@@ -1,0 +1,54 @@
+{
+  "entity": {
+    "name": "CUSTOMER",
+    "description": "Generic customer entity used for Experiment 001"
+  },
+  "fields": [
+    {
+      "name": "CUSTOMER_ID",
+      "data_type": "string",
+      "semantic_type": "identifier",
+      "format": {
+        "pattern": "C{sequence:06d}"
+      },
+      "optional": false
+    },
+    {
+      "name": "COUNTRY",
+      "data_type": "string",
+      "semantic_type": "categorical",
+      "domain": [
+        "US",
+        "DE",
+        "IN",
+        "GB",
+        "CA",
+        "FR"
+      ],
+      "optional": false
+    },
+    {
+      "name": "CUSTOMER_TYPE",
+      "data_type": "string",
+      "semantic_type": "categorical",
+      "domain": [
+        "BUSINESS",
+        "INDIVIDUAL"
+      ],
+      "optional": false
+    },
+    {
+      "name": "CREATED_DATE",
+      "data_type": "date",
+      "semantic_type": "date",
+      "format": {
+        "pattern": "YYYY-MM-DD"
+      },
+      "optional": false
+    }
+  ],
+  "generation_profile": {
+    "volume": 10,
+    "seed": 42
+  }
+}
