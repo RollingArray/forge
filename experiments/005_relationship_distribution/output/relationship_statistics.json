@@ -1,0 +1,46 @@
+{
+  "experiment": "005",
+  "name": "Relationship Distribution",
+  "seed": 42,
+  "relationships": [
+    {
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "distribution_type": "weighted",
+      "parent_record_count": 10,
+      "child_record_count": 100,
+      "minimum_children_per_parent": 2,
+      "maximum_children_per_parent": 33,
+      "mean_children_per_parent": 10.0,
+      "parents_with_zero_children": 0,
+      "observed_child_counts": {
+        "CUS0000001": 33,
+        "CUS0000002": 20,
+        "CUS0000003": 15,
+        "CUS0000004": 6,
+        "CUS0000005": 7,
+        "CUS0000006": 9,
+        "CUS0000007": 2,
+        "CUS0000008": 3,
+        "CUS0000009": 2,
+        "CUS0000010": 3
+      },
+      "observed_distribution": {
+        "CUS0000001": 0.33,
+        "CUS0000002": 0.2,
+        "CUS0000003": 0.15,
+        "CUS0000004": 0.06,
+        "CUS0000005": 0.07,
+        "CUS0000006": 0.09,
+        "CUS0000007": 0.02,
+        "CUS0000008": 0.03,
+        "CUS0000009": 0.02,
+        "CUS0000010": 0.03
+      },
+      "invalid_references": 0
+    }
+  ]
+}
