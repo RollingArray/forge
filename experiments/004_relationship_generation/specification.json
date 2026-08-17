@@ -1,0 +1,65 @@
+{
+  "experiment": {
+    "id": "004",
+    "name": "Relationship-Aware Generation"
+  },
+  "generation": {
+    "seed": 42
+  },
+  "entities": {
+    "CUSTOMER": {
+      "record_count": 10,
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "length": 10,
+          "prefix": "CUS"
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "distribution": {
+            "type": "uniform"
+          }
+        }
+      }
+    },
+    "ORDER": {
+      "record_count": 30,
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "length": 10,
+          "prefix": "ORD"
+        },
+        "AMOUNT": {
+          "type": "integer",
+          "distribution": {
+            "type": "uniform",
+            "min": 100,
+            "max": 5000
+          }
+        },
+        "CUSTOMER_ID": {
+          "type": "reference",
+          "relationship": "CUSTOMER_ORDER"
+        }
+      }
+    }
+  },
+  "relationships": [
+    {
+      "name": "CUSTOMER_ORDER",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N"
+    }
+  ]
+}

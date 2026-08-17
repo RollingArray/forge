@@ -8,6 +8,10 @@ This experiment tests whether synthetic data can be generated with
 explicit statistical distributions without access to real production
 data.
 
+The experiment builds on the metadata-driven generation established
+in Experiment 001 and the field constraint concepts established in
+Experiment 002.
+
 The experiment introduces:
 
     - uniform categorical distributions
@@ -15,11 +19,10 @@ The experiment introduces:
     - normal numeric distributions
     - bounded numeric distributions
     - population rates
+    - statistical validation
 
-No machine learning, LLM, or real production data is used.
-
-The objective is to determine whether statistical behavior can be
-declared explicitly as metadata and then enforced by the generator.
+No machine learning, deep learning, LLM, or real production data
+is used.
 
 Experiment
 ----------
@@ -44,6 +47,12 @@ From the repository root:
 
     uv run python experiments/003_distribution_control/experiment.py
 
+Input
+-----
+The experiment specification is read from:
+
+    experiments/003_distribution_control/specification.json
+
 Output
 ------
 The generated dataset is written to:
@@ -56,8 +65,9 @@ The generated data is synthetic and does not represent any real
 production dataset.
 """
 
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
+import json
 import random
 import statistics
 
@@ -68,55 +78,39 @@ import pandas as pd
 # --------------------------------------------------
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
+
+SPECIFICATION_FILE = EXPERIMENT_DIR / "specification.json"
+
 OUTPUT_DIR = EXPERIMENT_DIR / "output"
+
 OUTPUT_FILE = OUTPUT_DIR / "generated_data.csv"
 
 
 # --------------------------------------------------
-# Experiment configuration
+# Specification loading
 # --------------------------------------------------
 
-RANDOM_SEED = 42
-VOLUME = 1000
 
+def load_specification() -> dict:
+    """
+    Load the experiment specification from JSON.
 
-# --------------------------------------------------
-# Metadata
-# --------------------------------------------------
+    The specification is the source of truth for:
 
-METADATA = {
-    "table": "CUSTOMER",
-    "fields": {
-        "CUSTOMER_ID": {
-            "type": "identifier",
-            "length": 10,
-        },
-        "COUNTRY_UNIFORM": {
-            "type": "categorical",
-            "values": ["US", "IN", "DE", "FR"],
-            "distribution": "uniform",
-        },
-        "COUNTRY_WEIGHTED": {
-            "type": "categorical",
-            "values": ["US", "IN", "DE", "FR"],
-            "distribution": "weighted",
-            "weights": [0.50, 0.30, 0.15, 0.05],
-        },
-        "AGE": {
-            "type": "integer",
-            "distribution": "normal",
-            "mean": 42,
-            "std": 10,
-            "min": 18,
-            "max": 80,
-        },
-        "PHONE": {
-            "type": "string",
-            "length": 10,
-            "population_rate": 0.70,
-        },
-    },
-}
+        - entity definition
+        - field definition
+        - generation behavior
+        - distributions
+        - population rates
+        - record volume
+        - random seed
+    """
+
+    with SPECIFICATION_FILE.open(
+        "r",
+        encoding="utf-8",
+    ) as file:
+        return json.load(file)
 
 
 # --------------------------------------------------
@@ -136,7 +130,7 @@ def generate_identifier(
 def generate_uniform(
     values: list[str],
 ) -> str:
-    """Select values with equal probability."""
+    """Select a value using a uniform categorical distribution."""
 
     return random.choice(values)
 
@@ -145,7 +139,18 @@ def generate_weighted(
     values: list[str],
     weights: list[float],
 ) -> str:
-    """Select values according to explicit probabilities."""
+    """Select a value using an explicit weighted distribution."""
+
+    if len(values) != len(weights):
+        raise ValueError(
+            "Number of categorical values must match " "number of weights."
+        )
+
+    if not weights:
+        raise ValueError("Weighted distribution requires at least one weight.")
+
+    if abs(sum(weights) - 1.0) > 0.000001:
+        raise ValueError("Weighted distribution weights must sum to 1.0.")
 
     return random.choices(
         values,
@@ -161,8 +166,10 @@ def generate_normal(
     maximum: int,
 ) -> int:
     """
-    Generate a value from a normal distribution and constrain it
-    to the declared bounds.
+    Generate an integer using a normal distribution.
+
+    The generated value is constrained to the declared minimum
+    and maximum.
     """
 
     value = random.gauss(
@@ -174,11 +181,14 @@ def generate_normal(
 
     return max(
         minimum,
-        min(maximum, value),
+        min(
+            maximum,
+            value,
+        ),
     )
 
 
-def generate_phone(
+def generate_string(
     length: int,
 ) -> str:
     """Generate a synthetic numeric string."""
@@ -194,7 +204,12 @@ def generate_phone(
 def should_populate(
     population_rate: float,
 ) -> bool:
-    """Determine whether an optional field receives a value."""
+    """
+    Determine whether an optional field should be populated.
+    """
+
+    if not 0.0 <= population_rate <= 1.0:
+        raise ValueError("Population rate must be between 0.0 and 1.0.")
 
     return random.random() < population_rate
 
@@ -208,53 +223,92 @@ def generate_value(
     field_metadata: dict,
     index: int,
 ):
-    """Generate a value according to the field metadata."""
+    """
+    Generate a field value according to its metadata.
+    """
 
     field_type = field_metadata["type"]
 
+    # --------------------------------------------------
+    # Identifier
+    # --------------------------------------------------
+
     if field_type == "identifier":
+
         return generate_identifier(
-            field_metadata["length"],
-            index,
+            length=field_metadata["length"],
+            index=index,
         )
+
+    # --------------------------------------------------
+    # Categorical
+    # --------------------------------------------------
 
     if field_type == "categorical":
 
+        values = field_metadata["values"]
+
         distribution = field_metadata.get(
             "distribution",
-            "uniform",
+            {
+                "type": "uniform",
+            },
         )
 
-        if distribution == "uniform":
-            return generate_uniform(field_metadata["values"])
+        distribution_type = distribution["type"]
 
-        if distribution == "weighted":
-            return generate_weighted(
-                field_metadata["values"],
-                field_metadata["weights"],
+        if distribution_type == "uniform":
+
+            return generate_uniform(
+                values,
             )
 
-        raise ValueError(f"Unsupported categorical distribution: " f"{distribution}")
+        if distribution_type == "weighted":
+
+            return generate_weighted(
+                values,
+                distribution["weights"],
+            )
+
+        raise ValueError(
+            "Unsupported categorical distribution: " f"{distribution_type}"
+        )
+
+    # --------------------------------------------------
+    # Integer
+    # --------------------------------------------------
 
     if field_type == "integer":
 
         distribution = field_metadata.get(
             "distribution",
-            "uniform",
+            {
+                "type": "uniform",
+            },
         )
 
-        if distribution == "normal":
+        distribution_type = distribution["type"]
+
+        if distribution_type == "normal":
+
             return generate_normal(
-                field_metadata["mean"],
-                field_metadata["std"],
-                field_metadata["min"],
-                field_metadata["max"],
+                mean=distribution["mean"],
+                std=distribution["std"],
+                minimum=distribution["min"],
+                maximum=distribution["max"],
             )
 
-        raise ValueError(f"Unsupported integer distribution: " f"{distribution}")
+        raise ValueError("Unsupported integer distribution: " f"{distribution_type}")
+
+    # --------------------------------------------------
+    # String
+    # --------------------------------------------------
 
     if field_type == "string":
-        return generate_phone(field_metadata["length"])
+
+        return generate_string(
+            field_metadata["length"],
+        )
 
     raise ValueError(f"Unsupported field type: {field_type}")
 
@@ -265,18 +319,25 @@ def generate_value(
 
 
 def generate_dataset(
-    metadata: dict,
+    entity_metadata: dict,
     volume: int,
 ) -> pd.DataFrame:
-    """Generate a statistically controlled dataset."""
+    """
+    Generate a dataset according to the entity specification.
+    """
 
     rows = []
 
-    for index in range(1, volume + 1):
+    fields = entity_metadata["fields"]
+
+    for index in range(
+        1,
+        volume + 1,
+    ):
 
         row = {}
 
-        for field_name, field_metadata in metadata["fields"].items():
+        for field_name, field_metadata in fields.items():
 
             population_rate = field_metadata.get(
                 "population_rate",
@@ -285,13 +346,15 @@ def generate_dataset(
 
             if population_rate < 1.0:
 
-                if not should_populate(population_rate):
+                if not should_populate(
+                    population_rate,
+                ):
                     row[field_name] = None
                     continue
 
             row[field_name] = generate_value(
-                field_metadata,
-                index,
+                field_metadata=field_metadata,
+                index=index,
             )
 
         rows.append(row)
@@ -310,9 +373,13 @@ def validate_uniform_distribution(
 ) -> None:
     """Display observed frequencies for a uniform distribution."""
 
-    counts = Counter(series.dropna())
+    counts = Counter(
+        series.dropna(),
+    )
 
-    total = sum(counts.values())
+    total = sum(
+        counts.values(),
+    )
 
     print("\nUniform distribution:")
 
@@ -323,7 +390,7 @@ def validate_uniform_distribution(
             0,
         )
 
-        percentage = observed / total
+        percentage = observed / total if total else 0
 
         print(f"  {value}: " f"{observed:4d} " f"({percentage:.2%})")
 
@@ -335,9 +402,13 @@ def validate_weighted_distribution(
 ) -> None:
     """Display observed versus expected weighted frequencies."""
 
-    counts = Counter(series.dropna())
+    counts = Counter(
+        series.dropna(),
+    )
 
-    total = sum(counts.values())
+    total = sum(
+        counts.values(),
+    )
 
     print("\nWeighted distribution:")
 
@@ -351,7 +422,7 @@ def validate_weighted_distribution(
             0,
         )
 
-        observed_rate = observed / total
+        observed_rate = observed / total if total else 0
 
         print(
             f"  {value}: " f"observed={observed_rate:.2%}, " f"expected={expected:.2%}"
@@ -362,19 +433,34 @@ def validate_normal_distribution(
     series: pd.Series,
     expected_mean: float,
     expected_std: float,
+    minimum: int,
+    maximum: int,
 ) -> None:
-    """Display observed versus expected normal distribution statistics."""
+    """Display observed versus expected numeric statistics."""
 
     values = series.dropna().tolist()
 
+    if not values:
+        print("\nNormal distribution: no values generated.")
+        return
+
     observed_mean = statistics.mean(values)
-    observed_std = statistics.stdev(values)
+
+    observed_std = statistics.stdev(values) if len(values) > 1 else 0
+
+    observed_min = min(values)
+
+    observed_max = max(values)
 
     print("\nNormal distribution:")
 
     print(f"  Mean: " f"observed={observed_mean:.2f}, " f"expected={expected_mean:.2f}")
 
     print(f"  Std : " f"observed={observed_std:.2f}, " f"expected={expected_std:.2f}")
+
+    print(f"  Min : " f"observed={observed_min}, " f"allowed={minimum}")
+
+    print(f"  Max : " f"observed={observed_max}, " f"allowed={maximum}")
 
 
 def validate_population_rate(
@@ -398,7 +484,7 @@ def validate_population_rate(
 def save_output(
     dataframe: pd.DataFrame,
 ) -> None:
-    """Save generated data."""
+    """Save generated data to CSV."""
 
     OUTPUT_DIR.mkdir(
         parents=True,
@@ -419,51 +505,114 @@ def save_output(
 def main() -> None:
     """Run Experiment 003."""
 
-    random.seed(RANDOM_SEED)
+    specification = load_specification()
 
-    print("=" * 60)
+    generation_config = specification["generation"]
+
+    random_seed = generation_config["seed"]
+
+    volume = generation_config["record_count"]
+
+    entity = specification["entity"]
+
+    random.seed(
+        random_seed,
+    )
+
+    print("=" * 70)
     print("FORGE - Experiment 003")
     print("Distribution-Controlled Generation")
-    print("=" * 60)
+    print("=" * 70)
+
+    print(f"\nSpecification: " f"{SPECIFICATION_FILE}")
+
+    print(f"Random seed:   " f"{random_seed}")
+
+    print(f"Record count:  " f"{volume}")
+
+    print(f"Entity:        " f"{entity['name']}")
 
     print("\nGenerating synthetic data...")
 
     dataframe = generate_dataset(
-        metadata=METADATA,
-        volume=VOLUME,
+        entity_metadata=entity,
+        volume=volume,
     )
 
-    print(f"  Records: {len(dataframe)}")
+    print(f"  Records generated: " f"{len(dataframe)}")
+
+    fields = entity["fields"]
+
+    # --------------------------------------------------
+    # Validate uniform distribution
+    # --------------------------------------------------
+
+    uniform_field = fields["COUNTRY_UNIFORM"]
 
     validate_uniform_distribution(
         dataframe["COUNTRY_UNIFORM"],
-        METADATA["fields"]["COUNTRY_UNIFORM"]["values"],
+        uniform_field["values"],
     )
+
+    # --------------------------------------------------
+    # Validate weighted distribution
+    # --------------------------------------------------
+
+    weighted_field = fields["COUNTRY_WEIGHTED"]
+
+    weighted_distribution = weighted_field["distribution"]
 
     validate_weighted_distribution(
         dataframe["COUNTRY_WEIGHTED"],
-        METADATA["fields"]["COUNTRY_WEIGHTED"]["values"],
-        METADATA["fields"]["COUNTRY_WEIGHTED"]["weights"],
+        weighted_field["values"],
+        weighted_distribution["weights"],
     )
+
+    # --------------------------------------------------
+    # Validate normal distribution
+    # --------------------------------------------------
+
+    age_field = fields["AGE"]
+
+    age_distribution = age_field["distribution"]
 
     validate_normal_distribution(
         dataframe["AGE"],
-        METADATA["fields"]["AGE"]["mean"],
-        METADATA["fields"]["AGE"]["std"],
+        age_distribution["mean"],
+        age_distribution["std"],
+        age_distribution["min"],
+        age_distribution["max"],
     )
+
+    # --------------------------------------------------
+    # Validate population rate
+    # --------------------------------------------------
+
+    phone_field = fields["PHONE"]
 
     validate_population_rate(
         dataframe["PHONE"],
-        METADATA["fields"]["PHONE"]["population_rate"],
+        phone_field["population_rate"],
     )
 
-    save_output(dataframe)
+    # --------------------------------------------------
+    # Save output
+    # --------------------------------------------------
+
+    save_output(
+        dataframe,
+    )
 
     print("\nOutput:")
     print(f"  {OUTPUT_FILE}")
 
     print("\nFirst 20 records:")
-    print(dataframe.head(20).to_string(index=False))
+
+    print(
+        dataframe.head(20).to_string(
+            index=False,
+        )
+    )
 
     print("\nExperiment completed successfully.")
 

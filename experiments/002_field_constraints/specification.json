@@ -1,54 +1,48 @@
 {
+  "experiment": {
+    "id": "002",
+    "name": "Explicit field-level constraints"
+  },
+  "generation": {
+    "seed": 42,
+    "volume": 30
+  },
   "entity": {
     "name": "CUSTOMER",
-    "description": "Generic customer entity used for Experiment 001"
-  },
-  "fields": [
-    {
-      "name": "CUSTOMER_ID",
-      "data_type": "string",
-      "semantic_type": "identifier",
-      "format": {
-        "pattern": "C{sequence:06d}"
+    "fields": {
+      "CUSTOMER_ID": {
+        "type": "identifier",
+        "length": 10,
+        "nullable": false
       },
-      "optional": false
-    },
-    {
-      "name": "COUNTRY",
-      "data_type": "string",
-      "semantic_type": "categorical",
-      "domain": [
-        "US",
-        "DE",
-        "IN",
-        "GB",
-        "CA",
-        "FR"
-      ],
-      "optional": false
-    },
-    {
-      "name": "CUSTOMER_TYPE",
-      "data_type": "string",
-      "semantic_type": "categorical",
-      "domain": [
-        "BUSINESS",
-        "INDIVIDUAL"
-      ],
-      "optional": false
-    },
-    {
-      "name": "CREATED_DATE",
-      "data_type": "date",
-      "semantic_type": "date",
-      "format": {
-        "pattern": "YYYY-MM-DD"
+      "COUNTRY": {
+        "type": "categorical",
+        "values": [
+          "US",
+          "IN",
+          "DE",
+          "FR"
+        ],
+        "nullable": false
       },
-      "optional": false
+      "AGE": {
+        "type": "integer",
+        "min": 18,
+        "max": 80,
+        "nullable": false
+      },
+      "CUSTOMER_CODE": {
+        "type": "pattern",
+        "pattern": "CUS-#####",
+        "nullable": false
+      },
+      "PHONE": {
+        "type": "string",
+        "min_length": 10,
+        "max_length": 10,
+        "nullable": true,
+        "population_rate": 0.8
+      }
     }
-  ],
-  "generation_profile": {
-    "volume": 10,
-    "seed": 42
   }
 }
