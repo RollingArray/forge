@@ -1,0 +1,113 @@
+{
+  "experiment": 6,
+  "distribution_intent": [
+    {
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "distribution": {
+        "type": "power_law",
+        "parameters": {
+          "alpha": 1.5
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "distribution": {
+        "type": "power_law",
+        "parameters": {
+          "alpha": 1.5
+        }
+      },
+      "parent_record_count": 10,
+      "child_record_count": 10000,
+      "minimum_children_per_parent": 147,
+      "maximum_children_per_parent": 4979,
+      "mean_children_per_parent": 1000,
+      "median_children_per_parent": 392.0,
+      "parents_with_zero_children": 0,
+      "allocation": [
+        {
+          "rank": 1,
+          "parent": "CUS0000001",
+          "derived_weight": 0.5011686015541617,
+          "child_count": 4979,
+          "observed_rate": 0.4979
+        },
+        {
+          "rank": 2,
+          "parent": "CUS0000002",
+          "derived_weight": 0.1771898583383633,
+          "child_count": 1750,
+          "observed_rate": 0.175
+        },
+        {
+          "rank": 3,
+          "parent": "CUS0000003",
+          "derived_weight": 0.09644994233889452,
+          "child_count": 963,
+          "observed_rate": 0.0963
+        },
+        {
+          "rank": 4,
+          "parent": "CUS0000004",
+          "derived_weight": 0.0626460751942702,
+          "child_count": 669,
+          "observed_rate": 0.0669
+        },
+        {
+          "rank": 5,
+          "parent": "CUS0000005",
+          "derived_weight": 0.04482588245054449,
+          "child_count": 436,
+          "observed_rate": 0.0436
+        },
+        {
+          "rank": 6,
+          "parent": "CUS0000006",
+          "derived_weight": 0.0341002041364419,
+          "child_count": 348,
+          "observed_rate": 0.0348
+        },
+        {
+          "rank": 7,
+          "parent": "CUS0000007",
+          "derived_weight": 0.027060560910741438,
+          "child_count": 288,
+          "observed_rate": 0.0288
+        },
+        {
+          "rank": 8,
+          "parent": "CUS0000008",
+          "derived_weight": 0.02214873229229541,
+          "child_count": 233,
+          "observed_rate": 0.0233
+        },
+        {
+          "rank": 9,
+          "parent": "CUS0000009",
+          "derived_weight": 0.018561800057561542,
+          "child_count": 187,
+          "observed_rate": 0.0187
+        },
+        {
+          "rank": 10,
+          "parent": "CUS0000010",
+          "derived_weight": 0.015848342726725532,
+          "child_count": 147,
+          "observed_rate": 0.0147
+        }
+      ],
+      "parent_entity": "CUSTOMER",
+      "child_entity": "ORDER",
+      "parent_field": "CUSTOMER_ID",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "invalid_references": 0
+    }
+  ]
+}

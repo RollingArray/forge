@@ -1,0 +1,64 @@
+{
+  "experiment": {
+    "id": "007",
+    "name": "Reproducible generation"
+  },
+  "generation": {
+    "seed": 42,
+    "different_seed": 99,
+    "record_count": 100,
+    "repeat_count": 3
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "length": 10,
+          "prefix": "CUS",
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "distribution": {
+            "type": "weighted",
+            "weights": [
+              0.50,
+              0.30,
+              0.15,
+              0.05
+            ]
+          },
+          "nullable": false
+        },
+        "AGE": {
+          "type": "integer",
+          "min": 18,
+          "max": 80,
+          "distribution": {
+            "type": "uniform"
+          },
+          "nullable": false
+        },
+        "CUSTOMER_CODE": {
+          "type": "pattern",
+          "pattern": "CUS-#####",
+          "nullable": false
+        },
+        "PHONE": {
+          "type": "string",
+          "min_length": 10,
+          "max_length": 10,
+          "nullable": true,
+          "population_rate": 0.80
+        }
+      }
+    }
+  }
+}

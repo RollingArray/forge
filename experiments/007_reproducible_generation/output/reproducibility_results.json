@@ -1,0 +1,36 @@
+{
+  "experiment": 7,
+  "primary_seed": 42,
+  "different_seed": {
+    "datasets_identical": false,
+    "byte_identical": false,
+    "passed": true
+  },
+  "repeat_count": 3,
+  "same_seed": {
+    "tests": [
+      {
+        "run_a": 1,
+        "run_b": 2,
+        "dataset_identical": true,
+        "byte_identical": true,
+        "hash_a": "39f63efd061bd6f8abbe4f6ed26e94133841d1dbf3edeef598275e2c3820f53a",
+        "hash_b": "39f63efd061bd6f8abbe4f6ed26e94133841d1dbf3edeef598275e2c3820f53a"
+      },
+      {
+        "run_a": 1,
+        "run_b": 3,
+        "dataset_identical": true,
+        "byte_identical": true,
+        "hash_a": "39f63efd061bd6f8abbe4f6ed26e94133841d1dbf3edeef598275e2c3820f53a",
+        "hash_b": "39f63efd061bd6f8abbe4f6ed26e94133841d1dbf3edeef598275e2c3820f53a"
+      }
+    ],
+    "passed": true
+  },
+  "dataset_hash": {
+    "primary": "39f63efd061bd6f8abbe4f6ed26e94133841d1dbf3edeef598275e2c3820f53a",
+    "different_seed": "101a76d6da667c1a7c8b11c3f872bd1a5fff2b9f50f9670178c04390869d79ab"
+  },
+  "overall_result": "PASS"
+}
