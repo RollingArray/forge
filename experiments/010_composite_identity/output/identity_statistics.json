@@ -1,0 +1,246 @@
+{
+  "experiment": {
+    "id": "010",
+    "name": "Composite Identity"
+  },
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+  "identity": {
+    "type": "composite",
+    "fields": [
+      "COMPANY_CODE",
+      "CUSTOMER_NUMBER",
+      "ACCOUNT_TYPE"
+    ]
+  },
+  "independent_generation": {
+    "identity_validation": {
+      "identity_fields": [
+        "COMPANY_CODE",
+        "CUSTOMER_NUMBER",
+        "ACCOUNT_TYPE"
+      ],
+      "record_count": 1000,
+      "unique_identity_count": 495,
+      "duplicate_record_count": 505,
+      "duplicate_identity_count": 301,
+      "duplicates": [
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS001",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS002",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 4
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS002",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS005",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS006",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS006",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 4
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS007",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS008",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS009",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS009",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS010",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS012",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS012",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS013",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 4
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS014",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS015",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS016",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 3
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS016",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS018",
+          "ACCOUNT_TYPE": "PREMIUM",
+          "count": 2
+        },
+        {
+          "COMPANY_CODE": "1000",
+          "CUSTOMER_NUMBER": "CUS018",
+          "ACCOUNT_TYPE": "STANDARD",
+          "count": 2
+        }
+      ],
+      "passed": false
+    },
+    "field_validation": {
+      "COMPANY_CODE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NUMBER": {
+        "passed": true,
+        "errors": []
+      },
+      "ACCOUNT_TYPE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NAME": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "component_reuse": {
+      "COMPANY_CODE": {
+        "record_count": 1000,
+        "unique_value_count": 3,
+        "repeated_values_allowed": true
+      },
+      "CUSTOMER_NUMBER": {
+        "record_count": 1000,
+        "unique_value_count": 100,
+        "repeated_values_allowed": true
+      },
+      "ACCOUNT_TYPE": {
+        "record_count": 1000,
+        "unique_value_count": 2,
+        "repeated_values_allowed": true
+      }
+    }
+  },
+  "coordinated_generation": {
+    "identity_validation": {
+      "identity_fields": [
+        "COMPANY_CODE",
+        "CUSTOMER_NUMBER",
+        "ACCOUNT_TYPE"
+      ],
+      "record_count": 1000,
+      "unique_identity_count": 1000,
+      "duplicate_record_count": 0,
+      "duplicate_identity_count": 0,
+      "duplicates": [],
+      "passed": true
+    },
+    "field_validation": {
+      "COMPANY_CODE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NUMBER": {
+        "passed": true,
+        "errors": []
+      },
+      "ACCOUNT_TYPE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NAME": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "component_reuse": {
+      "COMPANY_CODE": {
+        "record_count": 1000,
+        "unique_value_count": 3,
+        "repeated_values_allowed": true
+      },
+      "CUSTOMER_NUMBER": {
+        "record_count": 1000,
+        "unique_value_count": 676,
+        "repeated_values_allowed": true
+      },
+      "ACCOUNT_TYPE": {
+        "record_count": 1000,
+        "unique_value_count": 2,
+        "repeated_values_allowed": true
+      }
+    }
+  },
+  "architectural_observation": {
+    "identity_is_declared_separately": true,
+    "individual_components_can_repeat": true,
+    "coordinated_generation_preserves_composite_uniqueness": true,
+    "independent_generation_requires_identity_validation": true
+  },
+  "overall_result": "PASS"
+}

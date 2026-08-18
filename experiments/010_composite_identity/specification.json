@@ -1,0 +1,83 @@
+{
+  "experiment": {
+    "id": "010",
+    "name": "Composite Identity"
+  },
+
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+
+  "entities": {
+    "CUSTOMER_ACCOUNT": {
+      "identity": {
+        "type": "composite",
+        "fields": [
+          "COMPANY_CODE",
+          "CUSTOMER_NUMBER",
+          "ACCOUNT_TYPE"
+        ]
+      },
+
+      "fields": {
+        "COMPANY_CODE": {
+          "type": "categorical",
+          "semantic": "company_identifier",
+          "values": [
+            "1000",
+            "2000",
+            "3000"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform"
+          }
+        },
+
+        "CUSTOMER_NUMBER": {
+          "type": "identifier",
+          "semantic": "customer_identifier",
+          "length": 6,
+          "prefix": "CUS",
+          "nullable": false
+        },
+
+        "ACCOUNT_TYPE": {
+          "type": "categorical",
+          "semantic": "account_type",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform"
+          }
+        },
+
+        "CUSTOMER_NAME": {
+          "type": "string",
+          "semantic": "name",
+          "min_length": 5,
+          "max_length": 30,
+          "nullable": false
+        }
+      }
+    }
+  },
+
+  "identity_generation": {
+    "approaches": {
+      "independent": {
+        "description": "Generate each identity component independently and validate the resulting composite identity.",
+        "strategy": "independent"
+      },
+
+      "coordinated": {
+        "description": "Generate the composite identity as a coordinated unit and assign its components to the corresponding fields.",
+        "strategy": "coordinated"
+      }
+    }
+  }
+}
