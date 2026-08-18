@@ -1,0 +1,171 @@
+{
+  "experiment": {
+    "id": "008",
+    "name": "Domain vs Generation Strategy"
+  },
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+  "domain": {
+    "name": "COUNTRY",
+    "type": "categorical",
+    "values": [
+      "US",
+      "IN",
+      "DE",
+      "FR"
+    ]
+  },
+  "strategies": {
+    "fixed": {
+      "field": "COUNTRY_FIXED",
+      "domain": "COUNTRY",
+      "strategy": "fixed",
+      "passed": true
+    },
+    "uniform": {
+      "field": "COUNTRY_UNIFORM",
+      "domain": "COUNTRY",
+      "strategy": "uniform",
+      "passed": true
+    },
+    "weighted": {
+      "field": "COUNTRY_WEIGHTED",
+      "domain": "COUNTRY",
+      "strategy": "weighted",
+      "passed": true
+    },
+    "random": {
+      "field": "COUNTRY_RANDOM",
+      "domain": "COUNTRY",
+      "strategy": "random",
+      "passed": true
+    }
+  },
+  "observed_distributions": {
+    "COUNTRY_UNIFORM": {
+      "DE": {
+        "count": 270,
+        "percentage": 0.27
+      },
+      "FR": {
+        "count": 258,
+        "percentage": 0.258
+      },
+      "IN": {
+        "count": 218,
+        "percentage": 0.218
+      },
+      "US": {
+        "count": 254,
+        "percentage": 0.254
+      }
+    },
+    "COUNTRY_WEIGHTED": {
+      "US": {
+        "observed": 0.494,
+        "expected": 0.5,
+        "difference": -0.006000000000000005
+      },
+      "IN": {
+        "observed": 0.306,
+        "expected": 0.3,
+        "difference": 0.006000000000000005
+      },
+      "DE": {
+        "observed": 0.145,
+        "expected": 0.15,
+        "difference": -0.0050000000000000044
+      },
+      "FR": {
+        "observed": 0.055,
+        "expected": 0.05,
+        "difference": 0.0049999999999999975
+      }
+    },
+    "COUNTRY_RANDOM": {
+      "DE": {
+        "count": 237,
+        "percentage": 0.237
+      },
+      "FR": {
+        "count": 258,
+        "percentage": 0.258
+      },
+      "IN": {
+        "count": 269,
+        "percentage": 0.269
+      },
+      "US": {
+        "count": 236,
+        "percentage": 0.236
+      }
+    }
+  },
+  "domain_validation": {
+    "COUNTRY_FIXED": {
+      "field": "COUNTRY_FIXED",
+      "domain": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ],
+      "invalid_count": 0,
+      "invalid_values": [],
+      "passed": true
+    },
+    "COUNTRY_UNIFORM": {
+      "field": "COUNTRY_UNIFORM",
+      "domain": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ],
+      "invalid_count": 0,
+      "invalid_values": [],
+      "passed": true
+    },
+    "COUNTRY_WEIGHTED": {
+      "field": "COUNTRY_WEIGHTED",
+      "domain": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ],
+      "invalid_count": 0,
+      "invalid_values": [],
+      "passed": true
+    },
+    "COUNTRY_RANDOM": {
+      "field": "COUNTRY_RANDOM",
+      "domain": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ],
+      "invalid_count": 0,
+      "invalid_values": [],
+      "passed": true
+    }
+  },
+  "fixed_validation": {
+    "strategy": "fixed",
+    "field": "COUNTRY_FIXED",
+    "expected_value": "US",
+    "observed_values": [
+      "US"
+    ],
+    "passed": true
+  },
+  "architectural_observation": {
+    "same_domain_reused": true,
+    "domain_changed_between_strategies": false,
+    "strategy_changes_generation_behavior": true
+  },
+  "overall_result": "PASS"
+}

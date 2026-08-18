@@ -1,0 +1,79 @@
+{
+  "experiment": {
+    "id": "008",
+    "name": "Domain vs Generation Strategy"
+  },
+
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+
+  "domains": {
+    "COUNTRY": {
+      "type": "categorical",
+      "values": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ]
+    }
+  },
+
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "length": 10,
+          "prefix": "CUS",
+          "nullable": false
+        },
+
+        "COUNTRY_FIXED": {
+          "type": "categorical",
+          "domain": "COUNTRY",
+          "generation": {
+            "strategy": "fixed",
+            "value": "US"
+          },
+          "nullable": false
+        },
+
+        "COUNTRY_UNIFORM": {
+          "type": "categorical",
+          "domain": "COUNTRY",
+          "generation": {
+            "strategy": "uniform"
+          },
+          "nullable": false
+        },
+
+        "COUNTRY_WEIGHTED": {
+          "type": "categorical",
+          "domain": "COUNTRY",
+          "generation": {
+            "strategy": "weighted",
+            "weights": [
+              0.50,
+              0.30,
+              0.15,
+              0.05
+            ]
+          },
+          "nullable": false
+        },
+
+        "COUNTRY_RANDOM": {
+          "type": "categorical",
+          "domain": "COUNTRY",
+          "generation": {
+            "strategy": "random"
+          },
+          "nullable": false
+        }
+      }
+    }
+  }
+}
