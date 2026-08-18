@@ -1,0 +1,160 @@
+{
+  "experiment": {
+    "id": "012",
+    "name": "Correlation and Dependency",
+    "type": "Statistical / Dependency",
+    "objective": "Determine whether meaningful relationships between fields require explicit dependency-aware generation rather than independent field generation."
+  },
+
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "customer_identifier",
+          "length": 10,
+          "prefix": "CUS",
+          "nullable": false
+        },
+
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "semantic": "customer_classification",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "distribution": {
+            "type": "weighted",
+            "weights": [
+              0.70,
+              0.30
+            ]
+          },
+          "nullable": false
+        },
+
+        "CUSTOMER_LIMIT": {
+          "type": "number",
+          "semantic": "customer_credit_limit",
+          "generation": {
+            "strategy": "uniform",
+            "min": 1000,
+            "max": 15000
+          },
+          "nullable": false
+        },
+
+        "ORDER_AMOUNT": {
+          "type": "number",
+          "semantic": "order_amount",
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 10000
+          },
+          "nullable": false
+        }
+      }
+    }
+  },
+
+  "dependencies": [
+    {
+      "id": "D001",
+      "type": "categorical_to_numeric",
+      "source": "CUSTOMER_TYPE",
+      "target": "CUSTOMER_LIMIT",
+      "behavior": {
+        "STANDARD": {
+          "distribution": {
+            "type": "uniform",
+            "min": 1000,
+            "max": 7000
+          }
+        },
+        "PREMIUM": {
+          "distribution": {
+            "type": "uniform",
+            "min": 7000,
+            "max": 15000
+          }
+        }
+      }
+    },
+
+    {
+      "id": "D002",
+      "type": "numeric_to_numeric",
+      "source": "CUSTOMER_LIMIT",
+      "target": "ORDER_AMOUNT",
+      "behavior": {
+        "relationship": "positive",
+        "minimum_ratio": 0.10,
+        "maximum_ratio": 0.80,
+        "noise": {
+          "type": "uniform",
+          "min": -500,
+          "max": 500
+        }
+      }
+    }
+  ],
+
+  "validation": {
+    "field_constraints": {
+      "CUSTOMER_ID": {
+        "type": "identifier",
+        "length": 10,
+        "prefix": "CUS"
+      },
+
+      "CUSTOMER_TYPE": {
+        "type": "domain",
+        "values": [
+          "STANDARD",
+          "PREMIUM"
+        ]
+      },
+
+      "CUSTOMER_LIMIT": {
+        "type": "range",
+        "min": 1000,
+        "max": 15000
+      },
+
+      "ORDER_AMOUNT": {
+        "type": "range",
+        "min": 100,
+        "max": 10000
+      }
+    },
+
+    "dependency_metrics": {
+      "categorical_to_numeric": {
+        "source": "CUSTOMER_TYPE",
+        "target": "CUSTOMER_LIMIT",
+        "metrics": [
+          "count",
+          "mean",
+          "median",
+          "min",
+          "max"
+        ]
+      },
+
+      "numeric_to_numeric": {
+        "source": "CUSTOMER_LIMIT",
+        "target": "ORDER_AMOUNT",
+        "metrics": [
+          "pearson_correlation"
+        ]
+      }
+    }
+  }
+}

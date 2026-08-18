@@ -1,0 +1,194 @@
+{
+  "experiment": {
+    "id": "012",
+    "name": "Correlation and Dependency",
+    "type": "Statistical / Dependency",
+    "objective": "Determine whether meaningful relationships between fields require explicit dependency-aware generation rather than independent field generation."
+  },
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+  "dependencies": [
+    {
+      "id": "D001",
+      "type": "categorical_to_numeric",
+      "source": "CUSTOMER_TYPE",
+      "target": "CUSTOMER_LIMIT",
+      "behavior": {
+        "STANDARD": {
+          "distribution": {
+            "type": "uniform",
+            "min": 1000,
+            "max": 7000
+          }
+        },
+        "PREMIUM": {
+          "distribution": {
+            "type": "uniform",
+            "min": 7000,
+            "max": 15000
+          }
+        }
+      }
+    },
+    {
+      "id": "D002",
+      "type": "numeric_to_numeric",
+      "source": "CUSTOMER_LIMIT",
+      "target": "ORDER_AMOUNT",
+      "behavior": {
+        "relationship": "positive",
+        "minimum_ratio": 0.1,
+        "maximum_ratio": 0.8,
+        "noise": {
+          "type": "uniform",
+          "min": -500,
+          "max": 500
+        }
+      }
+    }
+  ],
+  "independent_generation": {
+    "field_validation": {
+      "CUSTOMER_ID": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_TYPE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_LIMIT": {
+        "passed": true,
+        "errors": []
+      },
+      "ORDER_AMOUNT": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "statistics": {
+      "categorical_to_numeric": {
+        "source": "CUSTOMER_TYPE",
+        "target": "CUSTOMER_LIMIT",
+        "groups": {
+          "PREMIUM": {
+            "count": 321,
+            "mean": 7863.22,
+            "median": 7990.22,
+            "min": 1015.21,
+            "max": 14851.65
+          },
+          "STANDARD": {
+            "count": 679,
+            "mean": 8038.98,
+            "median": 7994.16,
+            "min": 1005.68,
+            "max": 14998.71
+          }
+        }
+      },
+      "numeric_to_numeric": {
+        "source": "CUSTOMER_LIMIT",
+        "target": "ORDER_AMOUNT",
+        "pearson_correlation": -0.015479
+      }
+    }
+  },
+  "dependency_aware_generation": {
+    "field_validation": {
+      "CUSTOMER_ID": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_TYPE": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_LIMIT": {
+        "passed": true,
+        "errors": []
+      },
+      "ORDER_AMOUNT": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "statistics": {
+      "categorical_to_numeric": {
+        "source": "CUSTOMER_TYPE",
+        "target": "CUSTOMER_LIMIT",
+        "groups": {
+          "PREMIUM": {
+            "count": 297,
+            "mean": 10831.94,
+            "median": 10890.17,
+            "min": 7133.52,
+            "max": 14996.85
+          },
+          "STANDARD": {
+            "count": 703,
+            "mean": 3940.03,
+            "median": 4044.02,
+            "min": 1001.02,
+            "max": 6995.88
+          }
+        }
+      },
+      "numeric_to_numeric": {
+        "source": "CUSTOMER_LIMIT",
+        "target": "ORDER_AMOUNT",
+        "pearson_correlation": 0.786324
+      }
+    },
+    "categorical_dependency_validation": {
+      "passed": true,
+      "groups": {
+        "STANDARD": {
+          "observed_min": 1001.02,
+          "observed_max": 6995.88,
+          "expected_min": 1000,
+          "expected_max": 7000,
+          "passed": true
+        },
+        "PREMIUM": {
+          "observed_min": 7133.52,
+          "observed_max": 14996.85,
+          "expected_min": 7000,
+          "expected_max": 15000,
+          "passed": true
+        }
+      }
+    },
+    "numeric_dependency_validation": {
+      "field_bounds_passed": true,
+      "configured_minimum_ratio": 0.1,
+      "configured_maximum_ratio": 0.8,
+      "noise": {
+        "type": "uniform",
+        "min": -500,
+        "max": 500
+      },
+      "relationship_measurement": "pearson_correlation",
+      "ratio_reference": {
+        "minimum_observed_reference": 100.1,
+        "maximum_observed_reference": 11997.48
+      }
+    }
+  },
+  "comparison": {
+    "independent_numeric_correlation": -0.015479,
+    "dependency_aware_numeric_correlation": 0.786324,
+    "correlation_change": 0.801803,
+    "independent_group_mean_gap": 175.76,
+    "dependency_aware_group_mean_gap": 6891.91
+  },
+  "architectural_observation": {
+    "dependencies_are_declared_separately": true,
+    "categorical_dependency_is_observable": true,
+    "numeric_dependency_is_observable": true,
+    "dependency_aware_generation_preserves_field_validity": true
+  },
+  "overall_result": "PASS"
+}
