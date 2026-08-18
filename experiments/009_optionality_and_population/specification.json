@@ -1,0 +1,115 @@
+{
+  "experiment": {
+    "id": "009",
+    "name": "Optionality and Population"
+  },
+
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+
+  "domains": {
+    "COUNTRY": {
+      "type": "categorical",
+      "values": [
+        "US",
+        "IN",
+        "DE",
+        "FR"
+      ]
+    }
+  },
+
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "length": 10,
+          "prefix": "CUS",
+          "nullable": false
+        },
+
+        "COUNTRY": {
+          "type": "categorical",
+          "domain": "COUNTRY",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform"
+          }
+        },
+
+        "EMAIL": {
+          "type": "string",
+          "min_length": 10,
+          "max_length": 30,
+          "nullable": true,
+          "population": {
+            "type": "rate",
+            "rate": 0.80
+          }
+        },
+
+        "PHONE": {
+          "type": "string",
+          "min_length": 10,
+          "max_length": 10,
+          "nullable": true,
+          "population": {
+            "type": "rate",
+            "rate": 0.50
+          }
+        },
+
+        "TAX_ID": {
+          "type": "string",
+          "min_length": 9,
+          "max_length": 12,
+          "nullable": true,
+          "population": {
+            "type": "conditional",
+            "condition": {
+              "field": "COUNTRY",
+              "operator": "equals",
+              "value": "US"
+            }
+          }
+        },
+
+        "ADDRESS": {
+          "type": "string",
+          "min_length": 10,
+          "max_length": 50,
+          "nullable": true,
+          "population": {
+            "type": "rate",
+            "rate": 0.60
+          }
+        },
+
+        "ZERO_POPULATION_FIELD": {
+          "type": "string",
+          "min_length": 5,
+          "max_length": 15,
+          "nullable": true,
+          "population": {
+            "type": "rate",
+            "rate": 0.0
+          }
+        },
+
+        "FULL_POPULATION_FIELD": {
+          "type": "string",
+          "min_length": 5,
+          "max_length": 15,
+          "nullable": true,
+          "population": {
+            "type": "rate",
+            "rate": 1.0
+          }
+        }
+      }
+    }
+  }
+}

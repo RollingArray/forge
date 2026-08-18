@@ -1,0 +1,148 @@
+{
+  "experiment": {
+    "id": "009",
+    "name": "Optionality and Population"
+  },
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+  "population": {
+    "CUSTOMER_ID": {
+      "population_type": "always",
+      "expected_rate": null,
+      "observed_rate": 1.0,
+      "populated_count": 1000,
+      "null_count": 0,
+      "total_count": 1000
+    },
+    "COUNTRY": {
+      "population_type": "always",
+      "expected_rate": null,
+      "observed_rate": 1.0,
+      "populated_count": 1000,
+      "null_count": 0,
+      "total_count": 1000
+    },
+    "EMAIL": {
+      "population_type": "rate",
+      "expected_rate": 0.8,
+      "observed_rate": 0.824,
+      "populated_count": 824,
+      "null_count": 176,
+      "total_count": 1000
+    },
+    "PHONE": {
+      "population_type": "rate",
+      "expected_rate": 0.5,
+      "observed_rate": 0.511,
+      "populated_count": 511,
+      "null_count": 489,
+      "total_count": 1000
+    },
+    "TAX_ID": {
+      "population_type": "conditional",
+      "expected_rate": null,
+      "observed_rate": 0.248,
+      "populated_count": 248,
+      "null_count": 752,
+      "total_count": 1000
+    },
+    "ADDRESS": {
+      "population_type": "rate",
+      "expected_rate": 0.6,
+      "observed_rate": 0.592,
+      "populated_count": 592,
+      "null_count": 408,
+      "total_count": 1000
+    },
+    "ZERO_POPULATION_FIELD": {
+      "population_type": "rate",
+      "expected_rate": 0.0,
+      "observed_rate": 0.0,
+      "populated_count": 0,
+      "null_count": 1000,
+      "total_count": 1000
+    },
+    "FULL_POPULATION_FIELD": {
+      "population_type": "rate",
+      "expected_rate": 1.0,
+      "observed_rate": 1.0,
+      "populated_count": 1000,
+      "null_count": 0,
+      "total_count": 1000
+    }
+  },
+  "validation": {
+    "nullability": {
+      "CUSTOMER_ID": {
+        "nullable": false,
+        "null_count": 0,
+        "passed": true
+      },
+      "COUNTRY": {
+        "nullable": false,
+        "null_count": 0,
+        "passed": true
+      },
+      "EMAIL": {
+        "nullable": true,
+        "null_count": 176,
+        "passed": true
+      },
+      "PHONE": {
+        "nullable": true,
+        "null_count": 489,
+        "passed": true
+      },
+      "TAX_ID": {
+        "nullable": true,
+        "null_count": 752,
+        "passed": true
+      },
+      "ADDRESS": {
+        "nullable": true,
+        "null_count": 408,
+        "passed": true
+      },
+      "ZERO_POPULATION_FIELD": {
+        "nullable": true,
+        "null_count": 1000,
+        "passed": true
+      },
+      "FULL_POPULATION_FIELD": {
+        "nullable": true,
+        "null_count": 0,
+        "passed": true
+      }
+    },
+    "boundary": {
+      "ZERO_POPULATION_FIELD": {
+        "configured_rate": 0.0,
+        "passed": true
+      },
+      "FULL_POPULATION_FIELD": {
+        "configured_rate": 1.0,
+        "passed": true
+      }
+    },
+    "conditional": {
+      "TAX_ID": {
+        "condition": {
+          "field": "COUNTRY",
+          "operator": "equals",
+          "value": "US"
+        },
+        "populated_when_condition_true": true,
+        "null_when_condition_false": true,
+        "passed": true
+      }
+    }
+  },
+  "architectural_observation": {
+    "nullability_separated_from_population": true,
+    "population_separated_from_generation": true,
+    "conditional_population_supported": true
+  },
+  "overall_result": "PASS"
+}
