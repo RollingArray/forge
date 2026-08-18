@@ -1,0 +1,134 @@
+{
+  "experiment": {
+    "id": "015",
+    "name": "Scenario Generation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "base_specification": {
+    "entities": {
+      "CUSTOMER": {
+        "fields": {
+          "CUSTOMER_ID": {
+            "type": "identifier",
+            "prefix": "CUS",
+            "length": 10,
+            "nullable": false
+          },
+          "CUSTOMER_TYPE": {
+            "type": "categorical",
+            "values": [
+              "STANDARD",
+              "PREMIUM"
+            ],
+            "nullable": false,
+            "generation": {
+              "strategy": "weighted",
+              "weights": {
+                "STANDARD": 0.70,
+                "PREMIUM": 0.30
+              }
+            }
+          },
+          "COUNTRY": {
+            "type": "categorical",
+            "values": [
+              "US",
+              "IN",
+              "DE",
+              "FR"
+            ],
+            "nullable": false,
+            "generation": {
+              "strategy": "uniform"
+            }
+          },
+          "EMAIL": {
+            "type": "string",
+            "min_length": 10,
+            "max_length": 30,
+            "nullable": true,
+            "population_rate": 0.80
+          }
+        }
+      },
+      "ORDER": {
+        "fields": {
+          "ORDER_ID": {
+            "type": "identifier",
+            "prefix": "ORD",
+            "length": 10,
+            "nullable": false
+          },
+          "CUSTOMER_ID": {
+            "type": "identifier",
+            "prefix": "CUS",
+            "length": 10,
+            "nullable": false
+          },
+          "AMOUNT": {
+            "type": "number",
+            "semantic": "amount",
+            "generation": {
+              "strategy": "uniform",
+              "min": 100,
+              "max": 10000
+            },
+            "nullable": false
+          }
+        }
+      }
+    },
+    "relationships": [
+      {
+        "id": "R001",
+        "parent_entity": "CUSTOMER",
+        "parent_field": "CUSTOMER_ID",
+        "child_entity": "ORDER",
+        "child_field": "CUSTOMER_ID",
+        "cardinality": "1:N",
+        "optional": false
+      }
+    ]
+  },
+  "scenarios": {
+    "NORMAL": {
+      "description": "Baseline generation using the base specification without overrides.",
+      "overrides": {}
+    },
+    "HIGH_VALUE": {
+      "description": "Scenario with a higher proportion of premium customers and higher-value orders.",
+      "overrides": {
+        "CUSTOMER.CUSTOMER_TYPE": {
+          "generation": {
+            "strategy": "weighted",
+            "weights": {
+              "STANDARD": 0.40,
+              "PREMIUM": 0.60
+            }
+          }
+        },
+        "ORDER.AMOUNT": {
+          "generation": {
+            "strategy": "uniform",
+            "min": 1000,
+            "max": 20000
+          }
+        }
+      }
+    },
+    "MISSING_DATA": {
+      "description": "Scenario with intentionally increased missingness for optional customer email data.",
+      "overrides": {
+        "CUSTOMER.EMAIL": {
+          "population_rate": 0.40
+        }
+      }
+    }
+  }
+}

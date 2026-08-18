@@ -1,0 +1,208 @@
+{
+  "experiment": {
+    "id": "015",
+    "name": "Scenario Generation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "scenarios": {
+    "NORMAL": {
+      "scenario": "NORMAL",
+      "seed": 42,
+      "record_counts": {
+        "CUSTOMER": 100,
+        "ORDER": 1000
+      },
+      "customer_type_distribution": {
+        "STANDARD": 73.0,
+        "PREMIUM": 27.0
+      },
+      "country_distribution": {
+        "DE": 30.0,
+        "US": 24.0,
+        "FR": 24.0,
+        "IN": 22.0
+      },
+      "email_population_percent": 79.0,
+      "order_amount": {
+        "mean": 4979.08,
+        "median": 4841.76,
+        "minimum": 112.68,
+        "maximum": 9977.26
+      },
+      "customer_validation": {
+        "CUSTOMER_ID": true,
+        "CUSTOMER_TYPE": true,
+        "COUNTRY": true,
+        "EMAIL": true
+      },
+      "order_validation": {
+        "ORDER_ID": true,
+        "CUSTOMER_ID": true,
+        "AMOUNT": true
+      },
+      "relationship_validation": {
+        "parent_records": 100,
+        "child_records": 1000,
+        "invalid_references": 0,
+        "passed": true
+      },
+      "scenario_validation": {
+        "baseline": {
+          "passed": true,
+          "message": "Base specification used without overrides."
+        },
+        "passed": true
+      },
+      "structural_validation": {
+        "passed": true
+      },
+      "overall_result": "PASS"
+    },
+    "HIGH_VALUE": {
+      "scenario": "HIGH_VALUE",
+      "seed": 42,
+      "record_counts": {
+        "CUSTOMER": 100,
+        "ORDER": 1000
+      },
+      "customer_type_distribution": {
+        "PREMIUM": 55.0,
+        "STANDARD": 45.0
+      },
+      "country_distribution": {
+        "DE": 30.0,
+        "US": 24.0,
+        "FR": 24.0,
+        "IN": 22.0
+      },
+      "email_population_percent": 79.0,
+      "order_amount": {
+        "mean": 10363.88,
+        "median": 10100.35,
+        "minimum": 1024.34,
+        "maximum": 19956.35
+      },
+      "customer_validation": {
+        "CUSTOMER_ID": true,
+        "CUSTOMER_TYPE": true,
+        "COUNTRY": true,
+        "EMAIL": true
+      },
+      "order_validation": {
+        "ORDER_ID": true,
+        "CUSTOMER_ID": true,
+        "AMOUNT": true
+      },
+      "relationship_validation": {
+        "parent_records": 100,
+        "child_records": 1000,
+        "invalid_references": 0,
+        "passed": true
+      },
+      "scenario_validation": {
+        "customer_type_distribution": {
+          "passed": true,
+          "expected": {
+            "STANDARD": 0.4,
+            "PREMIUM": 0.6
+          },
+          "observed": {
+            "PREMIUM": 0.55,
+            "STANDARD": 0.45
+          },
+          "tolerance": 0.08
+        },
+        "order_amount_range": {
+          "passed": true,
+          "expected_minimum": 1000,
+          "expected_maximum": 20000,
+          "observed_minimum": 1024.34,
+          "observed_maximum": 19956.35
+        },
+        "passed": true
+      },
+      "structural_validation": {
+        "passed": true
+      },
+      "overall_result": "PASS"
+    },
+    "MISSING_DATA": {
+      "scenario": "MISSING_DATA",
+      "seed": 42,
+      "record_counts": {
+        "CUSTOMER": 100,
+        "ORDER": 1000
+      },
+      "customer_type_distribution": {
+        "STANDARD": 77.0,
+        "PREMIUM": 23.0
+      },
+      "country_distribution": {
+        "US": 28.0,
+        "FR": 28.0,
+        "IN": 24.0,
+        "DE": 20.0
+      },
+      "email_population_percent": 42.0,
+      "order_amount": {
+        "mean": 4991.35,
+        "median": 4933.94,
+        "minimum": 167.62,
+        "maximum": 9999.77
+      },
+      "customer_validation": {
+        "CUSTOMER_ID": true,
+        "CUSTOMER_TYPE": true,
+        "COUNTRY": true,
+        "EMAIL": true
+      },
+      "order_validation": {
+        "ORDER_ID": true,
+        "CUSTOMER_ID": true,
+        "AMOUNT": true
+      },
+      "relationship_validation": {
+        "parent_records": 100,
+        "child_records": 1000,
+        "invalid_references": 0,
+        "passed": true
+      },
+      "scenario_validation": {
+        "email_population": {
+          "passed": true,
+          "expected_percent": 40.0,
+          "observed_percent": 42.0,
+          "tolerance": 8.0
+        },
+        "passed": true
+      },
+      "structural_validation": {
+        "passed": true
+      },
+      "overall_result": "PASS"
+    }
+  },
+  "scenario_isolation": {
+    "checks": {
+      "base_country_configuration_valid": true,
+      "HIGH_VALUE_country_unchanged": true,
+      "MISSING_DATA_country_unchanged": true
+    },
+    "passed": true
+  },
+  "determinism": {
+    "checks": {
+      "NORMAL": true,
+      "HIGH_VALUE": true,
+      "MISSING_DATA": true
+    },
+    "passed": true
+  },
+  "overall_result": "PASS"
+}
