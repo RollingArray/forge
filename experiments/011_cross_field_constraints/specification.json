@@ -1,0 +1,131 @@
+{
+  "experiment": {
+    "id": "011",
+    "name": "Cross-Field Constraints"
+  },
+
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+
+  "entities": {
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "semantic": "order_identifier",
+          "length": 10,
+          "prefix": "ORD",
+          "nullable": false
+        },
+
+        "START_DATE": {
+          "type": "date",
+          "semantic": "start_date",
+          "format": "YYYY-MM-DD",
+          "nullable": false,
+          "generation": {
+            "strategy": "random",
+            "min": "2020-01-01",
+            "max": "2030-12-31"
+          }
+        },
+
+        "END_DATE": {
+          "type": "date",
+          "semantic": "end_date",
+          "format": "YYYY-MM-DD",
+          "nullable": false,
+          "generation": {
+            "strategy": "random",
+            "min": "2020-01-01",
+            "max": "2030-12-31"
+          }
+        },
+
+        "MIN_AMOUNT": {
+          "type": "number",
+          "semantic": "minimum_amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 5000
+          }
+        },
+
+        "MAX_AMOUNT": {
+          "type": "number",
+          "semantic": "maximum_amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 5000
+          }
+        },
+
+        "ORDER_AMOUNT": {
+          "type": "number",
+          "semantic": "order_amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 5000
+          }
+        },
+        "CUSTOMER_NAME": {
+            "type": "string",
+            "semantic": "customer_name",
+            "min_length": 5,
+            "max_length": 30,
+            "nullable": false
+        }
+      },
+
+      "constraints": [
+        {
+          "id": "C001",
+          "type": "comparison",
+          "left": "START_DATE",
+          "operator": "less_than_or_equal",
+          "right": "END_DATE"
+        },
+        {
+          "id": "C002",
+          "type": "comparison",
+          "left": "MIN_AMOUNT",
+          "operator": "less_than_or_equal",
+          "right": "MAX_AMOUNT"
+        },
+        {
+          "id": "C003",
+          "type": "range",
+          "field": "ORDER_AMOUNT",
+          "minimum_field": "MIN_AMOUNT",
+          "maximum_field": "MAX_AMOUNT"
+        }
+      ]
+    }
+  },
+
+  "generation_approaches": {
+    "independent": {
+      "description": "Generate all fields independently and validate cross-field constraints after generation.",
+      "strategy": "independent"
+    },
+
+    "constraint_aware": {
+      "description": "Generate fields according to the dependency implied by the declared cross-field constraints.",
+      "strategy": "constraint_aware"
+    }
+  },
+
+  "validation": {
+    "field_level": true,
+    "cross_field": true,
+    "report_violations": true
+  }
+}

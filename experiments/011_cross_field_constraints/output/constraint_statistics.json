@@ -1,0 +1,688 @@
+{
+  "experiment": {
+    "id": "011",
+    "name": "Cross-Field Constraints"
+  },
+  "generation": {
+    "seed": 42,
+    "record_count": 1000
+  },
+  "constraints": [
+    {
+      "id": "C001",
+      "type": "comparison",
+      "left": "START_DATE",
+      "operator": "less_than_or_equal",
+      "right": "END_DATE"
+    },
+    {
+      "id": "C002",
+      "type": "comparison",
+      "left": "MIN_AMOUNT",
+      "operator": "less_than_or_equal",
+      "right": "MAX_AMOUNT"
+    },
+    {
+      "id": "C003",
+      "type": "range",
+      "field": "ORDER_AMOUNT",
+      "minimum_field": "MIN_AMOUNT",
+      "maximum_field": "MAX_AMOUNT"
+    }
+  ],
+  "derived_dependencies": [
+    {
+      "constraint_id": "C001",
+      "source": "START_DATE",
+      "dependent": "END_DATE",
+      "relationship": "less_than_or_equal"
+    },
+    {
+      "constraint_id": "C002",
+      "source": "MIN_AMOUNT",
+      "dependent": "MAX_AMOUNT",
+      "relationship": "less_than_or_equal"
+    },
+    {
+      "constraint_id": "C003",
+      "source": [
+        "MIN_AMOUNT",
+        "MAX_AMOUNT"
+      ],
+      "dependent": "ORDER_AMOUNT",
+      "relationship": "bounded_by"
+    }
+  ],
+  "independent_generation": {
+    "field_validation": {
+      "ORDER_ID": {
+        "passed": true,
+        "errors": []
+      },
+      "START_DATE": {
+        "passed": true,
+        "errors": []
+      },
+      "END_DATE": {
+        "passed": true,
+        "errors": []
+      },
+      "MIN_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "MAX_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "ORDER_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NAME": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "cross_field_validation": {
+      "constraints": [
+        {
+          "constraint_id": "C001",
+          "type": "comparison",
+          "passed": false,
+          "violation_count": 507,
+          "violations": [
+            {
+              "record": 1,
+              "left_field": "START_DATE",
+              "left_value": "2027-03-04",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2021-04-01"
+            },
+            {
+              "record": 2,
+              "left_field": "START_DATE",
+              "left_value": "2024-04-05",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2021-01-31"
+            },
+            {
+              "record": 6,
+              "left_field": "START_DATE",
+              "left_value": "2030-11-21",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2026-03-16"
+            },
+            {
+              "record": 9,
+              "left_field": "START_DATE",
+              "left_value": "2029-08-22",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2023-09-15"
+            },
+            {
+              "record": 10,
+              "left_field": "START_DATE",
+              "left_value": "2024-09-30",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2024-08-10"
+            },
+            {
+              "record": 13,
+              "left_field": "START_DATE",
+              "left_value": "2026-12-11",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2020-12-01"
+            },
+            {
+              "record": 16,
+              "left_field": "START_DATE",
+              "left_value": "2025-06-24",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2022-10-25"
+            },
+            {
+              "record": 17,
+              "left_field": "START_DATE",
+              "left_value": "2026-07-13",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2026-03-13"
+            },
+            {
+              "record": 18,
+              "left_field": "START_DATE",
+              "left_value": "2022-07-02",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2020-04-06"
+            },
+            {
+              "record": 21,
+              "left_field": "START_DATE",
+              "left_value": "2028-10-23",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2026-07-03"
+            },
+            {
+              "record": 23,
+              "left_field": "START_DATE",
+              "left_value": "2030-04-15",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2029-07-06"
+            },
+            {
+              "record": 25,
+              "left_field": "START_DATE",
+              "left_value": "2029-05-04",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2024-09-16"
+            },
+            {
+              "record": 26,
+              "left_field": "START_DATE",
+              "left_value": "2028-06-13",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2024-05-16"
+            },
+            {
+              "record": 27,
+              "left_field": "START_DATE",
+              "left_value": "2025-02-05",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2023-08-31"
+            },
+            {
+              "record": 28,
+              "left_field": "START_DATE",
+              "left_value": "2027-07-05",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2021-04-13"
+            },
+            {
+              "record": 29,
+              "left_field": "START_DATE",
+              "left_value": "2030-10-10",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2024-01-23"
+            },
+            {
+              "record": 31,
+              "left_field": "START_DATE",
+              "left_value": "2027-09-29",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2025-05-04"
+            },
+            {
+              "record": 32,
+              "left_field": "START_DATE",
+              "left_value": "2026-03-17",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2025-12-14"
+            },
+            {
+              "record": 33,
+              "left_field": "START_DATE",
+              "left_value": "2026-09-10",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2023-03-05"
+            },
+            {
+              "record": 34,
+              "left_field": "START_DATE",
+              "left_value": "2025-05-14",
+              "operator": "less_than_or_equal",
+              "right_field": "END_DATE",
+              "right_value": "2024-12-09"
+            }
+          ]
+        },
+        {
+          "constraint_id": "C002",
+          "type": "comparison",
+          "passed": false,
+          "violation_count": 511,
+          "violations": [
+            {
+              "record": 2,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 1859.0,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1785.38
+            },
+            {
+              "record": 5,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 3750.45,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2740.99
+            },
+            {
+              "record": 6,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4317.82,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 156.26
+            },
+            {
+              "record": 8,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4374.92,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2173.38
+            },
+            {
+              "record": 11,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 2479.64,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1147.36
+            },
+            {
+              "record": 15,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 3304.48,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 138.33
+            },
+            {
+              "record": 16,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4536.15,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 4245.91
+            },
+            {
+              "record": 17,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 825.66,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 724.48
+            },
+            {
+              "record": 18,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 3334.16,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2052.48
+            },
+            {
+              "record": 19,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4854.96,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 974.98
+            },
+            {
+              "record": 20,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4635.32,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2738.41
+            },
+            {
+              "record": 21,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 3072.64,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1679.02
+            },
+            {
+              "record": 28,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 2863.45,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1168.03
+            },
+            {
+              "record": 31,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 3264.92,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2505.02
+            },
+            {
+              "record": 33,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4904.5,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 4179.88
+            },
+            {
+              "record": 35,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4951.15,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1596.36
+            },
+            {
+              "record": 39,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 2758.71,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2124.91
+            },
+            {
+              "record": 40,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 2099.15,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1201.03
+            },
+            {
+              "record": 41,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 4903.2,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 1294.28
+            },
+            {
+              "record": 42,
+              "left_field": "MIN_AMOUNT",
+              "left_value": 2804.4,
+              "operator": "less_than_or_equal",
+              "right_field": "MAX_AMOUNT",
+              "right_value": 2762.81
+            }
+          ]
+        },
+        {
+          "constraint_id": "C003",
+          "type": "range",
+          "passed": false,
+          "violation_count": 830,
+          "violations": [
+            {
+              "record": 2,
+              "field": "ORDER_AMOUNT",
+              "value": 1396.15,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 1859.0,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 1785.38
+            },
+            {
+              "record": 3,
+              "field": "ORDER_AMOUNT",
+              "value": 1872.01,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3180.34,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 4438.71
+            },
+            {
+              "record": 4,
+              "field": "ORDER_AMOUNT",
+              "value": 3538.92,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 1840.83,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 3383.86
+            },
+            {
+              "record": 5,
+              "field": "ORDER_AMOUNT",
+              "value": 3760.37,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3750.45,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 2740.99
+            },
+            {
+              "record": 6,
+              "field": "ORDER_AMOUNT",
+              "value": 3631.54,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 4317.82,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 156.26
+            },
+            {
+              "record": 8,
+              "field": "ORDER_AMOUNT",
+              "value": 1137.81,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 4374.92,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 2173.38
+            },
+            {
+              "record": 9,
+              "field": "ORDER_AMOUNT",
+              "value": 3377.99,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 447.2,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 1266.22
+            },
+            {
+              "record": 11,
+              "field": "ORDER_AMOUNT",
+              "value": 2065.1,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 2479.64,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 1147.36
+            },
+            {
+              "record": 12,
+              "field": "ORDER_AMOUNT",
+              "value": 3938.47,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3513.3,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 3679.48
+            },
+            {
+              "record": 14,
+              "field": "ORDER_AMOUNT",
+              "value": 4672.97,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 1144.46,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 1399.48
+            },
+            {
+              "record": 15,
+              "field": "ORDER_AMOUNT",
+              "value": 4103.81,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3304.48,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 138.33
+            },
+            {
+              "record": 16,
+              "field": "ORDER_AMOUNT",
+              "value": 552.26,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 4536.15,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 4245.91
+            },
+            {
+              "record": 17,
+              "field": "ORDER_AMOUNT",
+              "value": 1610.47,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 825.66,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 724.48
+            },
+            {
+              "record": 18,
+              "field": "ORDER_AMOUNT",
+              "value": 1465.15,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3334.16,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 2052.48
+            },
+            {
+              "record": 19,
+              "field": "ORDER_AMOUNT",
+              "value": 4816.42,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 4854.96,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 974.98
+            },
+            {
+              "record": 20,
+              "field": "ORDER_AMOUNT",
+              "value": 3625.21,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 4635.32,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 2738.41
+            },
+            {
+              "record": 21,
+              "field": "ORDER_AMOUNT",
+              "value": 2264.75,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 3072.64,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 1679.02
+            },
+            {
+              "record": 23,
+              "field": "ORDER_AMOUNT",
+              "value": 2376.75,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 694.66,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 753.36
+            },
+            {
+              "record": 24,
+              "field": "ORDER_AMOUNT",
+              "value": 778.03,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 1666.58,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 2746.75
+            },
+            {
+              "record": 25,
+              "field": "ORDER_AMOUNT",
+              "value": 4735.7,
+              "minimum_field": "MIN_AMOUNT",
+              "minimum": 2008.44,
+              "maximum_field": "MAX_AMOUNT",
+              "maximum": 3872.0
+            }
+          ]
+        }
+      ],
+      "total_violation_count": 1848,
+      "passed": false
+    }
+  },
+  "constraint_aware_generation": {
+    "field_validation": {
+      "ORDER_ID": {
+        "passed": true,
+        "errors": []
+      },
+      "START_DATE": {
+        "passed": true,
+        "errors": []
+      },
+      "END_DATE": {
+        "passed": true,
+        "errors": []
+      },
+      "MIN_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "MAX_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "ORDER_AMOUNT": {
+        "passed": true,
+        "errors": []
+      },
+      "CUSTOMER_NAME": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    "cross_field_validation": {
+      "constraints": [
+        {
+          "constraint_id": "C001",
+          "type": "comparison",
+          "passed": true,
+          "violation_count": 0,
+          "violations": []
+        },
+        {
+          "constraint_id": "C002",
+          "type": "comparison",
+          "passed": true,
+          "violation_count": 0,
+          "violations": []
+        },
+        {
+          "constraint_id": "C003",
+          "type": "range",
+          "passed": true,
+          "violation_count": 0,
+          "violations": []
+        }
+      ],
+      "total_violation_count": 0,
+      "passed": true
+    }
+  },
+  "comparison": {
+    "independent_violation_count": 1848,
+    "constraint_aware_violation_count": 0,
+    "violation_reduction": 1.0
+  },
+  "architectural_observation": {
+    "cross_field_constraints_are_declared_separately": true,
+    "generation_dependencies_can_be_derived": true,
+    "constraint_aware_generation_preserves_validity": true
+  },
+  "overall_result": "PASS"
+}
