@@ -1,0 +1,347 @@
+{
+  "experiment": {
+    "id": "018",
+    "name": "Constraint Conflict Detection"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false
+        }
+      },
+      "primary_key": [
+        "CUSTOMER_ID"
+      ]
+    },
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "MIN_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false
+        },
+        "MAX_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false
+        },
+        "ORDER_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false
+        },
+        "DISCOUNT": {
+          "type": "number",
+          "semantic": "percentage",
+          "nullable": false
+        }
+      },
+      "primary_key": [
+        "ORDER_ID"
+      ]
+    }
+  },
+  "constraint_sets": [
+    {
+      "id": "CS001",
+      "name": "Compatible Numeric Bounds",
+      "expected_result": "COMPATIBLE",
+      "constraints": [
+        {
+          "id": "C001",
+          "type": "range",
+          "field": "MIN_AMOUNT",
+          "operator": ">=",
+          "value": 100
+        },
+        {
+          "id": "C002",
+          "type": "range",
+          "field": "MIN_AMOUNT",
+          "operator": "<=",
+          "value": 5000
+        },
+        {
+          "id": "C003",
+          "type": "range",
+          "field": "MAX_AMOUNT",
+          "operator": ">=",
+          "value": 100
+        },
+        {
+          "id": "C004",
+          "type": "range",
+          "field": "MAX_AMOUNT",
+          "operator": "<=",
+          "value": 10000
+        }
+      ]
+    },
+    {
+      "id": "CS002",
+      "name": "Direct Numeric Conflict",
+      "expected_result": "CONFLICT",
+      "constraints": [
+        {
+          "id": "C005",
+          "type": "range",
+          "field": "MIN_AMOUNT",
+          "operator": ">=",
+          "value": 2000
+        },
+        {
+          "id": "C006",
+          "type": "range",
+          "field": "MIN_AMOUNT",
+          "operator": "<=",
+          "value": 1000
+        }
+      ]
+    },
+    {
+      "id": "CS003",
+      "name": "Boundary Conflict",
+      "expected_result": "CONFLICT",
+      "constraints": [
+        {
+          "id": "C007",
+          "type": "range",
+          "field": "DISCOUNT",
+          "operator": ">=",
+          "value": 20
+        },
+        {
+          "id": "C008",
+          "type": "range",
+          "field": "DISCOUNT",
+          "operator": "<=",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "CS004",
+      "name": "Indirect Cross-Field Conflict",
+      "expected_result": "CONFLICT",
+      "constraints": [
+        {
+          "id": "C009",
+          "type": "cross_field",
+          "left": "MIN_AMOUNT",
+          "operator": "<=",
+          "right": "MAX_AMOUNT"
+        },
+        {
+          "id": "C010",
+          "type": "range",
+          "field": "MIN_AMOUNT",
+          "operator": ">=",
+          "value": 5000
+        },
+        {
+          "id": "C011",
+          "type": "range",
+          "field": "MAX_AMOUNT",
+          "operator": "<=",
+          "value": 3000
+        }
+      ]
+    },
+    {
+      "id": "CS005",
+      "name": "Categorical Conflict",
+      "expected_result": "CONFLICT",
+      "constraints": [
+        {
+          "id": "C012",
+          "type": "categorical",
+          "field": "CUSTOMER_TYPE",
+          "operator": "=",
+          "value": "PREMIUM"
+        },
+        {
+          "id": "C013",
+          "type": "categorical",
+          "field": "CUSTOMER_TYPE",
+          "operator": "=",
+          "value": "STANDARD"
+        }
+      ]
+    },
+    {
+      "id": "CS006",
+      "name": "Compatible Categorical Constraints",
+      "expected_result": "COMPATIBLE",
+      "constraints": [
+        {
+          "id": "C014",
+          "type": "categorical",
+          "field": "CUSTOMER_TYPE",
+          "operator": "IN",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CS007",
+      "name": "Conditional Conflict",
+      "expected_result": "CONFLICT",
+      "constraints": [
+        {
+          "id": "C015",
+          "type": "conditional",
+          "when": {
+            "field": "CUSTOMER_TYPE",
+            "operator": "=",
+            "value": "PREMIUM"
+          },
+          "then": {
+            "field": "DISCOUNT",
+            "operator": ">=",
+            "value": 20
+          }
+        },
+        {
+          "id": "C016",
+          "type": "conditional",
+          "when": {
+            "field": "CUSTOMER_TYPE",
+            "operator": "=",
+            "value": "PREMIUM"
+          },
+          "then": {
+            "field": "DISCOUNT",
+            "operator": "<=",
+            "value": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "CS008",
+      "name": "Compatible Conditional Constraints",
+      "expected_result": "COMPATIBLE",
+      "constraints": [
+        {
+          "id": "C017",
+          "type": "conditional",
+          "when": {
+            "field": "CUSTOMER_TYPE",
+            "operator": "=",
+            "value": "PREMIUM"
+          },
+          "then": {
+            "field": "DISCOUNT",
+            "operator": ">=",
+            "value": 10
+          }
+        },
+        {
+          "id": "C018",
+          "type": "conditional",
+          "when": {
+            "field": "CUSTOMER_TYPE",
+            "operator": "=",
+            "value": "PREMIUM"
+          },
+          "then": {
+            "field": "DISCOUNT",
+            "operator": "<=",
+            "value": 25
+          }
+        }
+      ]
+    }
+  ],
+  "conflict_detection": {
+    "enabled": true,
+    "supported_types": [
+      "range",
+      "cross_field",
+      "categorical",
+      "conditional"
+    ],
+    "result_levels": [
+      "COMPATIBLE",
+      "CONFLICT"
+    ],
+    "generation_guard": {
+      "enabled": true,
+      "block_on_conflict": true
+    }
+  },
+  "validation": {
+    "expected": {
+      "compatible_sets": [
+        "CS001",
+        "CS006",
+        "CS008"
+      ],
+      "conflicting_sets": [
+        "CS002",
+        "CS003",
+        "CS004",
+        "CS005",
+        "CS007"
+      ]
+    }
+  },
+  "test_cases": {
+    "compatible_specifications": {
+      "enabled": true,
+      "expected_generation_allowed": true
+    },
+    "conflicting_specifications": {
+      "enabled": true,
+      "expected_generation_allowed": false
+    }
+  }
+}

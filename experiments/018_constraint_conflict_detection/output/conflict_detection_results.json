@@ -1,0 +1,208 @@
+{
+  "experiment": {
+    "id": "018",
+    "name": "Constraint Conflict Detection"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "results": [
+    {
+      "id": "CS001",
+      "name": "Compatible Numeric Bounds",
+      "expected_result": "COMPATIBLE",
+      "actual_result": "COMPATIBLE",
+      "classification_pass": true,
+      "generation_allowed": true,
+      "expected_generation_allowed": true,
+      "generation_guard_pass": true,
+      "constraints_checked": 4,
+      "conflicts_detected": 0,
+      "conflicts": [],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS002",
+      "name": "Direct Numeric Conflict",
+      "expected_result": "CONFLICT",
+      "actual_result": "CONFLICT",
+      "classification_pass": true,
+      "generation_allowed": false,
+      "expected_generation_allowed": false,
+      "generation_guard_pass": true,
+      "constraints_checked": 2,
+      "conflicts_detected": 1,
+      "conflicts": [
+        {
+          "id": "X-MIN_AMOUNT-C005-C006",
+          "type": "numeric_range",
+          "constraints": [
+            "C005",
+            "C006"
+          ],
+          "reason": "MIN_AMOUNT has incompatible bounds: >= 2000 and <= 1000",
+          "fields": [
+            "MIN_AMOUNT"
+          ]
+        }
+      ],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS003",
+      "name": "Boundary Conflict",
+      "expected_result": "CONFLICT",
+      "actual_result": "CONFLICT",
+      "classification_pass": true,
+      "generation_allowed": false,
+      "expected_generation_allowed": false,
+      "generation_guard_pass": true,
+      "constraints_checked": 2,
+      "conflicts_detected": 1,
+      "conflicts": [
+        {
+          "id": "X-DISCOUNT-C007-C008",
+          "type": "numeric_range",
+          "constraints": [
+            "C007",
+            "C008"
+          ],
+          "reason": "DISCOUNT has incompatible bounds: >= 20 and <= 10",
+          "fields": [
+            "DISCOUNT"
+          ]
+        }
+      ],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS004",
+      "name": "Indirect Cross-Field Conflict",
+      "expected_result": "CONFLICT",
+      "actual_result": "CONFLICT",
+      "classification_pass": true,
+      "generation_allowed": false,
+      "expected_generation_allowed": false,
+      "generation_guard_pass": true,
+      "constraints_checked": 3,
+      "conflicts_detected": 1,
+      "conflicts": [
+        {
+          "id": "X-CROSS-C009",
+          "type": "cross_field",
+          "constraints": [
+            "C009",
+            "C010",
+            "C011"
+          ],
+          "reason": "MIN_AMOUNT must be <= MAX_AMOUNT, but MIN_AMOUNT >= 5000 and MAX_AMOUNT <= 3000",
+          "fields": [
+            "MIN_AMOUNT",
+            "MAX_AMOUNT"
+          ]
+        }
+      ],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS005",
+      "name": "Categorical Conflict",
+      "expected_result": "CONFLICT",
+      "actual_result": "CONFLICT",
+      "classification_pass": true,
+      "generation_allowed": false,
+      "expected_generation_allowed": false,
+      "generation_guard_pass": true,
+      "constraints_checked": 2,
+      "conflicts_detected": 1,
+      "conflicts": [
+        {
+          "id": "X-CUSTOMER_TYPE-CATEGORICAL",
+          "type": "categorical",
+          "constraints": [
+            "C012",
+            "C013"
+          ],
+          "reason": "CUSTOMER_TYPE is required to equal multiple categorical values: ['PREMIUM', 'STANDARD']",
+          "fields": [
+            "CUSTOMER_TYPE"
+          ]
+        }
+      ],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS006",
+      "name": "Compatible Categorical Constraints",
+      "expected_result": "COMPATIBLE",
+      "actual_result": "COMPATIBLE",
+      "classification_pass": true,
+      "generation_allowed": true,
+      "expected_generation_allowed": true,
+      "generation_guard_pass": true,
+      "constraints_checked": 1,
+      "conflicts_detected": 0,
+      "conflicts": [],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS007",
+      "name": "Conditional Conflict",
+      "expected_result": "CONFLICT",
+      "actual_result": "CONFLICT",
+      "classification_pass": true,
+      "generation_allowed": false,
+      "expected_generation_allowed": false,
+      "generation_guard_pass": true,
+      "constraints_checked": 2,
+      "conflicts_detected": 1,
+      "conflicts": [
+        {
+          "id": "X-CONDITIONAL-C015-C016",
+          "type": "conditional",
+          "constraints": [
+            "C015",
+            "C016"
+          ],
+          "reason": "When CUSTOMER_TYPE = PREMIUM, DISCOUNT must satisfy >= 20 and <= 10",
+          "fields": [
+            "CUSTOMER_TYPE",
+            "DISCOUNT"
+          ]
+        }
+      ],
+      "unsupported_types": []
+    },
+    {
+      "id": "CS008",
+      "name": "Compatible Conditional Constraints",
+      "expected_result": "COMPATIBLE",
+      "actual_result": "COMPATIBLE",
+      "classification_pass": true,
+      "generation_allowed": true,
+      "expected_generation_allowed": true,
+      "generation_guard_pass": true,
+      "constraints_checked": 2,
+      "conflicts_detected": 0,
+      "conflicts": [],
+      "unsupported_types": []
+    }
+  ],
+  "summary": {
+    "constraint_sets": 8,
+    "classification_passes": 8,
+    "generation_guard_passes": 8,
+    "compatible_sets_detected": 3,
+    "conflicting_sets_detected": 5,
+    "expected_compatible_sets": 3,
+    "expected_conflicting_sets": 5,
+    "classification_validation": "PASS",
+    "generation_guard_validation": "PASS",
+    "coverage_validation": "PASS",
+    "overall_result": "PASS"
+  }
+}
