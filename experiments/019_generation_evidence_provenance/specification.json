@@ -1,0 +1,214 @@
+{
+  "experiment": {
+    "id": "019",
+    "name": "Generation Evidence / Provenance"
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL",
+    "run_id": "RUN-019-0001",
+    "generator_version": "FORGE-EXPERIMENTAL"
+  },
+  "entities": {
+    "CUSTOMER": {
+      "record_count": 100,
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "CUS",
+          "nullable": false,
+          "strategy": "sequential"
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false,
+          "strategy": "weighted"
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false,
+          "strategy": "weighted",
+          "distribution": {
+            "US": 0.50,
+            "IN": 0.30,
+            "DE": 0.15,
+            "FR": 0.05
+          }
+        },
+        "EMAIL": {
+          "type": "string",
+          "semantic": "email",
+          "nullable": true,
+          "population": 0.80,
+          "strategy": "random"
+        }
+      },
+      "primary_key": [
+        "CUSTOMER_ID"
+      ]
+    },
+    "ORDER": {
+      "record_count": 1000,
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "ORD",
+          "nullable": false,
+          "strategy": "sequential"
+        },
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "foreign_key",
+          "references": "CUSTOMER.CUSTOMER_ID",
+          "nullable": false,
+          "strategy": "parent_reference"
+        },
+        "AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false,
+          "strategy": "parent_dependent",
+          "depends_on": {
+            "entity": "CUSTOMER",
+            "field": "CUSTOMER_TYPE"
+          },
+          "parameters": {
+            "STANDARD": {
+              "min": 500,
+              "max": 5000
+            },
+            "PREMIUM": {
+              "min": 5000,
+              "max": 15000
+            }
+          }
+        },
+        "DISCOUNT": {
+          "type": "number",
+          "semantic": "percentage",
+          "nullable": false,
+          "strategy": "scenario_dependent",
+          "parameters": {
+            "NORMAL": {
+              "min": 0,
+              "max": 30
+            },
+            "HIGH_VALUE": {
+              "min": 5,
+              "max": 20
+            }
+          }
+        }
+      },
+      "primary_key": [
+        "ORDER_ID"
+      ]
+    }
+  },
+  "relationships": [
+    {
+      "id": "R001",
+      "parent": "CUSTOMER.CUSTOMER_ID",
+      "child": "ORDER.CUSTOMER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    }
+  ],
+  "constraints": [
+    {
+      "id": "C001",
+      "type": "cross_field",
+      "left": "AMOUNT",
+      "operator": ">=",
+      "right": "DISCOUNT"
+    }
+  ],
+  "provenance": {
+    "enabled": true,
+    "levels": [
+      "run",
+      "field",
+      "value"
+    ],
+    "capture": {
+      "run_id": true,
+      "specification_id": true,
+      "specification_version": true,
+      "generator_version": true,
+      "seed": true,
+      "scenario": true,
+      "entity": true,
+      "record_id": true,
+      "field": true,
+      "strategy": true,
+      "generated_value": true,
+      "parent_reference": true,
+      "dependencies": true,
+      "constraints": true,
+      "generation_parameters": true
+    },
+    "evidence_id": {
+      "prefix": "EV",
+      "format": "EV-{sequence:06d}"
+    }
+  },
+  "evidence_validation": {
+    "enabled": true,
+    "checks": [
+      "entity_match",
+      "record_match",
+      "field_match",
+      "value_match",
+      "strategy_match",
+      "seed_match",
+      "scenario_match",
+      "parent_reference_match",
+      "dependency_match",
+      "constraint_match"
+    ]
+  },
+  "provenance_lookup": {
+    "enabled": true,
+    "supported_keys": [
+      "entity",
+      "record_id",
+      "field",
+      "evidence_id"
+    ]
+  },
+  "reproducibility": {
+    "enabled": true,
+    "required_context": [
+      "specification_id",
+      "specification_version",
+      "seed",
+      "scenario",
+      "generator_version"
+    ]
+  },
+  "validation": {
+    "expected": {
+      "run_provenance": "PASS",
+      "field_provenance": "PASS",
+      "value_provenance": "PASS",
+      "parent_dependency_evidence": "PASS",
+      "scenario_evidence": "PASS",
+      "constraint_evidence": "PASS",
+      "evidence_integrity": "PASS",
+      "provenance_lookup": "PASS",
+      "reproducibility_context": "PASS"
+    }
+  }
+}

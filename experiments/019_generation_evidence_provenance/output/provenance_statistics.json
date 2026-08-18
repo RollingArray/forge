@@ -1,0 +1,58 @@
+{
+  "experiment": {
+    "id": "019",
+    "name": "Generation Evidence / Provenance"
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL",
+    "run_id": "RUN-019-0001",
+    "generator_version": "FORGE-EXPERIMENTAL"
+  },
+  "validation": {
+    "run_provenance": "PASS",
+    "field_provenance": "PASS",
+    "strategy_evidence": "PASS",
+    "value_evidence": "PASS",
+    "parent_dependency_evidence": "PASS",
+    "scenario_evidence": "PASS",
+    "constraint_evidence": "PASS",
+    "reproducibility_context": "PASS",
+    "provenance_lookup": "PASS",
+    "overall": "PASS"
+  },
+  "evidence_statistics": {
+    "run_evidence_records": 1,
+    "field_evidence_records": 8,
+    "value_evidence_records": 4400,
+    "customer_records": 100,
+    "order_records": 1000,
+    "values_per_record": {
+      "CUSTOMER": 4,
+      "ORDER": 4
+    },
+    "provenance_coverage": {
+      "CUSTOMER": true,
+      "ORDER": true
+    }
+  },
+  "value_integrity": {
+    "entity_match": true,
+    "record_match": true,
+    "field_match": true,
+    "value_match": true,
+    "overall": true,
+    "values_checked": 4400
+  },
+  "lookup": {
+    "lookup_success": true,
+    "evidence_id_lookup_success": true,
+    "overall": true,
+    "sample": {
+      "entity": "ORDER",
+      "record_id": "ORD0000001",
+      "field": "AMOUNT",
+      "evidence_id": "EV-000411"
+    }
+  }
+}
