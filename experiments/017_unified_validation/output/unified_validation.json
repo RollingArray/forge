@@ -1,0 +1,502 @@
+{
+  "experiment": {
+    "id": "017",
+    "name": "Unified Validation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "valid_dataset": {
+    "output": "/Users/e10936535/forge/experiments/017_unified_validation/output/valid",
+    "validation": {
+      "categories": {
+        "structural": {
+          "result": "PASS",
+          "checks": [
+            {
+              "id": "S-CUSTOMER-001",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "entity_exists",
+              "observed": "present",
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-002",
+              "type": "structural",
+              "result": "PASS",
+              "expected": [
+                "CUSTOMER_ID",
+                "COUNTRY",
+                "CUSTOMER_TYPE",
+                "EMAIL"
+              ],
+              "observed": [
+                "CUSTOMER_ID",
+                "COUNTRY",
+                "CUSTOMER_TYPE",
+                "EMAIL"
+              ],
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-PK-CUSTOMER_ID-NULL",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "no_nulls",
+              "observed": 0,
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-PK-CUSTOMER_ID-UNIQUE",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "unique",
+              "observed": 100,
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-001",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "entity_exists",
+              "observed": "present",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-002",
+              "type": "structural",
+              "result": "PASS",
+              "expected": [
+                "ORDER_ID",
+                "CUSTOMER_ID",
+                "START_DATE",
+                "END_DATE",
+                "MIN_AMOUNT",
+                "MAX_AMOUNT",
+                "ORDER_AMOUNT"
+              ],
+              "observed": [
+                "ORDER_ID",
+                "CUSTOMER_ID",
+                "START_DATE",
+                "END_DATE",
+                "MIN_AMOUNT",
+                "MAX_AMOUNT",
+                "ORDER_AMOUNT"
+              ],
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-PK-ORDER_ID-NULL",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "no_nulls",
+              "observed": 0,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-PK-ORDER_ID-UNIQUE",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "unique",
+              "observed": 1000,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            }
+          ]
+        },
+        "relational": {
+          "result": "PASS",
+          "checks": [
+            {
+              "id": "R001",
+              "type": "relational",
+              "result": "PASS",
+              "expected": "all ORDER.CUSTOMER_ID values reference CUSTOMER.CUSTOMER_ID",
+              "observed": "0 invalid references",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            }
+          ]
+        },
+        "constraints": {
+          "result": "PASS",
+          "checks": [
+            {
+              "id": "C001",
+              "type": "constraint",
+              "result": "PASS",
+              "expected": "START_DATE <= END_DATE",
+              "observed": "0 violations",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "C002",
+              "type": "constraint",
+              "result": "PASS",
+              "expected": "MIN_AMOUNT <= MAX_AMOUNT",
+              "observed": "0 violations",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "C003",
+              "type": "constraint",
+              "result": "PASS",
+              "expected": "MIN_AMOUNT <= ORDER_AMOUNT <= MAX_AMOUNT",
+              "observed": "0 violations",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            }
+          ]
+        },
+        "population": {
+          "result": "PASS",
+          "checks": [
+            {
+              "id": "P001",
+              "type": "population",
+              "result": "PASS",
+              "expected": 0.8,
+              "observed": 0.81,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0100, tolerance=0.0500"
+            }
+          ]
+        },
+        "statistical": {
+          "result": "PASS",
+          "checks": [
+            {
+              "id": "STAT-COUNTRY-US",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.5,
+              "observed": 0.45,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0500, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-IN",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.3,
+              "observed": 0.39,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0900, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-DE",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.15,
+              "observed": 0.12,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0300, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-FR",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.05,
+              "observed": 0.04,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0100, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-ORDER-AMOUNT-MEAN",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 2550.0,
+              "observed": 2385.2448,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": "Difference=164.7552, tolerance=500.0000"
+            }
+          ]
+        }
+      },
+      "overall_result": "PASS"
+    },
+    "expected_result": "PASS",
+    "result_matches_expectation": true
+  },
+  "invalid_dataset": {
+    "output": "/Users/e10936535/forge/experiments/017_unified_validation/output/invalid",
+    "validation": {
+      "categories": {
+        "structural": {
+          "result": "FAIL",
+          "checks": [
+            {
+              "id": "S-CUSTOMER-001",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "entity_exists",
+              "observed": "present",
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-002",
+              "type": "structural",
+              "result": "PASS",
+              "expected": [
+                "CUSTOMER_ID",
+                "COUNTRY",
+                "CUSTOMER_TYPE",
+                "EMAIL"
+              ],
+              "observed": [
+                "CUSTOMER_ID",
+                "COUNTRY",
+                "CUSTOMER_TYPE",
+                "EMAIL"
+              ],
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-PK-CUSTOMER_ID-NULL",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "no_nulls",
+              "observed": 0,
+              "records_checked": 100,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-CUSTOMER-PK-CUSTOMER_ID-UNIQUE",
+              "type": "structural",
+              "result": "FAIL",
+              "expected": "unique",
+              "observed": 99,
+              "records_checked": 100,
+              "violations": 1,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-001",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "entity_exists",
+              "observed": "present",
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-002",
+              "type": "structural",
+              "result": "PASS",
+              "expected": [
+                "ORDER_ID",
+                "CUSTOMER_ID",
+                "START_DATE",
+                "END_DATE",
+                "MIN_AMOUNT",
+                "MAX_AMOUNT",
+                "ORDER_AMOUNT"
+              ],
+              "observed": [
+                "ORDER_ID",
+                "CUSTOMER_ID",
+                "START_DATE",
+                "END_DATE",
+                "MIN_AMOUNT",
+                "MAX_AMOUNT",
+                "ORDER_AMOUNT"
+              ],
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-PK-ORDER_ID-NULL",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "no_nulls",
+              "observed": 0,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            },
+            {
+              "id": "S-ORDER-PK-ORDER_ID-UNIQUE",
+              "type": "structural",
+              "result": "PASS",
+              "expected": "unique",
+              "observed": 1000,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": null
+            }
+          ]
+        },
+        "relational": {
+          "result": "FAIL",
+          "checks": [
+            {
+              "id": "R001",
+              "type": "relational",
+              "result": "FAIL",
+              "expected": "all ORDER.CUSTOMER_ID values reference CUSTOMER.CUSTOMER_ID",
+              "observed": "16 invalid references",
+              "records_checked": 1000,
+              "violations": 16,
+              "message": null
+            }
+          ]
+        },
+        "constraints": {
+          "result": "FAIL",
+          "checks": [
+            {
+              "id": "C001",
+              "type": "constraint",
+              "result": "FAIL",
+              "expected": "START_DATE <= END_DATE",
+              "observed": "1 violations",
+              "records_checked": 1000,
+              "violations": 1,
+              "message": null
+            },
+            {
+              "id": "C002",
+              "type": "constraint",
+              "result": "FAIL",
+              "expected": "MIN_AMOUNT <= MAX_AMOUNT",
+              "observed": "1 violations",
+              "records_checked": 1000,
+              "violations": 1,
+              "message": null
+            },
+            {
+              "id": "C003",
+              "type": "constraint",
+              "result": "FAIL",
+              "expected": "MIN_AMOUNT <= ORDER_AMOUNT <= MAX_AMOUNT",
+              "observed": "850 violations",
+              "records_checked": 1000,
+              "violations": 850,
+              "message": null
+            }
+          ]
+        },
+        "population": {
+          "result": "FAIL",
+          "checks": [
+            {
+              "id": "P001",
+              "type": "population",
+              "result": "FAIL",
+              "expected": 0.8,
+              "observed": 0.0,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.8000, tolerance=0.0500"
+            }
+          ]
+        },
+        "statistical": {
+          "result": "FAIL",
+          "checks": [
+            {
+              "id": "STAT-COUNTRY-US",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.5,
+              "observed": 0.45,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0500, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-IN",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.3,
+              "observed": 0.39,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0900, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-DE",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.15,
+              "observed": 0.12,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0300, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-COUNTRY-FR",
+              "type": "statistical",
+              "result": "PASS",
+              "expected": 0.05,
+              "observed": 0.04,
+              "records_checked": 100,
+              "violations": 0,
+              "message": "Difference=0.0100, tolerance=0.1000"
+            },
+            {
+              "id": "STAT-ORDER-AMOUNT-MEAN",
+              "type": "statistical",
+              "result": "FAIL",
+              "expected": 2550.0,
+              "observed": 4501.8696,
+              "records_checked": 1000,
+              "violations": 0,
+              "message": "Difference=1951.8696, tolerance=500.0000"
+            }
+          ]
+        }
+      },
+      "overall_result": "FAIL"
+    },
+    "expected_result": "FAIL",
+    "result_matches_expectation": true
+  },
+  "unified_model_assessment": {
+    "categories_present": true,
+    "multiple_failures_detected": true,
+    "category_evidence_present": true,
+    "multiple_failed_categories": 5,
+    "overall_result": "PASS"
+  }
+}

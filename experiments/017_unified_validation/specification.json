@@ -1,0 +1,247 @@
+{
+  "experiment": {
+    "id": "017",
+    "name": "Unified Validation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "weighted",
+            "weights": {
+              "US": 0.50,
+              "IN": 0.30,
+              "DE": 0.15,
+              "FR": 0.05
+            }
+          },
+          "validation": {
+            "distribution_tolerance": 0.10
+          }
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "weighted",
+            "weights": {
+              "STANDARD": 0.70,
+              "PREMIUM": 0.30
+            }
+          },
+          "validation": {
+            "distribution_tolerance": 0.10
+          }
+        },
+        "EMAIL": {
+          "type": "string",
+          "semantic": "email",
+          "nullable": true,
+          "generation": {
+            "strategy": "random_string",
+            "length": 20
+          },
+          "population": {
+            "expected_rate": 0.80,
+            "tolerance": 0.05
+          }
+        }
+      },
+      "primary_key": [
+        "CUSTOMER_ID"
+      ]
+    },
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "semantic": "primary_key",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "semantic": "foreign_key",
+          "nullable": false
+        },
+        "START_DATE": {
+          "type": "date",
+          "nullable": false,
+          "generation": {
+            "strategy": "date",
+            "start": "2021-01-01",
+            "end": "2030-12-31"
+          }
+        },
+        "END_DATE": {
+          "type": "date",
+          "nullable": false,
+          "generation": {
+            "strategy": "date",
+            "start": "2021-01-01",
+            "end": "2030-12-31"
+          }
+        },
+        "MIN_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100.0,
+            "max": 5000.0
+          }
+        },
+        "MAX_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100.0,
+            "max": 5000.0
+          }
+        },
+        "ORDER_AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100.0,
+            "max": 5000.0
+          }
+        }
+      },
+      "primary_key": [
+        "ORDER_ID"
+      ]
+    }
+  },
+  "relationships": [
+    {
+      "id": "R001",
+      "parent": "CUSTOMER.CUSTOMER_ID",
+      "child": "ORDER.CUSTOMER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    }
+  ],
+  "constraints": [
+    {
+      "id": "C001",
+      "type": "cross_field",
+      "expression": "START_DATE <= END_DATE",
+      "severity": "error"
+    },
+    {
+      "id": "C002",
+      "type": "cross_field",
+      "expression": "MIN_AMOUNT <= MAX_AMOUNT",
+      "severity": "error"
+    },
+    {
+      "id": "C003",
+      "type": "cross_field",
+      "expression": "MIN_AMOUNT <= ORDER_AMOUNT <= MAX_AMOUNT",
+      "severity": "error"
+    }
+  ],
+  "validation": {
+    "result_levels": [
+      "PASS",
+      "WARN",
+      "FAIL"
+    ],
+    "overall_precedence": [
+      "FAIL",
+      "WARN",
+      "PASS"
+    ],
+    "structural": {
+      "enabled": true,
+      "checks": [
+        "entity_exists",
+        "required_fields",
+        "field_types",
+        "primary_key_population",
+        "primary_key_uniqueness"
+      ]
+    },
+    "relational": {
+      "enabled": true,
+      "checks": [
+        "foreign_key_existence",
+        "referential_integrity",
+        "cardinality"
+      ]
+    },
+    "constraints": {
+      "enabled": true
+    },
+    "population": {
+      "enabled": true
+    },
+    "statistical": {
+      "enabled": true,
+      "percentiles": [
+        5,
+        25,
+        50,
+        75,
+        95
+      ],
+      "numeric": {
+        "mean_tolerance": 500.0,
+        "median_tolerance": 500.0,
+        "stddev_tolerance": 500.0,
+        "percentile_tolerance": 750.0
+      }
+    }
+  },
+  "test_cases": {
+    "valid_dataset": {
+      "enabled": true,
+      "expected_result": "PASS"
+    },
+    "invalid_dataset": {
+      "enabled": true,
+      "violations": [
+        "invalid_foreign_key",
+        "duplicate_primary_key",
+        "cross_field_constraint",
+        "population_deviation",
+        "statistical_deviation"
+      ],
+      "expected_result": "FAIL"
+    }
+  }
+}
