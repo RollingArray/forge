@@ -1,0 +1,133 @@
+{
+  "experiment": {
+    "id": "016",
+    "name": "Statistical Generation Validation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": [
+      100,
+      1000,
+      10000,
+      100000
+    ]
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "weighted",
+            "weights": {
+              "US": 0.50,
+              "IN": 0.30,
+              "DE": 0.15,
+              "FR": 0.05
+            }
+          },
+          "validation": {
+            "distribution_tolerance": 0.03
+          }
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false,
+          "generation": {
+            "strategy": "weighted",
+            "weights": {
+              "STANDARD": 0.70,
+              "PREMIUM": 0.30
+            }
+          },
+          "validation": {
+            "distribution_tolerance": 0.03
+          }
+        }
+      }
+    },
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 10000
+          },
+          "validation": {
+            "range_tolerance": 0.0,
+            "mean_tolerance": 150.0,
+            "median_tolerance": 150.0,
+            "stddev_tolerance": 150.0,
+            "percentile_tolerance": 250.0
+          }
+        },
+        "DISCOUNT": {
+          "type": "number",
+          "semantic": "percentage",
+          "nullable": false,
+          "generation": {
+            "strategy": "uniform",
+            "min": 0,
+            "max": 30
+          },
+          "validation": {
+            "range_tolerance": 0.0,
+            "mean_tolerance": 1.0,
+            "median_tolerance": 1.0,
+            "stddev_tolerance": 1.0,
+            "percentile_tolerance": 2.0
+          }
+        }
+      }
+    }
+  },
+  "statistical_validation": {
+    "result_levels": [
+      "PASS",
+      "WARN",
+      "FAIL"
+    ],
+    "percentiles": [
+      5,
+      25,
+      50,
+      75,
+      95
+    ],
+    "distribution": {
+      "pass_tolerance_multiplier": 1.0,
+      "warn_tolerance_multiplier": 2.0
+    },
+    "numeric": {
+      "pass_tolerance_multiplier": 1.0,
+      "warn_tolerance_multiplier": 2.0
+    }
+  }
+}
