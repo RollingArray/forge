@@ -1,0 +1,206 @@
+{
+  "experiment": {
+    "id": "013",
+    "name": "Relationship Model Expansion"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "PROFILE": 100,
+      "PRODUCT": 50,
+      "ORDER": 300,
+      "ORDER_ITEM": 600,
+      "SHIPMENT": 250
+    }
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false
+        }
+      }
+    },
+    "PROFILE": {
+      "fields": {
+        "PROFILE_ID": {
+          "type": "identifier",
+          "prefix": "PRO",
+          "length": 10,
+          "nullable": false
+        },
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        }
+      }
+    },
+    "PRODUCT": {
+      "fields": {
+        "PRODUCT_ID": {
+          "type": "identifier",
+          "prefix": "PRD",
+          "length": 10,
+          "nullable": false
+        },
+        "PRODUCT_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM",
+            "SERVICE"
+          ],
+          "nullable": false
+        }
+      }
+    },
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "BILL_TO_CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": true
+        },
+        "AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 5000
+          },
+          "nullable": false
+        }
+      }
+    },
+    "ORDER_ITEM": {
+      "fields": {
+        "ORDER_ITEM_ID": {
+          "type": "identifier",
+          "prefix": "ITM",
+          "length": 10,
+          "nullable": false
+        },
+        "ORDER_ID": {
+          "type": "identifier",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "PRODUCT_ID": {
+          "type": "identifier",
+          "prefix": "PRD",
+          "length": 10,
+          "nullable": false
+        },
+        "QUANTITY": {
+          "type": "integer",
+          "min": 1,
+          "max": 20,
+          "nullable": false
+        }
+      }
+    },
+    "SHIPMENT": {
+      "fields": {
+        "SHIPMENT_ID": {
+          "type": "identifier",
+          "prefix": "SHP",
+          "length": 10,
+          "nullable": false
+        },
+        "ORDER_ID": {
+          "type": "identifier",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        }
+      }
+    }
+  },
+  "relationships": [
+    {
+      "id": "R001",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "PROFILE",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:1",
+      "optional": false
+    },
+    {
+      "id": "R002",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    },
+    {
+      "id": "R003",
+      "parent_entity": "ORDER",
+      "parent_field": "ORDER_ID",
+      "child_entity": "ORDER_ITEM",
+      "child_field": "ORDER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    },
+    {
+      "id": "R004",
+      "parent_entity": "PRODUCT",
+      "parent_field": "PRODUCT_ID",
+      "child_entity": "ORDER_ITEM",
+      "child_field": "PRODUCT_ID",
+      "cardinality": "1:N",
+      "optional": false
+    },
+    {
+      "id": "R005",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "BILL_TO_CUSTOMER_ID",
+      "cardinality": "1:N",
+      "optional": true
+    },
+    {
+      "id": "R006",
+      "parent_entity": "ORDER",
+      "parent_field": "ORDER_ID",
+      "child_entity": "SHIPMENT",
+      "child_field": "ORDER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    }
+  ]
+}

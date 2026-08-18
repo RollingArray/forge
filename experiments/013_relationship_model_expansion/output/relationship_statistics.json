@@ -1,0 +1,193 @@
+{
+  "experiment": {
+    "id": "013",
+    "name": "Relationship Model Expansion"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "PROFILE": 100,
+      "PRODUCT": 50,
+      "ORDER": 300,
+      "ORDER_ITEM": 600,
+      "SHIPMENT": 250
+    }
+  },
+  "relationships": [
+    {
+      "relationship_id": "R001",
+      "cardinality": "1:1",
+      "optional": false,
+      "child_records": 100,
+      "null_references": 0,
+      "unique_parent_references": 100,
+      "minimum_children_per_parent": 1,
+      "maximum_children_per_parent": 1,
+      "average_children_per_parent": 1.0
+    },
+    {
+      "relationship_id": "R002",
+      "cardinality": "1:N",
+      "optional": false,
+      "child_records": 300,
+      "null_references": 0,
+      "unique_parent_references": 95,
+      "minimum_children_per_parent": 1,
+      "maximum_children_per_parent": 8,
+      "average_children_per_parent": 3.16
+    },
+    {
+      "relationship_id": "R003",
+      "cardinality": "1:N",
+      "optional": false,
+      "child_records": 600,
+      "null_references": 0,
+      "unique_parent_references": 259,
+      "minimum_children_per_parent": 1,
+      "maximum_children_per_parent": 9,
+      "average_children_per_parent": 2.32
+    },
+    {
+      "relationship_id": "R004",
+      "cardinality": "1:N",
+      "optional": false,
+      "child_records": 600,
+      "null_references": 0,
+      "unique_parent_references": 50,
+      "minimum_children_per_parent": 4,
+      "maximum_children_per_parent": 19,
+      "average_children_per_parent": 12.0
+    },
+    {
+      "relationship_id": "R005",
+      "cardinality": "1:N",
+      "optional": true,
+      "child_records": 300,
+      "null_references": 100,
+      "unique_parent_references": 87,
+      "minimum_children_per_parent": 1,
+      "maximum_children_per_parent": 7,
+      "average_children_per_parent": 2.3
+    },
+    {
+      "relationship_id": "R006",
+      "cardinality": "1:N",
+      "optional": false,
+      "child_records": 250,
+      "null_references": 0,
+      "unique_parent_references": 168,
+      "minimum_children_per_parent": 1,
+      "maximum_children_per_parent": 5,
+      "average_children_per_parent": 1.49
+    }
+  ],
+  "many_to_many": {
+    "order_item_records": 600,
+    "unique_order_product_pairs": 586,
+    "invalid_order_references": 0,
+    "invalid_product_references": 0,
+    "passed": true
+  },
+  "validation": [
+    {
+      "parent_records": 100,
+      "child_records": 100,
+      "invalid_references": 0,
+      "null_references": 0,
+      "optional": false,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R001",
+      "parent_entity": "CUSTOMER",
+      "child_entity": "PROFILE",
+      "parent_field": "CUSTOMER_ID",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:1",
+      "unique_parent_references": 100,
+      "duplicate_parent_assignments": 0,
+      "cardinality_validation": true
+    },
+    {
+      "parent_records": 100,
+      "child_records": 300,
+      "invalid_references": 0,
+      "null_references": 0,
+      "optional": false,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R002",
+      "parent_entity": "CUSTOMER",
+      "child_entity": "ORDER",
+      "parent_field": "CUSTOMER_ID",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "cardinality_validation": true
+    },
+    {
+      "parent_records": 300,
+      "child_records": 600,
+      "invalid_references": 0,
+      "null_references": 0,
+      "optional": false,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R003",
+      "parent_entity": "ORDER",
+      "child_entity": "ORDER_ITEM",
+      "parent_field": "ORDER_ID",
+      "child_field": "ORDER_ID",
+      "cardinality": "1:N",
+      "cardinality_validation": true
+    },
+    {
+      "parent_records": 50,
+      "child_records": 600,
+      "invalid_references": 0,
+      "null_references": 0,
+      "optional": false,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R004",
+      "parent_entity": "PRODUCT",
+      "child_entity": "ORDER_ITEM",
+      "parent_field": "PRODUCT_ID",
+      "child_field": "PRODUCT_ID",
+      "cardinality": "1:N",
+      "cardinality_validation": true
+    },
+    {
+      "parent_records": 100,
+      "child_records": 300,
+      "invalid_references": 0,
+      "null_references": 100,
+      "optional": true,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R005",
+      "parent_entity": "CUSTOMER",
+      "child_entity": "ORDER",
+      "parent_field": "CUSTOMER_ID",
+      "child_field": "BILL_TO_CUSTOMER_ID",
+      "cardinality": "1:N",
+      "cardinality_validation": true
+    },
+    {
+      "parent_records": 300,
+      "child_records": 250,
+      "invalid_references": 0,
+      "null_references": 0,
+      "optional": false,
+      "optional_validation": true,
+      "passed": true,
+      "relationship_id": "R006",
+      "parent_entity": "ORDER",
+      "child_entity": "SHIPMENT",
+      "parent_field": "ORDER_ID",
+      "child_field": "ORDER_ID",
+      "cardinality": "1:N",
+      "cardinality_validation": true
+    }
+  ],
+  "overall_result": "PASS"
+}
