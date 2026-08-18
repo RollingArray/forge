@@ -1,0 +1,106 @@
+{
+  "experiment": {
+    "id": "014",
+    "name": "Parent-Dependent Generation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "entities": {
+    "CUSTOMER": {
+      "fields": {
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "CUSTOMER_TYPE": {
+          "type": "categorical",
+          "values": [
+            "STANDARD",
+            "PREMIUM"
+          ],
+          "nullable": false
+        },
+        "COUNTRY": {
+          "type": "categorical",
+          "values": [
+            "US",
+            "IN",
+            "DE",
+            "FR"
+          ],
+          "nullable": false
+        }
+      }
+    },
+    "ORDER": {
+      "fields": {
+        "ORDER_ID": {
+          "type": "identifier",
+          "prefix": "ORD",
+          "length": 10,
+          "nullable": false
+        },
+        "CUSTOMER_ID": {
+          "type": "identifier",
+          "prefix": "CUS",
+          "length": 10,
+          "nullable": false
+        },
+        "AMOUNT": {
+          "type": "number",
+          "semantic": "amount",
+          "generation": {
+            "strategy": "uniform",
+            "min": 100,
+            "max": 10000
+          },
+          "nullable": false
+        }
+      }
+    }
+  },
+  "relationships": [
+    {
+      "id": "R001",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "ORDER",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "optional": false
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "D001",
+      "type": "parent_dependent",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_TYPE",
+      "child_entity": "ORDER",
+      "child_field": "AMOUNT",
+      "behavior": {
+        "STANDARD": {
+          "distribution": {
+            "type": "uniform",
+            "min": 100,
+            "max": 2000
+          }
+        },
+        "PREMIUM": {
+          "distribution": {
+            "type": "uniform",
+            "min": 2000,
+            "max": 10000
+          }
+        }
+      }
+    }
+  ]
+}

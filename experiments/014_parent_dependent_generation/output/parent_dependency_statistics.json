@@ -1,0 +1,115 @@
+{
+  "experiment": {
+    "id": "014",
+    "name": "Parent-Dependent Generation"
+  },
+  "generation": {
+    "seed": 42,
+    "record_counts": {
+      "CUSTOMER": 100,
+      "ORDER": 1000
+    }
+  },
+  "independent": {
+    "field_validation": {
+      "ORDER_ID": {
+        "passed": true
+      },
+      "CUSTOMER_ID": {
+        "passed": true
+      },
+      "AMOUNT": {
+        "passed": true
+      }
+    },
+    "relationship_validation": {
+      "parent_records": 100,
+      "child_records": 1000,
+      "invalid_references": 0,
+      "passed": true
+    },
+    "group_statistics": {
+      "PREMIUM": {
+        "records": 482,
+        "mean": 5133.48,
+        "median": 5158.27,
+        "minimum": 126.49,
+        "maximum": 9999.77
+      },
+      "STANDARD": {
+        "records": 518,
+        "mean": 4825.68,
+        "median": 4647.1,
+        "minimum": 135.1,
+        "maximum": 9995.77
+      }
+    },
+    "group_mean_gap": 307.8
+  },
+  "parent_dependent": {
+    "field_validation": {
+      "ORDER_ID": {
+        "passed": true
+      },
+      "CUSTOMER_ID": {
+        "passed": true
+      },
+      "AMOUNT": {
+        "passed": true
+      }
+    },
+    "relationship_validation": {
+      "parent_records": 100,
+      "child_records": 1000,
+      "invalid_references": 0,
+      "passed": true
+    },
+    "dependency_validation": {
+      "groups": {
+        "STANDARD": {
+          "records": 518,
+          "minimum": 106.74,
+          "maximum": 1999.19,
+          "mean": 1006.95,
+          "expected_minimum": 100,
+          "expected_maximum": 2000,
+          "passed": true
+        },
+        "PREMIUM": {
+          "records": 482,
+          "minimum": 2021.41,
+          "maximum": 9999.81,
+          "mean": 6067.46,
+          "expected_minimum": 2000,
+          "expected_maximum": 10000,
+          "passed": true
+        }
+      },
+      "violations": 0,
+      "passed": true
+    },
+    "group_statistics": {
+      "PREMIUM": {
+        "records": 482,
+        "mean": 6067.46,
+        "median": 6087.49,
+        "minimum": 2021.41,
+        "maximum": 9999.81
+      },
+      "STANDARD": {
+        "records": 518,
+        "mean": 1006.95,
+        "median": 972.67,
+        "minimum": 106.74,
+        "maximum": 1999.19
+      }
+    },
+    "group_mean_gap": 5060.51
+  },
+  "comparison": {
+    "independent_group_mean_gap": 307.8,
+    "parent_dependent_group_mean_gap": 5060.51,
+    "group_mean_gap_change": 4752.71
+  },
+  "overall_result": "PASS"
+}
