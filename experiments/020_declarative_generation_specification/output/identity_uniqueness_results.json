@@ -1,0 +1,88 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-G",
+  "purpose": "Declarative identity and uniqueness",
+  "random_seed": 42,
+  "identity_vocabulary": [
+    "COMPOSITE_ID",
+    "COMPOSITE_KEY",
+    "FOREIGN_KEY",
+    "NATURAL_KEY",
+    "PRIMARY_KEY",
+    "SEQUENTIAL_ID",
+    "STABLE",
+    "SURROGATE_KEY",
+    "UNIQUE",
+    "UUID"
+  ],
+  "results": {
+    "sequential_id": {
+      "status": "PASS",
+      "first": "ENT-100",
+      "last": "ENT-199",
+      "unique": true,
+      "non_null": true
+    },
+    "uuid": {
+      "status": "PASS",
+      "valid_uuid": true,
+      "unique": true,
+      "non_null": true
+    },
+    "stability": {
+      "status": "PASS",
+      "stable": true
+    },
+    "seed_sensitivity": {
+      "status": "PASS",
+      "different_seed_changes_identity": true
+    },
+    "surrogate_key": {
+      "status": "PASS",
+      "unique": true,
+      "non_null": true,
+      "prefix_valid": true
+    },
+    "natural_key": {
+      "status": "PASS",
+      "unique": true,
+      "first_value": "US|CUS-00001",
+      "expected_first": "US|CUS-00001"
+    },
+    "composite_id": {
+      "status": "PASS",
+      "first_value": "PRD-001|1",
+      "expected_first": "PRD-001|1",
+      "unique": false,
+      "duplicate_detected": true
+    },
+    "unique_semantic": {
+      "status": "PASS",
+      "unique_dataset_detected": true,
+      "duplicate_dataset_detected": true
+    },
+    "primary_key_properties": {
+      "status": "PASS",
+      "unique": true,
+      "non_null": true,
+      "record_count": 1000
+    },
+    "field_order_independence": {
+      "status": "PASS",
+      "identical": true
+    },
+    "vocabulary_safety": {
+      "status": "PASS",
+      "unexpected_acceptances": []
+    },
+    "foreign_key_boundary": {
+      "status": "PASS",
+      "identity_values_generated": 100,
+      "non_null": true,
+      "unique": true,
+      "relationship_resolution": "DEFERRED"
+    }
+  },
+  "architectural_conclusion": "Identity semantics can be represented independently from business entities. Sequential, UUID, surrogate, natural, and composite identities can be generated and validated generically. Foreign-key identity is recognized here, while relationship resolution remains a separate capability.",
+  "overall": "PASS"
+}

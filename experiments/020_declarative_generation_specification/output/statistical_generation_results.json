@@ -1,0 +1,129 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-M",
+  "purpose": "Declarative statistical generation",
+  "seed": 42,
+  "sample_size": 5000,
+  "executable_distributions": [
+    "CATEGORICAL",
+    "DISCRETE_UNIFORM",
+    "NORMAL",
+    "POISSON",
+    "UNIFORM"
+  ],
+  "deferred_distributions": [
+    "BETA",
+    "EMPIRICAL",
+    "EXPONENTIAL",
+    "GAMMA",
+    "LOGNORMAL",
+    "MIXTURE",
+    "TRIANGULAR",
+    "TRUNCATED",
+    "WEIBULL"
+  ],
+  "tests": [
+    {
+      "name": "UNIFORM generation",
+      "status": "PASS",
+      "minimum": 100.15629320130995,
+      "maximum": 499.9886555454039
+    },
+    {
+      "name": "NORMAL generation",
+      "status": "PASS",
+      "observed_mean": 500.52,
+      "observed_stddev": 99.94
+    },
+    {
+      "name": "DISCRETE_UNIFORM generation",
+      "status": "PASS",
+      "unique_values": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "name": "POISSON generation",
+      "status": "PASS",
+      "observed_mean": 4.01
+    },
+    {
+      "name": "CATEGORICAL generation",
+      "status": "PASS",
+      "observed_frequencies": {
+        "NEW": 0.599,
+        "ACTIVE": 0.297,
+        "CLOSED": 0.104
+      }
+    },
+    {
+      "name": "Parameter validation",
+      "status": "PASS",
+      "blocked": 4,
+      "expected": 4
+    },
+    {
+      "name": "Unsupported distribution boundary",
+      "status": "PASS",
+      "result": {
+        "status": "DEFERRED",
+        "reason": "Distribution 'BETA' is valid FORGE vocabulary but not executable in 020-M."
+      }
+    },
+    {
+      "name": "Unknown distribution boundary",
+      "status": "PASS",
+      "reason": "Unknown distribution: MADE_UP_DISTRIBUTION"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS",
+      "different": true
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "No hidden distribution fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "Parameter explicitness",
+      "status": "PASS",
+      "parameters": {
+        "minimum": 100,
+        "maximum": 200
+      }
+    }
+  ],
+  "tests_passed": 13,
+  "tests_total": 13,
+  "architecture": {
+    "distribution_as_first_class_capability": true,
+    "explicit_parameters": true,
+    "parameter_validation": true,
+    "deterministic_field_streams": true,
+    "statistical_validation": true,
+    "safe_deferred_capabilities": true,
+    "hidden_distribution_fallback": false
+  },
+  "architectural_conclusion": "Declarative distributions can be treated as first-class generation strategies with explicit parameters, deterministic execution, statistical validation, and safe capability boundaries.",
+  "boundary": "Only five representative statistical distributions are executable in 020-M. The remaining valid FORGE vocabulary is explicitly deferred.",
+  "overall": "PASS"
+}

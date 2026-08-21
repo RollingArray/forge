@@ -1,0 +1,153 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-L",
+  "purpose": "Declarative derived and conditional generation",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Formula generation",
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "order": [
+          "QUANTITY",
+          "UNIT_PRICE",
+          "LINE_AMOUNT"
+        ],
+        "steps": [
+          {
+            "field": "QUANTITY",
+            "strategy": "INDEPENDENT",
+            "dependencies": []
+          },
+          {
+            "field": "UNIT_PRICE",
+            "strategy": "INDEPENDENT",
+            "dependencies": []
+          },
+          {
+            "field": "LINE_AMOUNT",
+            "strategy": "DERIVED",
+            "dependencies": [
+              "QUANTITY",
+              "UNIT_PRICE"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Multi-level derivation",
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "order": [
+          "DISCOUNT",
+          "QUANTITY",
+          "UNIT_PRICE",
+          "SUBTOTAL",
+          "NET_AMOUNT"
+        ],
+        "steps": [
+          {
+            "field": "DISCOUNT",
+            "strategy": "INDEPENDENT",
+            "dependencies": []
+          },
+          {
+            "field": "QUANTITY",
+            "strategy": "INDEPENDENT",
+            "dependencies": []
+          },
+          {
+            "field": "UNIT_PRICE",
+            "strategy": "INDEPENDENT",
+            "dependencies": []
+          },
+          {
+            "field": "SUBTOTAL",
+            "strategy": "DERIVED",
+            "dependencies": [
+              "QUANTITY",
+              "UNIT_PRICE"
+            ]
+          },
+          {
+            "field": "NET_AMOUNT",
+            "strategy": "DERIVED",
+            "dependencies": [
+              "DISCOUNT",
+              "SUBTOTAL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Conditional generation",
+      "status": "PASS",
+      "validation": {
+        "status": "PASS",
+        "records_checked": 100,
+        "failures": []
+      }
+    },
+    {
+      "name": "Conditional branch semantics",
+      "status": "PASS"
+    },
+    {
+      "name": "Dependency planning",
+      "status": "PASS",
+      "order": [
+        "DISCOUNT",
+        "QUANTITY",
+        "UNIT_PRICE",
+        "SUBTOTAL",
+        "NET_AMOUNT"
+      ]
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS",
+      "different": true
+    },
+    {
+      "name": "Cycle blocking",
+      "status": "PASS",
+      "reason": "Invalid or cyclic generation dependency graph."
+    },
+    {
+      "name": "Derived values are deterministic",
+      "status": "PASS"
+    },
+    {
+      "name": "Division safety",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 11,
+  "tests_total": 11,
+  "architecture": {
+    "expression_analysis": true,
+    "dependency_extraction": true,
+    "generation_planning": true,
+    "derived_generation": true,
+    "conditional_generation": true,
+    "context_aware_generation": true,
+    "post_generation_repair": false
+  },
+  "architectural_conclusion": "Derived and conditional rules can participate in generation planning and can be executed directly from declared dependencies and context.",
+  "boundary": "The experiment intentionally supports a controlled arithmetic expression subset and simple conditional ranges.",
+  "overall": "PASS"
+}

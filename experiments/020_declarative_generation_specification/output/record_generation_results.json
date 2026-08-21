@@ -1,0 +1,120 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-E",
+  "purpose": "Generic declarative multi-field record generation",
+  "seed": 42,
+  "entities": {
+    "CUSTOMER": {
+      "record_count": 10,
+      "field_count": 5,
+      "validation": {
+        "valid": true,
+        "errors": []
+      },
+      "sample": [
+        {
+          "CUSTOMER_ID": "CUS-1",
+          "CUSTOMER_TYPE": "STANDARD",
+          "COUNTRY": "US",
+          "CREDIT_LIMIT": 8252.37,
+          "IS_ACTIVE": true
+        },
+        {
+          "CUSTOMER_ID": "CUS-2",
+          "CUSTOMER_TYPE": "STANDARD",
+          "COUNTRY": "IN",
+          "CREDIT_LIMIT": 7283.25,
+          "IS_ACTIVE": true
+        },
+        {
+          "CUSTOMER_ID": "CUS-3",
+          "CUSTOMER_TYPE": "STANDARD",
+          "COUNTRY": "US",
+          "CREDIT_LIMIT": 4062.25,
+          "IS_ACTIVE": true
+        },
+        {
+          "CUSTOMER_ID": "CUS-4",
+          "CUSTOMER_TYPE": "STANDARD",
+          "COUNTRY": "US",
+          "CREDIT_LIMIT": 2399.32,
+          "IS_ACTIVE": false
+        },
+        {
+          "CUSTOMER_ID": "CUS-5",
+          "CUSTOMER_TYPE": "PREMIUM",
+          "COUNTRY": "IN",
+          "CREDIT_LIMIT": 9614.92,
+          "IS_ACTIVE": true
+        }
+      ]
+    },
+    "PRODUCT": {
+      "record_count": 10,
+      "field_count": 5,
+      "validation": {
+        "valid": true,
+        "errors": []
+      },
+      "sample": [
+        {
+          "PRODUCT_ID": "PRD-100",
+          "PRODUCT_TYPE": "SPECIAL",
+          "UNIT_PRICE": 3386.73,
+          "PRODUCT_SCORE": 68.22,
+          "CREATED_DATE": "2026-01-01"
+        },
+        {
+          "PRODUCT_ID": "PRD-101",
+          "PRODUCT_TYPE": "STANDARD",
+          "UNIT_PRICE": 4461.98,
+          "PRODUCT_SCORE": 73.03,
+          "CREATED_DATE": "2026-01-01"
+        },
+        {
+          "PRODUCT_ID": "PRD-102",
+          "PRODUCT_TYPE": "STANDARD",
+          "UNIT_PRICE": 443.82,
+          "PRODUCT_SCORE": 59.58,
+          "CREATED_DATE": "2026-01-01"
+        },
+        {
+          "PRODUCT_ID": "PRD-103",
+          "PRODUCT_TYPE": "SPECIAL",
+          "UNIT_PRICE": 2115.39,
+          "PRODUCT_SCORE": 65.31,
+          "CREATED_DATE": "2026-01-01"
+        },
+        {
+          "PRODUCT_ID": "PRD-104",
+          "PRODUCT_TYPE": "PREMIUM",
+          "UNIT_PRICE": 158.69,
+          "PRODUCT_SCORE": 93.09,
+          "CREATED_DATE": "2026-01-01"
+        }
+      ]
+    }
+  },
+  "entity_agnosticism": {
+    "status": "PASS",
+    "customer_generated": 10,
+    "product_generated": 10,
+    "same_generic_generator": true
+  },
+  "field_order_independence": {
+    "status": "FAIL",
+    "records_identical": false
+  },
+  "reproducibility": {
+    "status": "PASS",
+    "identical": true
+  },
+  "summary": {
+    "customer_generation": "PASS",
+    "product_generation": "PASS",
+    "entity_agnosticism": "PASS",
+    "field_order_independence": "FAIL",
+    "reproducibility": "PASS",
+    "overall": "FAIL"
+  }
+}

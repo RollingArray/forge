@@ -1,0 +1,73 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-F",
+  "purpose": "Population and nullability",
+  "random_seed": 42,
+  "controlled_vocabulary": {
+    "population": [
+      "POPULATION_COUNT",
+      "POPULATION_RATE"
+    ],
+    "nullability": [
+      "ALWAYS",
+      "NEVER",
+      "NOT_NULL",
+      "NULLABLE",
+      "OPTIONAL"
+    ]
+  },
+  "results": {
+    "population_count": {
+      "status": "PASS",
+      "requested_count": 1000,
+      "configured_count": 250,
+      "actual_count": 250
+    },
+    "population_rate": {
+      "status": "PASS",
+      "expected_rate": 0.7,
+      "observed_rate": 0.7038,
+      "tolerance": 0.05,
+      "populated": 3519,
+      "null": 1481
+    },
+    "always": {
+      "status": "PASS",
+      "null_count": 0
+    },
+    "never": {
+      "status": "PASS",
+      "non_null_count": 0
+    },
+    "nullable": {
+      "status": "PASS",
+      "expected_population_rate": 0.8,
+      "observed_population_rate": 0.807,
+      "tolerance": 0.05
+    },
+    "not_null": {
+      "status": "PASS",
+      "null_count": 0
+    },
+    "optional": {
+      "status": "PASS",
+      "expected_population_rate": 0.25,
+      "observed_population_rate": 0.253,
+      "tolerance": 0.05
+    },
+    "determinism": {
+      "status": "PASS",
+      "records_identical": true
+    },
+    "field_order_independence": {
+      "status": "PASS",
+      "records_identical": true
+    },
+    "invalid_configuration": {
+      "status": "PASS",
+      "unexpected_acceptances": []
+    }
+  },
+  "architectural_conclusion": "Population and nullability are independent declarative controls around field value generation. Population decisions use deterministic field- and record-specific streams and therefore do not implicitly depend on field declaration order.",
+  "overall": "PASS"
+}

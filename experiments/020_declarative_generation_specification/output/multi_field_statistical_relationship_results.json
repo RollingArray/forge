@@ -1,0 +1,126 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-Q",
+  "purpose": "Declarative multi-field statistical relationships",
+  "seed": 42,
+  "fields": [
+    "CREDIT_LIMIT",
+    "CUSTOMER_SCORE",
+    "RETENTION_SCORE",
+    "RISK_SCORE"
+  ],
+  "relationships": [
+    {
+      "name": "SCORE_TO_CREDIT",
+      "source_field": "CUSTOMER_SCORE",
+      "target_field": "CREDIT_LIMIT",
+      "target_correlation": 0.75,
+      "method": "PEARSON",
+      "tolerance": 0.15
+    },
+    {
+      "name": "SCORE_TO_RISK",
+      "source_field": "CUSTOMER_SCORE",
+      "target_field": "RISK_SCORE",
+      "target_correlation": -0.6,
+      "method": "PEARSON",
+      "tolerance": 0.15
+    }
+  ],
+  "correlation_matrix": [
+    [
+      1.0,
+      0.75,
+      0.0,
+      0.0
+    ],
+    [
+      0.75,
+      1.0,
+      0.0,
+      -0.6
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      -0.6,
+      0.0,
+      1.0
+    ]
+  ],
+  "matrix_positive_semidefinite": true,
+  "tests": [
+    {
+      "name": "Correlation matrix symmetry",
+      "status": "PASS"
+    },
+    {
+      "name": "Compatible graph feasibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Three-field generation",
+      "status": "PASS"
+    },
+    {
+      "name": "Shared-source relationships",
+      "status": "PASS"
+    },
+    {
+      "name": "Impossible graph blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "Unknown field blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Duplicate conflict blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Positive-semidefinite validation",
+      "status": "PASS"
+    },
+    {
+      "name": "Relationship count",
+      "status": "PASS"
+    },
+    {
+      "name": "Achieved relationship validation",
+      "status": "PASS"
+    },
+    {
+      "name": "Relationship direction",
+      "status": "PASS"
+    },
+    {
+      "name": "Zero relationship",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 16,
+  "tests_total": 16,
+  "overall": "PASS"
+}

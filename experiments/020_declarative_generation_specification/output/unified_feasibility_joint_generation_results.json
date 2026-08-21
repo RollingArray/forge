@@ -1,0 +1,82 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-R.1",
+  "purpose": "Unified feasibility and joint generation",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Unified feasibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Joint generation",
+      "status": "PASS"
+    },
+    {
+      "name": "Constraint preservation",
+      "status": "FAIL"
+    },
+    {
+      "name": "Statistical relationships",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional rules",
+      "status": "PASS"
+    },
+    {
+      "name": "Derived values",
+      "status": "PASS"
+    },
+    {
+      "name": "Dependency planning",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Impossible specification blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS"
+    },
+    {
+      "name": "Combined validation",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 13,
+  "tests_total": 14,
+  "overall": "FAIL",
+  "architecture": [
+    "specification",
+    "requirement_extraction",
+    "unified_feasibility",
+    "joint_generation_planning",
+    "direct_generation",
+    "independent_validation"
+  ],
+  "principles": [
+    "no_post_generation_repair",
+    "no_hidden_fallback",
+    "field_order_independence",
+    "deterministic_streams",
+    "safe_impossible_specification_blocking"
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-S",
+  "purpose": "Declarative generation adversarial and production-readiness validation",
+  "seed": 42,
+  "generation_plan": {
+    "entities": [
+      "CUSTOMER",
+      "PRODUCT",
+      "CUSTOMER_PROFILE",
+      "ORDER",
+      "SHIPMENT"
+    ],
+    "fields": {
+      "CUSTOMER": [
+        "CUSTOMER_SCORE",
+        "CUSTOMER_VALUE"
+      ],
+      "PRODUCT": [
+        "PRODUCT_SCORE",
+        "UNIT_PRICE"
+      ],
+      "CUSTOMER_PROFILE": [
+        "PROFILE_SCORE"
+      ],
+      "ORDER": [
+        "ORDER_CUSTOMER_VALUE",
+        "ORDER_VALUE",
+        "DISCOUNT",
+        "NET_ORDER_VALUE"
+      ],
+      "SHIPMENT": [
+        "SHIPMENT_ORDER_VALUE",
+        "SHIPPING_COST"
+      ]
+    }
+  },
+  "tests": [
+    {
+      "name": "Complete generation",
+      "status": "PASS"
+    },
+    {
+      "name": "Dataset structure",
+      "status": "PASS"
+    },
+    {
+      "name": "Relationship integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Constraint integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Derived-field integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Statistical integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario isolation",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario behavior",
+      "status": "PASS"
+    },
+    {
+      "name": "Reject hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "Reject dependency cycle",
+      "status": "PASS"
+    },
+    {
+      "name": "Reject impossible constraint",
+      "status": "PASS"
+    },
+    {
+      "name": "Reject invalid scenario",
+      "status": "PASS"
+    },
+    {
+      "name": "Capability boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS"
+    },
+    {
+      "name": "Complex specification isolation",
+      "status": "PASS"
+    },
+    {
+      "name": "Full integrity",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 21,
+  "tests_total": 21,
+  "overall": "PASS",
+  "capabilities": {
+    "entities": 5,
+    "relationships": 3,
+    "statistical_relationships": 2,
+    "constraints": 1,
+    "conditionals": 1,
+    "derived_fields": 1,
+    "scenarios": 3
+  },
+  "invariants": [
+    "declarative_specification",
+    "entity_order_independence",
+    "field_order_independence",
+    "deterministic_reproducibility",
+    "seed_sensitivity",
+    "explicit_capability_boundaries",
+    "no_hidden_fallback",
+    "no_post_generation_repair",
+    "constraint_preservation",
+    "relationship_integrity",
+    "statistical_relationship_preservation",
+    "scenario_isolation",
+    "derived_value_determinism",
+    "safe_failure",
+    "field_level_dependency_planning"
+  ]
+}

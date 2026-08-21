@@ -1,0 +1,98 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-R.2",
+  "purpose": "Constraint-conditioned statistical generation",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Field feasible region",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional feasible region",
+      "status": "PASS"
+    },
+    {
+      "name": "Combined feasible region",
+      "status": "PASS"
+    },
+    {
+      "name": "Constraint-conditioned generation",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional generation",
+      "status": "PASS"
+    },
+    {
+      "name": "Statistical target preservation",
+      "status": "PASS"
+    },
+    {
+      "name": "Derived values",
+      "status": "PASS"
+    },
+    {
+      "name": "Combined validation",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Impossible specification blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Impossible record-region blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS"
+    },
+    {
+      "name": "Configuration safety",
+      "status": "PASS"
+    },
+    {
+      "name": "Multiple constraints",
+      "status": "PASS"
+    },
+    {
+      "name": "Record region is used",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 18,
+  "tests_total": 18,
+  "overall": "PASS",
+  "architecture": [
+    "source_generation",
+    "record_level_context",
+    "feasible_region_derivation",
+    "constraint_conditioned_generation",
+    "independent_validation"
+  ],
+  "principles": [
+    "record_level_feasible_regions",
+    "no_post_generation_repair",
+    "no_hidden_fallback",
+    "field_order independence",
+    "deterministic_streams",
+    "safe_impossible_specification_blocking"
+  ]
+}

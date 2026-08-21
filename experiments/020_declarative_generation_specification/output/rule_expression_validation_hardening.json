@@ -1,0 +1,266 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-C.1",
+  "purpose": "Expression engine validation hardening",
+  "classification": {
+    "PASS": "Expected result was produced.",
+    "FAIL": "Evaluation completed but produced an unexpected result.",
+    "ERROR": "Expression could not be evaluated.",
+    "DEFERRED": "Valid FORGE vocabulary is not executable at this stage."
+  },
+  "vocabulary": {
+    "registered": 47,
+    "executable": 41,
+    "deferred": 6
+  },
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "failed": 0,
+    "overall": "PASS"
+  },
+  "category_summary": {
+    "Boolean Outcomes": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Comparison": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "String": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Nested Expression": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Conditional": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Error Handling": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Capability Boundary": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Vocabulary Boundary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "Determinism": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "status": "PASS"
+    }
+  },
+  "determinism": {
+    "status": "PASS",
+    "first_result": 8250.0,
+    "second_result": 8250.0,
+    "deterministic": true
+  },
+  "tests": [
+    {
+      "test_id": "BOOL-001",
+      "category": "Boolean Outcomes",
+      "description": "True comparison is accepted as PASS",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": true,
+      "actual": true,
+      "error": null
+    },
+    {
+      "test_id": "BOOL-002",
+      "category": "Boolean Outcomes",
+      "description": "False comparison is accepted as PASS",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": false,
+      "actual": false,
+      "error": null
+    },
+    {
+      "test_id": "BOOL-003",
+      "category": "Boolean Outcomes",
+      "description": "False membership result is accepted as PASS",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": false,
+      "actual": false,
+      "error": null
+    },
+    {
+      "test_id": "CMP-001",
+      "category": "Comparison",
+      "description": "BETWEEN returns True for value inside bounds",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": true,
+      "actual": true,
+      "error": null
+    },
+    {
+      "test_id": "CMP-002",
+      "category": "Comparison",
+      "description": "BETWEEN returns False for value outside bounds",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": false,
+      "actual": false,
+      "error": null
+    },
+    {
+      "test_id": "STR-001",
+      "category": "String",
+      "description": "MATCH accepts a valid code",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": true,
+      "actual": true,
+      "error": null
+    },
+    {
+      "test_id": "STR-002",
+      "category": "String",
+      "description": "MATCH rejects an invalid code",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": false,
+      "actual": false,
+      "error": null
+    },
+    {
+      "test_id": "NEST-001",
+      "category": "Nested Expression",
+      "description": "Nested arithmetic comparison evaluates True",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": true,
+      "actual": true,
+      "error": null
+    },
+    {
+      "test_id": "NEST-002",
+      "category": "Nested Expression",
+      "description": "Nested arithmetic comparison evaluates False",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": false,
+      "actual": false,
+      "error": null
+    },
+    {
+      "test_id": "COND-001",
+      "category": "Conditional",
+      "description": "IF selects THEN branch",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": "HIGH",
+      "actual": "HIGH",
+      "error": null
+    },
+    {
+      "test_id": "ERR-001",
+      "category": "Error Handling",
+      "description": "Missing operator is rejected",
+      "status": "PASS",
+      "behavior": "INVALID_EXPRESSION",
+      "expected": "INVALID_EXPRESSION",
+      "actual": null,
+      "error": "Unable to resolve expression: {'left': {'field': 'AMOUNT'}, 'right': {'value': 100}}"
+    },
+    {
+      "test_id": "ERR-002",
+      "category": "Error Handling",
+      "description": "AND without operands is rejected",
+      "status": "PASS",
+      "behavior": "INVALID_EXPRESSION",
+      "expected": "INVALID_EXPRESSION",
+      "actual": null,
+      "error": "AND requires operands."
+    },
+    {
+      "test_id": "ERR-003",
+      "category": "Error Handling",
+      "description": "Unknown field reference is rejected",
+      "status": "PASS",
+      "behavior": "EVALUATION_ERROR",
+      "expected": "EVALUATION_ERROR",
+      "actual": null,
+      "error": "Reference 'DOES_NOT_EXIST' not found in evaluation context."
+    },
+    {
+      "test_id": "ERR-004",
+      "category": "Error Handling",
+      "description": "Division by zero is rejected",
+      "status": "PASS",
+      "behavior": "EVALUATION_ERROR",
+      "expected": "EVALUATION_ERROR",
+      "actual": null,
+      "error": "Division by zero."
+    },
+    {
+      "test_id": "DEF-001",
+      "category": "Capability Boundary",
+      "description": "Valid DERIVE vocabulary remains deferred",
+      "status": "PASS",
+      "behavior": "DEFERRED",
+      "expected": "DEFERRED",
+      "actual": null,
+      "error": "Operator 'DERIVE' is valid FORGE vocabulary but is not executable in 020-C."
+    },
+    {
+      "test_id": "DEF-002",
+      "category": "Capability Boundary",
+      "description": "Valid REFERENCE vocabulary remains deferred",
+      "status": "PASS",
+      "behavior": "DEFERRED",
+      "expected": "DEFERRED",
+      "actual": null,
+      "error": "Operator 'REFERENCE' is valid FORGE vocabulary but is not executable in 020-C."
+    },
+    {
+      "test_id": "ERR-005",
+      "category": "Vocabulary Boundary",
+      "description": "Unknown operator is rejected",
+      "status": "PASS",
+      "behavior": "UNSUPPORTED_OPERATOR",
+      "expected": "UNSUPPORTED_OPERATOR",
+      "actual": null,
+      "error": "Unknown operator: MAGIC_OPERATOR"
+    },
+    {
+      "test_id": "DET-001",
+      "category": "Determinism",
+      "description": "Same expression produces same result",
+      "status": "PASS",
+      "behavior": "VALUE",
+      "expected": 600,
+      "actual": 600,
+      "error": null
+    }
+  ]
+}

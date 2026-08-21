@@ -1,0 +1,57 @@
+{
+  "experiment": "020",
+  "stage": "020-B.1",
+  "status": "PASS",
+  "validation": [
+    {
+      "category": "Specification structure",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Controlled vocabulary",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Entities and fields",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Relationships",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Rules",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Statistical behavior",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Scenarios",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Validation configuration",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Provenance configuration",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Reproducibility configuration",
+      "status": "PASS",
+      "errors": []
+    }
+  ]
+}

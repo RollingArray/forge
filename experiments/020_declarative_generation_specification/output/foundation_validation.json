@@ -1,0 +1,69 @@
+{
+  "experiment": "020",
+  "stage": "020-A",
+  "status": "PASS",
+  "specification": {
+    "name": "FORGE Experiment 020 - Declarative Generation Specification",
+    "version": "1.0.0",
+    "experiment": "020_declarative_generation_specification"
+  },
+  "context": {
+    "seed": 42,
+    "random_state": 42,
+    "random_stream": "FORGE-020",
+    "deterministic": true,
+    "scenario": "NORMAL"
+  },
+  "validation": [
+    {
+      "category": "Specification structure",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Controlled vocabulary",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Entities and fields",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Relationships",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Rules",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Statistical behavior",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Scenarios",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Validation configuration",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Provenance configuration",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "category": "Reproducibility configuration",
+      "status": "PASS",
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,1571 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-K",
+  "purpose": "Constraint-aware generation",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Field constraints",
+      "status": "FAIL",
+      "validation": {
+        "status": "FAIL",
+        "records_checked": 100,
+        "constraint_failures": [
+          {
+            "record": 0,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 1,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 2,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 3,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 4,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 5,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 6,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 7,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 8,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 9,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 10,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 11,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 12,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 13,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 14,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 15,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 16,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 17,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 18,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 19,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 20,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 21,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 22,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 23,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 24,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 25,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 26,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 27,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 28,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 29,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 30,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 31,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 32,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 33,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 34,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 35,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 36,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 37,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 38,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 39,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 40,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 41,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 42,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 43,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 44,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 45,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 46,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 47,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 48,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 49,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 50,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 51,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 52,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 53,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 54,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 55,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 56,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 57,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 58,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 59,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 60,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 61,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 62,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 63,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 64,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 65,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 66,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 67,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 68,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 69,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 70,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 71,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 72,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 73,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 74,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 75,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 76,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 77,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 78,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 79,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 80,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 81,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 82,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 83,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 84,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 85,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 86,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 87,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 88,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 89,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 90,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 91,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 92,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 93,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 94,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 95,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 96,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 97,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 98,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 99,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Cross-field constraints",
+      "status": "FAIL",
+      "validation": {
+        "status": "FAIL",
+        "records_checked": 100,
+        "constraint_failures": [
+          {
+            "record": 0,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 1,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 2,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 3,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 4,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 5,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 6,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 7,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 8,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 9,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 10,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 11,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 12,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 13,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 14,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 15,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 16,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 17,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 18,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 19,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 20,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 21,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 22,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 23,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 24,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 25,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 26,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 27,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 28,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 29,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 30,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 31,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 32,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 33,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 34,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 35,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 36,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 37,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 38,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 39,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 40,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 41,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 42,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 43,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 44,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 45,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 46,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 47,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 48,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 49,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 50,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 51,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 52,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 53,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 54,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 55,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 56,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 57,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 58,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 59,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 60,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 61,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 62,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 63,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 64,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 65,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 66,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 67,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 68,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 69,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 70,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 71,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 72,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 73,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 74,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 75,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 76,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 77,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 78,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 79,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 80,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 81,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 82,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 83,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 84,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 85,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 86,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 87,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 88,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 89,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 90,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 91,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 92,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 93,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 94,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 95,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 96,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 97,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 98,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          },
+          {
+            "record": 99,
+            "constraint": "C005",
+            "error": "Unsupported operator: BETWEEN"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Conditional constraints",
+      "status": "PASS",
+      "validation": {
+        "status": "PASS",
+        "records_checked": 100,
+        "constraint_failures": []
+      }
+    },
+    {
+      "name": "Direct conflict blocking",
+      "status": "PASS",
+      "conflicts": [
+        {
+          "field": "AMOUNT",
+          "minimum": 2000.0,
+          "maximum": 1000,
+          "reason": "Minimum exceeds maximum."
+        }
+      ]
+    },
+    {
+      "name": "Cross-field conflict blocking",
+      "status": "PASS",
+      "detected": true
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Constraint validation integrity",
+      "status": "FAIL",
+      "records_checked": 100,
+      "failures": [
+        {
+          "record": 0,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 1,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 2,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 3,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 4,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 5,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 6,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 7,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 8,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 9,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 10,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 11,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 12,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 13,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 14,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 15,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 16,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 17,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 18,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 19,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 20,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 21,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 22,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 23,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 24,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 25,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 26,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 27,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 28,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 29,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 30,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 31,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 32,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 33,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 34,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 35,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 36,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 37,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 38,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 39,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 40,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 41,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 42,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 43,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 44,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 45,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 46,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 47,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 48,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 49,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 50,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 51,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 52,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 53,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 54,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 55,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 56,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 57,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 58,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 59,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 60,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 61,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 62,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 63,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 64,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 65,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 66,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 67,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 68,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 69,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 70,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 71,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 72,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 73,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 74,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 75,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 76,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 77,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 78,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 79,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 80,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 81,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 82,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 83,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 84,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 85,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 86,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 87,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 88,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 89,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 90,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 91,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 92,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 93,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 94,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 95,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 96,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 97,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 98,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        },
+        {
+          "record": 99,
+          "constraint": "C005",
+          "error": "Unsupported operator: BETWEEN"
+        }
+      ]
+    }
+  ],
+  "tests_passed": 4,
+  "tests_total": 7,
+  "architectural_conclusion": "Compatible declarative constraints can participate in generation by restricting the feasible generation region. Impossible constraints must block generation rather than produce invalid data.",
+  "important_boundary": "The experiment intentionally uses bounded constraint analysis. It does not attempt arbitrary symbolic or general-purpose constraint solving.",
+  "overall": "FAIL"
+}

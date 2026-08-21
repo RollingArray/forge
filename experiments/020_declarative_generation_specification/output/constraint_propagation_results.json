@@ -1,0 +1,92 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-K.1",
+  "purpose": "Constraint propagation and feasible generation",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Single-field bounds",
+      "status": "PASS",
+      "bounds": {
+        "AMOUNT": {
+          "minimum": 500.0,
+          "maximum": 5000.0
+        }
+      }
+    },
+    {
+      "name": "Cross-field constraints",
+      "status": "FAIL",
+      "bounds": {
+        "MIN_AMOUNT": {
+          "minimum": 500,
+          "maximum": 5000
+        },
+        "MAX_AMOUNT": {
+          "minimum": 1000,
+          "maximum": 10000
+        }
+      }
+    },
+    {
+      "name": "Chained constraints",
+      "status": "FAIL",
+      "bounds": {
+        "A": {
+          "minimum": 100,
+          "maximum": 1000
+        },
+        "B": {
+          "minimum": 200,
+          "maximum": 2000
+        },
+        "C": {
+          "minimum": 300,
+          "maximum": 3000
+        }
+      }
+    },
+    {
+      "name": "Impossible propagation",
+      "status": "PASS",
+      "conflicts": [
+        {
+          "field": "A",
+          "minimum": 9000,
+          "maximum": 5000,
+          "reason": "Propagated minimum exceeds maximum."
+        },
+        {
+          "field": "B",
+          "minimum": 9000,
+          "maximum": 5000,
+          "reason": "Propagated minimum exceeds maximum."
+        }
+      ]
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS",
+      "repair_required": false
+    }
+  ],
+  "tests_passed": 5,
+  "tests_total": 7,
+  "architecture": {
+    "constraint_propagation": true,
+    "direct_feasible_generation": true,
+    "post_generation_repair": false,
+    "bounded_constraint_solver": true
+  },
+  "overall": "FAIL"
+}

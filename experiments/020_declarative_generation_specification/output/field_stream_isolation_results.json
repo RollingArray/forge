@@ -1,0 +1,73 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-E.1",
+  "purpose": "Deterministic field stream isolation",
+  "master_seed": 42,
+  "field_streams": {
+    "FIELD_ALPHA": 8716225243679976164,
+    "FIELD_BETA": 12442231687341915875,
+    "FIELD_GAMMA": 84612352792127497,
+    "FIELD_DELTA": 6652980629696963257,
+    "FIELD_SEQUENCE": 5652390992494421946
+  },
+  "field_order_independence": {
+    "status": "PASS",
+    "records_identical": true,
+    "original_order": [
+      "FIELD_ALPHA",
+      "FIELD_BETA",
+      "FIELD_GAMMA",
+      "FIELD_DELTA",
+      "FIELD_SEQUENCE"
+    ],
+    "reordered": [
+      "FIELD_SEQUENCE",
+      "FIELD_DELTA",
+      "FIELD_GAMMA",
+      "FIELD_BETA",
+      "FIELD_ALPHA"
+    ]
+  },
+  "reproducibility": {
+    "status": "PASS",
+    "records_identical": true
+  },
+  "seed_sensitivity": {
+    "status": "PASS",
+    "random_fields": [
+      "FIELD_ALPHA",
+      "FIELD_BETA",
+      "FIELD_GAMMA",
+      "FIELD_DELTA"
+    ],
+    "changed_fields": [
+      "FIELD_ALPHA",
+      "FIELD_BETA",
+      "FIELD_GAMMA",
+      "FIELD_DELTA"
+    ]
+  },
+  "field_stream_isolation": {
+    "status": "PASS",
+    "field_seeds": {
+      "FIELD_ALPHA": 8716225243679976164,
+      "FIELD_BETA": 12442231687341915875,
+      "FIELD_GAMMA": 84612352792127497,
+      "FIELD_DELTA": 6652980629696963257,
+      "FIELD_SEQUENCE": 5652390992494421946
+    },
+    "unique_field_seeds": true
+  },
+  "field_name_sensitivity": {
+    "status": "PASS",
+    "FIELD_A_seed": 1464340946297217250,
+    "FIELD_B_seed": 5191301791479887748
+  },
+  "sequential_stability": {
+    "status": "PASS",
+    "field": "FIELD_SEQUENCE",
+    "stable": true
+  },
+  "architectural_conclusion": "Independent fields derive deterministic random streams from master seed and field identity. Field declaration order therefore does not implicitly create a generation dependency.",
+  "overall": "PASS"
+}

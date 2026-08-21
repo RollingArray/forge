@@ -1,0 +1,160 @@
+{
+  "architecture": {
+    "dependency_paths": true,
+    "deterministic": true,
+    "entity_order_independent": true,
+    "feasible_region_analysis": true,
+    "field_order_independent": true,
+    "generation_blocked_on_infeasibility": true,
+    "hidden_relaxation": false,
+    "post_generation_repair": false,
+    "pre_generation_analysis": true,
+    "source_rule_references": true,
+    "structured_conflicts": true
+  },
+  "experiment": "020_declarative_generation_specification",
+  "overall": "PASS",
+  "purpose": "Explainable specification conflict detection and diagnosis",
+  "random_seed": 42,
+  "representative_diagnosis": {
+    "conflict_count": 1,
+    "conflicts": [
+      {
+        "conflict_type": "EMPTY_FEASIBLE_REGION",
+        "dependency_path": [
+          "ORDER.ORDER_VALUE"
+        ],
+        "entity": "ORDER",
+        "feasible_region": {
+          "empty": true,
+          "maximum": 5000,
+          "minimum": 7000
+        },
+        "field": "ORDER_VALUE",
+        "message": "ORDER.ORDER_VALUE has no feasible generation region.",
+        "requirements": [
+          "FIELD_BOUND_MAX",
+          "ORDER.ORDER_VALUE >= CUSTOMER_VALUE"
+        ],
+        "resolved_context": {
+          "maximum": 5000,
+          "minimum": 7000
+        },
+        "source_rules": [
+          "FIELD_BOUND_MAX",
+          "ORDER_ABOVE_CUSTOMER"
+        ]
+      }
+    ],
+    "feasible": false,
+    "resolved_ranges": {
+      "ORDER.CUSTOMER_VALUE": {
+        "lower_sources": [
+          "FIELD_BOUND_MIN"
+        ],
+        "maximum": 10000,
+        "minimum": 7000,
+        "upper_sources": [
+          "FIELD_BOUND_MAX"
+        ]
+      },
+      "ORDER.ORDER_VALUE": {
+        "lower_sources": [
+          "ORDER_ABOVE_CUSTOMER"
+        ],
+        "maximum": 5000,
+        "minimum": 7000,
+        "upper_sources": [
+          "FIELD_BOUND_MAX"
+        ]
+      }
+    },
+    "specification": "CROSS_FIELD_CONFLICT",
+    "specification_fingerprint": "4f2987ff0c5714a84bdf0a73b2f33e196f334557cdbc5c1c70134a14e831d440"
+  },
+  "stage": "020-U",
+  "tests": [
+    {
+      "name": "Feasible specification",
+      "status": "PASS"
+    },
+    {
+      "name": "Direct field conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "Cross-field conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "Chained conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "Multiple conflict detection",
+      "status": "PASS"
+    },
+    {
+      "name": "Feasible-region explanation",
+      "status": "PASS"
+    },
+    {
+      "name": "Source-rule references",
+      "status": "PASS"
+    },
+    {
+      "name": "Dependency path",
+      "status": "PASS"
+    },
+    {
+      "name": "Deterministic diagnosis",
+      "status": "PASS"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Generation blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden relaxation",
+      "status": "PASS"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS"
+    },
+    {
+      "name": "Actionable diagnosis",
+      "status": "PASS"
+    },
+    {
+      "name": "JSON serialization",
+      "status": "PASS"
+    },
+    {
+      "name": "Unknown entity safety",
+      "status": "PASS"
+    },
+    {
+      "name": "Unknown field safety",
+      "status": "PASS"
+    },
+    {
+      "name": "No false-positive diagnosis",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 20,
+  "tests_total": 20
+}

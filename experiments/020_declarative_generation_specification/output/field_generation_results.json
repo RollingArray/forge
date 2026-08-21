@@ -1,0 +1,387 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-D",
+  "purpose": "Generic declarative field generation",
+  "seed": 42,
+  "capabilities": {
+    "types": [
+      "BOOLEAN",
+      "CATEGORICAL",
+      "CODE",
+      "CURRENCY",
+      "DATE",
+      "DATETIME",
+      "DECIMAL",
+      "ENUM",
+      "FLOAT",
+      "IDENTIFIER",
+      "INTEGER",
+      "PERCENTAGE",
+      "STRING",
+      "TIME"
+    ],
+    "strategies": [
+      "CONSTANT",
+      "NULL",
+      "RANDOM",
+      "SEQUENTIAL"
+    ],
+    "distributions": [
+      "CATEGORICAL",
+      "DISCRETE_UNIFORM",
+      "NORMAL",
+      "UNIFORM"
+    ]
+  },
+  "results": [
+    {
+      "field": "FIELD_INTEGER",
+      "type": "INTEGER",
+      "strategy": "RANDOM",
+      "distribution": "DISCRETE_UNIFORM",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        82,
+        15,
+        4,
+        95,
+        36
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_DECIMAL",
+      "type": "DECIMAL",
+      "strategy": "RANDOM",
+      "distribution": "UNIFORM",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        341.58,
+        447.17,
+        52.6,
+        216.74,
+        24.6
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_FLOAT",
+      "type": "FLOAT",
+      "strategy": "RANDOM",
+      "distribution": "NORMAL",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        89.83331418158464,
+        97.05035798702576,
+        76.87186962724358,
+        85.47169218865542,
+        127.13495181637789
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_STRING",
+      "type": "STRING",
+      "strategy": "CONSTANT",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "FORGE",
+        "FORGE",
+        "FORGE",
+        "FORGE",
+        "FORGE"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_BOOLEAN",
+      "type": "BOOLEAN",
+      "strategy": "RANDOM",
+      "distribution": "CATEGORICAL",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_DATE",
+      "type": "DATE",
+      "strategy": "CONSTANT",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "2026-01-01",
+        "2026-01-01",
+        "2026-01-01",
+        "2026-01-01",
+        "2026-01-01"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_DATETIME",
+      "type": "DATETIME",
+      "strategy": "CONSTANT",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "2026-01-01T12:00:00",
+        "2026-01-01T12:00:00",
+        "2026-01-01T12:00:00",
+        "2026-01-01T12:00:00",
+        "2026-01-01T12:00:00"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_TIME",
+      "type": "TIME",
+      "strategy": "CONSTANT",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "12:30:00",
+        "12:30:00",
+        "12:30:00",
+        "12:30:00",
+        "12:30:00"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_CATEGORY",
+      "type": "CATEGORICAL",
+      "strategy": "RANDOM",
+      "distribution": "CATEGORICAL",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "B",
+        "C",
+        "B",
+        "C",
+        "B"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_ENUM",
+      "type": "ENUM",
+      "strategy": "RANDOM",
+      "distribution": "CATEGORICAL",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "NEW",
+        "NEW",
+        "ACTIVE",
+        "ACTIVE",
+        "ACTIVE"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_CODE",
+      "type": "CODE",
+      "strategy": "SEQUENTIAL",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "C-1",
+        "C-2",
+        "C-3",
+        "C-4",
+        "C-5"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_IDENTIFIER",
+      "type": "IDENTIFIER",
+      "strategy": "SEQUENTIAL",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        "ID-1",
+        "ID-2",
+        "ID-3",
+        "ID-4",
+        "ID-5"
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_PERCENTAGE",
+      "type": "PERCENTAGE",
+      "strategy": "RANDOM",
+      "distribution": "UNIFORM",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        20.95,
+        26.7,
+        93.67,
+        64.8,
+        60.91
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_CURRENCY",
+      "type": "CURRENCY",
+      "strategy": "RANDOM",
+      "distribution": "UNIFORM",
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        6403.6,
+        5573.93,
+        6849.3,
+        8430.09,
+        7762.24
+      ],
+      "null_behavior_valid": true
+    },
+    {
+      "field": "FIELD_NULL",
+      "type": "STRING",
+      "strategy": "NULL",
+      "distribution": null,
+      "record_count": 10,
+      "generated": true,
+      "type_valid": true,
+      "constraints_valid": true,
+      "sample": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "null_behavior_valid": true
+    }
+  ],
+  "field_agnosticism": {
+    "status": "PASS",
+    "field_a": "CUSTOMER_SCORE",
+    "field_b": "ENGINE_TEMPERATURE",
+    "same_specification_behavior": true
+  },
+  "reproducibility": {
+    "status": "PASS",
+    "fields": [
+      {
+        "field": "FIELD_INTEGER",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_DECIMAL",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_FLOAT",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_STRING",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_BOOLEAN",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_DATE",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_DATETIME",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_TIME",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_CATEGORY",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_ENUM",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_CODE",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_IDENTIFIER",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_PERCENTAGE",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_CURRENCY",
+        "deterministic": true
+      },
+      {
+        "field": "FIELD_NULL",
+        "deterministic": true
+      }
+    ]
+  },
+  "summary": {
+    "fields_tested": 15,
+    "fields_passed": 15,
+    "field_generation": "PASS",
+    "field_agnosticism": "PASS",
+    "reproducibility": "PASS",
+    "overall": "PASS"
+  }
+}

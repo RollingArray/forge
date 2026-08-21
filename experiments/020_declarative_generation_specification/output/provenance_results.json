@@ -1,0 +1,109 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-T",
+  "purpose": "Declarative generation provenance and explainability",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Direct generation provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Statistical provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Constraint-conditioned provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Conditional provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Derived-field provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Relationship provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Cross-entity lineage",
+      "status": "PASS"
+    },
+    {
+      "name": "Multi-level lineage",
+      "status": "PASS"
+    },
+    {
+      "name": "Provenance completeness",
+      "status": "PASS"
+    },
+    {
+      "name": "Dataset/provenance consistency",
+      "status": "PASS"
+    },
+    {
+      "name": "Dependency integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Provenance determinism",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Provenance does not change dataset",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "Specification references",
+      "status": "PASS"
+    },
+    {
+      "name": "Mutated value detection",
+      "status": "PASS"
+    },
+    {
+      "name": "Broken reference detection",
+      "status": "PASS"
+    },
+    {
+      "name": "JSON serialization",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 20,
+  "tests_total": 20,
+  "overall": "PASS",
+  "dataset_records": 350,
+  "provenance_nodes": 1100,
+  "provenance_fingerprint": "fa1970895a7825e0c9abb60485988db3c3196b0506ca0d5c48a3af5b0a274cb5",
+  "artifacts": {
+    "dataset": "/Users/e10936535/forge/experiments/020_declarative_generation_specification/output/provenance_dataset.json",
+    "provenance": "/Users/e10936535/forge/experiments/020_declarative_generation_specification/output/provenance.json"
+  },
+  "architecture": {
+    "provenance_separate_from_dataset": true,
+    "deterministic": true,
+    "field_order_independent": true,
+    "entity_order_independent": true,
+    "dependency_lineage": true,
+    "statistical_lineage": true,
+    "derived_lineage": true,
+    "relationship_lineage": true,
+    "scenario_lineage": true
+  }
+}

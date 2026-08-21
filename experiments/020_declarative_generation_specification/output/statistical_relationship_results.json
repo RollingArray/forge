@@ -1,0 +1,89 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-P",
+  "purpose": "Declarative statistical relationship generation",
+  "seed": 42,
+  "supported_relationships": [
+    "CORRELATION",
+    "TARGET_CORRELATION"
+  ],
+  "supported_directions": [
+    "NEGATIVE",
+    "POSITIVE"
+  ],
+  "supported_methods": [
+    "PEARSON",
+    "SPEARMAN"
+  ],
+  "observed_statistics": {
+    "positive_target": 0.75,
+    "positive_observed": 0.7627378226018077,
+    "negative_target": -0.75,
+    "negative_observed": -0.7542775464548783
+  },
+  "tests": [
+    {
+      "name": "Positive Pearson correlation",
+      "status": "PASS"
+    },
+    {
+      "name": "Negative Pearson correlation",
+      "status": "PASS"
+    },
+    {
+      "name": "Spearman correlation",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent generation baseline",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Relationship direction",
+      "status": "PASS"
+    },
+    {
+      "name": "Zero correlation",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid target blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid method blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Unknown field blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "Correlation validation integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "Target sensitivity",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 15,
+  "tests_total": 15,
+  "overall": "PASS"
+}

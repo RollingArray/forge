@@ -1,0 +1,84 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-R",
+  "purpose": "Declarative constraint and statistical integration",
+  "seed": 42,
+  "capabilities": {
+    "statistical_relationships": 2,
+    "constraints": 2,
+    "conditionals": 1,
+    "derived_fields": 1
+  },
+  "tests": [
+    {
+      "name": "Complete generation",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Statistical relationships",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Field constraints",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Conditional rules",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Derived fields",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Dependency planning",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Impossible specification blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No hidden fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Configuration safety",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    },
+    {
+      "name": "Combined integrity",
+      "status": "FAIL",
+      "error": "ValueError: Derived field already exists: NET_VALUE"
+    }
+  ],
+  "tests_passed": 3,
+  "tests_total": 14,
+  "overall": "FAIL"
+}

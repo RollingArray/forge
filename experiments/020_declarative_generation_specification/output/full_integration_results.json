@@ -1,0 +1,301 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-N",
+  "purpose": "Full declarative generation integration",
+  "seed": 42,
+  "entities": [
+    "CUSTOMER",
+    "CUSTOMER_PROFILE",
+    "PRODUCT",
+    "ORDER",
+    "ORDER_ITEM",
+    "SHIPMENT"
+  ],
+  "relationships": [
+    {
+      "name": "CUSTOMER_PROFILE",
+      "parent": "CUSTOMER",
+      "child": "CUSTOMER_PROFILE",
+      "cardinality": "1:1",
+      "parent_key": [
+        "CUSTOMER_ID"
+      ],
+      "child_key": [
+        "CUSTOMER_ID"
+      ],
+      "required": true
+    },
+    {
+      "name": "CUSTOMER_ORDERS",
+      "parent": "CUSTOMER",
+      "child": "ORDER",
+      "cardinality": "1:N",
+      "parent_key": [
+        "CUSTOMER_ID"
+      ],
+      "child_key": [
+        "CUSTOMER_ID"
+      ],
+      "required": true
+    },
+    {
+      "name": "ORDER_ITEMS",
+      "parent": "ORDER",
+      "child": "ORDER_ITEM",
+      "cardinality": "1:N",
+      "parent_key": [
+        "ORDER_ID"
+      ],
+      "child_key": [
+        "ORDER_ID"
+      ],
+      "required": true
+    },
+    {
+      "name": "PRODUCT_ORDER_ITEMS",
+      "parent": "PRODUCT",
+      "child": "ORDER_ITEM",
+      "cardinality": "1:N",
+      "parent_key": [
+        "PRODUCT_ID"
+      ],
+      "child_key": [
+        "PRODUCT_ID"
+      ],
+      "required": true
+    },
+    {
+      "name": "ORDER_SHIPMENTS",
+      "parent": "ORDER",
+      "child": "SHIPMENT",
+      "cardinality": "0:N",
+      "parent_key": [
+        "ORDER_ID"
+      ],
+      "child_key": [
+        "ORDER_ID"
+      ],
+      "required": false
+    }
+  ],
+  "tests": [
+    {
+      "name": "Complete generation",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "status": "PASS",
+      "entity_order": [
+        "CUSTOMER",
+        "CUSTOMER_PROFILE",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM",
+        "SHIPMENT"
+      ],
+      "field_orders": {
+        "CUSTOMER": [
+          "COUNTRY",
+          "CUSTOMER_ID",
+          "CUSTOMER_TYPE",
+          "CREDIT_LIMIT",
+          "IS_ACTIVE"
+        ],
+        "CUSTOMER_PROFILE": [
+          "CUSTOMER_ID",
+          "PREFERRED_LANGUAGE",
+          "PROFILE_STATUS"
+        ],
+        "PRODUCT": [
+          "PRODUCT_CODE",
+          "PRODUCT_ID",
+          "PRODUCT_TYPE",
+          "UNIT_PRICE"
+        ],
+        "ORDER": [
+          "CUSTOMER_ID",
+          "DISCOUNT",
+          "ORDER_DATE",
+          "ORDER_ID",
+          "QUANTITY",
+          "UNIT_PRICE",
+          "SUBTOTAL",
+          "NET_AMOUNT",
+          "IS_PRIORITY"
+        ],
+        "ORDER_ITEM": [
+          "LINE_NUMBER",
+          "ORDER_ID",
+          "PRODUCT_ID",
+          "QUANTITY",
+          "UNIT_PRICE",
+          "LINE_AMOUNT"
+        ],
+        "SHIPMENT": [
+          "CARRIER_CODE",
+          "DELIVERY_DAYS",
+          "DELIVERY_DATE",
+          "ORDER_ID",
+          "SHIPMENT_ID",
+          "SHIPPING_COST"
+        ]
+      },
+      "name": "Generation planning"
+    },
+    {
+      "name": "Dataset structure",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Primary key validation",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Relationship integrity",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Composite key validation",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Derived field validation",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Constraint validation",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Statistical behavior",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    },
+    {
+      "status": "PASS",
+      "assessment": {
+        "status": "PASS",
+        "requested": {
+          "types": [
+            "BOOLEAN",
+            "CATEGORICAL",
+            "CODE",
+            "CURRENCY",
+            "DATE",
+            "DECIMAL",
+            "IDENTIFIER",
+            "INTEGER",
+            "STRING"
+          ],
+          "strategies": [
+            "CONDITIONAL",
+            "CONSTANT",
+            "DERIVED",
+            "FORMULA",
+            "NULL",
+            "RANDOM",
+            "SEQUENTIAL"
+          ],
+          "distributions": [
+            "CATEGORICAL",
+            "DISCRETE_UNIFORM",
+            "NORMAL",
+            "POISSON",
+            "UNIFORM"
+          ],
+          "deferred": [
+            "BETA",
+            "EMPIRICAL",
+            "GAMMA",
+            "LOGNORMAL",
+            "LOOKUP",
+            "MIXTURE",
+            "REFERENCE",
+            "TRUNCATED",
+            "WEIBULL"
+          ]
+        },
+        "deferred_capabilities": [
+          "BETA",
+          "EMPIRICAL",
+          "GAMMA",
+          "LOGNORMAL",
+          "LOOKUP",
+          "MIXTURE",
+          "REFERENCE",
+          "TRUNCATED",
+          "WEIBULL"
+        ]
+      },
+      "name": "Capability assessment"
+    },
+    {
+      "status": "PASS",
+      "capabilities": [
+        "LOOKUP",
+        "REFERENCE",
+        "BETA",
+        "EMPIRICAL"
+      ],
+      "behavior": "DEFERRED",
+      "name": "Deferred capability safety"
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "FAIL",
+      "error": "ValueError: Strategy 'RANDOM' cannot be independently generated for field ORDER_DATE"
+    }
+  ],
+  "tests_passed": 3,
+  "tests_total": 16,
+  "sample_dataset": {},
+  "architecture": {
+    "declarative_specification": true,
+    "vocabulary_validation": true,
+    "capability_assessment": true,
+    "dependency_planning": true,
+    "field_generation": true,
+    "statistical_generation": true,
+    "derived_generation": true,
+    "conditional_generation": true,
+    "identity_generation": true,
+    "relationship_resolution": true,
+    "constraint_validation": true,
+    "statistical_validation": true,
+    "deterministic_streams": true,
+    "entity_order_independence": true,
+    "field_order_independence": true,
+    "safe_deferred_capabilities": true,
+    "post_generation_repair": false
+  },
+  "architectural_conclusion": "The FORGE declarative model can combine field generation, statistical behavior, derived expressions, conditional rules, identity, relationships, dependencies, constraints, deterministic streams, and validation within one executable generation pipeline.",
+  "framework_readiness": "Framework extraction should wait until the failed integration capabilities are resolved.",
+  "overall": "FAIL"
+}

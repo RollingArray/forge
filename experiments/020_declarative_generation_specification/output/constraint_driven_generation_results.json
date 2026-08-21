@@ -1,0 +1,115 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-K.2",
+  "purpose": "Constraint-driven generation planning",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Simple dependency planning",
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "order": [
+          "A",
+          "B"
+        ],
+        "steps": [
+          {
+            "field": "A",
+            "dependencies": [],
+            "minimum": 100,
+            "maximum": 1000,
+            "strategy": "INDEPENDENT"
+          },
+          {
+            "field": "B",
+            "dependencies": [
+              "A"
+            ],
+            "minimum": 200,
+            "maximum": 2000,
+            "strategy": "CONTEXT_AWARE"
+          }
+        ],
+        "edges": {
+          "A": [
+            "B"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Simple constraint generation",
+      "status": "PASS",
+      "validation": {
+        "status": "PASS",
+        "records_checked": 100,
+        "failures": []
+      }
+    },
+    {
+      "name": "Chained dependency generation",
+      "status": "PASS",
+      "order": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "name": "Strict ordering generation",
+      "status": "PASS",
+      "validation": {
+        "status": "PASS",
+        "records_checked": 100,
+        "failures": []
+      }
+    },
+    {
+      "name": "Cycle blocking",
+      "status": "PASS",
+      "reason": "Generation dependency graph is invalid or cyclic."
+    },
+    {
+      "name": "Impossible generation blocking",
+      "status": "PASS",
+      "reason": "No feasible generation range for B"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS",
+      "identical": true
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS",
+      "different": true
+    },
+    {
+      "name": "No post-generation repair",
+      "status": "PASS",
+      "generation_order": [
+        "A",
+        "B",
+        "C"
+      ]
+    }
+  ],
+  "tests_passed": 10,
+  "tests_total": 10,
+  "architecture": {
+    "constraint_graph": true,
+    "generation_planning": true,
+    "context_aware_generation": true,
+    "post_generation_repair": false,
+    "bounded_ordering_constraints": true
+  },
+  "architectural_conclusion": "Cross-field declarative constraints can be represented as generation dependencies. Dependent fields can then be generated directly from the already-generated context.",
+  "boundary": "The experiment intentionally supports bounded numeric ordering constraints and does not attempt arbitrary constraint solving.",
+  "overall": "PASS"
+}

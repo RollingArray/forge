@@ -1,0 +1,189 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-J",
+  "purpose": "End-to-end declarative generation",
+  "seed": 42,
+  "tests": {
+    "complete_generation": {
+      "status": "PASS",
+      "execution_order": [
+        "CUSTOMER",
+        "CUSTOMER_PROFILE",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM",
+        "SHIPMENT"
+      ],
+      "validation": {
+        "status": "PASS",
+        "entities": {
+          "CUSTOMER": {
+            "record_count": 20,
+            "expected_record_count": 20,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          },
+          "CUSTOMER_PROFILE": {
+            "record_count": 20,
+            "expected_record_count": 20,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          },
+          "PRODUCT": {
+            "record_count": 10,
+            "expected_record_count": 10,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          },
+          "ORDER": {
+            "record_count": 100,
+            "expected_record_count": 100,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          },
+          "ORDER_ITEM": {
+            "record_count": 200,
+            "expected_record_count": 200,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          },
+          "SHIPMENT": {
+            "record_count": 80,
+            "expected_record_count": 80,
+            "structure_valid": true,
+            "fields_valid": true,
+            "status": "PASS"
+          }
+        }
+      }
+    },
+    "relationships": {
+      "status": "PASS",
+      "relationships": [
+        {
+          "status": "PASS",
+          "relationship": "CUSTOMER_PROFILE",
+          "parent_count": 20,
+          "child_count": 20,
+          "null_references": 0,
+          "invalid_references": 0
+        },
+        {
+          "status": "PASS",
+          "relationship": "CUSTOMER_ORDER",
+          "parent_count": 20,
+          "child_count": 100,
+          "null_references": 0,
+          "invalid_references": 0
+        },
+        {
+          "status": "PASS",
+          "relationship": "ORDER_ORDER_ITEM",
+          "parent_count": 100,
+          "child_count": 200,
+          "null_references": 0,
+          "invalid_references": 0
+        },
+        {
+          "status": "PASS",
+          "relationship": "PRODUCT_ORDER_ITEM",
+          "parent_count": 10,
+          "child_count": 200,
+          "null_references": 0,
+          "invalid_references": 0
+        },
+        {
+          "status": "PASS",
+          "relationship": "ORDER_SHIPMENT",
+          "parent_count": 100,
+          "child_count": 80,
+          "null_references": 0,
+          "invalid_references": 0
+        }
+      ]
+    },
+    "entity_order_independence": {
+      "status": "PASS",
+      "execution_order_a": [
+        "CUSTOMER",
+        "CUSTOMER_PROFILE",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM",
+        "SHIPMENT"
+      ],
+      "execution_order_b": [
+        "CUSTOMER",
+        "CUSTOMER_PROFILE",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM",
+        "SHIPMENT"
+      ]
+    },
+    "reproducibility": {
+      "status": "PASS",
+      "identical": true
+    },
+    "seed_sensitivity": {
+      "status": "PASS",
+      "different_seed_changes_data": true
+    },
+    "safe_capability_blocking": {
+      "status": "PASS",
+      "execution_blocked": true,
+      "deferred_capabilities": [
+        {
+          "entity": "CUSTOMER",
+          "field": "DERIVED_VALUE",
+          "kind": "strategy",
+          "value": "DERIVED"
+        }
+      ]
+    },
+    "entity_agnostic_execution": {
+      "status": "PASS",
+      "entities": [
+        "ALPHA",
+        "BETA"
+      ]
+    },
+    "final_dataset_quality": {
+      "status": "PASS",
+      "entity_counts": {
+        "CUSTOMER": 20,
+        "CUSTOMER_PROFILE": 20,
+        "ORDER": 100,
+        "PRODUCT": 10,
+        "ORDER_ITEM": 200,
+        "SHIPMENT": 80
+      }
+    }
+  },
+  "tests_passed": 8,
+  "tests_total": 8,
+  "execution_order": [
+    "CUSTOMER",
+    "CUSTOMER_PROFILE",
+    "ORDER",
+    "PRODUCT",
+    "ORDER_ITEM",
+    "SHIPMENT"
+  ],
+  "dataset_counts": {
+    "CUSTOMER": 20,
+    "CUSTOMER_PROFILE": 20,
+    "ORDER": 100,
+    "PRODUCT": 10,
+    "ORDER_ITEM": 200,
+    "SHIPMENT": 80
+  },
+  "architectural_conclusion": "The foundational FORGE capabilities established in 020-A through 020-I can be composed into a generic declarative execution pipeline. The runtime validates capabilities before execution, derives generation order from relationships, generates fields and identities, resolves references, and validates the resulting dataset.",
+  "important_boundary": "This experiment does not implement statistical correlation, advanced constraints, scenarios, provenance, or LLM specification translation.",
+  "overall": "PASS"
+}

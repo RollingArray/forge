@@ -1,0 +1,134 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-N.1",
+  "purpose": "Cross-entity context resolution",
+  "seed": 42,
+  "tests": [
+    {
+      "name": "Local field reference",
+      "status": "PASS"
+    },
+    {
+      "name": "Direct parent reference",
+      "status": "PASS"
+    },
+    {
+      "name": "Cross-entity derived value",
+      "status": "PASS"
+    },
+    {
+      "name": "Multi-level context",
+      "status": "PASS"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Unknown field blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Missing relationship blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Ambiguous relationship blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "No fallback generation",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 12,
+  "tests_total": 12,
+  "context_model": {
+    "local_reference": true,
+    "qualified_reference": true,
+    "parent_resolution": true,
+    "multi_level_context": true,
+    "explicit_relationship_path": true,
+    "ambiguous_reference_blocking": true,
+    "missing_context_blocking": true,
+    "unknown_field_blocking": true,
+    "fallback_generation": false
+  },
+  "example": {
+    "target": "SHIPMENT.DELIVERY_DATE",
+    "expression": "ORDER.ORDER_DATE + SHIPMENT.DELIVERY_DAYS"
+  },
+  "representative_dataset": {
+    "CUSTOMER": [
+      {
+        "CUSTOMER_ID": "CUS-1",
+        "CUSTOMER_TYPE": "PREMIUM"
+      },
+      {
+        "CUSTOMER_ID": "CUS-2",
+        "CUSTOMER_TYPE": "PREMIUM"
+      },
+      {
+        "CUSTOMER_ID": "CUS-3",
+        "CUSTOMER_TYPE": "PREMIUM"
+      }
+    ],
+    "ORDER": [
+      {
+        "ORDER_ID": "ORD-1",
+        "CUSTOMER_ID": "CUS-3",
+        "ORDER_DATE": "2026-06-20",
+        "ORDER_VALUE": 7685.02
+      },
+      {
+        "ORDER_ID": "ORD-2",
+        "CUSTOMER_ID": "CUS-3",
+        "ORDER_DATE": "2026-06-20",
+        "ORDER_VALUE": 7685.02
+      },
+      {
+        "ORDER_ID": "ORD-3",
+        "CUSTOMER_ID": "CUS-3",
+        "ORDER_DATE": "2026-06-20",
+        "ORDER_VALUE": 7685.02
+      }
+    ],
+    "SHIPMENT": [
+      {
+        "SHIPMENT_ID": "SHP-1",
+        "ORDER_ID": "ORD-2",
+        "DELIVERY_DAYS": 10,
+        "DELIVERY_DATE": "2026-06-30",
+        "ORDER_VALUE_COPY": 7685.02
+      },
+      {
+        "SHIPMENT_ID": "SHP-2",
+        "ORDER_ID": "ORD-2",
+        "DELIVERY_DAYS": 10,
+        "DELIVERY_DATE": "2026-06-30",
+        "ORDER_VALUE_COPY": 7685.02
+      },
+      {
+        "SHIPMENT_ID": "SHP-3",
+        "ORDER_ID": "ORD-2",
+        "DELIVERY_DAYS": 10,
+        "DELIVERY_DATE": "2026-06-30",
+        "ORDER_VALUE_COPY": 7685.02
+      }
+    ]
+  },
+  "architectural_conclusion": "FORGE can resolve declarative cross-entity references through explicit relationship context without implicit fallback or guessing.",
+  "overall": "PASS"
+}

@@ -1,0 +1,191 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-H",
+  "purpose": "Declarative relationships and reference resolution",
+  "random_seed": 42,
+  "relationship_cardinalities": [
+    "0:1",
+    "0:N",
+    "1:1",
+    "1:N",
+    "N:M"
+  ],
+  "relationship_semantics": [
+    "ASSOCIATIVE",
+    "CHILD",
+    "DEPENDENT",
+    "OPTIONAL",
+    "PARENT",
+    "REQUIRED"
+  ],
+  "results": {
+    "one_to_one": {
+      "relationship": "R-1-1",
+      "status": "PASS",
+      "parent_count": 100,
+      "child_count": 100,
+      "distinct_parent_references": 100,
+      "null_references": 0,
+      "invalid_references": [],
+      "referential_integrity": true,
+      "cardinality_valid": true,
+      "nullability_valid": true,
+      "required_parent_coverage": true,
+      "duplicate_parent_assignments": 0
+    },
+    "zero_to_one": {
+      "relationship": "R-0-1",
+      "status": "PASS",
+      "parent_count": 100,
+      "child_count": 150,
+      "distinct_parent_references": 100,
+      "null_references": 50,
+      "invalid_references": [],
+      "referential_integrity": true,
+      "cardinality_valid": true,
+      "nullability_valid": true,
+      "required_parent_coverage": true,
+      "duplicate_parent_assignments": 0
+    },
+    "one_to_many": {
+      "relationship": "R-1-N",
+      "status": "PASS",
+      "parent_count": 100,
+      "child_count": 1000,
+      "distinct_parent_references": 100,
+      "null_references": 0,
+      "invalid_references": [],
+      "referential_integrity": true,
+      "cardinality_valid": true,
+      "nullability_valid": true,
+      "required_parent_coverage": true,
+      "duplicate_parent_assignments": 0
+    },
+    "zero_to_many": {
+      "relationship": "R-0-N",
+      "status": "PASS",
+      "parent_count": 100,
+      "child_count": 50,
+      "distinct_parent_references": 50,
+      "null_references": 0,
+      "invalid_references": [],
+      "referential_integrity": true,
+      "cardinality_valid": true,
+      "nullability_valid": true,
+      "required_parent_coverage": true,
+      "duplicate_parent_assignments": 0
+    },
+    "required_optional": {
+      "status": "PASS",
+      "required": {
+        "relationship": "REQUIRED",
+        "status": "PASS",
+        "parent_count": 10,
+        "child_count": 10,
+        "distinct_parent_references": 10,
+        "null_references": 0,
+        "invalid_references": [],
+        "referential_integrity": true,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      },
+      "optional": {
+        "relationship": "OPTIONAL",
+        "status": "PASS",
+        "parent_count": 10,
+        "child_count": 10,
+        "distinct_parent_references": 10,
+        "null_references": 0,
+        "invalid_references": [],
+        "referential_integrity": true,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      }
+    },
+    "referential_integrity": {
+      "status": "PASS",
+      "valid_case": {
+        "relationship": "R-INTEGRITY",
+        "status": "PASS",
+        "parent_count": 10,
+        "child_count": 10,
+        "distinct_parent_references": 10,
+        "null_references": 0,
+        "invalid_references": [],
+        "referential_integrity": true,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      },
+      "invalid_case": {
+        "relationship": "R-INTEGRITY",
+        "status": "FAIL",
+        "parent_count": 10,
+        "child_count": 10,
+        "distinct_parent_references": 10,
+        "null_references": 0,
+        "invalid_references": [
+          "NON_EXISTENT_PARENT"
+        ],
+        "referential_integrity": false,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      }
+    },
+    "many_to_many": {
+      "status": "PASS",
+      "order_relationship": {
+        "relationship": "R-ORDER-ITEM",
+        "status": "PASS",
+        "parent_count": 20,
+        "child_count": 60,
+        "distinct_parent_references": 20,
+        "null_references": 0,
+        "invalid_references": [],
+        "referential_integrity": true,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      },
+      "product_relationship": {
+        "relationship": "R-PRODUCT-ITEM",
+        "status": "PASS",
+        "parent_count": 10,
+        "child_count": 60,
+        "distinct_parent_references": 10,
+        "null_references": 0,
+        "invalid_references": [],
+        "referential_integrity": true,
+        "cardinality_valid": true,
+        "nullability_valid": true,
+        "required_parent_coverage": true,
+        "duplicate_parent_assignments": 0
+      },
+      "associative_records": 60,
+      "unique_combinations": 60
+    },
+    "determinism": {
+      "status": "PASS",
+      "identical": true
+    },
+    "entity_order_independence": {
+      "status": "PASS",
+      "identical": true
+    },
+    "invalid_configuration": {
+      "status": "PASS",
+      "unexpected_acceptances": []
+    }
+  },
+  "architectural_conclusion": "Relationships are represented declaratively and resolved against actual generated parent identities. Foreign keys therefore become valid references rather than merely generated values. N:M relationships are represented through associative entities. Relationship resolution is independent of entity declaration order and deterministic under a fixed seed.",
+  "important_boundary": "Arbitrary field dependencies and dependency graph execution remain deferred to Experiment 020-I.",
+  "overall": "PASS"
+}

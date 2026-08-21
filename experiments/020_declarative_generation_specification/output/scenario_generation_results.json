@@ -1,0 +1,99 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-O",
+  "purpose": "Declarative scenario generation",
+  "seed": 42,
+  "scenarios": [
+    "NORMAL",
+    "PREMIUM_HEAVY",
+    "STRESS"
+  ],
+  "tests": [
+    {
+      "name": "Base scenario",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario parameter behavior",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario distribution override",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario parameter override",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario constraint",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario isolation",
+      "status": "PASS"
+    },
+    {
+      "name": "Reproducibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Seed sensitivity",
+      "status": "PASS"
+    },
+    {
+      "name": "Entity-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Field-order independence",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid scenario blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid distribution blocking",
+      "status": "PASS"
+    },
+    {
+      "name": "Base specification immutability",
+      "status": "PASS"
+    },
+    {
+      "name": "Scenario parameter validation",
+      "status": "PASS"
+    }
+  ],
+  "tests_passed": 14,
+  "tests_total": 14,
+  "scenario_summaries": {
+    "NORMAL": {
+      "customer_count": 100,
+      "premium_count": 20,
+      "premium_rate": 0.2,
+      "order_count": 200,
+      "orders_at_or_above_3000": 200,
+      "orders_at_or_above_3000_rate": 1.0
+    },
+    "PREMIUM_HEAVY": {
+      "customer_count": 100,
+      "premium_count": 60,
+      "premium_rate": 0.6,
+      "order_count": 200,
+      "orders_at_or_above_3000": 200,
+      "orders_at_or_above_3000_rate": 1.0
+    },
+    "STRESS": {
+      "customer_count": 100,
+      "premium_count": 50,
+      "premium_rate": 0.5,
+      "order_count": 200,
+      "orders_at_or_above_3000": 200,
+      "orders_at_or_above_3000_rate": 1.0
+    }
+  },
+  "architectural_conclusion": "FORGE can generate controlled scenario-specific datasets from a shared declarative specification.",
+  "overall": "PASS"
+}

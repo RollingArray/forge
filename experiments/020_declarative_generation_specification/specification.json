@@ -1,0 +1,2137 @@
+{
+  "specification": {
+    "name": "FORGE Experiment 020 - Declarative Generation Specification",
+    "version": "1.0.0",
+    "experiment": "020_declarative_generation_specification",
+    "description": "Domain-neutral declarative specification exercising the FORGE Controlled Vocabulary v1 across a composed relational dataset.",
+    "domain": "generic",
+    "strict_vocabulary": true
+  },
+
+  "generation_control": {
+    "seed": 42,
+    "random_state": 42,
+    "random_stream": "FORGE-020",
+    "deterministic": true,
+    "record_order": "stable",
+    "priority": "dependency_first"
+  },
+
+  "vocabulary": {
+    "version": "1.0",
+    "strict": true,
+
+    "type_system": [
+      "INTEGER",
+      "DECIMAL",
+      "FLOAT",
+      "STRING",
+      "BOOLEAN",
+      "DATE",
+      "DATETIME",
+      "TIME",
+      "CATEGORICAL",
+      "ENUM",
+      "IDENTIFIER",
+      "CODE",
+      "PERCENTAGE",
+      "CURRENCY"
+    ],
+
+    "generation_strategies": [
+      "CONSTANT",
+      "SEQUENTIAL",
+      "RANDOM",
+      "SAMPLE",
+      "REFERENCE",
+      "LOOKUP",
+      "CONDITIONAL",
+      "DERIVED",
+      "FORMULA",
+      "TRANSFORM",
+      "COPY",
+      "NULL"
+    ],
+
+    "distributions": [
+      "UNIFORM",
+      "NORMAL",
+      "LOGNORMAL",
+      "EXPONENTIAL",
+      "GAMMA",
+      "BETA",
+      "WEIBULL",
+      "TRIANGULAR",
+      "DISCRETE_UNIFORM",
+      "BINOMIAL",
+      "POISSON",
+      "CATEGORICAL",
+      "EMPIRICAL",
+      "TRUNCATED",
+      "MIXTURE"
+    ],
+
+    "identity": [
+      "PRIMARY_KEY",
+      "FOREIGN_KEY",
+      "COMPOSITE_KEY",
+      "NATURAL_KEY",
+      "SURROGATE_KEY",
+      "UNIQUE",
+      "STABLE",
+      "SEQUENTIAL_ID",
+      "UUID",
+      "COMPOSITE_ID"
+    ],
+
+    "relationships": [
+      "1:1",
+      "0:1",
+      "1:N",
+      "0:N",
+      "N:M",
+      "PARENT",
+      "CHILD",
+      "ASSOCIATIVE",
+      "REQUIRED",
+      "OPTIONAL",
+      "DEPENDENT"
+    ],
+
+    "dependencies": [
+      "FIELD_DEPENDENCY",
+      "CONDITIONAL_DEPENDENCY",
+      "PARENT_DEPENDENCY",
+      "CHILD_DEPENDENCY",
+      "SEQUENTIAL_DEPENDENCY",
+      "TEMPORAL_DEPENDENCY",
+      "STATISTICAL_DEPENDENCY"
+    ],
+
+    "rules": [
+      "EQUALS",
+      "NOT_EQUALS",
+      "GREATER_THAN",
+      "LESS_THAN",
+      "GREATER_OR_EQUAL",
+      "LESS_OR_EQUAL",
+      "BETWEEN",
+      "IN",
+      "NOT_IN",
+      "IS_NULL",
+      "IS_NOT_NULL",
+      "AND",
+      "OR",
+      "NOT",
+      "XOR",
+      "IMPLIES",
+      "IF",
+      "THEN",
+      "ELSE",
+      "ADD",
+      "SUBTRACT",
+      "MULTIPLY",
+      "DIVIDE",
+      "MODULO",
+      "ABS",
+      "MIN",
+      "MAX",
+      "ROUND",
+      "FLOOR",
+      "CEILING",
+      "CONCAT",
+      "LENGTH",
+      "CONTAINS",
+      "STARTS_WITH",
+      "ENDS_WITH",
+      "MATCH",
+      "UPPER",
+      "LOWER",
+      "TRIM",
+      "REPLACE",
+      "DATE_ADD",
+      "DATE_SUBTRACT",
+      "DATE_DIFF",
+      "REFERENCE",
+      "LOOKUP",
+      "SAMPLE",
+      "DERIVE"
+    ],
+
+    "population_nullability": [
+      "POPULATION_RATE",
+      "POPULATION_COUNT",
+      "ALWAYS",
+      "NEVER",
+      "OPTIONAL",
+      "NULLABLE",
+      "NOT_NULL"
+    ],
+
+    "scenarios": [
+      "SCENARIO",
+      "SCENARIO_PARAMETER",
+      "SCENARIO_OVERRIDE",
+      "SCENARIO_CONSTRAINT",
+      "SCENARIO_DISTRIBUTION"
+    ],
+
+    "statistical_behavior": [
+      "CORRELATION",
+      "TARGET_CORRELATION",
+      "POSITIVE",
+      "NEGATIVE",
+      "PEARSON",
+      "SPEARMAN"
+    ],
+
+    "validation_evidence": [
+      "VALIDATION",
+      "PROVENANCE",
+      "REPRODUCIBILITY",
+      "EVIDENCE_ID",
+      "STRUCTURAL_VALID",
+      "CONSTRAINT_VALID",
+      "RELATIONSHIP_VALID",
+      "DEPENDENCY_VALID",
+      "DISTRIBUTION_VALID",
+      "STATISTICAL_VALID",
+      "PROVENANCE_VALID"
+    ]
+  },
+
+  "entities": [
+    {
+      "name": "CUSTOMER",
+      "population": {
+        "strategy": "POPULATION_COUNT",
+        "count": 100
+      },
+
+      "identity": {
+        "type": "PRIMARY_KEY",
+        "strategy": "SURROGATE_KEY",
+        "field": "CUSTOMER_ID",
+        "generation": {
+          "strategy": "SEQUENTIAL",
+          "semantic": "IDENTIFIER",
+          "format": "CUS{sequence:07d}",
+          "stable": true
+        }
+      },
+
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "PRIMARY_KEY",
+            "SURROGATE_KEY",
+            "SEQUENTIAL_ID",
+            "STABLE",
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "prefix": "CUS",
+              "start": 1,
+              "padding": 7
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CUSTOMER_CODE",
+          "type": "STRING",
+          "semantic": "CODE",
+          "identity": [
+            "NATURAL_KEY",
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "TRANSFORM",
+            "source": "CUSTOMER_ID",
+            "operation": "CONCAT",
+            "parameters": {
+              "prefix": "CUST-"
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CUSTOMER_TYPE",
+          "type": "STRING",
+          "semantic": "ENUM",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "STANDARD",
+                  "PREMIUM"
+                ],
+                "weights": [
+                  0.75,
+                  0.25
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "COUNTRY",
+          "type": "STRING",
+          "semantic": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "US",
+                  "IN",
+                  "DE",
+                  "FR"
+                ],
+                "weights": [
+                  0.50,
+                  0.30,
+                  0.15,
+                  0.05
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CREDIT_LIMIT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "CONDITIONAL",
+            "condition": {
+              "operator": "EQUALS",
+              "left": {
+                "field": "CUSTOMER_TYPE"
+              },
+              "right": "PREMIUM"
+            },
+            "then": {
+              "strategy": "RANDOM",
+              "distribution": {
+                "type": "TRUNCATED",
+                "parameters": {
+                  "distribution": "NORMAL",
+                  "mean": 15000,
+                  "stddev": 3000,
+                  "min": 5000,
+                  "max": 25000
+                }
+              }
+            },
+            "else": {
+              "strategy": "RANDOM",
+              "distribution": {
+                "type": "TRUNCATED",
+                "parameters": {
+                  "distribution": "NORMAL",
+                  "mean": 5000,
+                  "stddev": 1200,
+                  "min": 1000,
+                  "max": 10000
+                }
+              }
+            }
+          },
+          "dependencies": [
+            {
+              "type": "CONDITIONAL_DEPENDENCY",
+              "source": "CUSTOMER_TYPE"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CUSTOMER_SCORE",
+          "type": "FLOAT",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "BETA",
+              "parameters": {
+                "alpha": 5,
+                "beta": 2,
+                "scale": 100
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "IS_ACTIVE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "BINOMIAL",
+              "parameters": {
+                "n": 1,
+                "p": 0.92
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "EMAIL",
+          "type": "STRING",
+          "generation": {
+            "strategy": "TRANSFORM",
+            "source": "CUSTOMER_ID",
+            "operation": "CONCAT",
+            "parameters": {
+              "prefix": "customer.",
+              "suffix": "@example.com"
+            }
+          },
+          "population": {
+            "strategy": "POPULATION_RATE",
+            "rate": 0.80
+          },
+          "nullability": "NULLABLE"
+        },
+
+        {
+          "name": "CREATED_DATE",
+          "type": "DATE",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "UNIFORM",
+              "parameters": {
+                "min": "2023-01-01",
+                "max": "2025-12-31"
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        }
+      ]
+    },
+
+    {
+      "name": "CUSTOMER_PROFILE",
+      "population": {
+        "strategy": "REFERENCE",
+        "source": "CUSTOMER",
+        "cardinality": "1:1"
+      },
+
+      "identity": {
+        "type": "PRIMARY_KEY",
+        "field": "CUSTOMER_ID"
+      },
+
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "PRIMARY_KEY",
+            "FOREIGN_KEY"
+          ],
+          "generation": {
+            "strategy": "REFERENCE",
+            "reference": {
+              "entity": "CUSTOMER",
+              "field": "CUSTOMER_ID"
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PROFILE_STATUS",
+          "type": "STRING",
+          "semantic": "ENUM",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "ACTIVE",
+                  "INACTIVE"
+                ],
+                "weights": [
+                  0.90,
+                  0.10
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PHONE_CODE",
+          "type": "STRING",
+          "semantic": "CODE",
+          "generation": {
+            "strategy": "TRANSFORM",
+            "source": "CUSTOMER_ID",
+            "operation": "CONCAT",
+            "parameters": {
+              "prefix": "+1-800-"
+            }
+          },
+          "nullability": "NULLABLE",
+          "population": {
+            "strategy": "POPULATION_RATE",
+            "rate": 0.90
+          }
+        },
+
+        {
+          "name": "PREFERRED_LANGUAGE",
+          "type": "STRING",
+          "semantic": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "EN",
+                  "DE",
+                  "FR",
+                  "HI"
+                ],
+                "weights": [
+                  0.60,
+                  0.15,
+                  0.10,
+                  0.15
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PROFILE_CREATED_DATE",
+          "type": "DATE",
+          "generation": {
+            "strategy": "DERIVED",
+            "expression": {
+              "operator": "DATE_ADD",
+              "arguments": [
+                {
+                  "field": "CUSTOMER.CREATED_DATE"
+                },
+                {
+                  "value": 1,
+                  "unit": "DAY"
+                }
+              ]
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "CUSTOMER.CREATED_DATE"
+            },
+            {
+              "type": "TEMPORAL_DEPENDENCY",
+              "source": "CUSTOMER.CREATED_DATE"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        }
+      ]
+    },
+
+    {
+      "name": "PRODUCT",
+      "population": {
+        "strategy": "POPULATION_COUNT",
+        "count": 50
+      },
+
+      "identity": {
+        "type": "PRIMARY_KEY",
+        "strategy": "SURROGATE_KEY",
+        "field": "PRODUCT_ID"
+      },
+
+      "keys": [
+        {
+          "type": "PRIMARY_KEY",
+          "fields": [
+            "PRODUCT_ID"
+          ]
+        },
+        {
+          "type": "NATURAL_KEY",
+          "fields": [
+            "PRODUCT_CODE",
+            "PRODUCT_VERSION"
+          ]
+        },
+        {
+          "type": "UNIQUE",
+          "fields": [
+            "PRODUCT_CODE",
+            "PRODUCT_VERSION"
+          ]
+        }
+      ],
+
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "PRIMARY_KEY",
+            "SURROGATE_KEY",
+            "SEQUENTIAL_ID",
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "prefix": "PRD",
+              "start": 1,
+              "padding": 7
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PRODUCT_CODE",
+          "type": "STRING",
+          "semantic": "CODE",
+          "identity": [
+            "NATURAL_KEY"
+          ],
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "prefix": "PROD-",
+              "start": 1,
+              "padding": 5
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PRODUCT_VERSION",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "CONSTANT",
+            "parameters": {
+              "value": 1
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PRODUCT_TYPE",
+          "type": "STRING",
+          "semantic": "ENUM",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "PRODUCT",
+                  "SERVICE"
+                ],
+                "weights": [
+                  0.70,
+                  0.30
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "LOGNORMAL",
+              "parameters": {
+                "mean": 4.5,
+                "sigma": 0.8
+              }
+            }
+          },
+          "constraints": [
+            {
+              "operator": "GREATER_THAN",
+              "left": {
+                "field": "UNIT_PRICE"
+              },
+              "right": 0
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "IS_ACTIVE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "BINOMIAL",
+              "parameters": {
+                "n": 1,
+                "p": 0.90
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        }
+      ]
+    },
+
+    {
+      "name": "ORDER",
+      "population": {
+        "strategy": "POPULATION_COUNT",
+        "count": 1000
+      },
+
+      "identity": {
+        "type": "PRIMARY_KEY",
+        "strategy": "SURROGATE_KEY",
+        "field": "ORDER_ID"
+      },
+
+      "fields": [
+        {
+          "name": "ORDER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "PRIMARY_KEY",
+            "SURROGATE_KEY",
+            "SEQUENTIAL_ID",
+            "STABLE",
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "prefix": "ORD",
+              "start": 1,
+              "padding": 7
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CUSTOMER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "FOREIGN_KEY"
+          ],
+          "generation": {
+            "strategy": "REFERENCE",
+            "reference": {
+              "entity": "CUSTOMER",
+              "field": "CUSTOMER_ID",
+              "sampling": "SAMPLE",
+              "replacement": true
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "CUSTOMER.CUSTOMER_ID"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "ORDER_NUMBER",
+          "type": "STRING",
+          "semantic": "CODE",
+          "identity": [
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "TRANSFORM",
+            "source": "ORDER_ID",
+            "operation": "CONCAT",
+            "parameters": {
+              "prefix": "ORDER-"
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "ORDER_DATE",
+          "type": "DATE",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "TRUNCATED",
+              "parameters": {
+                "distribution": "NORMAL",
+                "mean": "2025-06-15",
+                "stddev_days": 45,
+                "min": "2025-01-01",
+                "max": "2025-12-31"
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "ORDER_TIME",
+          "type": "TIME",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "UNIFORM",
+              "parameters": {
+                "min": "08:00:00",
+                "max": "20:00:00"
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "MIN_AMOUNT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "UNIFORM",
+              "parameters": {
+                "min": 100,
+                "max": 5000
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "MAX_AMOUNT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "UNIFORM",
+              "parameters": {
+                "min": 5000,
+                "max": 20000
+              }
+            }
+          },
+          "constraints": [
+            {
+              "operator": "GREATER_OR_EQUAL",
+              "left": {
+                "field": "MAX_AMOUNT"
+              },
+              "right": {
+                "field": "MIN_AMOUNT"
+              }
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "AMOUNT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "TRUNCATED",
+              "parameters": {
+                "distribution": "UNIFORM",
+                "min_reference": "MIN_AMOUNT",
+                "max_reference": "MAX_AMOUNT"
+              }
+            }
+          },
+          "dependencies": [
+            {
+              "type": "FIELD_DEPENDENCY",
+              "source": [
+                "MIN_AMOUNT",
+                "MAX_AMOUNT"
+              ]
+            }
+          ],
+          "constraints": [
+            {
+              "operator": "BETWEEN",
+              "value": {
+                "field": "AMOUNT"
+              },
+              "lower": {
+                "field": "MIN_AMOUNT"
+              },
+              "upper": {
+                "field": "MAX_AMOUNT"
+              }
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "DISCOUNT",
+          "type": "DECIMAL",
+          "semantic": "PERCENTAGE",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "BETA",
+              "parameters": {
+                "alpha": 2,
+                "beta": 5,
+                "scale": 30
+              }
+            }
+          },
+          "constraints": [
+            {
+              "operator": "BETWEEN",
+              "value": {
+                "field": "DISCOUNT"
+              },
+              "lower": 0,
+              "upper": 30
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "DISCRETE_UNIFORM",
+              "parameters": {
+                "min": 1,
+                "max": 20
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "STATUS",
+          "type": "STRING",
+          "semantic": "ENUM",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "NEW",
+                  "CONFIRMED",
+                  "SHIPPED",
+                  "COMPLETED",
+                  "CANCELLED"
+                ],
+                "weights": [
+                  0.15,
+                  0.20,
+                  0.25,
+                  0.30,
+                  0.10
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "IS_PRIORITY",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "CONDITIONAL",
+            "condition": {
+              "operator": "EQUALS",
+              "left": {
+                "field": "STATUS"
+              },
+              "right": "NEW"
+            },
+            "then": {
+              "strategy": "RANDOM",
+              "distribution": {
+                "type": "BINOMIAL",
+                "parameters": {
+                  "n": 1,
+                  "p": 0.35
+                }
+              }
+            },
+            "else": {
+              "strategy": "CONSTANT",
+              "parameters": {
+                "value": false
+              }
+            }
+          },
+          "dependencies": [
+            {
+              "type": "CONDITIONAL_DEPENDENCY",
+              "source": "STATUS"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "SUBTOTAL",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "DERIVED",
+            "expression": {
+              "operator": "SUM",
+              "source": {
+                "entity": "ORDER_ITEM",
+                "field": "LINE_AMOUNT",
+                "where": {
+                  "operator": "EQUALS",
+                  "left": {
+                    "field": "ORDER_ITEM.ORDER_ID"
+                  },
+                  "right": {
+                    "field": "ORDER.ORDER_ID"
+                  }
+                }
+              }
+            }
+          },
+          "dependencies": [
+            {
+              "type": "CHILD_DEPENDENCY",
+              "source": "ORDER_ITEM.LINE_AMOUNT"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "NET_AMOUNT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "FORMULA",
+            "expression": {
+              "operator": "SUBTRACT",
+              "arguments": [
+                {
+                  "field": "SUBTOTAL"
+                },
+                {
+                  "operator": "MULTIPLY",
+                  "arguments": [
+                    {
+                      "field": "SUBTOTAL"
+                    },
+                    {
+                      "operator": "DIVIDE",
+                      "arguments": [
+                        {
+                          "field": "DISCOUNT"
+                        },
+                        100
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "dependencies": [
+            {
+              "type": "FIELD_DEPENDENCY",
+              "source": [
+                "SUBTOTAL",
+                "DISCOUNT"
+              ]
+            }
+          ],
+          "constraints": [
+            {
+              "operator": "GREATER_OR_EQUAL",
+              "left": {
+                "field": "NET_AMOUNT"
+              },
+              "right": 0
+            }
+          ],
+          "nullability": "NOT_NULL"
+        }
+      ]
+    },
+
+    {
+      "name": "ORDER_ITEM",
+      "population": {
+        "strategy": "REFERENCE",
+        "source": "ORDER",
+        "cardinality": "1:N",
+        "average_children": 2.5
+      },
+
+      "identity": {
+        "type": "COMPOSITE_KEY",
+        "fields": [
+          "ORDER_ID",
+          "LINE_NUMBER"
+        ]
+      },
+
+      "keys": [
+        {
+          "type": "PRIMARY_KEY",
+          "fields": [
+            "ORDER_ID",
+            "LINE_NUMBER"
+          ]
+        },
+        {
+          "type": "COMPOSITE_ID",
+          "fields": [
+            "ORDER_ID",
+            "LINE_NUMBER"
+          ]
+        }
+      ],
+
+      "fields": [
+        {
+          "name": "ORDER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "FOREIGN_KEY"
+          ],
+          "generation": {
+            "strategy": "REFERENCE",
+            "reference": {
+              "entity": "ORDER",
+              "field": "ORDER_ID"
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "ORDER.ORDER_ID"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "LINE_NUMBER",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "scope": "ORDER_ID",
+              "start": 1,
+              "step": 1
+            }
+          },
+          "dependencies": [
+            {
+              "type": "SEQUENTIAL_DEPENDENCY",
+              "source": "ORDER_ID"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "PRODUCT_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "FOREIGN_KEY"
+          ],
+          "generation": {
+            "strategy": "REFERENCE",
+            "reference": {
+              "entity": "PRODUCT",
+              "field": "PRODUCT_ID",
+              "sampling": "SAMPLE",
+              "replacement": true
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "PRODUCT.PRODUCT_ID"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "POISSON",
+              "parameters": {
+                "lambda": 4,
+                "minimum": 1
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "LOOKUP",
+            "lookup": {
+              "entity": "PRODUCT",
+              "key": {
+                "field": "PRODUCT_ID",
+                "source": "PRODUCT_ID"
+              },
+              "value": {
+                "field": "UNIT_PRICE"
+              }
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "PRODUCT.UNIT_PRICE"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "LINE_AMOUNT",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "FORMULA",
+            "expression": {
+              "operator": "MULTIPLY",
+              "arguments": [
+                {
+                  "field": "QUANTITY"
+                },
+                {
+                  "field": "UNIT_PRICE"
+                }
+              ]
+            }
+          },
+          "dependencies": [
+            {
+              "type": "FIELD_DEPENDENCY",
+              "source": [
+                "QUANTITY",
+                "UNIT_PRICE"
+              ]
+            }
+          ],
+          "nullability": "NOT_NULL"
+        }
+      ]
+    },
+
+    {
+      "name": "SHIPMENT",
+      "population": {
+        "strategy": "REFERENCE",
+        "source": "ORDER",
+        "cardinality": "0:N",
+        "population_rate": 0.60
+      },
+
+      "identity": {
+        "type": "PRIMARY_KEY",
+        "strategy": "SURROGATE_KEY",
+        "field": "SHIPMENT_ID"
+      },
+
+      "fields": [
+        {
+          "name": "SHIPMENT_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "PRIMARY_KEY",
+            "SURROGATE_KEY",
+            "SEQUENTIAL_ID",
+            "UNIQUE"
+          ],
+          "generation": {
+            "strategy": "SEQUENTIAL",
+            "parameters": {
+              "prefix": "SHP",
+              "start": 1,
+              "padding": 7
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "ORDER_ID",
+          "type": "STRING",
+          "semantic": "IDENTIFIER",
+          "identity": [
+            "FOREIGN_KEY"
+          ],
+          "generation": {
+            "strategy": "REFERENCE",
+            "reference": {
+              "entity": "ORDER",
+              "field": "ORDER_ID"
+            }
+          },
+          "dependencies": [
+            {
+              "type": "PARENT_DEPENDENCY",
+              "source": "ORDER.ORDER_ID"
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "SHIPMENT_DATE",
+          "type": "DATE",
+          "generation": {
+            "strategy": "DERIVED",
+            "expression": {
+              "operator": "DATE_ADD",
+              "arguments": [
+                {
+                  "field": "ORDER.ORDER_DATE"
+                },
+                {
+                  "strategy": "RANDOM",
+                  "distribution": {
+                    "type": "DISCRETE_UNIFORM",
+                    "parameters": {
+                      "min": 1,
+                      "max": 7
+                    }
+                  },
+                  "unit": "DAY"
+                }
+              ]
+            }
+          },
+          "dependencies": [
+            {
+              "type": "TEMPORAL_DEPENDENCY",
+              "source": "ORDER.ORDER_DATE"
+            }
+          ],
+          "constraints": [
+            {
+              "operator": "GREATER_OR_EQUAL",
+              "left": {
+                "field": "SHIPMENT_DATE"
+              },
+              "right": {
+                "field": "ORDER.ORDER_DATE"
+              }
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "DELIVERY_DATE",
+          "type": "DATE",
+          "generation": {
+            "strategy": "DERIVED",
+            "expression": {
+              "operator": "DATE_ADD",
+              "arguments": [
+                {
+                  "field": "SHIPMENT_DATE"
+                },
+                {
+                  "strategy": "RANDOM",
+                  "distribution": {
+                    "type": "DISCRETE_UNIFORM",
+                    "parameters": {
+                      "min": 1,
+                      "max": 10
+                    }
+                  },
+                  "unit": "DAY"
+                }
+              ]
+            }
+          },
+          "dependencies": [
+            {
+              "type": "TEMPORAL_DEPENDENCY",
+              "source": "SHIPMENT_DATE"
+            }
+          ],
+          "constraints": [
+            {
+              "operator": "GREATER_OR_EQUAL",
+              "left": {
+                "field": "DELIVERY_DATE"
+              },
+              "right": {
+                "field": "SHIPMENT_DATE"
+              }
+            }
+          ],
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "CARRIER_CODE",
+          "type": "STRING",
+          "semantic": "CODE",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "CAR001",
+                  "CAR002",
+                  "CAR003",
+                  "CAR004"
+                ],
+                "weights": [
+                  0.35,
+                  0.30,
+                  0.20,
+                  0.15
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "SHIPPING_COST",
+          "type": "DECIMAL",
+          "semantic": "CURRENCY",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "GAMMA",
+              "parameters": {
+                "shape": 2,
+                "scale": 8
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        },
+
+        {
+          "name": "STATUS",
+          "type": "STRING",
+          "semantic": "ENUM",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": {
+              "type": "CATEGORICAL",
+              "parameters": {
+                "categories": [
+                  "CREATED",
+                  "IN_TRANSIT",
+                  "DELIVERED",
+                  "DELAYED"
+                ],
+                "weights": [
+                  0.10,
+                  0.25,
+                  0.55,
+                  0.10
+                ]
+              }
+            }
+          },
+          "nullability": "NOT_NULL"
+        }
+      ]
+    }
+  ],
+
+  "relationships": [
+    {
+      "id": "REL-001",
+      "name": "CUSTOMER_PROFILE",
+      "type": "1:1",
+      "semantics": [
+        "PARENT",
+        "CHILD",
+        "REQUIRED",
+        "DEPENDENT"
+      ],
+      "parent": {
+        "entity": "CUSTOMER",
+        "field": "CUSTOMER_ID"
+      },
+      "child": {
+        "entity": "CUSTOMER_PROFILE",
+        "field": "CUSTOMER_ID"
+      }
+    },
+
+    {
+      "id": "REL-002",
+      "name": "CUSTOMER_ORDERS",
+      "type": "1:N",
+      "semantics": [
+        "PARENT",
+        "CHILD",
+        "REQUIRED",
+        "DEPENDENT"
+      ],
+      "parent": {
+        "entity": "CUSTOMER",
+        "field": "CUSTOMER_ID"
+      },
+      "child": {
+        "entity": "ORDER",
+        "field": "CUSTOMER_ID"
+      }
+    },
+
+    {
+      "id": "REL-003",
+      "name": "ORDER_ITEMS",
+      "type": "1:N",
+      "semantics": [
+        "PARENT",
+        "CHILD",
+        "REQUIRED",
+        "DEPENDENT"
+      ],
+      "parent": {
+        "entity": "ORDER",
+        "field": "ORDER_ID"
+      },
+      "child": {
+        "entity": "ORDER_ITEM",
+        "field": "ORDER_ID"
+      }
+    },
+
+    {
+      "id": "REL-004",
+      "name": "PRODUCT_ORDER_ITEMS",
+      "type": "1:N",
+      "semantics": [
+        "PARENT",
+        "CHILD",
+        "DEPENDENT",
+        "ASSOCIATIVE"
+      ],
+      "parent": {
+        "entity": "PRODUCT",
+        "field": "PRODUCT_ID"
+      },
+      "child": {
+        "entity": "ORDER_ITEM",
+        "field": "PRODUCT_ID"
+      }
+    },
+
+    {
+      "id": "REL-005",
+      "name": "ORDER_PRODUCT",
+      "type": "N:M",
+      "semantics": [
+        "ASSOCIATIVE",
+        "DEPENDENT"
+      ],
+      "left": {
+        "entity": "ORDER",
+        "field": "ORDER_ID"
+      },
+      "right": {
+        "entity": "PRODUCT",
+        "field": "PRODUCT_ID"
+      },
+      "associative_entity": "ORDER_ITEM"
+    },
+
+    {
+      "id": "REL-006",
+      "name": "ORDER_SHIPMENTS",
+      "type": "0:N",
+      "semantics": [
+        "PARENT",
+        "CHILD",
+        "OPTIONAL",
+        "DEPENDENT"
+      ],
+      "parent": {
+        "entity": "ORDER",
+        "field": "ORDER_ID"
+      },
+      "child": {
+        "entity": "SHIPMENT",
+        "field": "ORDER_ID"
+      }
+    }
+  ],
+
+  "rules": [
+    {
+      "id": "RULE-001",
+      "name": "MIN_AMOUNT_LE_MAX_AMOUNT",
+      "type": "CONSTRAINT",
+      "expression": {
+        "operator": "LESS_OR_EQUAL",
+        "left": {
+          "field": "ORDER.MIN_AMOUNT"
+        },
+        "right": {
+          "field": "ORDER.MAX_AMOUNT"
+        }
+      }
+    },
+
+    {
+      "id": "RULE-002",
+      "name": "AMOUNT_WITHIN_BOUNDS",
+      "type": "CONSTRAINT",
+      "expression": {
+        "operator": "BETWEEN",
+        "value": {
+          "field": "ORDER.AMOUNT"
+        },
+        "lower": {
+          "field": "ORDER.MIN_AMOUNT"
+        },
+        "upper": {
+          "field": "ORDER.MAX_AMOUNT"
+        }
+      }
+    },
+
+    {
+      "id": "RULE-003",
+      "name": "DISCOUNT_VALID_RANGE",
+      "type": "CONSTRAINT",
+      "expression": {
+        "operator": "BETWEEN",
+        "value": {
+          "field": "ORDER.DISCOUNT"
+        },
+        "lower": 0,
+        "upper": 30
+      }
+    },
+
+    {
+      "id": "RULE-004",
+      "name": "SHIPMENT_AFTER_ORDER",
+      "type": "CONSTRAINT",
+      "expression": {
+        "operator": "GREATER_OR_EQUAL",
+        "left": {
+          "field": "SHIPMENT.SHIPMENT_DATE"
+        },
+        "right": {
+          "field": "ORDER.ORDER_DATE"
+        }
+      }
+    },
+
+    {
+      "id": "RULE-005",
+      "name": "DELIVERY_AFTER_SHIPMENT",
+      "type": "CONSTRAINT",
+      "expression": {
+        "operator": "GREATER_OR_EQUAL",
+        "left": {
+          "field": "SHIPMENT.DELIVERY_DATE"
+        },
+        "right": {
+          "field": "SHIPMENT.SHIPMENT_DATE"
+        }
+      }
+    },
+
+    {
+      "id": "RULE-006",
+      "name": "PREMIUM_HIGHER_CREDIT_LIMIT",
+      "type": "CONDITIONAL",
+      "expression": {
+        "operator": "IMPLIES",
+        "if": {
+          "operator": "EQUALS",
+          "left": {
+            "field": "CUSTOMER.CUSTOMER_TYPE"
+          },
+          "right": "PREMIUM"
+        },
+        "then": {
+          "operator": "GREATER_THAN",
+          "left": {
+            "field": "CUSTOMER.CREDIT_LIMIT"
+          },
+          "right": 5000
+        }
+      }
+    },
+
+    {
+      "id": "RULE-007",
+      "name": "LINE_AMOUNT_CALCULATION",
+      "type": "DERIVED",
+      "expression": {
+        "operator": "MULTIPLY",
+        "arguments": [
+          {
+            "field": "ORDER_ITEM.QUANTITY"
+          },
+          {
+            "field": "ORDER_ITEM.UNIT_PRICE"
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "RULE-008",
+      "name": "NET_AMOUNT_CALCULATION",
+      "type": "DERIVED",
+      "expression": {
+        "operator": "SUBTRACT",
+        "arguments": [
+          {
+            "field": "ORDER.SUBTOTAL"
+          },
+          {
+            "operator": "MULTIPLY",
+            "arguments": [
+              {
+                "field": "ORDER.SUBTOTAL"
+              },
+              {
+                "operator": "DIVIDE",
+                "arguments": [
+                  {
+                    "field": "ORDER.DISCOUNT"
+                  },
+                  100
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "RULE-009",
+      "name": "ACTIVE_PRODUCT_REQUIRED_FOR_ORDER_ITEM",
+      "type": "CONDITIONAL",
+      "expression": {
+        "operator": "IMPLIES",
+        "if": {
+          "operator": "IS_NOT_NULL",
+          "field": "ORDER_ITEM.PRODUCT_ID"
+        },
+        "then": {
+          "operator": "EQUALS",
+          "left": {
+            "field": "PRODUCT.IS_ACTIVE"
+          },
+          "right": true
+        }
+      }
+    }
+  ],
+
+  "statistical_behavior": [
+    {
+      "id": "STAT-001",
+      "type": "CORRELATION",
+      "method": "PEARSON",
+      "direction": "POSITIVE",
+      "source": "CUSTOMER.CUSTOMER_SCORE",
+      "target": "CUSTOMER.CREDIT_LIMIT",
+      "target_correlation": 0.60,
+      "tolerance": 0.15
+    },
+
+    {
+      "id": "STAT-002",
+      "type": "CORRELATION",
+      "method": "SPEARMAN",
+      "direction": "POSITIVE",
+      "source": "ORDER_ITEM.QUANTITY",
+      "target": "ORDER_ITEM.LINE_AMOUNT",
+      "target_correlation": 0.70,
+      "tolerance": 0.15
+    }
+  ],
+
+  "scenarios": [
+    {
+      "name": "NORMAL",
+      "type": "SCENARIO",
+      "description": "Baseline generation scenario."
+    },
+
+    {
+      "name": "HIGH_VALUE",
+      "type": "SCENARIO",
+      "parameters": [
+        {
+          "name": "premium_customer_rate",
+          "type": "SCENARIO_PARAMETER",
+          "value": 0.55
+        },
+        {
+          "name": "order_amount_multiplier",
+          "type": "SCENARIO_PARAMETER",
+          "value": 2.0
+        }
+      ],
+      "overrides": [
+        {
+          "type": "SCENARIO_OVERRIDE",
+          "target": "CUSTOMER.CUSTOMER_TYPE",
+          "distribution": {
+            "type": "CATEGORICAL",
+            "parameters": {
+              "categories": [
+                "STANDARD",
+                "PREMIUM"
+              ],
+              "weights": [
+                0.45,
+                0.55
+              ]
+            }
+          }
+        },
+        {
+          "type": "SCENARIO_DISTRIBUTION",
+          "target": "ORDER.AMOUNT",
+          "multiplier": 2.0
+        }
+      ]
+    },
+
+    {
+      "name": "MISSING_DATA",
+      "type": "SCENARIO",
+      "parameters": [
+        {
+          "name": "email_population_rate",
+          "type": "SCENARIO_PARAMETER",
+          "value": 0.40
+        },
+        {
+          "name": "shipment_population_rate",
+          "type": "SCENARIO_PARAMETER",
+          "value": 0.30
+        }
+      ],
+      "overrides": [
+        {
+          "type": "SCENARIO_OVERRIDE",
+          "target": "CUSTOMER.EMAIL",
+          "population": {
+            "strategy": "POPULATION_RATE",
+            "rate": 0.40
+          }
+        },
+        {
+          "type": "SCENARIO_OVERRIDE",
+          "target": "SHIPMENT",
+          "population": {
+            "strategy": "REFERENCE",
+            "source": "ORDER",
+            "cardinality": "0:N",
+            "population_rate": 0.30
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "PEAK_PERIOD",
+      "type": "SCENARIO",
+      "parameters": [
+        {
+          "name": "order_population",
+          "type": "SCENARIO_PARAMETER",
+          "value": 2000
+        },
+        {
+          "name": "order_item_average",
+          "type": "SCENARIO_PARAMETER",
+          "value": 3.5
+        }
+      ],
+      "overrides": [
+        {
+          "type": "SCENARIO_OVERRIDE",
+          "target": "ORDER",
+          "population": {
+            "strategy": "POPULATION_COUNT",
+            "count": 2000
+          }
+        },
+        {
+          "type": "SCENARIO_OVERRIDE",
+          "target": "ORDER_ITEM",
+          "population": {
+            "strategy": "REFERENCE",
+            "source": "ORDER",
+            "cardinality": "1:N",
+            "average_children": 3.5
+          }
+        }
+      ]
+    }
+  ],
+
+  "validation": {
+    "enabled": true,
+    "fail_on_error": true,
+
+    "categories": [
+      "STRUCTURAL_VALID",
+      "CONSTRAINT_VALID",
+      "RELATIONSHIP_VALID",
+      "DEPENDENCY_VALID",
+      "DISTRIBUTION_VALID",
+      "STATISTICAL_VALID",
+      "PROVENANCE_VALID"
+    ],
+
+    "structural": {
+      "validate_types": true,
+      "validate_required_fields": true,
+      "validate_primary_keys": true,
+      "validate_unique_keys": true,
+      "validate_composite_keys": true
+    },
+
+    "relationships": {
+      "validate_foreign_keys": true,
+      "validate_cardinality": true,
+      "validate_optional_relationships": true,
+      "validate_associative_relationships": true
+    },
+
+    "constraints": {
+      "validate_field_constraints": true,
+      "validate_cross_field_constraints": true,
+      "validate_conditional_constraints": true,
+      "validate_derived_values": true
+    },
+
+    "dependencies": {
+      "validate_dependency_graph": true,
+      "detect_cycles": true,
+      "validate_generation_order": true,
+      "validate_parent_dependencies": true,
+      "validate_temporal_dependencies": true
+    },
+
+    "distribution": {
+      "validate_parameters": true,
+      "validate_bounds": true,
+      "validate_categorical_weights": true,
+      "validate_observed_distribution": true
+    },
+
+    "statistical": {
+      "validate_correlations": true,
+      "validate_target_correlation": true,
+      "validate_pearson": true,
+      "validate_spearman": true
+    }
+  },
+
+  "provenance": {
+    "enabled": true,
+    "level": "FIELD_AND_VALUE",
+
+    "capture": [
+      "EVIDENCE_ID",
+      "specification.version",
+      "generation_control.seed",
+      "generation_control.random_state",
+      "generation_control.random_stream",
+      "scenario",
+      "entity",
+      "field",
+      "type",
+      "semantic",
+      "strategy",
+      "distribution",
+      "parameters",
+      "dependencies",
+      "rules"
+    ]
+  },
+
+  "reproducibility": {
+    "enabled": true,
+    "require_same_output_for_same_seed": true,
+    "require_different_output_for_different_seed": true,
+    "capture_seed": true,
+    "capture_random_state": true,
+    "capture_specification_version": true
+  },
+
+  "execution": {
+    "scenario": "NORMAL",
+
+    "validation_before_generation": true,
+    "build_dependency_graph": true,
+    "build_generation_plan": true,
+    "persist_generation_plan": true,
+    "persist_dependency_graph": true,
+    "persist_validation_results": true,
+    "persist_provenance": true
+  },
+
+  "experiment_tests": [
+    {
+      "id": "TEST-001",
+      "name": "Baseline Generation",
+      "purpose": "Generate the complete relational model from the declarative specification.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-002",
+      "name": "Specification Substitution",
+      "purpose": "Change generation behavior through specification changes without modifying generator source code.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-003",
+      "name": "Composite Identity",
+      "purpose": "Validate ORDER_ITEM composite primary key.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-004",
+      "name": "Natural And Surrogate Identity",
+      "purpose": "Validate PRODUCT natural and surrogate identity semantics.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-005",
+      "name": "Relationship Composition",
+      "purpose": "Validate 1:1, 1:N, 0:N and N:M relationships.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-006",
+      "name": "Dependency Planning",
+      "purpose": "Derive generation order from declared dependencies.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-007",
+      "name": "Rule Evaluation",
+      "purpose": "Evaluate declarative constraints and derived expressions.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-008",
+      "name": "Scenario Generation",
+      "purpose": "Generate multiple scenarios using specification overrides.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-009",
+      "name": "Statistical Behavior",
+      "purpose": "Validate declared statistical relationships.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-010",
+      "name": "Invalid Specification",
+      "purpose": "Reject invalid or unsupported specifications before generation.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-011",
+      "name": "Reproducibility",
+      "purpose": "Demonstrate deterministic generation for identical specification and seed.",
+      "expected": "PASS"
+    },
+    {
+      "id": "TEST-012",
+      "name": "Provenance",
+      "purpose": "Demonstrate generation evidence sufficient to explain generated values.",
+      "expected": "PASS"
+    }
+  ]
+}

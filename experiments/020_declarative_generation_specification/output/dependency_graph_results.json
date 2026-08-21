@@ -1,0 +1,318 @@
+{
+  "experiment": "020_declarative_generation_specification",
+  "stage": "020-I",
+  "purpose": "Declarative dependency graph and generation planning",
+  "edge_semantics": "parent -> child",
+  "tests": {
+    "simple_dependency": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER"
+        ]
+      }
+    },
+    "transitive_dependency": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER",
+          "ORDER_ITEM"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER",
+          "ORDER_ITEM"
+        ]
+      }
+    },
+    "multiple_dependencies": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER",
+          "ORDER_ITEM",
+          "PRODUCT"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ],
+          [
+            "PRODUCT",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER",
+          "PRODUCT",
+          "ORDER_ITEM"
+        ]
+      }
+    },
+    "independent_entities": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "COUNTRY",
+          "CUSTOMER",
+          "PRODUCT"
+        ],
+        "edges": [],
+        "execution_order": [
+          "COUNTRY",
+          "CUSTOMER",
+          "PRODUCT"
+        ]
+      }
+    },
+    "associative_entity": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "ORDER",
+          "ORDER_ITEM",
+          "PRODUCT"
+        ],
+        "edges": [
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ],
+          [
+            "PRODUCT",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "ORDER",
+          "PRODUCT",
+          "ORDER_ITEM"
+        ]
+      }
+    },
+    "optional_dependency": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "ORDER",
+          "SHIPMENT"
+        ],
+        "edges": [
+          [
+            "ORDER",
+            "SHIPMENT"
+          ]
+        ],
+        "execution_order": [
+          "ORDER",
+          "SHIPMENT"
+        ]
+      }
+    },
+    "entity_order_independence": {
+      "status": "PASS",
+      "plan_a": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER",
+          "ORDER_ITEM",
+          "PRODUCT"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ],
+          [
+            "PRODUCT",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER",
+          "PRODUCT",
+          "ORDER_ITEM"
+        ]
+      },
+      "plan_b": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER",
+          "ORDER_ITEM",
+          "PRODUCT"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ],
+          [
+            "PRODUCT",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER",
+          "PRODUCT",
+          "ORDER_ITEM"
+        ]
+      }
+    },
+    "determinism": {
+      "status": "PASS",
+      "first": [
+        "CUSTOMER",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM"
+      ],
+      "second": [
+        "CUSTOMER",
+        "ORDER",
+        "PRODUCT",
+        "ORDER_ITEM"
+      ]
+    },
+    "cycle_detection": {
+      "status": "PASS",
+      "error": "Dependency cycle detected. Unresolved entities: ['A', 'B', 'C']"
+    },
+    "self_reference": {
+      "status": "PASS",
+      "error": "Self-referencing dependency detected for entity 'EMPLOYEE'."
+    },
+    "unknown_entity": {
+      "status": "PASS",
+      "error": "Unknown parent entity: UNKNOWN"
+    },
+    "invalid_cardinality": {
+      "status": "PASS",
+      "error": "Unsupported cardinality: X:Y"
+    },
+    "disconnected_components": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "ORDER",
+          "PRODUCT",
+          "SUPPLIER"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "SUPPLIER",
+            "PRODUCT"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "ORDER",
+          "SUPPLIER",
+          "PRODUCT"
+        ]
+      }
+    },
+    "full_graph": {
+      "status": "PASS",
+      "plan": {
+        "status": "PASS",
+        "entities": [
+          "CUSTOMER",
+          "CUSTOMER_PROFILE",
+          "ORDER",
+          "ORDER_ITEM",
+          "PRODUCT",
+          "SHIPMENT"
+        ],
+        "edges": [
+          [
+            "CUSTOMER",
+            "CUSTOMER_PROFILE"
+          ],
+          [
+            "CUSTOMER",
+            "ORDER"
+          ],
+          [
+            "ORDER",
+            "ORDER_ITEM"
+          ],
+          [
+            "ORDER",
+            "SHIPMENT"
+          ],
+          [
+            "PRODUCT",
+            "ORDER_ITEM"
+          ]
+        ],
+        "execution_order": [
+          "CUSTOMER",
+          "CUSTOMER_PROFILE",
+          "ORDER",
+          "PRODUCT",
+          "ORDER_ITEM",
+          "SHIPMENT"
+        ]
+      }
+    }
+  },
+  "tests_passed": 14,
+  "tests_total": 14,
+  "architectural_conclusion": "FORGE can derive a deterministic generation order from declarative entity relationships. Parent entities are planned before dependent entities. Independent entities remain valid graph components. Cyclic and invalid dependencies are rejected rather than silently producing an unsafe generation plan.",
+  "important_boundary": "This experiment produces an execution plan but does not execute record generation. Actual execution orchestration will be addressed after the dependency model is established.",
+  "overall": "PASS"
+}
