@@ -1,0 +1,47 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-D",
+  "specification": "specification.json",
+  "model": "declarative_derived_conditional_relational_model",
+  "seed": 42,
+  "scenario": "default",
+  "generation_mode": "declarative",
+  "domain_specific_generation_code": false,
+  "entities": {
+    "CUSTOMER": 100,
+    "PRODUCT": 50
+  },
+  "total_records": 150,
+  "relationships": 1,
+  "constraints": 4,
+  "derived_fields": [
+    "PRODUCT.TOTAL_VALUE"
+  ],
+  "conditional_fields": [
+    "CUSTOMER.CUSTOMER_STATUS",
+    "PRODUCT.VALUE_BAND"
+  ],
+  "entity_generation_plan": [
+    "CUSTOMER",
+    "PRODUCT"
+  ],
+  "field_generation_plans": {
+    "CUSTOMER": [
+      "CREDIT_LIMIT",
+      "CUSTOMER_ID",
+      "CUSTOMER_TYPE",
+      "CUSTOMER_STATUS"
+    ],
+    "PRODUCT": [
+      "PRODUCT_ID",
+      "QUANTITY",
+      "UNIT_PRICE",
+      "TOTAL_VALUE",
+      "VALUE_BAND"
+    ]
+  },
+  "dataset_files": [
+    "/Users/e10936535/forge/experiments/021_declarative_model_to_dataset/021-D/output/dataset/CUSTOMER.csv",
+    "/Users/e10936535/forge/experiments/021_declarative_model_to_dataset/021-D/output/dataset/PRODUCT.csv"
+  ]
+}

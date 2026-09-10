@@ -1,0 +1,59 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-D",
+  "purpose": "Declarative derived and conditional relational model to dataset",
+  "overall": "PASS",
+  "specification_valid": true,
+  "dataset_validation": {
+    "dataset_structure": true,
+    "population_counts": true,
+    "field_presence": true,
+    "identity_uniqueness": true,
+    "referential_integrity": true,
+    "constraint_preservation": true,
+    "derived_field_correctness": true,
+    "conditional_field_correctness": true,
+    "chained_dependency_correctness": true
+  },
+  "csv_artifact_validation": true,
+  "reproducibility": true,
+  "seed_sensitivity": true,
+  "entity_order_independence": true,
+  "field_order_independence": true,
+  "relationships": 1,
+  "relationship_managed_fields": 1,
+  "constraints": 4,
+  "dependencies": 4,
+  "entities": {
+    "CUSTOMER": 100,
+    "PRODUCT": 50
+  },
+  "total_records": 150,
+  "domain_specific_generation_code": false,
+  "entity_generation_plan": [
+    "CUSTOMER",
+    "PRODUCT"
+  ],
+  "field_generation_plans": {
+    "CUSTOMER": [
+      "CREDIT_LIMIT",
+      "CUSTOMER_ID",
+      "CUSTOMER_TYPE",
+      "CUSTOMER_STATUS"
+    ],
+    "PRODUCT": [
+      "PRODUCT_ID",
+      "QUANTITY",
+      "UNIT_PRICE",
+      "TOTAL_VALUE",
+      "VALUE_BAND"
+    ]
+  },
+  "artifacts": {
+    "dataset_csv": [
+      "/Users/e10936535/forge/experiments/021_declarative_model_to_dataset/021-D/output/dataset/CUSTOMER.csv",
+      "/Users/e10936535/forge/experiments/021_declarative_model_to_dataset/021-D/output/dataset/PRODUCT.csv"
+    ],
+    "generation_manifest": "/Users/e10936535/forge/experiments/021_declarative_model_to_dataset/021-D/output/generation_manifest.json"
+  }
+}

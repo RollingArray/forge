@@ -1,0 +1,42 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-B",
+  "model": "constraint_aware_relational_model",
+  "specification_version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "seed": 42,
+  "scenario": "NORMAL",
+  "dataset_format": "CSV",
+  "generation_order": [
+    "CUSTOMER",
+    "PRODUCT"
+  ],
+  "relationship_managed_fields": [
+    {
+      "entity": "PRODUCT",
+      "field": "CUSTOMER_ID"
+    }
+  ],
+  "relationships": [
+    {
+      "name": "CUSTOMER_TO_PRODUCT",
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+      "child_entity": "PRODUCT",
+      "child_field": "CUSTOMER_ID",
+      "cardinality": "1:N",
+      "required": true
+    }
+  ],
+  "entities": {
+    "CUSTOMER": {
+      "records": 100,
+      "output": "output/dataset/CUSTOMER.csv"
+    },
+    "PRODUCT": {
+      "records": 50,
+      "output": "output/dataset/PRODUCT.csv"
+    }
+  },
+  "total_records": 150
+}

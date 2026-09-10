@@ -1,0 +1,250 @@
+{
+  "version": "1.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "declarative_derived_conditional_relational_model",
+    "description": "Domain-neutral relational model with derived and conditional field behavior"
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "default"
+  },
+  "entities": [
+    {
+      "name": "CUSTOMER",
+      "population": {
+        "count": 100
+      },
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "SEQUENTIAL_ID",
+            "parameters": {
+              "prefix": "CUST-",
+              "start": 1
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_TYPE",
+          "type": "CATEGORICAL",
+          "generation": {
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STANDARD",
+                "PREMIUM"
+              ],
+              "weights": [
+                0.7,
+                0.3
+              ]
+            }
+          }
+        },
+        {
+          "name": "CREDIT_LIMIT",
+          "type": "DECIMAL",
+          "generation": {
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 1000,
+              "maximum": 10000
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_STATUS",
+          "type": "STRING",
+          "generation": {
+            "strategy": "CONDITIONAL",
+            "condition": {
+              "field": "CUSTOMER_TYPE",
+              "operator": "EQUALS",
+              "value": "PREMIUM"
+            },
+            "when_true": "PRIORITY",
+            "when_false": "STANDARD"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PRODUCT",
+      "population": {
+        "count": 50
+      },
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "SEQUENTIAL_ID",
+            "parameters": {
+              "prefix": "PROD-",
+              "start": 1
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL",
+          "generation": {
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 100,
+              "maximum": 2000
+            }
+          }
+        },
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER",
+          "generation": {
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        },
+        {
+          "name": "TOTAL_VALUE",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "DERIVED",
+            "expression": "UNIT_PRICE * QUANTITY"
+          }
+        },
+        {
+          "name": "VALUE_BAND",
+          "type": "STRING",
+          "generation": {
+            "strategy": "CONDITIONAL",
+            "condition": {
+              "field": "TOTAL_VALUE",
+              "operator": "GREATER_THAN_OR_EQUAL",
+              "value": 1000
+            },
+            "when_true": "HIGH",
+            "when_false": "STANDARD"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "customer_products",
+      "type": "ONE_TO_MANY",
+      "from": {
+        "entity": "CUSTOMER",
+        "field": "CUSTOMER_ID"
+      },
+      "to": {
+        "entity": "PRODUCT",
+        "field": "CUSTOMER_ID"
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "name": "positive_unit_price",
+      "entity": "PRODUCT",
+      "field": "UNIT_PRICE",
+      "operator": "GREATER_THAN",
+      "value": 0
+    },
+    {
+      "name": "positive_quantity",
+      "entity": "PRODUCT",
+      "field": "QUANTITY",
+      "operator": "GREATER_THAN",
+      "value": 0
+    },
+    {
+      "name": "non_negative_total_value",
+      "entity": "PRODUCT",
+      "field": "TOTAL_VALUE",
+      "operator": "GREATER_THAN_OR_EQUAL",
+      "value": 0
+    },
+    {
+      "name": "premium_credit_limit",
+      "entity": "CUSTOMER",
+      "field": "CREDIT_LIMIT",
+      "operator": "GREATER_THAN_OR_EQUAL",
+      "value": 1000
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "product_total_value",
+      "type": "DERIVATION",
+      "target": {
+        "entity": "PRODUCT",
+        "field": "TOTAL_VALUE"
+      },
+      "sources": [
+        {
+          "entity": "PRODUCT",
+          "field": "UNIT_PRICE"
+        },
+        {
+          "entity": "PRODUCT",
+          "field": "QUANTITY"
+        }
+      ]
+    },
+    {
+      "name": "customer_status_from_type",
+      "type": "CONDITIONAL",
+      "target": {
+        "entity": "CUSTOMER",
+        "field": "CUSTOMER_STATUS"
+      },
+      "sources": [
+        {
+          "entity": "CUSTOMER",
+          "field": "CUSTOMER_TYPE"
+        }
+      ]
+    },
+    {
+      "name": "product_value_band",
+      "type": "CONDITIONAL",
+      "target": {
+        "entity": "PRODUCT",
+        "field": "VALUE_BAND"
+      },
+      "sources": [
+        {
+          "entity": "PRODUCT",
+          "field": "TOTAL_VALUE"
+        }
+      ]
+    },
+    {
+      "name": "product_customer_reference",
+      "type": "RELATIONSHIP",
+      "target": {
+        "entity": "PRODUCT",
+        "field": "CUSTOMER_ID"
+      },
+      "sources": [
+        {
+          "entity": "CUSTOMER",
+          "field": "CUSTOMER_ID"
+        }
+      ]
+    }
+  ],
+  "statistical_behavior": {},
+  "scenarios": {}
+}

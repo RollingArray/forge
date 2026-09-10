@@ -1,0 +1,249 @@
+{
+  "version": "1.0.0",
+  "vocabulary_version": "1.0",
+
+  "model": {
+    "name": "constraint_aware_relational_model",
+    "description": "Domain-neutral relational model for testing declarative constraint-aware dataset generation."
+  },
+
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL"
+  },
+
+  "entities": [
+    {
+      "name": "CUSTOMER",
+
+      "population": {
+        "count": 100
+      },
+
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+
+          "identity": {
+            "strategy": "SEQUENTIAL_ID",
+            "prefix": "CUS-"
+          }
+        },
+
+        {
+          "name": "CUSTOMER_SCORE",
+          "type": "FLOAT",
+
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+
+          "constraints": [
+            {
+              "name": "CUSTOMER_SCORE_RANGE",
+              "rule": "BETWEEN",
+              "operands": [
+                {
+                  "field": "CUSTOMER_SCORE"
+                },
+                0,
+                100
+              ]
+            }
+          ]
+        },
+
+        {
+          "name": "CUSTOMER_TYPE",
+          "type": "CATEGORICAL",
+
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STANDARD",
+                "PREMIUM"
+              ]
+            }
+          },
+
+          "constraints": [
+            {
+              "name": "CUSTOMER_TYPE_ALLOWED",
+              "rule": "IN",
+              "operands": [
+                {
+                  "field": "CUSTOMER_TYPE"
+                },
+                [
+                  "STANDARD",
+                  "PREMIUM"
+                ]
+              ]
+            }
+          ]
+        },
+
+        {
+          "name": "IS_ACTIVE",
+          "type": "BOOLEAN",
+
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                true,
+                false
+              ],
+              "weights": [
+                0.8,
+                0.2
+              ]
+            }
+          }
+        }
+      ],
+
+      "constraints": [
+        {
+          "name": "PREMIUM_SCORE_RULE",
+          "rule": "IMPLIES",
+          "operands": [
+            {
+              "rule": "EQUALS",
+              "operands": [
+                {
+                  "field": "CUSTOMER_TYPE"
+                },
+                "PREMIUM"
+              ]
+            },
+            {
+              "rule": "GREATER_OR_EQUAL",
+              "operands": [
+                {
+                  "field": "CUSTOMER_SCORE"
+                },
+                80
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "PRODUCT",
+
+      "population": {
+        "count": 50
+      },
+
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+
+          "identity": {
+            "strategy": "SEQUENTIAL_ID",
+            "prefix": "PRD-"
+          }
+        },
+
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER"
+        },
+
+        {
+          "name": "PRODUCT_PRICE",
+          "type": "DECIMAL",
+
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 10,
+              "maximum": 1000,
+              "precision": 2
+            }
+          },
+
+          "constraints": [
+            {
+              "name": "PRODUCT_PRICE_RANGE",
+              "rule": "BETWEEN",
+              "operands": [
+                {
+                  "field": "PRODUCT_PRICE"
+                },
+                10,
+                1000
+              ]
+            }
+          ]
+        },
+
+        {
+          "name": "PRODUCT_TYPE",
+          "type": "CATEGORICAL",
+
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STANDARD",
+                "PREMIUM"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+
+  "relationships": [
+    {
+      "name": "CUSTOMER_TO_PRODUCT",
+
+      "parent_entity": "CUSTOMER",
+      "parent_field": "CUSTOMER_ID",
+
+      "child_entity": "PRODUCT",
+      "child_field": "CUSTOMER_ID",
+
+      "cardinality": "1:N",
+      "required": true
+    }
+  ],
+
+  "constraints": [
+    {
+      "name": "PRODUCT_PRICE_VALID",
+      "entity": "PRODUCT",
+      "rule": "BETWEEN",
+      "operands": [
+        {
+          "field": "PRODUCT_PRICE"
+        },
+        10,
+        1000
+      ]
+    }
+  ],
+
+  "dependencies": [],
+
+  "statistical_behavior": [],
+
+  "scenarios": []
+}

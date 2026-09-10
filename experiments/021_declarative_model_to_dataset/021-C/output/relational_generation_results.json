@@ -1,0 +1,25 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-B",
+  "specification_validity": "PASS",
+  "relational_generation": "PASS",
+  "dataset_validation": {
+    "dataset_structure": "PASS",
+    "population_counts": "PASS",
+    "field_presence": "PASS",
+    "identity_uniqueness": "PASS",
+    "relationship_configuration": "PASS",
+    "referential_integrity": "PASS"
+  },
+  "reproducibility": "PASS",
+  "seed_sensitivity": "PASS",
+  "entity_order_independence": "PASS",
+  "generation_order": [
+    "CUSTOMER",
+    "PRODUCT"
+  ],
+  "relationship_count": 1,
+  "relationship_managed_field_count": 1,
+  "total_records": 150,
+  "overall": "PASS"
+}

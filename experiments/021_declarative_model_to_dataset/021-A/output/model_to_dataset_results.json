@@ -1,0 +1,19 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-A",
+  "specification_validity": "PASS",
+  "dataset_generation": "PASS",
+  "dataset_format": "CSV",
+  "dataset_validation": {
+    "Dataset Structure": "PASS",
+    "Population Counts": "PASS",
+    "Field Presence": "PASS",
+    "Identity Uniqueness": "PASS",
+    "Declared Ranges": "PASS",
+    "Categorical Values": "PASS"
+  },
+  "reproducibility": "PASS",
+  "seed_sensitivity": "PASS",
+  "total_records": 150,
+  "overall": "PASS"
+}

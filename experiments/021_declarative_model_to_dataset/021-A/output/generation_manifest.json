@@ -1,0 +1,21 @@
+{
+  "experiment": "021_declarative_model_to_dataset",
+  "stage": "021-A",
+  "model": "basic_relational_model",
+  "specification_version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "seed": 42,
+  "scenario": "NORMAL",
+  "dataset_format": "CSV",
+  "entities": {
+    "CUSTOMER": {
+      "records": 100,
+      "output": "output/dataset/CUSTOMER.csv"
+    },
+    "PRODUCT": {
+      "records": 50,
+      "output": "output/dataset/PRODUCT.csv"
+    }
+  },
+  "total_records": 150
+}
