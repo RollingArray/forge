@@ -212,11 +212,24 @@
               "description": "Generate realistic customer email addresses for an enterprise dataset. customers and from africa, india, china and US, have uqual distribution. each email to have of suffix with the country code"
             }
           }
+        },
+        {
+          "name": "INVOICE_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
         }
       ]
     }
   ],
-  "relationships": [],
+  "relationships": [
+    {
+      "source": "Customer.CUSTOMER_ID",
+      "target": "INVOICE.INVOICE_ID",
+      "type": "ONE_TO_MANY"
+    }
+  ],
   "constraints": [],
   "dependencies": [],
   "statistical_behavior": [],

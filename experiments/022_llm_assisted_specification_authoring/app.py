@@ -234,6 +234,7 @@ def initialise_state() -> None:
         "adding_field": None,
         "editing_population": None,
         "editing_relationship": None,
+        "adding_relationship": False,
         "editing_constraint": None,
         "adding_entity": False,
     }
@@ -2701,6 +2702,185 @@ with model_column:
 
         st.caption("No relationships defined.")
 
+    # -------------------------------------------------------------------------
+    # ADD RELATIONSHIP
+    # -------------------------------------------------------------------------
+
+    if st.button(
+        "➕ Add relationship",
+        key="add_relationship",
+        use_container_width=True,
+    ):
+
+        st.session_state.adding_relationship = True
+
+        st.session_state.manual_error = []
+
+        st.rerun()
+
+    if st.session_state.get("adding_relationship", False):
+
+        entity_list = entity_names(current_model)
+
+        if not entity_list:
+
+            st.warning("Create at least two entities before adding a relationship.")
+
+        elif len(entity_list) < 2:
+
+            st.warning("A relationship requires at least two entities.")
+
+        else:
+
+            with st.container(border=True):
+
+                st.markdown("**New relationship**")
+
+                source_entity = st.selectbox(
+                    "Source entity",
+                    entity_list,
+                    key="new_relationship_source_entity",
+                )
+
+                source_object = get_entity(
+                    current_model,
+                    source_entity,
+                )
+
+                source_fields = [
+                    field["name"] for field in (source_object or {}).get("fields", [])
+                ]
+
+                if not source_fields:
+
+                    st.warning(f"Source entity **{source_entity}** has no fields.")
+
+                else:
+
+                    source_field = st.selectbox(
+                        "Source field",
+                        source_fields,
+                        key="new_relationship_source_field",
+                    )
+
+                    target_entity_options = [
+                        entity for entity in entity_list if entity != source_entity
+                    ]
+
+                    target_entity = st.selectbox(
+                        "Target entity",
+                        target_entity_options,
+                        key="new_relationship_target_entity",
+                    )
+
+                    target_object = get_entity(
+                        current_model,
+                        target_entity,
+                    )
+
+                    target_fields = [
+                        field["name"]
+                        for field in (target_object or {}).get("fields", [])
+                    ]
+
+                    if not target_fields:
+
+                        st.warning(f"Target entity **{target_entity}** has no fields.")
+
+                    else:
+
+                        target_field = st.selectbox(
+                            "Target field",
+                            target_fields,
+                            key="new_relationship_target_field",
+                        )
+
+                        relationship_type = st.selectbox(
+                            "Relationship type",
+                            SUPPORTED_RELATIONSHIP_TYPES,
+                            key="new_relationship_type",
+                        )
+
+                        create_col, cancel_col = st.columns(2)
+
+                        with create_col:
+
+                            create_relationship = st.button(
+                                "Add Relationship",
+                                key="create_relationship",
+                                type="primary",
+                                use_container_width=True,
+                            )
+
+                        with cancel_col:
+
+                            cancel_relationship = st.button(
+                                "Cancel",
+                                key="cancel_new_relationship",
+                                use_container_width=True,
+                            )
+
+                        if cancel_relationship:
+
+                            st.session_state.adding_relationship = False
+
+                            st.session_state.manual_error = []
+
+                            st.rerun()
+
+                        if create_relationship:
+
+                            candidate = copy.deepcopy(current_model)
+
+                            candidate.setdefault(
+                                "relationships",
+                                [],
+                            )
+
+                            candidate["relationships"].append(
+                                {
+                                    "source": (f"{source_entity}.{source_field}"),
+                                    "target": (f"{target_entity}.{target_field}"),
+                                    "type": relationship_type,
+                                }
+                            )
+
+                            errors = forge_backend.validate_authoring_model(candidate)
+
+                            if errors:
+
+                                st.session_state.manual_error = errors
+
+                                st.session_state.manual_success = None
+
+                            else:
+
+                                try:
+
+                                    save_specification(candidate)
+
+                                except Exception as exc:
+
+                                    st.session_state.manual_error = [
+                                        "Relationship was validated but "
+                                        f"could not be saved: {exc}"
+                                    ]
+
+                                    st.session_state.manual_success = None
+
+                                else:
+
+                                    st.session_state.model = candidate
+
+                                    st.session_state.adding_relationship = False
+
+                                    st.session_state.manual_success = (
+                                        "Relationship added, validated, and saved."
+                                    )
+
+                                    st.session_state.manual_error = []
+
+                            st.rerun()
     for index, relationship in enumerate(relationships):
 
         with st.container(border=True):
@@ -2713,14 +2893,34 @@ with model_column:
                 f"{relationship.get('target', '?')}"
             )
 
-            if st.button(
-                "Edit relationship",
-                key=f"relationship_{index}",
-            ):
+            col1, col2 = st.columns(2)
 
-                st.session_state.editing_relationship = index
+            with col1:
+                if st.button("Edit relationship", key=f"relationship_edit_{index}"):
+                    st.session_state.editing_relationship = index
+                    st.rerun()
 
-                st.rerun()
+            with col2:
+                if st.button("Delete relationship", key=f"relationship_delete_{index}"):
+                    candidate = copy.deepcopy(current_model)
+                    candidate["relationships"].pop(index)
+
+                    validation_errors = forge_backend.validate_authoring_model(
+                        candidate
+                    )
+
+                    if validation_errors:
+                        st.error("Cannot delete relationship:")
+                        for error in validation_errors:
+                            st.error(error)
+                    else:
+                        save_specification(candidate)
+                        st.session_state.model = candidate
+                        st.session_state.editing_relationship = None
+                        st.session_state.manual_success = (
+                            "Relationship deleted successfully."
+                        )
+                        st.rerun()
 
         if st.session_state.editing_relationship == index:
 
