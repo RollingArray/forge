@@ -1788,15 +1788,112 @@ with model_column:
 
                 with field_right:
 
-                    if st.button(
-                        "Edit",
-                        key=f"field_edit_{reference}",
-                        use_container_width=True,
-                    ):
+                    edit_col, delete_col = st.columns(2)
 
-                        st.session_state.editing_field = reference
+                    with edit_col:
 
-                        st.rerun()
+                        if st.button(
+                            "Edit",
+                            key=f"field_edit_{reference}",
+                            use_container_width=True,
+                        ):
+
+                            st.session_state.editing_field = reference
+
+                            st.rerun()
+
+                    with delete_col:
+
+                        if st.button(
+                            "Delete",
+                            key=f"field_delete_{reference}",
+                            use_container_width=True,
+                        ):
+
+                            candidate = copy.deepcopy(current_model)
+
+                            target = get_field(
+                                candidate,
+                                reference,
+                            )
+
+                            if target is None:
+
+                                st.session_state.manual_error = [
+                                    f"Field {reference} does not exist."
+                                ]
+
+                                st.session_state.manual_success = None
+
+                            else:
+
+                                entity_name, field_name = reference.split(
+                                    ".",
+                                    1,
+                                )
+
+                                entity = get_entity(
+                                    candidate,
+                                    entity_name,
+                                )
+
+                                if entity is None:
+
+                                    st.session_state.manual_error = [
+                                        f"Entity {entity_name} does not exist."
+                                    ]
+
+                                    st.session_state.manual_success = None
+
+                                else:
+
+                                    entity["fields"] = [
+                                        field
+                                        for field in entity.get(
+                                            "fields",
+                                            [],
+                                        )
+                                        if field.get("name") != field_name
+                                    ]
+
+                                    validation_errors = (
+                                        forge_backend.validate_authoring_model(
+                                            candidate
+                                        )
+                                    )
+
+                                    if validation_errors:
+
+                                        st.session_state.manual_error = (
+                                            validation_errors
+                                        )
+
+                                        st.session_state.manual_success = None
+
+                                    else:
+
+                                        try:
+
+                                            save_specification(candidate)
+
+                                        except Exception as exc:
+
+                                            st.session_state.manual_error = [
+                                                "Field was validated but "
+                                                f"could not be saved: {exc}"
+                                            ]
+
+                                            st.session_state.manual_success = None
+
+                                        else:
+
+                                            st.session_state.model = candidate
+                                            st.session_state.editing_field = None
+                                            st.session_state.manual_success = (
+                                                f"Deleted **{reference}** and saved."
+                                            )
+
+                            st.rerun()
 
                 # ------------------------------------------------------------
                 # FIELD EDITOR

@@ -24,21 +24,6 @@
           }
         },
         {
-          "name": "COUNTRY",
-          "type": "STRING",
-          "generation": {
-            "strategy": "RANDOM",
-            "distribution": "CATEGORICAL",
-            "values": [
-              "US",
-              "DE",
-              "IN",
-              "GB",
-              "CA"
-            ]
-          }
-        },
-        {
           "name": "NAME",
           "type": "STRING",
           "generation": {
