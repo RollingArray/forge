@@ -201,6 +201,17 @@
               "pattern": "AAA-####-XX/##_AA-aa"
             }
           }
+        },
+        {
+          "name": "SIMANTIC_STRING",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "SEMANTIC",
+            "parameters": {
+              "description": "Generate realistic customer email addresses for an enterprise dataset. customers and from africa, india, china and US, have uqual distribution. each email to have of suffix with the country code"
+            }
+          }
         }
       ]
     }

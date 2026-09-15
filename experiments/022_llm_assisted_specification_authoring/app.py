@@ -224,6 +224,10 @@ def initialise_state() -> None:
         "pending_candidate": None,
         "pending_errors": [],
         "last_raw_response": "",
+        "semantic_preview": None,
+        "semantic_preview_error": [],
+        "semantic_preview_description": "",
+        "semantic_preview_field": None,
         "manual_error": [],
         "manual_success": None,
         "editing_field": None,
@@ -1168,6 +1172,7 @@ with model_column:
                                     "CATEGORICAL",
                                     "RANDOM_STRING",
                                     "PATTERN",
+                                    "SEMANTIC",
                                 ],
                                 key=f"new_string_generation_mode_{entity_name}",
                             )
@@ -1223,6 +1228,170 @@ with model_column:
 
                                 st.caption(f"Preview: `{preview_pattern(new_pattern)}`")
 
+                            elif string_generation_mode == "SEMANTIC":
+
+                                new_generator = "SEMANTIC"
+
+                                semantic_description = st.text_area(
+                                    "Semantic description",
+                                    key=f"new_semantic_description_{entity_name}",
+                                    placeholder=(
+                                        "Generate realistic aerospace component "
+                                        "descriptions suitable for an engineering dataset."
+                                    ),
+                                    help=(
+                                        "Describe the kind of realistic STRING "
+                                        "values you want FORGE to generate."
+                                    ),
+                                )
+
+                                preview_col, clear_col = st.columns(2)
+
+                                with preview_col:
+
+                                    preview_semantic = st.button(
+                                        "Interpret & Preview",
+                                        key=f"preview_semantic_{entity_name}",
+                                        use_container_width=True,
+                                    )
+
+                                with clear_col:
+
+                                    clear_semantic = st.button(
+                                        "Clear Preview",
+                                        key=f"clear_semantic_{entity_name}",
+                                        use_container_width=True,
+                                    )
+
+                                if clear_semantic:
+
+                                    st.session_state.semantic_preview = None
+                                    st.session_state.semantic_preview_error = []
+                                    st.session_state.semantic_preview_description = ""
+                                    st.session_state.semantic_preview_field = None
+
+                                    st.rerun()
+
+                                if preview_semantic:
+
+                                    description = semantic_description.strip()
+
+                                    if not description:
+
+                                        st.session_state.semantic_preview = None
+                                        st.session_state.semantic_preview_error = [
+                                            "Semantic description must not be empty."
+                                        ]
+                                        st.session_state.semantic_preview_description = (
+                                            ""
+                                        )
+                                        st.session_state.semantic_preview_field = (
+                                            entity_name
+                                        )
+
+                                    else:
+
+                                        try:
+
+                                            semantic_result = (
+                                                forge_backend.generate_semantic_preview(
+                                                    description
+                                                )
+                                            )
+
+                                            st.session_state.semantic_preview = (
+                                                semantic_result
+                                            )
+
+                                            st.session_state.semantic_preview_error = []
+
+                                            st.session_state.semantic_preview_description = (
+                                                description
+                                            )
+
+                                            st.session_state.semantic_preview_field = (
+                                                entity_name
+                                            )
+
+                                        except Exception as exc:
+
+                                            st.session_state.semantic_preview = None
+                                            st.session_state.semantic_preview_error = [
+                                                str(exc)
+                                            ]
+                                            st.session_state.semantic_preview_description = (
+                                                description
+                                            )
+                                            st.session_state.semantic_preview_field = (
+                                                entity_name
+                                            )
+
+                                # ------------------------------------------------
+                                # SEMANTIC PREVIEW
+                                # ------------------------------------------------
+
+                                semantic_result = st.session_state.semantic_preview
+
+                                if (
+                                    semantic_result is not None
+                                    and st.session_state.semantic_preview_field
+                                    == entity_name
+                                ):
+
+                                    status = semantic_result.get("status")
+
+                                    if status == "PROPOSE":
+
+                                        st.markdown("**LLM interpretation**")
+
+                                        st.info(
+                                            semantic_result.get(
+                                                "message",
+                                                "",
+                                            )
+                                        )
+
+                                        st.markdown("**10-value preview**")
+
+                                        preview_values = semantic_result.get(
+                                            "preview_values",
+                                            [],
+                                        )
+
+                                        for index, value in enumerate(
+                                            preview_values,
+                                            start=1,
+                                        ):
+
+                                            st.write(f"{index}. {value}")
+
+                                        st.success(
+                                            "Review the interpretation and "
+                                            "preview values, then click "
+                                            "**Create Field** to accept them."
+                                        )
+
+                                    elif status == "CLARIFY":
+
+                                        st.warning(
+                                            semantic_result.get(
+                                                "message",
+                                                "Additional clarification is required.",
+                                            )
+                                        )
+
+                                    elif status == "UNSUPPORTED":
+
+                                        st.error(
+                                            semantic_result.get(
+                                                "message",
+                                                "This semantic requirement is unsupported.",
+                                            )
+                                        )
+
+                                for error in st.session_state.semantic_preview_error:
+
+                                    st.error(error)
                             else:
 
                                 new_distribution = "CATEGORICAL"
@@ -1424,6 +1593,39 @@ with model_column:
                                 "generator": "PATTERN",
                                 "parameters": {
                                     "pattern": new_pattern,
+                                },
+                            }
+
+                        elif new_field_type == "STRING" and new_generator == "SEMANTIC":
+
+                            semantic_description = st.session_state.get(
+                                "semantic_preview_description",
+                                "",
+                            ).strip()
+
+                            semantic_preview = st.session_state.get(
+                                "semantic_preview",
+                            )
+
+                            if (
+                                not semantic_description
+                                or not isinstance(semantic_preview, dict)
+                                or semantic_preview.get("status") != "PROPOSE"
+                            ):
+
+                                st.session_state.manual_error = [
+                                    "SEMANTIC generation requires a successful "
+                                    "LLM interpretation and preview before the "
+                                    "field can be created."
+                                ]
+
+                                st.rerun()
+
+                            operation["field"]["generation"] = {
+                                "strategy": new_generation_strategy,
+                                "generator": "SEMANTIC",
+                                "parameters": {
+                                    "description": semantic_description,
                                 },
                             }
 
@@ -1711,7 +1913,11 @@ with model_column:
 
                                 current_generator = generation.get("generator")
 
-                                if current_generator in {"RANDOM_STRING", "PATTERN"}:
+                                if current_generator in {
+                                    "RANDOM_STRING",
+                                    "PATTERN",
+                                    "SEMANTIC",
+                                }:
 
                                     current_parameters = generation.get(
                                         "parameters",
@@ -1722,6 +1928,7 @@ with model_column:
                                         "CATEGORICAL",
                                         "RANDOM_STRING",
                                         "PATTERN",
+                                        "SEMANTIC",
                                     ]
 
                                     string_generation_mode = st.selectbox(
@@ -1817,6 +2024,181 @@ with model_column:
                                         st.caption(
                                             f"Preview: `{preview_pattern(new_pattern)}`"
                                         )
+
+                                    elif string_generation_mode == "SEMANTIC":
+
+                                        new_generator = "SEMANTIC"
+
+                                        current_description = current_parameters.get(
+                                            "description",
+                                            "",
+                                        )
+
+                                        new_semantic_description = st.text_area(
+                                            "Semantic description",
+                                            value=str(current_description),
+                                            key=f"edit_semantic_description_{reference}",
+                                            placeholder=(
+                                                "Generate realistic engineering "
+                                                "document titles."
+                                            ),
+                                            help=(
+                                                "Describe the kind of realistic "
+                                                "STRING values you want FORGE "
+                                                "to generate."
+                                            ),
+                                        )
+
+                                        preview_col, clear_col = st.columns(2)
+
+                                        with preview_col:
+
+                                            preview_semantic = st.button(
+                                                "Interpret & Preview",
+                                                key=f"edit_preview_semantic_{reference}",
+                                                use_container_width=True,
+                                            )
+
+                                        with clear_col:
+
+                                            clear_semantic = st.button(
+                                                "Clear Preview",
+                                                key=f"edit_clear_semantic_{reference}",
+                                                use_container_width=True,
+                                            )
+
+                                        if clear_semantic:
+
+                                            st.session_state.semantic_preview = None
+                                            st.session_state.semantic_preview_error = []
+                                            st.session_state.semantic_preview_description = (
+                                                ""
+                                            )
+                                            st.session_state.semantic_preview_field = (
+                                                None
+                                            )
+
+                                            st.rerun()
+
+                                        if preview_semantic:
+
+                                            description = (
+                                                new_semantic_description.strip()
+                                            )
+
+                                            if not description:
+
+                                                st.session_state.semantic_preview = None
+                                                st.session_state.semantic_preview_error = [
+                                                    "Semantic description must not be empty."
+                                                ]
+                                                st.session_state.semantic_preview_description = (
+                                                    ""
+                                                )
+                                                st.session_state.semantic_preview_field = (
+                                                    reference
+                                                )
+
+                                            else:
+
+                                                try:
+
+                                                    semantic_result = forge_backend.generate_semantic_preview(
+                                                        description
+                                                    )
+
+                                                    st.session_state.semantic_preview = (
+                                                        semantic_result
+                                                    )
+
+                                                    st.session_state.semantic_preview_error = (
+                                                        []
+                                                    )
+
+                                                    st.session_state.semantic_preview_description = (
+                                                        description
+                                                    )
+
+                                                    st.session_state.semantic_preview_field = (
+                                                        reference
+                                                    )
+
+                                                except Exception as exc:
+
+                                                    st.session_state.semantic_preview = (
+                                                        None
+                                                    )
+                                                    st.session_state.semantic_preview_error = [
+                                                        str(exc)
+                                                    ]
+                                                    st.session_state.semantic_preview_description = (
+                                                        description
+                                                    )
+                                                    st.session_state.semantic_preview_field = (
+                                                        reference
+                                                    )
+
+                                        semantic_result = (
+                                            st.session_state.semantic_preview
+                                        )
+
+                                        if (
+                                            semantic_result is not None
+                                            and st.session_state.semantic_preview_field
+                                            == reference
+                                        ):
+
+                                            status = semantic_result.get("status")
+
+                                            if status == "PROPOSE":
+
+                                                st.markdown("**LLM interpretation**")
+
+                                                st.info(
+                                                    semantic_result.get(
+                                                        "message",
+                                                        "",
+                                                    )
+                                                )
+
+                                                st.markdown("**10-value preview**")
+
+                                                preview_values = semantic_result.get(
+                                                    "preview_values",
+                                                    [],
+                                                )
+
+                                                for index, value in enumerate(
+                                                    preview_values,
+                                                    start=1,
+                                                ):
+
+                                                    st.write(f"{index}. {value}")
+
+                                            elif status == "CLARIFY":
+
+                                                st.warning(
+                                                    semantic_result.get(
+                                                        "message",
+                                                        "Additional clarification is required.",
+                                                    )
+                                                )
+
+                                            elif status == "UNSUPPORTED":
+
+                                                st.error(
+                                                    semantic_result.get(
+                                                        "message",
+                                                        "This semantic requirement is unsupported.",
+                                                    )
+                                                )
+
+                                        for (
+                                            error
+                                        ) in st.session_state.semantic_preview_error:
+
+                                            st.error(error)
+
                                     else:
 
                                         new_generator = None
@@ -2166,13 +2548,53 @@ with model_column:
                             # STRING PATTERN
                             # ------------------------------------------------
 
-                            elif new_type == "STRING" and new_generator == "PATTERN":
+                            elif new_type == "STRING" and new_generator == "SEMANTIC":
+
+                                semantic_description = new_semantic_description.strip()
+
+                                semantic_preview = st.session_state.get(
+                                    "semantic_preview",
+                                )
+
+                                semantic_preview_field = st.session_state.get(
+                                    "semantic_preview_field",
+                                )
+
+                                semantic_preview_description = st.session_state.get(
+                                    "semantic_preview_description",
+                                    "",
+                                ).strip()
+
+                                # ------------------------------------------------
+                                # Require successful interpretation
+                                # ------------------------------------------------
+
+                                if (
+                                    not semantic_description
+                                    or semantic_preview_field != reference
+                                    or semantic_preview_description
+                                    != semantic_description
+                                    or not isinstance(
+                                        semantic_preview,
+                                        dict,
+                                    )
+                                    or semantic_preview.get("status") != "PROPOSE"
+                                ):
+
+                                    st.session_state.manual_error = [
+                                        "SEMANTIC generation requires a successful "
+                                        "LLM interpretation and preview for the "
+                                        "current description before the field "
+                                        "can be saved."
+                                    ]
+
+                                    st.rerun()
 
                                 target["generation"] = {
                                     "strategy": new_strategy,
-                                    "generator": "PATTERN",
+                                    "generator": "SEMANTIC",
                                     "parameters": {
-                                        "pattern": new_pattern,
+                                        "description": semantic_description,
                                     },
                                 }
 

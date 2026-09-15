@@ -183,7 +183,10 @@ SUPPORTED_DISTRIBUTIONS = {
 SUPPORTED_STRING_GENERATORS = {
     "RANDOM_STRING",
     "PATTERN",
+    "SEMANTIC",
 }
+
+SEMANTIC_PREVIEW_COUNT = 10
 
 SUPPORTED_STRING_CHARACTER_SETS = {
     "ALPHA",
@@ -199,7 +202,6 @@ SUPPORTED_OPERATORS = {
     "==",
     "!=",
 }
-
 
 # ============================================================================
 # INITIAL FORGE MODEL
@@ -644,6 +646,27 @@ def validate_specification(
                                 errors.append(
                                     f"{name}.{field_name}: PATTERN "
                                     "pattern must not be empty."
+                                )
+                    elif generator == "SEMANTIC":
+
+                        parameters = generation.get("parameters")
+
+                        if not isinstance(parameters, dict):
+                            errors.append(
+                                f"{name}.{field_name}: SEMANTIC " "requires parameters."
+                            )
+                        else:
+                            description = parameters.get("description")
+
+                            if not isinstance(description, str):
+                                errors.append(
+                                    f"{name}.{field_name}: SEMANTIC "
+                                    "description must be a string."
+                                )
+                            elif not description.strip():
+                                errors.append(
+                                    f"{name}.{field_name}: SEMANTIC "
+                                    "description must not be empty."
                                 )
 
                 else:
@@ -1237,6 +1260,28 @@ def validate_authoring_model(
                                 errors.append(
                                     f"{name}.{field_name}: PATTERN "
                                     "pattern must not be empty."
+                                )
+
+                    elif generator == "SEMANTIC":
+
+                        parameters = generation.get("parameters")
+
+                        if not isinstance(parameters, dict):
+                            errors.append(
+                                f"{name}.{field_name}: SEMANTIC " "requires parameters."
+                            )
+                        else:
+                            description = parameters.get("description")
+
+                            if not isinstance(description, str):
+                                errors.append(
+                                    f"{name}.{field_name}: SEMANTIC "
+                                    "description must be a string."
+                                )
+                            elif not description.strip():
+                                errors.append(
+                                    f"{name}.{field_name}: SEMANTIC "
+                                    "description must not be empty."
                                 )
 
                 else:
@@ -3403,6 +3448,500 @@ Translate ONLY this user requirement into FORGE operations.
         raise RuntimeError("Ollama response did not contain " "a textual response.")
 
     return response_text.strip()
+
+
+# ============================================================================
+# SEMANTIC STRING LLM CONTRACT
+# ============================================================================
+
+
+def build_semantic_system_prompt() -> str:
+    """
+    Build the dedicated LLM contract for SEMANTIC STRING authoring.
+
+    This contract is intentionally separate from the general FORGE
+    operation-authoring protocol.
+
+    The LLM interprets semantic intent and produces representative preview
+    values. It does not create or modify FORGE model operations.
+    """
+
+    return f"""
+You are the FORGE Semantic String Authoring Assistant.
+
+Your only responsibility is to interpret a natural-language requirement for
+the values of a FORGE STRING field and demonstrate that interpretation using
+exactly {SEMANTIC_PREVIEW_COUNT} representative preview values.
+
+You are NOT the FORGE data generator.
+
+You are NOT the FORGE specification authoring assistant.
+
+You must NOT create FORGE operations.
+
+You must NOT create entities, fields, relationships, constraints,
+dependencies, distributions, or generation rules.
+
+You must NOT return Python, SQL, CSV, markdown, explanations outside the
+defined JSON contract, or arbitrary metadata.
+
+============================================================
+1. INPUT
+============================================================
+
+You will receive one natural-language semantic description.
+
+Example:
+
+    Generate realistic first and last names.
+
+Other examples:
+
+    Generate realistic US street addresses.
+
+    Generate realistic aerospace component descriptions.
+
+    Generate concise descriptions of manufacturing defects.
+
+    Generate realistic engineering document titles.
+
+    Generate realistic customer email addresses for an enterprise dataset.
+
+The description is the user's intent.
+
+Do not silently add requirements that are not present in the description.
+
+============================================================
+2. INTERPRETATION
+============================================================
+
+First determine whether the description is sufficiently clear to generate
+representative STRING values.
+
+If it is clear:
+
+- Return status PROPOSE.
+- Provide a concise interpretation of the requested semantic content.
+- Provide exactly {SEMANTIC_PREVIEW_COUNT} representative STRING values.
+
+The interpretation must describe what the values represent.
+
+Do not turn the interpretation into a FORGE operation.
+
+============================================================
+3. NO HIDDEN ASSUMPTIONS
+============================================================
+
+Do not silently assume important semantic requirements that the user did not
+provide.
+
+Examples of information that may require clarification include:
+
+- country or geographic scope
+- language
+- naming convention
+- business context
+- audience
+- format requirements
+- level of realism
+- required terminology
+- domain-specific meaning
+- required structure
+
+Use reasonable interpretation only when the description is sufficiently clear
+without materially changing the user's intent.
+
+If an important ambiguity prevents a meaningful preview, return CLARIFY.
+
+Do not guess merely to produce a preview.
+
+============================================================
+4. CLARIFY
+============================================================
+
+If additional user information is required, return:
+
+{{
+  "status": "CLARIFY",
+  "message": "<short explanation of what needs clarification>",
+  "preview_values": []
+}}
+
+The message must contain a specific clarification question or explain the
+missing information.
+
+Do not provide preview values when returning CLARIFY.
+
+============================================================
+5. UNSUPPORTED
+============================================================
+
+If the requested semantic capability cannot reasonably be represented as
+STRING values by this capability, return:
+
+{{
+  "status": "UNSUPPORTED",
+  "message": "<short explanation>",
+  "preview_values": []
+}}
+
+Do not attempt to invent an alternative requirement.
+
+============================================================
+6. PROPOSE
+============================================================
+
+For a valid semantic requirement, return:
+
+{{
+  "status": "PROPOSE",
+  "message": "<concise interpretation of the semantic requirement>",
+  "preview_values": [
+    "<value 1>",
+    "<value 2>",
+    "<value 3>",
+    "<value 4>",
+    "<value 5>",
+    "<value 6>",
+    "<value 7>",
+    "<value 8>",
+    "<value 9>",
+    "<value 10>"
+  ]
+}}
+
+The preview_values array MUST contain exactly {SEMANTIC_PREVIEW_COUNT}
+values.
+
+Every preview value MUST be a JSON string.
+
+The values should be representative of the interpretation.
+
+Do not number the values.
+
+Do not add commentary to the values.
+
+Do not return fewer or more than {SEMANTIC_PREVIEW_COUNT} values.
+
+============================================================
+7. IMPORTANT BOUNDARY
+============================================================
+
+The preview values are examples only.
+
+They are NOT the FORGE specification.
+
+Do not infer or return:
+
+- field names
+- field types
+- generation strategies
+- generators
+- distributions
+- constraints
+- dependencies
+- FORGE operations
+
+The user's original semantic description remains the input that will
+eventually be stored in the FORGE specification.
+
+============================================================
+8. OUTPUT CONTRACT
+============================================================
+
+Your response MUST be valid JSON.
+
+The top-level JSON object MUST contain exactly:
+
+{{
+  "status": "PROPOSE" | "CLARIFY" | "UNSUPPORTED",
+  "message": "<short explanation>",
+  "preview_values": []
+}}
+
+For PROPOSE:
+
+- status MUST be "PROPOSE"
+- message MUST be a non-empty string
+- preview_values MUST contain exactly {SEMANTIC_PREVIEW_COUNT} strings
+
+For CLARIFY:
+
+- status MUST be "CLARIFY"
+- message MUST be a non-empty string
+- preview_values MUST be an empty list
+
+For UNSUPPORTED:
+
+- status MUST be "UNSUPPORTED"
+- message MUST be a non-empty string
+- preview_values MUST be an empty list
+
+Do not include:
+
+- operations
+- thoughts
+- reasoning
+- analysis
+- markdown
+- code fences
+- tool calls
+- arbitrary metadata
+- model information
+- FORGE specification objects
+
+Return JSON only.
+"""
+
+
+def call_semantic_llm(
+    description: str,
+) -> str:
+    """
+    Call the LLM using the dedicated SEMANTIC STRING contract.
+
+    This call is intentionally independent from the general FORGE
+    operation-authoring flow.
+    """
+
+    prompt = f"""
+SEMANTIC STRING REQUIREMENT:
+
+{description}
+
+Interpret this requirement according to the SEMANTIC STRING contract.
+Return only the required JSON response.
+"""
+
+    payload = {
+        "model": MODEL,
+        "prompt": prompt,
+        "system": build_semantic_system_prompt(),
+        "stream": False,
+        "format": "json",
+        "options": {
+            "temperature": 0,
+        },
+        "think": False,
+    }
+
+    request = urllib.request.Request(
+        OLLAMA_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+
+        with urllib.request.urlopen(
+            request,
+            timeout=LLM_TIMEOUT_SECONDS,
+        ) as response:
+
+            response_body = response.read().decode("utf-8")
+
+    except urllib.error.URLError as exc:
+
+        raise RuntimeError(
+            "Unable to reach Ollama at "
+            f"{OLLAMA_URL}. "
+            "Make sure Ollama is running and the selected "
+            f"model '{MODEL}' is available."
+        ) from exc
+
+    try:
+
+        response_payload = json.loads(response_body)
+
+    except json.JSONDecodeError as exc:
+
+        raise RuntimeError("Ollama returned invalid JSON.") from exc
+
+    response_text = response_payload.get("response")
+
+    if not isinstance(response_text, str):
+
+        raise RuntimeError("Ollama response did not contain a textual response.")
+
+    return response_text.strip()
+
+
+def parse_semantic_response(
+    raw_response: str,
+) -> dict[str, Any]:
+    """
+    Parse and strictly validate a SEMANTIC LLM response.
+
+    This parser is intentionally independent from parse_llm_response(),
+    because SEMANTIC responses are not FORGE operation responses.
+    """
+
+    text = raw_response.strip()
+
+    # ------------------------------------------------------------------------
+    # Tolerate accidental markdown fences
+    # ------------------------------------------------------------------------
+
+    if text.startswith("```"):
+
+        lines = text.splitlines()
+
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+
+        text = "\n".join(lines).strip()
+
+    # ------------------------------------------------------------------------
+    # Parse JSON
+    # ------------------------------------------------------------------------
+
+    try:
+
+        response = json.loads(text)
+
+    except json.JSONDecodeError as exc:
+
+        raise ValueError("SEMANTIC LLM response was not valid JSON.") from exc
+
+    if not isinstance(response, dict):
+
+        raise ValueError("SEMANTIC LLM response must be a JSON object.")
+
+    # ------------------------------------------------------------------------
+    # Strict top-level contract
+    # ------------------------------------------------------------------------
+
+    expected_keys = {
+        "status",
+        "message",
+        "preview_values",
+    }
+
+    actual_keys = set(response.keys())
+
+    unexpected_keys = actual_keys - expected_keys
+
+    if unexpected_keys:
+
+        raise ValueError(
+            "SEMANTIC LLM response contains unsupported keys: "
+            f"{sorted(unexpected_keys)}."
+        )
+
+    missing_keys = expected_keys - actual_keys
+
+    if missing_keys:
+
+        raise ValueError(
+            "SEMANTIC LLM response is missing required keys: "
+            f"{sorted(missing_keys)}."
+        )
+
+    status = response.get("status")
+    message = response.get("message")
+    preview_values = response.get("preview_values")
+
+    # ------------------------------------------------------------------------
+    # Status
+    # ------------------------------------------------------------------------
+
+    allowed_statuses = {
+        "PROPOSE",
+        "CLARIFY",
+        "UNSUPPORTED",
+    }
+
+    if status not in allowed_statuses:
+
+        raise ValueError(
+            "SEMANTIC LLM response contains unsupported status " f"{status!r}."
+        )
+
+    # ------------------------------------------------------------------------
+    # Message
+    # ------------------------------------------------------------------------
+
+    if not isinstance(message, str) or not message.strip():
+
+        raise ValueError("SEMANTIC LLM response message must be a non-empty string.")
+
+    # ------------------------------------------------------------------------
+    # Preview values container
+    # ------------------------------------------------------------------------
+
+    if not isinstance(preview_values, list):
+
+        raise ValueError("SEMANTIC LLM preview_values must be a list.")
+
+    # ------------------------------------------------------------------------
+    # PROPOSE
+    # ------------------------------------------------------------------------
+
+    if status == "PROPOSE":
+
+        if len(preview_values) != SEMANTIC_PREVIEW_COUNT:
+
+            raise ValueError(
+                "SEMANTIC PROPOSE response must contain exactly "
+                f"{SEMANTIC_PREVIEW_COUNT} preview values; "
+                f"got {len(preview_values)}."
+            )
+
+        if any(not isinstance(value, str) for value in preview_values):
+
+            raise ValueError("SEMANTIC preview values must all be strings.")
+
+        return {
+            "status": "PROPOSE",
+            "message": message.strip(),
+            "preview_values": preview_values,
+        }
+
+    # ------------------------------------------------------------------------
+    # CLARIFY / UNSUPPORTED
+    # ------------------------------------------------------------------------
+
+    if preview_values:
+
+        raise ValueError(f"SEMANTIC {status} response must not contain preview values.")
+
+    return {
+        "status": status,
+        "message": message.strip(),
+        "preview_values": [],
+    }
+
+
+def generate_semantic_preview(
+    description: str,
+) -> dict[str, Any]:
+    """
+    Interpret a semantic STRING requirement and return a validated preview.
+
+    No FORGE model is created or modified by this function.
+    """
+
+    if not isinstance(description, str):
+
+        raise ValueError("SEMANTIC description must be a string.")
+
+    if not description.strip():
+
+        raise ValueError("SEMANTIC description must not be empty.")
+
+    raw_response = call_semantic_llm(
+        description.strip(),
+    )
+
+    return parse_semantic_response(
+        raw_response,
+    )
 
 
 # ============================================================================
