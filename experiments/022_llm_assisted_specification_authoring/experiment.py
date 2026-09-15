@@ -182,6 +182,7 @@ SUPPORTED_DISTRIBUTIONS = {
 
 SUPPORTED_STRING_GENERATORS = {
     "RANDOM_STRING",
+    "PATTERN",
 }
 
 SUPPORTED_STRING_CHARACTER_SETS = {
@@ -622,6 +623,27 @@ def validate_specification(
                                     f"{name}.{field_name}: unsupported "
                                     f"RANDOM_STRING character set "
                                     f"{character_set!r}."
+                                )
+                    elif generator == "PATTERN":
+
+                        parameters = generation.get("parameters")
+
+                        if not isinstance(parameters, dict):
+                            errors.append(
+                                f"{name}.{field_name}: PATTERN " "requires parameters."
+                            )
+                        else:
+                            pattern = parameters.get("pattern")
+
+                            if not isinstance(pattern, str):
+                                errors.append(
+                                    f"{name}.{field_name}: PATTERN "
+                                    "pattern must be a string."
+                                )
+                            elif not pattern:
+                                errors.append(
+                                    f"{name}.{field_name}: PATTERN "
+                                    "pattern must not be empty."
                                 )
 
                 else:
@@ -1194,6 +1216,27 @@ def validate_authoring_model(
                                     f"{name}.{field_name}: unsupported "
                                     f"RANDOM_STRING character set "
                                     f"{character_set!r}."
+                                )
+                    elif generator == "PATTERN":
+
+                        parameters = generation.get("parameters")
+
+                        if not isinstance(parameters, dict):
+                            errors.append(
+                                f"{name}.{field_name}: PATTERN " "requires parameters."
+                            )
+                        else:
+                            pattern = parameters.get("pattern")
+
+                            if not isinstance(pattern, str):
+                                errors.append(
+                                    f"{name}.{field_name}: PATTERN "
+                                    "pattern must be a string."
+                                )
+                            elif not pattern:
+                                errors.append(
+                                    f"{name}.{field_name}: PATTERN "
+                                    "pattern must not be empty."
                                 )
 
                 else:

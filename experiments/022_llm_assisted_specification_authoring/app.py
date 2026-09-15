@@ -32,6 +32,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+import random
 
 import streamlit as st
 
@@ -116,6 +117,38 @@ SUPPORTED_RELATIONSHIP_TYPES = [
 ]
 
 SUPPORTED_OPERATORS = sorted(forge_backend.SUPPORTED_OPERATORS)
+
+
+def preview_pattern(pattern: str) -> str:
+    """Render one deterministic illustrative value from a FORGE PATTERN."""
+
+    rng = random.Random(f"FORGE_PATTERN_PREVIEW:{pattern}")
+
+    uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    lowercase = "abcdefghijklmnopqrstuvwxyz"
+    digits = "0123456789"
+    alphanumeric = uppercase + lowercase + digits
+
+    result = []
+
+    for character in pattern:
+
+        if character == "#":
+            result.append(rng.choice(digits))
+
+        elif character == "A":
+            result.append(rng.choice(uppercase))
+
+        elif character == "a":
+            result.append(rng.choice(lowercase))
+
+        elif character == "X":
+            result.append(rng.choice(alphanumeric))
+
+        else:
+            result.append(character)
+
+    return "".join(result)
 
 
 def integer_distribution_requires_range(distribution: str) -> bool:
@@ -1134,6 +1167,7 @@ with model_column:
                                 [
                                     "CATEGORICAL",
                                     "RANDOM_STRING",
+                                    "PATTERN",
                                 ],
                                 key=f"new_string_generation_mode_{entity_name}",
                             )
@@ -1165,6 +1199,29 @@ with model_column:
                                     SUPPORTED_STRING_CHARACTER_SETS,
                                     key=f"new_random_string_character_set_{entity_name}",
                                 )
+
+                            elif string_generation_mode == "PATTERN":
+
+                                new_generator = "PATTERN"
+
+                                new_pattern = st.text_input(
+                                    "Pattern",
+                                    value="AA-####-XX",
+                                    key=f"new_pattern_{entity_name}",
+                                    help=(
+                                        "# = digit | "
+                                        "A = uppercase letter | "
+                                        "a = lowercase letter | "
+                                        "X = alphanumeric. "
+                                        "All other characters are literals."
+                                    ),
+                                )
+
+                                st.caption(
+                                    r"\# = digit · A = uppercase · a = lowercase · X = alphanumeric"
+                                )
+
+                                st.caption(f"Preview: `{preview_pattern(new_pattern)}`")
 
                             else:
 
@@ -1357,6 +1414,16 @@ with model_column:
                                     "minimum_length": int(new_minimum),
                                     "maximum_length": int(new_maximum),
                                     "character_set": new_character_set,
+                                },
+                            }
+
+                        elif new_field_type == "STRING" and new_generator == "PATTERN":
+
+                            operation["field"]["generation"] = {
+                                "strategy": new_generation_strategy,
+                                "generator": "PATTERN",
+                                "parameters": {
+                                    "pattern": new_pattern,
                                 },
                             }
 
@@ -1644,20 +1711,30 @@ with model_column:
 
                                 current_generator = generation.get("generator")
 
-                                if current_generator == "RANDOM_STRING":
+                                if current_generator in {"RANDOM_STRING", "PATTERN"}:
 
                                     current_parameters = generation.get(
                                         "parameters",
                                         {},
                                     )
 
+                                    string_generation_modes = [
+                                        "CATEGORICAL",
+                                        "RANDOM_STRING",
+                                        "PATTERN",
+                                    ]
+
                                     string_generation_mode = st.selectbox(
                                         "String generation",
-                                        [
-                                            "CATEGORICAL",
-                                            "RANDOM_STRING",
-                                        ],
-                                        index=1,
+                                        string_generation_modes,
+                                        index=(
+                                            string_generation_modes.index(
+                                                current_generator
+                                            )
+                                            if current_generator
+                                            in string_generation_modes
+                                            else 0
+                                        ),
                                         key=f"edit_string_generation_mode_{reference}",
                                     )
 
@@ -1712,6 +1789,34 @@ with model_column:
                                             key=f"edit_random_string_character_set_{reference}",
                                         )
 
+                                    elif string_generation_mode == "PATTERN":
+
+                                        new_generator = "PATTERN"
+
+                                        current_pattern = current_parameters.get(
+                                            "pattern",
+                                            "AA-####-XX",
+                                        )
+
+                                        new_pattern = st.text_input(
+                                            "Pattern",
+                                            value=str(current_pattern),
+                                            key=f"edit_pattern_{reference}",
+                                            help=(
+                                                "# = digit | "
+                                                "A = uppercase letter | "
+                                                "a = lowercase letter | "
+                                                "X = alphanumeric. "
+                                                "All other characters are literals."
+                                            ),
+                                        )
+
+                                        st.caption(
+                                            r"\# digit · A uppercase · a lowercase · X alphanumeric"
+                                        )
+                                        st.caption(
+                                            f"Preview: `{preview_pattern(new_pattern)}`"
+                                        )
                                     else:
 
                                         new_generator = None
@@ -2054,6 +2159,20 @@ with model_column:
                                         "minimum_length": int(new_minimum),
                                         "maximum_length": int(new_maximum),
                                         "character_set": new_character_set,
+                                    },
+                                }
+
+                            # ------------------------------------------------
+                            # STRING PATTERN
+                            # ------------------------------------------------
+
+                            elif new_type == "STRING" and new_generator == "PATTERN":
+
+                                target["generation"] = {
+                                    "strategy": new_strategy,
+                                    "generator": "PATTERN",
+                                    "parameters": {
+                                        "pattern": new_pattern,
                                     },
                                 }
 
