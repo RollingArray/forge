@@ -1,0 +1,202 @@
+{
+  "version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "llm_authored_model",
+    "description": "Progressively authored FORGE model."
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL"
+  },
+  "entities": [
+    {
+      "name": "Customer",
+      "population": {
+        "count": 10000
+      },
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "COUNTRY",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "values": [
+              "US",
+              "DE",
+              "IN",
+              "GB",
+              "CA"
+            ]
+          }
+        },
+        {
+          "name": "NAME",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM"
+          }
+        },
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM"
+          }
+        },
+        {
+          "name": "TEMPERATURE",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "ORDER_VALUE",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM"
+          }
+        },
+        {
+          "name": "DISCOUNT",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "CUSTOMER_TYPE",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "values": [
+              "RETAIL",
+              "WHOLESALE",
+              "GOVERNMENT",
+              "OWNED"
+            ]
+          }
+        },
+        {
+          "name": "ACTIVE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        }
+      ]
+    },
+    {
+      "name": "INVOICE",
+      "population": {
+        "count": 250
+      },
+      "fields": [
+        {
+          "name": "NET_AMOUNT",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "SENSOR_READING",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        {
+          "name": "PRIORITY",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        },
+        {
+          "name": "STATUS_CODE",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                1,
+                2,
+                5,
+                10
+              ]
+            }
+          }
+        },
+        {
+          "name": "CATEGORICAL_STRING",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "ACTIVE",
+                "INACTIVE",
+                "PENDING"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RANDOM_STRING_8_12_ALPHA",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "RANDOM_STRING",
+            "parameters": {
+              "minimum_length": 5,
+              "maximum_length": 20,
+              "character_set": "DIGITS"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "dependencies": [],
+  "statistical_behavior": [],
+  "scenarios": []
+}
