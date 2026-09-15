@@ -219,6 +219,20 @@
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }
+        },
+        {
+          "name": "STATUS",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "ACTIVE",
+                "PASSIVE"
+              ]
+            }
+          }
         }
       ]
     }
@@ -230,7 +244,14 @@
       "type": "ONE_TO_MANY"
     }
   ],
-  "constraints": [],
+  "constraints": [
+    {
+      "entity": "INVOICE",
+      "field": "CATEGORICAL_STRING",
+      "operator": "==",
+      "value": "PENDING"
+    }
+  ],
   "dependencies": [],
   "statistical_behavior": [],
   "scenarios": []

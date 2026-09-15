@@ -237,6 +237,7 @@ def initialise_state() -> None:
         "adding_relationship": False,
         "editing_constraint": None,
         "adding_entity": False,
+        "adding_constraint": False,
     }
 
     for key, value in defaults.items():
@@ -3107,21 +3108,609 @@ with model_column:
     # =========================================================================
 
     st.divider()
-
     st.subheader("✓ Constraints")
 
-    if not constraints:
+    entity_list = entity_names(current_model)
 
+    if st.button(
+        "➕ Add constraint",
+        key="add_constraint_button",
+        use_container_width=True,
+    ):
+        st.session_state.adding_constraint = True
+        st.session_state.editing_constraint = None
+        st.rerun()
+
+    # -------------------------------------------------------------------------
+    # ADD CONSTRAINT
+    # -------------------------------------------------------------------------
+
+    if st.session_state.get("adding_constraint", False):
+
+        if not entity_list:
+            st.warning("Add an entity before creating a constraint.")
+
+        else:
+            st.markdown("**New constraint**")
+
+            constraint_entity = st.selectbox(
+                "Entity",
+                entity_list,
+                key="new_constraint_entity",
+            )
+
+            constraint_entity_object = get_entity(
+                current_model,
+                constraint_entity,
+            )
+
+            constraint_fields = [
+                field["name"]
+                for field in (constraint_entity_object or {}).get(
+                    "fields",
+                    [],
+                )
+            ]
+
+            if not constraint_fields:
+                st.warning(
+                    f"Entity `{constraint_entity}` has no fields. "
+                    "Add a field before creating a constraint."
+                )
+
+            else:
+                constraint_field = st.selectbox(
+                    "Field",
+                    constraint_fields,
+                    key="new_constraint_field",
+                )
+
+                selected_constraint_field = get_field(
+                    current_model,
+                    f"{constraint_entity}.{constraint_field}",
+                )
+
+                field_type = (
+                    selected_constraint_field.get("type")
+                    if selected_constraint_field
+                    else None
+                )
+
+                generation = (
+                    selected_constraint_field.get("generation", {})
+                    if selected_constraint_field
+                    else {}
+                )
+
+                is_categorical = field_type == "CATEGORICAL" or (
+                    isinstance(generation, dict)
+                    and generation.get("distribution") == "CATEGORICAL"
+                )
+
+                constraint_operators = (
+                    ["==", "!="]
+                    if is_categorical
+                    else SUPPORTED_OPERATORS
+                )
+
+                constraint_operator = st.selectbox(
+                    "Operator",
+                    constraint_operators,
+                    key="new_constraint_operator",
+                )
+
+                # -------------------------------------------------------------
+                # VALUE
+                # -------------------------------------------------------------
+
+                if field_type == "INTEGER":
+
+                    constraint_value = st.number_input(
+                        "Value",
+                        value=0,
+                        step=1,
+                        format="%d",
+                        key="new_constraint_value_integer",
+                    )
+
+                elif field_type == "DECIMAL":
+
+                    constraint_value = st.number_input(
+                        "Value",
+                        value=0.0,
+                        step=0.1,
+                        key="new_constraint_value_decimal",
+                    )
+
+                elif field_type == "BOOLEAN":
+
+                    constraint_value = st.selectbox(
+                        "Value",
+                        [True, False],
+                        key="new_constraint_value_boolean",
+                    )
+
+                else:
+
+                    generation = (
+                        selected_constraint_field.get("generation", {})
+                        if selected_constraint_field
+                        else {}
+                    )
+
+                    is_categorical = field_type == "CATEGORICAL" or (
+                        isinstance(generation, dict)
+                        and generation.get("distribution") == "CATEGORICAL"
+                    )
+
+                    if is_categorical:
+
+                        parameters = (
+                            generation.get(
+                                "parameters",
+                                {},
+                            )
+                            if isinstance(generation, dict)
+                            else {}
+                        )
+
+                        categorical_values = (
+                            parameters.get(
+                                "values",
+                                [],
+                            )
+                            if isinstance(parameters, dict)
+                            else []
+                        )
+
+                        if isinstance(categorical_values, list) and categorical_values:
+
+                            constraint_value = st.selectbox(
+                                "Value",
+                                categorical_values,
+                                key="new_constraint_value_categorical",
+                            )
+
+                        else:
+
+                            st.warning(
+                                "This categorical field has no declared "
+                                "vocabulary. Add categorical values to the "
+                                "field before creating a constraint."
+                            )
+
+                            constraint_value = None
+
+                    else:
+
+                        constraint_value = st.text_input(
+                            "Value",
+                            key="new_constraint_value_text",
+                        )
+
+                add_col, cancel_col = st.columns(2)
+
+                with add_col:
+                    add_constraint = st.button(
+                        "Add Constraint",
+                        type="primary",
+                        use_container_width=True,
+                        key="add_constraint_submit",
+                    )
+
+                with cancel_col:
+                    cancel_constraint = st.button(
+                        "Cancel",
+                        use_container_width=True,
+                        key="add_constraint_cancel",
+                    )
+
+                if cancel_constraint:
+                    st.session_state.adding_constraint = False
+                    st.rerun()
+
+                if add_constraint:
+
+                    candidate = copy.deepcopy(current_model)
+
+                    candidate["constraints"].append(
+                        {
+                            "entity": constraint_entity,
+                            "field": constraint_field,
+                            "operator": constraint_operator,
+                            "value": constraint_value,
+                        }
+                    )
+
+                    errors = forge_backend.validate_authoring_model(candidate)
+
+                    if errors:
+
+                        st.session_state.manual_error = errors
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        try:
+                            save_specification(candidate)
+
+                        except Exception as exc:
+
+                            st.session_state.manual_error = [
+                                "Constraint was validated but could not "
+                                f"be saved: {exc}"
+                            ]
+
+                        else:
+
+                            st.session_state.model = candidate
+                            st.session_state.adding_constraint = False
+                            st.session_state.manual_success = (
+                                "Constraint added, validated, and saved."
+                            )
+
+                    st.rerun()
+
+    # -------------------------------------------------------------------------
+    # EXISTING CONSTRAINTS
+    # -------------------------------------------------------------------------
+
+    if not constraints:
         st.caption("No constraints defined.")
 
-    for constraint in constraints:
+    for index, constraint in enumerate(constraints):
 
-        st.markdown(
-            f"• **{constraint.get('entity', '?')}."
-            f"{constraint.get('field', '?')}** "
-            f"`{constraint.get('operator', '?')}` "
-            f"**{constraint.get('value', '?')}**"
-        )
+        with st.container(border=True):
+
+            st.markdown(
+                f"**{constraint.get('entity', '?')}."
+                f"{constraint.get('field', '?')}** "
+                f"`{constraint.get('operator', '?')}` "
+                f"**{constraint.get('value', '?')}**"
+            )
+
+            edit_col, delete_col = st.columns(2)
+
+            with edit_col:
+
+                if st.button(
+                    "Edit constraint",
+                    key=f"constraint_edit_{index}",
+                    use_container_width=True,
+                ):
+                    st.session_state.editing_constraint = index
+                    st.session_state.adding_constraint = False
+                    st.rerun()
+
+            with delete_col:
+
+                if st.button(
+                    "Delete constraint",
+                    key=f"constraint_delete_{index}",
+                    use_container_width=True,
+                ):
+
+                    candidate = copy.deepcopy(current_model)
+
+                    candidate["constraints"].pop(index)
+
+                    errors = forge_backend.validate_authoring_model(candidate)
+
+                    if errors:
+
+                        st.session_state.manual_error = errors
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        try:
+                            save_specification(candidate)
+
+                        except Exception as exc:
+
+                            st.session_state.manual_error = [
+                                "Constraint was validated but could not "
+                                f"be deleted: {exc}"
+                            ]
+
+                        else:
+
+                            st.session_state.model = candidate
+                            st.session_state.editing_constraint = None
+                            st.session_state.manual_success = (
+                                "Constraint deleted, validated, and saved."
+                            )
+
+                    st.rerun()
+
+    # -------------------------------------------------------------------------
+    # EDIT CONSTRAINT
+    # -------------------------------------------------------------------------
+
+    if st.session_state.editing_constraint is not None:
+
+        index = st.session_state.editing_constraint
+
+        if 0 <= index < len(constraints):
+
+            constraint = constraints[index]
+
+            entity_list = entity_names(current_model)
+
+            current_entity = constraint.get("entity", "")
+
+            with st.container(border=True):
+
+                st.markdown("**Edit constraint**")
+
+                constraint_entity = st.selectbox(
+                    "Entity",
+                    entity_list,
+                    index=(
+                        entity_list.index(current_entity)
+                        if current_entity in entity_list
+                        else 0
+                    ),
+                    key=f"edit_constraint_entity_{index}",
+                )
+
+                constraint_entity_object = get_entity(
+                    current_model,
+                    constraint_entity,
+                )
+
+                constraint_fields = [
+                    field["name"]
+                    for field in (constraint_entity_object or {}).get(
+                        "fields",
+                        [],
+                    )
+                ]
+
+                current_field = constraint.get("field", "")
+
+                constraint_field = st.selectbox(
+                    "Field",
+                    constraint_fields,
+                    index=(
+                        constraint_fields.index(current_field)
+                        if current_field in constraint_fields
+                        else 0
+                    ),
+                    key=f"edit_constraint_field_{index}",
+                )
+
+                selected_constraint_field = get_field(
+                    current_model,
+                    f"{constraint_entity}.{constraint_field}",
+                )
+
+                current_operator = constraint.get(
+                    "operator",
+                    ">=",
+                )
+
+                field_type = (
+                    selected_constraint_field.get("type")
+                    if selected_constraint_field
+                    else None
+                )
+
+                generation = (
+                    selected_constraint_field.get("generation", {})
+                    if selected_constraint_field
+                    else {}
+                )
+
+                is_categorical = field_type == "CATEGORICAL" or (
+                    isinstance(generation, dict)
+                    and generation.get("distribution") == "CATEGORICAL"
+                )
+
+                constraint_operators = (
+                    ["==", "!="]
+                    if is_categorical
+                    else SUPPORTED_OPERATORS
+                )
+
+                constraint_operator = st.selectbox(
+                    "Operator",
+                    constraint_operators,
+                    index=(
+                        constraint_operators.index(current_operator)
+                        if current_operator in constraint_operators
+                        else 0
+                    ),
+                    key=f"edit_constraint_operator_{index}",
+                )
+
+                field_type = (
+                    selected_constraint_field.get("type")
+                    if selected_constraint_field
+                    else None
+                )
+
+                current_value = constraint.get("value")
+
+                if field_type == "INTEGER":
+
+                    constraint_value = st.number_input(
+                        "Value",
+                        value=(
+                            int(current_value)
+                            if isinstance(current_value, int)
+                            and not isinstance(current_value, bool)
+                            else 0
+                        ),
+                        step=1,
+                        format="%d",
+                        key=f"edit_constraint_value_integer_{index}",
+                    )
+
+                elif field_type == "DECIMAL":
+
+                    constraint_value = st.number_input(
+                        "Value",
+                        value=(
+                            float(current_value)
+                            if isinstance(current_value, (int, float))
+                            and not isinstance(current_value, bool)
+                            else 0.0
+                        ),
+                        step=0.1,
+                        key=f"edit_constraint_value_decimal_{index}",
+                    )
+
+                elif field_type == "BOOLEAN":
+
+                    constraint_value = st.selectbox(
+                        "Value",
+                        [True, False],
+                        index=(0 if current_value is True else 1),
+                        key=f"edit_constraint_value_boolean_{index}",
+                    )
+
+                else:
+
+                    generation = (
+                        selected_constraint_field.get("generation", {})
+                        if selected_constraint_field
+                        else {}
+                    )
+
+                    is_categorical = field_type == "CATEGORICAL" or (
+                        isinstance(generation, dict)
+                        and generation.get("distribution") == "CATEGORICAL"
+                    )
+
+                    if is_categorical:
+
+                        parameters = (
+                            generation.get(
+                                "parameters",
+                                {},
+                            )
+                            if isinstance(generation, dict)
+                            else {}
+                        )
+
+                        categorical_values = (
+                            parameters.get(
+                                "values",
+                                [],
+                            )
+                            if isinstance(parameters, dict)
+                            else []
+                        )
+
+                        if isinstance(categorical_values, list) and categorical_values:
+
+                            if current_value in categorical_values:
+                                categorical_index = categorical_values.index(
+                                    current_value
+                                )
+                            else:
+                                categorical_index = 0
+
+                                st.warning(
+                                    f"Current constraint value "
+                                    f"`{current_value}` is not in the "
+                                    "field's declared vocabulary. "
+                                    "Select a valid value before saving."
+                                )
+
+                            constraint_value = st.selectbox(
+                                "Value",
+                                categorical_values,
+                                index=categorical_index,
+                                key=f"edit_constraint_value_categorical_{index}",
+                            )
+
+                        else:
+
+                            st.warning(
+                                "This categorical field has no declared "
+                                "vocabulary. Add categorical values to the "
+                                "field before editing this constraint."
+                            )
+
+                            constraint_value = None
+
+                    else:
+
+                        constraint_value = st.text_input(
+                            "Value",
+                            value=(
+                                ""
+                                if current_value is None
+                                else str(current_value)
+                            ),
+                            key=f"edit_constraint_value_text_{index}",
+                        )
+
+                save_col, cancel_col = st.columns(2)
+
+                with save_col:
+
+                    save_constraint = st.button(
+                        "Save",
+                        type="primary",
+                        use_container_width=True,
+                        key=f"save_constraint_{index}",
+                    )
+
+                with cancel_col:
+
+                    cancel_constraint = st.button(
+                        "Cancel",
+                        use_container_width=True,
+                        key=f"cancel_constraint_{index}",
+                    )
+
+                if cancel_constraint:
+
+                    st.session_state.editing_constraint = None
+                    st.rerun()
+
+                if save_constraint:
+
+                    candidate = copy.deepcopy(current_model)
+
+                    candidate["constraints"][index] = {
+                        "entity": constraint_entity,
+                        "field": constraint_field,
+                        "operator": constraint_operator,
+                        "value": constraint_value,
+                    }
+
+                    errors = forge_backend.validate_authoring_model(candidate)
+
+                    if errors:
+
+                        st.session_state.manual_error = errors
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        try:
+                            save_specification(candidate)
+
+                        except Exception as exc:
+
+                            st.session_state.manual_error = [
+                                "Constraint was validated but could not "
+                                f"be saved: {exc}"
+                            ]
+
+                        else:
+
+                            st.session_state.model = candidate
+                            st.session_state.editing_constraint = None
+                            st.session_state.manual_success = (
+                                "Constraint updated, validated, and saved."
+                            )
+
+                    st.rerun()
 
     # =========================================================================
     # DEPENDENCIES

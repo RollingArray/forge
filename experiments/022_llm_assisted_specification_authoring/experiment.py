@@ -950,14 +950,94 @@ def validate_constraints(
             errors.append(f"Constraint references unknown entity " f"{entity!r}.")
             continue
 
+        referenced_field = None
+
         if not field_exists(
             specification,
             f"{entity}.{field}",
         ):
             errors.append(f"Constraint references unknown field " f"{entity}.{field}.")
+        else:
+            entity_object = entity_map(specification).get(entity)
+
+            if entity_object:
+                referenced_field = next(
+                    (
+                        candidate
+                        for candidate in entity_object.get(
+                            "fields",
+                            [],
+                        )
+                        if candidate.get("name") == field
+                    ),
+                    None,
+                )
 
         if operator not in SUPPORTED_OPERATORS:
             errors.append(f"Unsupported constraint operator " f"{operator!r}.")
+
+        # -------------------------------------------------------------
+        # CATEGORICAL OPERATOR VALIDATION
+        # -------------------------------------------------------------
+
+        if referenced_field is not None:
+
+            generation = referenced_field.get(
+                "generation",
+            )
+
+            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                isinstance(generation, dict)
+                and generation.get("distribution") == "CATEGORICAL"
+            )
+
+            if is_categorical and operator not in {"==", "!="}:
+                errors.append(
+                    f"{entity}.{field}: categorical constraints only "
+                    "support == or != operators."
+                )
+
+        # -------------------------------------------------------------
+        # CATEGORICAL VALUE VALIDATION
+        # -------------------------------------------------------------
+
+        if referenced_field is not None and "value" in constraint:
+
+            generation = referenced_field.get(
+                "generation",
+            )
+
+            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                isinstance(generation, dict)
+                and generation.get("distribution") == "CATEGORICAL"
+            )
+
+            if is_categorical:
+
+                parameters = (
+                    generation.get("parameters")
+                    if isinstance(generation, dict)
+                    else None
+                )
+
+                values = (
+                    parameters.get("values") if isinstance(parameters, dict) else None
+                )
+
+                if not isinstance(values, list) or not values:
+
+                    errors.append(
+                        f"{entity}.{field}: categorical constraint "
+                        "requires a non-empty declared vocabulary."
+                    )
+
+                elif constraint["value"] not in values:
+
+                    errors.append(
+                        f"{entity}.{field}: constraint value "
+                        f"{constraint['value']!r} is not in the "
+                        "declared categorical vocabulary."
+                    )
 
 
 def validate_dependencies(
@@ -1428,6 +1508,159 @@ def validate_authoring_model(
                 )
             ):
                 errors.append(f"Relationship references unknown field " f"{reference}.")
+
+        # -------------------------------------------------------------------------
+        # CONSTRAINTS
+        # -------------------------------------------------------------------------
+
+        for constraint in model.get(
+            "constraints",
+            [],
+        ):
+            if not isinstance(
+                constraint,
+                dict,
+            ):
+                errors.append("Each constraint must be an object.")
+                continue
+
+            entity_name = constraint.get("entity")
+            field_name = constraint.get("field")
+            operator = constraint.get("operator")
+
+            if (
+                not isinstance(
+                    entity_name,
+                    str,
+                )
+                or not entity_name
+            ):
+                errors.append("Constraint entity must be a non-empty string.")
+                continue
+
+            if entity_name not in entities_by_name:
+                errors.append(f"Constraint references unknown entity {entity_name}.")
+                continue
+
+            if (
+                not isinstance(
+                    field_name,
+                    str,
+                )
+                or not field_name
+            ):
+                errors.append(
+                    f"{entity_name}: constraint field must be a non-empty string."
+                )
+            elif not any(
+                field["name"] == field_name
+                for field in entities_by_name[entity_name].get(
+                    "fields",
+                    [],
+                )
+            ):
+                errors.append(
+                    f"Constraint references unknown field "
+                    f"{entity_name}.{field_name}."
+                )
+
+            if operator not in SUPPORTED_OPERATORS:
+                errors.append(f"Unsupported constraint operator {operator!r}.")
+
+            # -------------------------------------------------------------
+            # CATEGORICAL OPERATOR VALIDATION
+            # -------------------------------------------------------------
+
+            referenced_field = next(
+                (
+                    field
+                    for field in entities_by_name[entity_name].get(
+                        "fields",
+                        [],
+                    )
+                    if field.get("name") == field_name
+                ),
+                None,
+            )
+
+            if referenced_field is not None:
+
+                generation = referenced_field.get(
+                    "generation",
+                )
+
+                is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                    isinstance(generation, dict)
+                    and generation.get("distribution") == "CATEGORICAL"
+                )
+
+                if is_categorical and operator not in {"==", "!="}:
+                    errors.append(
+                        f"{entity_name}.{field_name}: categorical constraints "
+                        "only support == or != operators."
+                    )
+
+            if "value" not in constraint:
+                errors.append(
+                    f"{entity_name}.{field_name}: constraint value is required."
+                )
+
+            # -------------------------------------------------------------
+            # CATEGORICAL VALUE VALIDATION
+            # -------------------------------------------------------------
+
+            referenced_field = next(
+                (
+                    field
+                    for field in entities_by_name[entity_name].get(
+                        "fields",
+                        [],
+                    )
+                    if field.get("name") == field_name
+                ),
+                None,
+            )
+
+            if referenced_field is not None and "value" in constraint:
+
+                generation = referenced_field.get(
+                    "generation",
+                )
+
+                is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                    isinstance(generation, dict)
+                    and generation.get("distribution") == "CATEGORICAL"
+                )
+
+                if is_categorical:
+
+                    parameters = (
+                        generation.get("parameters")
+                        if isinstance(generation, dict)
+                        else None
+                    )
+
+                    values = (
+                        parameters.get("values")
+                        if isinstance(parameters, dict)
+                        else None
+                    )
+
+                    if not isinstance(values, list) or not values:
+
+                        errors.append(
+                            f"{entity_name}.{field_name}: categorical "
+                            "constraint requires a non-empty declared "
+                            "vocabulary."
+                        )
+
+                    elif constraint["value"] not in values:
+
+                        errors.append(
+                            f"{entity_name}.{field_name}: constraint value "
+                            f"{constraint['value']!r} is not in the declared "
+                            "categorical vocabulary."
+                        )
 
     return errors
 
