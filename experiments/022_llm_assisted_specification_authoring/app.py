@@ -235,6 +235,10 @@ def initialise_state() -> None:
         "editing_population": None,
         "editing_relationship": None,
         "adding_relationship": False,
+        "editing_relationship": None,
+        "adding_relationship": False,
+        "editing_foreign_key": None,
+        "adding_foreign_key": False,
         "editing_constraint": None,
         "adding_entity": False,
         "adding_constraint": False,
@@ -1090,13 +1094,9 @@ with model_column:
                 and field.get("name")
             ]
 
-            identity_editor_key = (
-                f"editing_identity_{entity_name}"
-            )
+            identity_editor_key = f"editing_identity_{entity_name}"
 
-            identity_editor_version_key = (
-                f"identity_editor_version_{entity_name}"
-            )
+            identity_editor_version_key = f"identity_editor_version_{entity_name}"
 
             identity_editor_version = st.session_state.get(
                 identity_editor_version_key,
@@ -1116,17 +1116,14 @@ with model_column:
 
                 if len(identity_fields) == 1:
 
-                    st.markdown(
-                        f"Primary key: **{identity_fields[0]}**"
-                    )
+                    st.markdown(f"Primary key: **{identity_fields[0]}**")
 
                 else:
 
                     st.markdown(
                         "Composite primary key: "
                         + " + ".join(
-                            f"**{field_name}**"
-                            for field_name in identity_fields
+                            f"**{field_name}**" for field_name in identity_fields
                         )
                     )
 
@@ -1136,9 +1133,7 @@ with model_column:
                     use_container_width=True,
                 ):
 
-                    st.session_state[
-                        identity_editor_key
-                    ] = True
+                    st.session_state[identity_editor_key] = True
 
                     st.rerun()
 
@@ -1148,9 +1143,7 @@ with model_column:
 
             elif not has_identity and not editing_identity:
 
-                st.caption(
-                    "No primary key / identity defined."
-                )
+                st.caption("No primary key / identity defined.")
 
                 if st.button(
                     "Set Identity",
@@ -1159,9 +1152,7 @@ with model_column:
                     use_container_width=True,
                 ):
 
-                    st.session_state[
-                        identity_editor_key
-                    ] = True
+                    st.session_state[identity_editor_key] = True
 
                     st.rerun()
 
@@ -1180,8 +1171,7 @@ with model_column:
                         if field_name in available_identity_fields
                     ],
                     key=(
-                        f"identity_fields_{entity_name}_"
-                        f"{identity_editor_version}"
+                        f"identity_fields_{entity_name}_" f"{identity_editor_version}"
                     ),
                     help=(
                         "Select one field for a single-field primary key, "
@@ -1220,13 +1210,11 @@ with model_column:
 
                 if cancel_identity:
 
-                    st.session_state[
-                        identity_editor_key
-                    ] = False
+                    st.session_state[identity_editor_key] = False
 
-                    st.session_state[
-                        identity_editor_version_key
-                    ] = identity_editor_version + 1
+                    st.session_state[identity_editor_version_key] = (
+                        identity_editor_version + 1
+                    )
 
                     st.rerun()
 
@@ -1262,9 +1250,7 @@ with model_column:
                                 "fields": selected_identity_fields,
                             }
 
-                        errors = forge_backend.validate_authoring_model(
-                            candidate
-                        )
+                        errors = forge_backend.validate_authoring_model(candidate)
 
                         if errors:
 
@@ -1298,13 +1284,11 @@ with model_column:
                                     "and saved."
                                 )
 
-                                st.session_state[
-                                    identity_editor_key
-                                ] = False
+                                st.session_state[identity_editor_key] = False
 
-                                st.session_state[
-                                    identity_editor_version_key
-                                ] = identity_editor_version + 1
+                                st.session_state[identity_editor_version_key] = (
+                                    identity_editor_version + 1
+                                )
 
                     st.rerun()
 
@@ -2107,10 +2091,75 @@ with model_column:
                                     )
 
                                     # ------------------------------------------------
+                                    # FOREIGN KEY PROTECTION
+                                    # ------------------------------------------------
+
+                                    foreign_key_references = []
+
+                                    for foreign_key in current_model.get(
+                                        "foreign_keys",
+                                        [],
+                                    ):
+                                        if not isinstance(
+                                            foreign_key,
+                                            dict,
+                                        ):
+                                            continue
+
+                                        source = foreign_key.get(
+                                            "source"
+                                        )
+
+                                        if not isinstance(
+                                            source,
+                                            dict,
+                                        ):
+                                            continue
+
+                                        source_entity = source.get(
+                                            "entity"
+                                        )
+
+                                        source_fields = source.get(
+                                            "fields",
+                                            [],
+                                        )
+
+                                        if (
+                                            source_entity == entity_name
+                                            and isinstance(
+                                                source_fields,
+                                                list,
+                                            )
+                                            and field_name in source_fields
+                                        ):
+                                            foreign_key_references.append(
+                                                foreign_key.get(
+                                                    "name",
+                                                    "Unnamed foreign key",
+                                                )
+                                            )
+
+                                    if foreign_key_references:
+
+                                        st.session_state.manual_error = [
+                                            f"Field **{reference}** cannot be "
+                                            "deleted because it is referenced "
+                                            "by foreign key(s): "
+                                            + ", ".join(
+                                                f"**{name}**"
+                                                for name in foreign_key_references
+                                            )
+                                            + ". Remove the foreign key first."
+                                        ]
+
+                                        st.session_state.manual_success = None
+
+                                    # ------------------------------------------------
                                     # ENTITY IDENTITY PROTECTION
                                     # ------------------------------------------------
 
-                                    if field_name in identity_fields:
+                                    elif field_name in identity_fields:
 
                                         st.session_state.manual_error = [
                                             f"Field **{reference}** cannot be "
@@ -2164,9 +2213,7 @@ with model_column:
 
                                                 st.session_state.model = candidate
                                                 st.session_state.editing_field = None
-                                                st.session_state.manual_success = (
-                                                    f"Deleted **{reference}** and saved."
-                                                )
+                                                st.session_state.manual_success = f"Deleted **{reference}** and saved."
 
                             st.rerun()
 
@@ -3475,6 +3522,662 @@ with model_column:
                         )
 
                 st.rerun()
+
+# ============================================================================
+# FOREIGN KEYS
+# ============================================================================
+
+st.divider()
+
+st.subheader("🔑 Foreign Keys")
+
+foreign_keys = current_model.get(
+    "foreign_keys",
+    [],
+)
+
+if not foreign_keys:
+
+    st.caption("No foreign keys defined.")
+
+
+# ---------------------------------------------------------------------------
+# ADD FOREIGN KEY
+# ---------------------------------------------------------------------------
+
+if st.button(
+    "➕ Add foreign key",
+    key="add_foreign_key",
+    use_container_width=True,
+):
+
+    st.session_state.adding_foreign_key = True
+    st.session_state.editing_foreign_key = None
+
+    st.rerun()
+
+
+if st.session_state.get(
+    "adding_foreign_key",
+    False,
+):
+
+    if len(entities) < 2:
+
+        st.warning(
+            "Create at least two entities before adding a foreign key."
+        )
+
+    else:
+
+        st.markdown("**New foreign key**")
+
+        fk_entity_names = [
+            entity.get("name")
+            for entity in entities
+            if isinstance(entity, dict)
+            and entity.get("name")
+        ]
+
+        fk_source_entity = st.selectbox(
+            "Source entity",
+            fk_entity_names,
+            key="new_foreign_key_source_entity",
+        )
+
+        fk_source_entity_object = get_entity(
+            current_model,
+            fk_source_entity,
+        )
+
+        fk_source_fields = [
+            field.get("name")
+            for field in (
+                fk_source_entity_object or {}
+            ).get(
+                "fields",
+                [],
+            )
+            if isinstance(field, dict)
+            and field.get("name")
+        ]
+
+        fk_source_selected_fields = st.multiselect(
+            "Source fields",
+            options=fk_source_fields,
+            key="new_foreign_key_source_fields",
+            help=(
+                "Select source fields in the same order as "
+                "the target identity fields."
+            ),
+        )
+
+        fk_target_entity = st.selectbox(
+            "Target entity",
+            fk_entity_names,
+            key="new_foreign_key_target_entity",
+        )
+
+        fk_target_entity_object = get_entity(
+            current_model,
+            fk_target_entity,
+        )
+
+        fk_target_identity = (
+            fk_target_entity_object.get(
+                "identity",
+                {},
+            )
+            if fk_target_entity_object
+            else {}
+        )
+
+        fk_target_identity_fields = (
+            fk_target_identity.get(
+                "fields",
+                [],
+            )
+            if isinstance(
+                fk_target_identity,
+                dict,
+            )
+            else []
+        )
+
+        if not fk_target_identity_fields:
+
+            st.warning(
+                f"Target entity **{fk_target_entity}** "
+                "must define an identity before it can be "
+                "referenced by a foreign key."
+            )
+
+        else:
+
+            st.markdown("**Target identity**")
+
+            st.code(
+                " + ".join(
+                    fk_target_identity_fields
+                )
+            )
+
+            st.caption(
+                "Target fields are automatically taken from "
+                "the target entity identity."
+            )
+
+        fk_add_left, fk_add_right = st.columns(2)
+
+        with fk_add_left:
+
+            create_foreign_key = st.button(
+                "Add Foreign Key",
+                key="create_foreign_key",
+                type="primary",
+                use_container_width=True,
+            )
+
+        with fk_add_right:
+
+            cancel_foreign_key = st.button(
+                "Cancel",
+                key="cancel_new_foreign_key",
+                use_container_width=True,
+            )
+
+        if cancel_foreign_key:
+
+            st.session_state.adding_foreign_key = False
+
+            st.rerun()
+
+        if create_foreign_key:
+
+            validation_error = None
+
+            if not fk_source_selected_fields:
+
+                validation_error = (
+                    "Select at least one source field."
+                )
+
+            elif not fk_target_identity_fields:
+
+                validation_error = (
+                    f"Target entity **{fk_target_entity}** "
+                    "must define an identity."
+                )
+
+            elif len(
+                fk_source_selected_fields
+            ) != len(
+                fk_target_identity_fields
+            ):
+
+                validation_error = (
+                    "The number of source fields must match "
+                    "the number of target identity fields."
+                )
+
+            if validation_error:
+
+                st.session_state.manual_error = [
+                    validation_error
+                ]
+
+                st.session_state.manual_success = None
+
+            else:
+
+                candidate = copy.deepcopy(
+                    current_model
+                )
+
+                candidate.setdefault(
+                    "foreign_keys",
+                    [],
+                )
+
+                foreign_key_name = (
+                    f"FK_{fk_source_entity}_{fk_target_entity}"
+                )
+
+                candidate["foreign_keys"].append(
+                    {
+                        "name": foreign_key_name,
+                        "source": {
+                            "entity": fk_source_entity,
+                            "fields": fk_source_selected_fields,
+                        },
+                        "target": {
+                            "entity": fk_target_entity,
+                            "fields": fk_target_identity_fields,
+                        },
+                    }
+                )
+
+                errors = forge_backend.validate_authoring_model(
+                    candidate
+                )
+
+                if errors:
+
+                    st.session_state.manual_error = errors
+                    st.session_state.manual_success = None
+
+                else:
+
+                    try:
+
+                        save_specification(
+                            candidate
+                        )
+
+                    except Exception as exc:
+
+                        st.session_state.manual_error = [
+                            "Foreign key was validated but could not be saved: "
+                            f"{exc}"
+                        ]
+
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        st.session_state.model = candidate
+
+                        st.session_state.manual_error = []
+
+                        st.session_state.manual_success = (
+                            f"Foreign key **{foreign_key_name}** "
+                            "added, validated, and saved."
+                        )
+
+                        st.session_state.adding_foreign_key = False
+
+            st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# EXISTING FOREIGN KEYS
+# ---------------------------------------------------------------------------
+
+for index, foreign_key in enumerate(
+    foreign_keys
+):
+
+    foreign_key_name = foreign_key.get(
+        "name",
+        "?",
+    )
+
+    source = foreign_key.get(
+        "source",
+        {},
+    )
+
+    target = foreign_key.get(
+        "target",
+        {},
+    )
+
+    source_entity_name = source.get(
+        "entity",
+        "?",
+    )
+
+    source_fields = source.get(
+        "fields",
+        [],
+    )
+
+    target_entity_name = target.get(
+        "entity",
+        "?",
+    )
+
+    target_fields = target.get(
+        "fields",
+        [],
+    )
+
+    st.markdown(
+        f"**{foreign_key_name}**"
+    )
+
+    st.caption(
+        f"{source_entity_name}."
+        f"{', '.join(source_fields)}"
+        " → "
+        f"{target_entity_name}."
+        f"{', '.join(target_fields)}"
+    )
+
+    fk_edit_left, fk_edit_right = st.columns(2)
+
+    with fk_edit_left:
+
+        if st.button(
+            "Edit foreign key",
+            key=f"foreign_key_edit_{index}",
+            use_container_width=True,
+        ):
+
+            st.session_state.editing_foreign_key = index
+            st.session_state.adding_foreign_key = False
+
+            st.rerun()
+
+    with fk_edit_right:
+
+        if st.button(
+            "Delete foreign key",
+            key=f"foreign_key_delete_{index}",
+            use_container_width=True,
+        ):
+
+            candidate = copy.deepcopy(
+                current_model
+            )
+
+            candidate.get(
+                "foreign_keys",
+                [],
+            ).pop(index)
+
+            errors = forge_backend.validate_authoring_model(
+                candidate
+            )
+
+            if errors:
+
+                st.session_state.manual_error = errors
+                st.session_state.manual_success = None
+
+            else:
+
+                try:
+
+                    save_specification(
+                        candidate
+                    )
+
+                except Exception as exc:
+
+                    st.session_state.manual_error = [
+                        "Foreign key could not be deleted: "
+                        f"{exc}"
+                    ]
+
+                    st.session_state.manual_success = None
+
+                else:
+
+                    st.session_state.model = candidate
+
+                    st.session_state.manual_error = []
+
+                    st.session_state.manual_success = (
+                        "Foreign key deleted successfully."
+                    )
+
+            st.session_state.editing_foreign_key = None
+
+            st.rerun()
+
+
+    # -----------------------------------------------------------------------
+    # EDIT FOREIGN KEY
+    # -----------------------------------------------------------------------
+
+    if st.session_state.get(
+        "editing_foreign_key"
+    ) == index:
+
+        fk_edit_entity_names = [
+            entity.get("name")
+            for entity in entities
+            if isinstance(entity, dict)
+            and entity.get("name")
+        ]
+
+        edit_fk_source_entity = st.selectbox(
+            "Source entity",
+            fk_edit_entity_names,
+            index=(
+                fk_edit_entity_names.index(
+                    source_entity_name
+                )
+                if source_entity_name
+                in fk_edit_entity_names
+                else 0
+            ),
+            key=f"edit_fk_source_entity_{index}",
+        )
+
+        edit_fk_source_entity_object = get_entity(
+            current_model,
+            edit_fk_source_entity,
+        )
+
+        edit_fk_source_fields = [
+            field.get("name")
+            for field in (
+                edit_fk_source_entity_object or {}
+            ).get(
+                "fields",
+                [],
+            )
+            if isinstance(field, dict)
+            and field.get("name")
+        ]
+
+        edit_fk_source_selected_fields = st.multiselect(
+            "Source fields",
+            options=edit_fk_source_fields,
+            default=[
+                field_name
+                for field_name in source_fields
+                if field_name in edit_fk_source_fields
+            ],
+            key=f"edit_fk_source_fields_{index}",
+            help=(
+                "Select source fields in the same order as "
+                "the target identity fields."
+            ),
+        )
+
+        edit_fk_target_entity = st.selectbox(
+            "Target entity",
+            fk_edit_entity_names,
+            index=(
+                fk_edit_entity_names.index(
+                    target_entity_name
+                )
+                if target_entity_name
+                in fk_edit_entity_names
+                else 0
+            ),
+            key=f"edit_fk_target_entity_{index}",
+        )
+
+        edit_fk_target_entity_object = get_entity(
+            current_model,
+            edit_fk_target_entity,
+        )
+
+        edit_fk_target_identity = (
+            edit_fk_target_entity_object.get(
+                "identity",
+                {},
+            )
+            if edit_fk_target_entity_object
+            else {}
+        )
+
+        edit_fk_target_identity_fields = (
+            edit_fk_target_identity.get(
+                "fields",
+                [],
+            )
+            if isinstance(
+                edit_fk_target_identity,
+                dict,
+            )
+            else []
+        )
+
+        if edit_fk_target_identity_fields:
+
+            st.markdown(
+                "**Target identity**"
+            )
+
+            st.code(
+                " + ".join(
+                    edit_fk_target_identity_fields
+                )
+            )
+
+        else:
+
+            st.warning(
+                f"Target entity **{edit_fk_target_entity}** "
+                "does not define an identity."
+            )
+
+        fk_save_left, fk_save_middle = st.columns(2)
+
+        with fk_save_left:
+
+            save_foreign_key = st.button(
+                "Save Foreign Key",
+                key=f"save_foreign_key_{index}",
+                type="primary",
+                use_container_width=True,
+            )
+
+        with fk_save_middle:
+
+            cancel_foreign_key = st.button(
+                "Cancel",
+                key=f"cancel_foreign_key_{index}",
+                use_container_width=True,
+            )
+
+        if cancel_foreign_key:
+
+            st.session_state.editing_foreign_key = None
+
+            st.rerun()
+
+        if save_foreign_key:
+
+            candidate = copy.deepcopy(
+                current_model
+            )
+
+            candidate_foreign_keys = candidate.get(
+                "foreign_keys",
+                [],
+            )
+
+            validation_error = None
+
+            if not edit_fk_source_selected_fields:
+
+                validation_error = (
+                    "Select at least one source field."
+                )
+
+            elif not edit_fk_target_identity_fields:
+
+                validation_error = (
+                    f"Target entity **{edit_fk_target_entity}** "
+                    "must define an identity."
+                )
+
+            elif len(
+                edit_fk_source_selected_fields
+            ) != len(
+                edit_fk_target_identity_fields
+            ):
+
+                validation_error = (
+                    "The number of source fields must match "
+                    "the number of target identity fields."
+                )
+
+            if validation_error:
+
+                st.session_state.manual_error = [
+                    validation_error
+                ]
+
+                st.session_state.manual_success = None
+
+            else:
+
+                candidate_foreign_keys[index] = {
+                    "name": (
+                        f"FK_{edit_fk_source_entity}_"
+                        f"{edit_fk_target_entity}"
+                    ),
+                    "source": {
+                        "entity": edit_fk_source_entity,
+                        "fields": edit_fk_source_selected_fields,
+                    },
+                    "target": {
+                        "entity": edit_fk_target_entity,
+                        "fields": edit_fk_target_identity_fields,
+                    },
+                }
+
+                errors = forge_backend.validate_authoring_model(
+                    candidate
+                )
+
+                if errors:
+
+                    st.session_state.manual_error = errors
+                    st.session_state.manual_success = None
+
+                else:
+
+                    try:
+
+                        save_specification(
+                            candidate
+                        )
+
+                    except Exception as exc:
+
+                        st.session_state.manual_error = [
+                            "Foreign key was validated but could not be saved: "
+                            f"{exc}"
+                        ]
+
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        st.session_state.model = candidate
+
+                        st.session_state.manual_error = []
+
+                        st.session_state.manual_success = (
+                            f"Foreign key **"
+                            f"FK_{edit_fk_source_entity}_"
+                            f"{edit_fk_target_entity}"
+                            "** updated, validated, and saved."
+                        )
+
+                        st.session_state.editing_foreign_key = None
+
+            st.rerun()
+
+
 
     # =========================================================================
     # CONSTRAINTS

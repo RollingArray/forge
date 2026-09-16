@@ -228,6 +228,7 @@ def create_empty_model() -> dict[str, Any]:
         },
         "entities": [],
         "relationships": [],
+        "foreign_keys": [],
         "constraints": [],
         "dependencies": [],
         "statistical_behavior": [],
@@ -390,6 +391,7 @@ def validate_specification(
         "generation",
         "entities",
         "relationships",
+        "foreign_keys",
         "constraints",
         "dependencies",
         "statistical_behavior",
@@ -854,6 +856,11 @@ def validate_specification(
         errors,
     )
 
+    validate_foreign_keys(
+        specification,
+        errors,
+    )
+
     validate_constraints(
         specification,
         errors,
@@ -1000,6 +1007,335 @@ def validate_relationships(
             "MANY_TO_MANY",
         }:
             errors.append(f"Unsupported relationship type " f"{relationship_type!r}.")
+
+
+def validate_foreign_keys(
+    specification: dict[str, Any],
+    errors: list[str],
+) -> None:
+
+    entities = entity_map(specification)
+
+    foreign_keys = specification.get(
+        "foreign_keys",
+        [],
+    )
+
+    if not isinstance(
+        foreign_keys,
+        list,
+    ):
+        errors.append("foreign_keys must be a list.")
+        return
+
+    seen_names: set[str] = set()
+    seen_mappings: set[
+        tuple[
+            str,
+            tuple[str, ...],
+            str,
+            tuple[str, ...],
+        ]
+    ] = set()
+
+    for foreign_key in foreign_keys:
+
+        if not isinstance(
+            foreign_key,
+            dict,
+        ):
+            errors.append("Each foreign key must be an object.")
+            continue
+
+        name = foreign_key.get("name")
+
+        source = foreign_key.get(
+            "source",
+            {},
+        )
+
+        target = foreign_key.get(
+            "target",
+            {},
+        )
+
+        if not isinstance(
+            name,
+            str,
+        ) or not name:
+            errors.append(
+                "Foreign key name must be a non-empty string."
+            )
+
+        if not isinstance(
+            source,
+            dict,
+        ):
+            errors.append(
+                "Foreign key source must be an object."
+            )
+            continue
+
+        if not isinstance(
+            target,
+            dict,
+        ):
+            errors.append(
+                "Foreign key target must be an object."
+            )
+            continue
+
+        source_entity = source.get("entity")
+        source_fields = source.get(
+            "fields",
+            [],
+        )
+
+        target_entity = target.get("entity")
+        target_fields = target.get(
+            "fields",
+            [],
+        )
+
+        if not isinstance(
+            source_entity,
+            str,
+        ) or not source_entity:
+            errors.append(
+                "Foreign key source entity must be a "
+                "non-empty string."
+            )
+            continue
+
+        if not isinstance(
+            target_entity,
+            str,
+        ) or not target_entity:
+            errors.append(
+                "Foreign key target entity must be a "
+                "non-empty string."
+            )
+            continue
+
+        expected_name = (
+            f"FK_{source_entity}_{target_entity}"
+        )
+
+        if isinstance(name, str) and name:
+            if name != expected_name:
+                errors.append(
+                    f"Foreign key name {name!r} does not match "
+                    f"the canonical name {expected_name!r}."
+                )
+
+            if name in seen_names:
+                errors.append(
+                    f"Duplicate foreign key name {name!r}."
+                )
+
+            seen_names.add(name)
+
+        if source_entity not in entities:
+            errors.append(
+                f"Foreign key references unknown source "
+                f"entity {source_entity}."
+            )
+            continue
+
+        if target_entity not in entities:
+            errors.append(
+                f"Foreign key references unknown target "
+                f"entity {target_entity}."
+            )
+            continue
+
+        if not isinstance(
+            source_fields,
+            list,
+        ) or not source_fields:
+
+            errors.append(
+                f"{expected_name}: source.fields must contain "
+                "at least one field."
+            )
+            continue
+
+        if not isinstance(
+            target_fields,
+            list,
+        ) or not target_fields:
+
+            errors.append(
+                f"{expected_name}: target.fields must contain "
+                "at least one field."
+            )
+            continue
+
+        if any(
+            not isinstance(field_name, str)
+            or not field_name
+            for field_name in source_fields
+        ):
+            errors.append(
+                f"{expected_name}: every source field must be a "
+                "non-empty string."
+            )
+            continue
+
+        if any(
+            not isinstance(field_name, str)
+            or not field_name
+            for field_name in target_fields
+        ):
+            errors.append(
+                f"{expected_name}: every target field must be a "
+                "non-empty string."
+            )
+            continue
+
+        if len(source_fields) != len(
+            target_fields
+        ):
+            errors.append(
+                f"{expected_name}: source and target field counts "
+                "must match."
+            )
+            continue
+
+        if len(source_fields) != len(
+            set(source_fields)
+        ):
+            errors.append(
+                f"{expected_name}: source.fields must not contain "
+                "duplicate fields."
+            )
+
+        if len(target_fields) != len(
+            set(target_fields)
+        ):
+            errors.append(
+                f"{expected_name}: target.fields must not contain "
+                "duplicate fields."
+            )
+
+        source_entity_object = entities[
+            source_entity
+        ]
+
+        target_entity_object = entities[
+            target_entity
+        ]
+
+        source_field_map = {
+            field.get("name"): field
+            for field in source_entity_object.get(
+                "fields",
+                [],
+            )
+            if isinstance(field, dict)
+        }
+
+        target_field_map = {
+            field.get("name"): field
+            for field in target_entity_object.get(
+                "fields",
+                [],
+            )
+            if isinstance(field, dict)
+        }
+
+        for field_name in source_fields:
+
+            if field_name not in source_field_map:
+                errors.append(
+                    f"{expected_name}: source references unknown "
+                    f"field {source_entity}.{field_name}."
+                )
+
+        for field_name in target_fields:
+
+            if field_name not in target_field_map:
+                errors.append(
+                    f"{expected_name}: target references unknown "
+                    f"field {target_entity}.{field_name}."
+                )
+
+        target_identity = target_entity_object.get(
+            "identity",
+            {},
+        )
+
+        target_identity_fields = (
+            target_identity.get(
+                "fields",
+                [],
+            )
+            if isinstance(
+                target_identity,
+                dict,
+            )
+            else []
+        )
+
+        if not target_identity_fields:
+
+            errors.append(
+                f"{expected_name}: target entity "
+                f"{target_entity} must define an identity."
+            )
+
+        elif target_fields != target_identity_fields:
+
+            errors.append(
+                f"{expected_name}: target.fields must exactly "
+                f"match the target entity identity fields in "
+                "the same order."
+            )
+
+        mapping_key = (
+            source_entity,
+            tuple(source_fields),
+            target_entity,
+            tuple(target_fields),
+        )
+
+        if mapping_key in seen_mappings:
+
+            errors.append(
+                f"{expected_name}: duplicate foreign key mapping."
+            )
+
+        seen_mappings.add(mapping_key)
+
+        for source_field_name, target_field_name in zip(
+            source_fields,
+            target_fields,
+        ):
+
+            source_field = source_field_map.get(
+                source_field_name
+            )
+
+            target_field = target_field_map.get(
+                target_field_name
+            )
+
+            if (
+                source_field is not None
+                and target_field is not None
+            ):
+
+                source_type = source_field.get("type")
+                target_type = target_field.get("type")
+
+                if source_type != target_type:
+                    errors.append(
+                        f"{expected_name}: incompatible field types "
+                        f"for {source_entity}.{source_field_name} "
+                        f"({source_type}) and "
+                        f"{target_entity}.{target_field_name} "
+                        f"({target_type})."
+                    )
 
 
 def validate_constraints(
@@ -1597,6 +1933,15 @@ def validate_authoring_model(
                 )
             ):
                 errors.append(f"Relationship references unknown field " f"{reference}.")
+
+        # -------------------------------------------------------------------------
+        # FOREIGN KEYS
+        # -------------------------------------------------------------------------
+
+        validate_foreign_keys(
+            model,
+            errors,
+        )
 
         # -------------------------------------------------------------------------
         # CONSTRAINTS

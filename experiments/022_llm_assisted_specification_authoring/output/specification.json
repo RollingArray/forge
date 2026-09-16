@@ -28,7 +28,10 @@
           "type": "STRING",
           "generation": {
             "strategy": "RANDOM",
-            "distribution": "UNIFORM"
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": []
+            }
           }
         },
         {
@@ -224,6 +227,24 @@
               ]
             }
           }
+        },
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "CUSTOMER_NAME",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": []
+            }
+          }
         }
       ],
       "identity": {
@@ -281,11 +302,43 @@
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }
+        },
+        {
+          "name": "just",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "RANDOM_STRING",
+            "parameters": {
+              "minimum_length": 8,
+              "maximum_length": 12,
+              "character_set": "ALPHANUMERIC"
+            }
+          }
         }
       ],
       "identity": {
         "fields": [
           "firld"
+        ]
+      }
+    }
+  ],
+  "foreign_keys": [
+    {
+      "name": "FK_INVOICE_Customer",
+      "source": {
+        "entity": "INVOICE",
+        "fields": [
+          "CUSTOMER_ID",
+          "CUSTOMER_NAME"
+        ]
+      },
+      "target": {
+        "entity": "Customer",
+        "fields": [
+          "CUSTOMER_ID",
+          "NAME"
         ]
       }
     }
