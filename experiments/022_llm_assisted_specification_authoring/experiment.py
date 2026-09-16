@@ -172,6 +172,11 @@ SUPPORTED_GENERATION_STRATEGIES = {
     "RANDOM",
 }
 
+SUPPORTED_RELATIONSHIP_PARTICIPATION = {
+    "MANDATORY",
+    "OPTIONAL",
+}
+
 SUPPORTED_DISTRIBUTIONS = {
     "UNIFORM",
     "CATEGORICAL",
@@ -932,6 +937,45 @@ def is_field_dependency_managed(
             return True
 
     return False
+
+
+def validate_relationship_definition(
+    relationship: dict[str, Any],
+    errors: list[str],
+) -> None:
+    """
+    Validate relationship type and participation semantics.
+
+    Participation is optional for backward compatibility with existing
+    relationship specifications. When omitted, it defaults to MANDATORY.
+    """
+
+    relationship_type = relationship.get("type")
+
+    if relationship_type not in {
+        "ONE_TO_ONE",
+        "ONE_TO_MANY",
+        "MANY_TO_ONE",
+        "MANY_TO_MANY",
+    }:
+        errors.append(
+            f"Unsupported relationship type {relationship_type!r}."
+        )
+
+    for participation_key in (
+        "source_participation",
+        "target_participation",
+    ):
+        participation = relationship.get(
+            participation_key,
+            "MANDATORY",
+        )
+
+        if participation not in SUPPORTED_RELATIONSHIP_PARTICIPATION:
+            errors.append(
+                f"Unsupported relationship participation "
+                f"{participation!r} for {participation_key}."
+            )
 
 
 def validate_relationships(
@@ -1934,167 +1978,172 @@ def validate_authoring_model(
             ):
                 errors.append(f"Relationship references unknown field " f"{reference}.")
 
-        # -------------------------------------------------------------------------
-        # FOREIGN KEYS
-        # -------------------------------------------------------------------------
-
-        validate_foreign_keys(
-            model,
+        validate_relationship_definition(
+            relationship,
             errors,
         )
 
-        # -------------------------------------------------------------------------
-        # CONSTRAINTS
-        # -------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # FOREIGN KEYS
+    # -------------------------------------------------------------------------
 
-        for constraint in model.get(
-            "constraints",
-            [],
+    validate_foreign_keys(
+        model,
+        errors,
+    )
+
+    # -------------------------------------------------------------------------
+    # CONSTRAINTS
+    # -------------------------------------------------------------------------
+
+    for constraint in model.get(
+        "constraints",
+        [],
+    ):
+        if not isinstance(
+            constraint,
+            dict,
         ):
-            if not isinstance(
-                constraint,
-                dict,
-            ):
-                errors.append("Each constraint must be an object.")
-                continue
+            errors.append("Each constraint must be an object.")
+            continue
 
-            entity_name = constraint.get("entity")
-            field_name = constraint.get("field")
-            operator = constraint.get("operator")
+        entity_name = constraint.get("entity")
+        field_name = constraint.get("field")
+        operator = constraint.get("operator")
 
-            if (
-                not isinstance(
-                    entity_name,
-                    str,
-                )
-                or not entity_name
-            ):
-                errors.append("Constraint entity must be a non-empty string.")
-                continue
+        if (
+            not isinstance(
+                entity_name,
+                str,
+            )
+            or not entity_name
+        ):
+            errors.append("Constraint entity must be a non-empty string.")
+            continue
 
-            if entity_name not in entities_by_name:
-                errors.append(f"Constraint references unknown entity {entity_name}.")
-                continue
+        if entity_name not in entities_by_name:
+            errors.append(f"Constraint references unknown entity {entity_name}.")
+            continue
 
-            if (
-                not isinstance(
-                    field_name,
-                    str,
-                )
-                or not field_name
-            ):
-                errors.append(
-                    f"{entity_name}: constraint field must be a non-empty string."
-                )
-            elif not any(
-                field["name"] == field_name
+        if (
+            not isinstance(
+                field_name,
+                str,
+            )
+            or not field_name
+        ):
+            errors.append(
+                f"{entity_name}: constraint field must be a non-empty string."
+            )
+        elif not any(
+            field["name"] == field_name
+            for field in entities_by_name[entity_name].get(
+                "fields",
+                [],
+            )
+        ):
+            errors.append(
+                f"Constraint references unknown field "
+                f"{entity_name}.{field_name}."
+            )
+
+        if operator not in SUPPORTED_OPERATORS:
+            errors.append(f"Unsupported constraint operator {operator!r}.")
+
+        # -------------------------------------------------------------
+        # CATEGORICAL OPERATOR VALIDATION
+        # -------------------------------------------------------------
+
+        referenced_field = next(
+            (
+                field
                 for field in entities_by_name[entity_name].get(
                     "fields",
                     [],
                 )
-            ):
-                errors.append(
-                    f"Constraint references unknown field "
-                    f"{entity_name}.{field_name}."
-                )
+                if field.get("name") == field_name
+            ),
+            None,
+        )
 
-            if operator not in SUPPORTED_OPERATORS:
-                errors.append(f"Unsupported constraint operator {operator!r}.")
+        if referenced_field is not None:
 
-            # -------------------------------------------------------------
-            # CATEGORICAL OPERATOR VALIDATION
-            # -------------------------------------------------------------
-
-            referenced_field = next(
-                (
-                    field
-                    for field in entities_by_name[entity_name].get(
-                        "fields",
-                        [],
-                    )
-                    if field.get("name") == field_name
-                ),
-                None,
+            generation = referenced_field.get(
+                "generation",
             )
 
-            if referenced_field is not None:
+            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                isinstance(generation, dict)
+                and generation.get("distribution") == "CATEGORICAL"
+            )
 
-                generation = referenced_field.get(
-                    "generation",
+            if is_categorical and operator not in {"==", "!="}:
+                errors.append(
+                    f"{entity_name}.{field_name}: categorical constraints "
+                    "only support == or != operators."
                 )
 
-                is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
-                    isinstance(generation, dict)
-                    and generation.get("distribution") == "CATEGORICAL"
+        if "value" not in constraint:
+            errors.append(
+                f"{entity_name}.{field_name}: constraint value is required."
+            )
+
+        # -------------------------------------------------------------
+        # CATEGORICAL VALUE VALIDATION
+        # -------------------------------------------------------------
+
+        referenced_field = next(
+            (
+                field
+                for field in entities_by_name[entity_name].get(
+                    "fields",
+                    [],
+                )
+                if field.get("name") == field_name
+            ),
+            None,
+        )
+
+        if referenced_field is not None and "value" in constraint:
+
+            generation = referenced_field.get(
+                "generation",
+            )
+
+            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
+                isinstance(generation, dict)
+                and generation.get("distribution") == "CATEGORICAL"
+            )
+
+            if is_categorical:
+
+                parameters = (
+                    generation.get("parameters")
+                    if isinstance(generation, dict)
+                    else None
                 )
 
-                if is_categorical and operator not in {"==", "!="}:
+                values = (
+                    parameters.get("values")
+                    if isinstance(parameters, dict)
+                    else None
+                )
+
+                if not isinstance(values, list) or not values:
+
                     errors.append(
-                        f"{entity_name}.{field_name}: categorical constraints "
-                        "only support == or != operators."
+                        f"{entity_name}.{field_name}: categorical "
+                        "constraint requires a non-empty declared "
+                        "vocabulary."
                     )
 
-            if "value" not in constraint:
-                errors.append(
-                    f"{entity_name}.{field_name}: constraint value is required."
-                )
+                elif constraint["value"] not in values:
 
-            # -------------------------------------------------------------
-            # CATEGORICAL VALUE VALIDATION
-            # -------------------------------------------------------------
-
-            referenced_field = next(
-                (
-                    field
-                    for field in entities_by_name[entity_name].get(
-                        "fields",
-                        [],
+                    errors.append(
+                        f"{entity_name}.{field_name}: constraint value "
+                        f"{constraint['value']!r} is not in the declared "
+                        "categorical vocabulary."
                     )
-                    if field.get("name") == field_name
-                ),
-                None,
-            )
-
-            if referenced_field is not None and "value" in constraint:
-
-                generation = referenced_field.get(
-                    "generation",
-                )
-
-                is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
-                    isinstance(generation, dict)
-                    and generation.get("distribution") == "CATEGORICAL"
-                )
-
-                if is_categorical:
-
-                    parameters = (
-                        generation.get("parameters")
-                        if isinstance(generation, dict)
-                        else None
-                    )
-
-                    values = (
-                        parameters.get("values")
-                        if isinstance(parameters, dict)
-                        else None
-                    )
-
-                    if not isinstance(values, list) or not values:
-
-                        errors.append(
-                            f"{entity_name}.{field_name}: categorical "
-                            "constraint requires a non-empty declared "
-                            "vocabulary."
-                        )
-
-                    elif constraint["value"] not in values:
-
-                        errors.append(
-                            f"{entity_name}.{field_name}: constraint value "
-                            f"{constraint['value']!r} is not in the declared "
-                            "categorical vocabulary."
-                        )
 
     return errors
 
@@ -2349,13 +2398,10 @@ def validate_operation(
         ):
             errors.append(f"Unknown relationship target: {target}")
 
-        if relationship.get("type") not in {
-            "ONE_TO_ONE",
-            "ONE_TO_MANY",
-            "MANY_TO_ONE",
-            "MANY_TO_MANY",
-        }:
-            errors.append("Unsupported relationship type.")
+        validate_relationship_definition(
+            relationship,
+            errors,
+        )
 
     return errors
 
@@ -3764,7 +3810,9 @@ Exact structure:
   "relationship": {
     "source": "<ENTITY_A>.<FIELD_A>",
     "target": "<ENTITY_B>.<FIELD_B>",
-    "type": "<RELATIONSHIP_TYPE>"
+    "type": "<RELATIONSHIP_TYPE>",
+    "source_participation": "<MANDATORY_OR_OPTIONAL>",
+    "target_participation": "<MANDATORY_OR_OPTIONAL>"
   }
 }
 
@@ -3774,6 +3822,29 @@ Supported relationship types:
 - ONE_TO_MANY
 - MANY_TO_ONE
 - MANY_TO_MANY
+
+Supported relationship participation:
+
+- MANDATORY
+- OPTIONAL
+
+Participation applies independently to the source and target ends.
+
+The relationship type defines the maximum cardinality.
+Participation defines the minimum cardinality:
+
+- ONE_TO_ONE + MANDATORY = 1..1
+- ONE_TO_ONE + OPTIONAL = 0..1
+- ONE_TO_MANY + MANDATORY = 1..N
+- ONE_TO_MANY + OPTIONAL = 0..N
+- MANY_TO_ONE + MANDATORY = 1..1 on the target end
+- MANY_TO_ONE + OPTIONAL = 0..1 on the target end
+- MANY_TO_MANY + MANDATORY = 1..N
+- MANY_TO_MANY + OPTIONAL = 0..N
+
+Do not invent other participation values.
+
+If the user does not specify participation, use MANDATORY.
 
 If a relationship requires a field that does not yet exist, create the
 required entity and field first, then create the relationship, provided

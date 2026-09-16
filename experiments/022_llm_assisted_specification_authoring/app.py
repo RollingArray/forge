@@ -3222,6 +3222,26 @@ with model_column:
                             key="new_relationship_type",
                         )
 
+                        source_participation = st.selectbox(
+                            "Source participation",
+                            ["MANDATORY", "OPTIONAL"],
+                            key="new_relationship_source_participation",
+                            help=(
+                                "Whether each target must be related to at "
+                                "least one source record."
+                            ),
+                        )
+
+                        target_participation = st.selectbox(
+                            "Target participation",
+                            ["MANDATORY", "OPTIONAL"],
+                            key="new_relationship_target_participation",
+                            help=(
+                                "Whether each source must have at least one "
+                                "related target record."
+                            ),
+                        )
+
                         create_col, cancel_col = st.columns(2)
 
                         with create_col:
@@ -3263,6 +3283,8 @@ with model_column:
                                     "source": (f"{source_entity}.{source_field}"),
                                     "target": (f"{target_entity}.{target_field}"),
                                     "type": relationship_type,
+                                    "source_participation": source_participation,
+                                    "target_participation": target_participation,
                                 }
                             )
 
@@ -3468,6 +3490,44 @@ with model_column:
                     ),
                 )
 
+                source_participation = st.selectbox(
+                    "Source participation",
+                    ["MANDATORY", "OPTIONAL"],
+                    index=(
+                        ["MANDATORY", "OPTIONAL"].index(
+                            relationship.get(
+                                "source_participation",
+                                "MANDATORY",
+                            )
+                        )
+                        if relationship.get(
+                            "source_participation",
+                            "MANDATORY",
+                        )
+                        in ["MANDATORY", "OPTIONAL"]
+                        else 0
+                    ),
+                )
+
+                target_participation = st.selectbox(
+                    "Target participation",
+                    ["MANDATORY", "OPTIONAL"],
+                    index=(
+                        ["MANDATORY", "OPTIONAL"].index(
+                            relationship.get(
+                                "target_participation",
+                                "MANDATORY",
+                            )
+                        )
+                        if relationship.get(
+                            "target_participation",
+                            "MANDATORY",
+                        )
+                        in ["MANDATORY", "OPTIONAL"]
+                        else 0
+                    ),
+                )
+
                 save, cancel = st.columns(2)
 
                 with save:
@@ -3499,6 +3559,8 @@ with model_column:
                     "source": (f"{source_entity}.{source_field}"),
                     "target": (f"{target_entity}.{target_field}"),
                     "type": relationship_type,
+                    "source_participation": source_participation,
+                    "target_participation": target_participation,
                 }
 
                 errors = forge_backend.validate_authoring_model(candidate)

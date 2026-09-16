@@ -347,7 +347,16 @@
     {
       "source": "Customer.CUSTOMER_ID",
       "target": "INVOICE.INVOICE_ID",
-      "type": "ONE_TO_MANY"
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "Customer.CUSTOMER_ID",
+      "target": "INVOICE.INVOICE_ID",
+      "type": "MANY_TO_MANY",
+      "source_participation": "MANDATORY",
+      "target_participation": "MANDATORY"
     }
   ],
   "constraints": [
