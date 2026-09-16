@@ -84,7 +84,13 @@
             "strategy": "RANDOM"
           }
         }
-      ]
+      ],
+      "identity": {
+        "fields": [
+          "CUSTOMER_ID",
+          "NAME"
+        ]
+      }
     },
     {
       "name": "INVOICE",
@@ -219,7 +225,69 @@
             }
           }
         }
-      ]
+      ],
+      "identity": {
+        "fields": [
+          "INVOICE_ID"
+        ]
+      }
+    },
+    {
+      "name": "ORDER_LINE",
+      "population": {
+        "count": 100
+      },
+      "fields": [
+        {
+          "name": "ORDER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "LINE_NUMBER",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "LINE_NO_1",
+                "LINE_NO_2",
+                "LINE_NO_3",
+                "LINE_NO_4"
+              ]
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "ORDER_ID",
+          "LINE_NUMBER"
+        ]
+      }
+    },
+    {
+      "name": "Entity",
+      "population": {
+        "count": 100
+      },
+      "fields": [
+        {
+          "name": "firld",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "firld"
+        ]
+      }
     }
   ],
   "relationships": [

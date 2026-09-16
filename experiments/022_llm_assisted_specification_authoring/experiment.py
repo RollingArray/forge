@@ -307,6 +307,71 @@ def field_exists(
         return False
 
 
+def validate_entity_identity(
+    specification: dict[str, Any],
+    entity: dict[str, Any],
+    errors: list[str],
+) -> None:
+    """
+    Validate the entity-level identity definition.
+
+    Entity identity is the generic FORGE representation of the
+    primary key. It may contain one or more fields.
+
+    A single field represents a single-field primary key.
+    Multiple fields represent a composite primary key.
+
+    Field-level identity configuration remains responsible for
+    field generation semantics such as SEQUENTIAL_ID.
+    """
+
+    entity_name = entity.get("name")
+    identity = entity.get("identity")
+
+    if identity is None:
+        return
+
+    if not isinstance(identity, dict):
+        errors.append(f"{entity_name}: identity must be an object.")
+        return
+
+    identity_fields = identity.get("fields")
+
+    if not isinstance(identity_fields, list):
+        errors.append(f"{entity_name}: identity.fields must be a list.")
+        return
+
+    if not identity_fields:
+        errors.append(
+            f"{entity_name}: identity.fields must contain at least one field."
+        )
+        return
+
+    if len(identity_fields) != len(set(identity_fields)):
+        errors.append(
+            f"{entity_name}: identity.fields must not contain duplicate fields."
+        )
+
+    entity_fields = {
+        field.get("name")
+        for field in entity.get("fields", [])
+        if isinstance(field, dict)
+    }
+
+    for field_name in identity_fields:
+
+        if not isinstance(field_name, str) or not field_name:
+            errors.append(
+                f"{entity_name}: every identity field must be a " "non-empty string."
+            )
+            continue
+
+        if field_name not in entity_fields:
+            errors.append(
+                f"{entity_name}: identity references unknown field " f"{field_name}."
+            )
+
+
 # ============================================================================
 # STRICT FORGE SPECIFICATION VALIDATION
 # ============================================================================
@@ -769,6 +834,21 @@ def validate_specification(
                                 f"support {distribution!r} distribution."
                             )
 
+    # -------------------------------------------------------------------------
+    # ENTITY IDENTITY
+    # -------------------------------------------------------------------------
+
+    for entity in specification.get(
+        "entities",
+        [],
+    ):
+
+        validate_entity_identity(
+            specification,
+            entity,
+            errors,
+        )
+
     validate_relationships(
         specification,
         errors,
@@ -778,7 +858,6 @@ def validate_specification(
         specification,
         errors,
     )
-
     validate_dependencies(
         specification,
         errors,
@@ -1468,6 +1547,16 @@ def validate_authoring_model(
                                 f"{name}.{field_name}: INTEGER fields do not "
                                 f"support {distribution!r} distribution."
                             )
+
+        # ---------------------------------------------------------------------
+        # ENTITY IDENTITY
+        # ---------------------------------------------------------------------
+
+        validate_entity_identity(
+            model,
+            entity,
+            errors,
+        )
 
     entities_by_name = entity_map(model)
 

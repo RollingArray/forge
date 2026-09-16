@@ -1061,6 +1061,254 @@ with model_column:
                     st.rerun()
 
             # ----------------------------------------------------------------
+            # ENTITY IDENTITY
+            # ----------------------------------------------------------------
+
+            identity = entity.get(
+                "identity",
+                {},
+            )
+
+            identity_fields = (
+                identity.get(
+                    "fields",
+                    [],
+                )
+                if isinstance(identity, dict)
+                else []
+            )
+
+            has_identity = bool(identity_fields)
+
+            st.markdown("**Primary Key / Identity**")
+
+            available_identity_fields = [
+                field.get("name")
+                for field in fields
+                if isinstance(field, dict)
+                and isinstance(field.get("name"), str)
+                and field.get("name")
+            ]
+
+            identity_editor_key = (
+                f"editing_identity_{entity_name}"
+            )
+
+            identity_editor_version_key = (
+                f"identity_editor_version_{entity_name}"
+            )
+
+            identity_editor_version = st.session_state.get(
+                identity_editor_version_key,
+                0,
+            )
+
+            editing_identity = st.session_state.get(
+                identity_editor_key,
+                False,
+            )
+
+            # ------------------------------------------------------------
+            # VIEW MODE
+            # ------------------------------------------------------------
+
+            if has_identity and not editing_identity:
+
+                if len(identity_fields) == 1:
+
+                    st.markdown(
+                        f"Primary key: **{identity_fields[0]}**"
+                    )
+
+                else:
+
+                    st.markdown(
+                        "Composite primary key: "
+                        + " + ".join(
+                            f"**{field_name}**"
+                            for field_name in identity_fields
+                        )
+                    )
+
+                if st.button(
+                    "Edit Identity",
+                    key=f"edit_identity_{entity_name}",
+                    use_container_width=True,
+                ):
+
+                    st.session_state[
+                        identity_editor_key
+                    ] = True
+
+                    st.rerun()
+
+            # ------------------------------------------------------------
+            # NO IDENTITY
+            # ------------------------------------------------------------
+
+            elif not has_identity and not editing_identity:
+
+                st.caption(
+                    "No primary key / identity defined."
+                )
+
+                if st.button(
+                    "Set Identity",
+                    key=f"set_identity_{entity_name}",
+                    type="primary",
+                    use_container_width=True,
+                ):
+
+                    st.session_state[
+                        identity_editor_key
+                    ] = True
+
+                    st.rerun()
+
+            # ------------------------------------------------------------
+            # EDIT MODE
+            # ------------------------------------------------------------
+
+            if editing_identity:
+
+                selected_identity_fields = st.multiselect(
+                    "Identity fields",
+                    options=available_identity_fields,
+                    default=[
+                        field_name
+                        for field_name in identity_fields
+                        if field_name in available_identity_fields
+                    ],
+                    key=(
+                        f"identity_fields_{entity_name}_"
+                        f"{identity_editor_version}"
+                    ),
+                    help=(
+                        "Select one field for a single-field primary key, "
+                        "or multiple fields for a composite primary key."
+                    ),
+                )
+
+                identity_save_left, identity_save_middle, identity_save_right = (
+                    st.columns(3)
+                )
+
+                with identity_save_left:
+
+                    save_identity = st.button(
+                        "Save Identity",
+                        key=f"save_identity_{entity_name}",
+                        type="primary",
+                        use_container_width=True,
+                    )
+
+                with identity_save_middle:
+
+                    clear_identity = st.button(
+                        "Clear Identity",
+                        key=f"clear_identity_{entity_name}",
+                        use_container_width=True,
+                    )
+
+                with identity_save_right:
+
+                    cancel_identity = st.button(
+                        "Cancel",
+                        key=f"cancel_identity_{entity_name}",
+                        use_container_width=True,
+                    )
+
+                if cancel_identity:
+
+                    st.session_state[
+                        identity_editor_key
+                    ] = False
+
+                    st.session_state[
+                        identity_editor_version_key
+                    ] = identity_editor_version + 1
+
+                    st.rerun()
+
+                if save_identity or clear_identity:
+
+                    candidate = copy.deepcopy(current_model)
+
+                    target_entity = get_entity(
+                        candidate,
+                        entity_name,
+                    )
+
+                    if target_entity is None:
+
+                        st.session_state.manual_error = [
+                            f"Entity {entity_name} does not exist."
+                        ]
+
+                        st.session_state.manual_success = None
+
+                    else:
+
+                        if clear_identity:
+
+                            target_entity.pop(
+                                "identity",
+                                None,
+                            )
+
+                        else:
+
+                            target_entity["identity"] = {
+                                "fields": selected_identity_fields,
+                            }
+
+                        errors = forge_backend.validate_authoring_model(
+                            candidate
+                        )
+
+                        if errors:
+
+                            st.session_state.manual_error = errors
+                            st.session_state.manual_success = None
+
+                        else:
+
+                            try:
+
+                                save_specification(candidate)
+
+                            except Exception as exc:
+
+                                st.session_state.manual_error = [
+                                    "Identity was validated but could not be saved: "
+                                    f"{exc}"
+                                ]
+
+                                st.session_state.manual_success = None
+
+                            else:
+
+                                st.session_state.model = candidate
+
+                                st.session_state.manual_error = []
+
+                                st.session_state.manual_success = (
+                                    f"Identity for **{entity_name}** "
+                                    f"{'cleared' if clear_identity else 'updated'} "
+                                    "and saved."
+                                )
+
+                                st.session_state[
+                                    identity_editor_key
+                                ] = False
+
+                                st.session_state[
+                                    identity_editor_version_key
+                                ] = identity_editor_version + 1
+
+                    st.rerun()
+
+            # ----------------------------------------------------------------
             # FIELDS
             # ----------------------------------------------------------------
 
@@ -1847,51 +2095,78 @@ with model_column:
 
                                 else:
 
-                                    entity["fields"] = [
-                                        field
-                                        for field in entity.get(
-                                            "fields",
-                                            [],
-                                        )
-                                        if field.get("name") != field_name
-                                    ]
-
-                                    validation_errors = (
-                                        forge_backend.validate_authoring_model(
-                                            candidate
-                                        )
+                                    identity = entity.get(
+                                        "identity",
+                                        {},
                                     )
 
-                                    if validation_errors:
+                                    identity_fields = (
+                                        identity.get("fields", [])
+                                        if isinstance(identity, dict)
+                                        else []
+                                    )
 
-                                        st.session_state.manual_error = (
-                                            validation_errors
-                                        )
+                                    # ------------------------------------------------
+                                    # ENTITY IDENTITY PROTECTION
+                                    # ------------------------------------------------
+
+                                    if field_name in identity_fields:
+
+                                        st.session_state.manual_error = [
+                                            f"Field **{reference}** cannot be "
+                                            "deleted because it is part of the "
+                                            "entity identity."
+                                        ]
 
                                         st.session_state.manual_success = None
 
                                     else:
 
-                                        try:
+                                        entity["fields"] = [
+                                            field
+                                            for field in entity.get(
+                                                "fields",
+                                                [],
+                                            )
+                                            if field.get("name") != field_name
+                                        ]
 
-                                            save_specification(candidate)
+                                        validation_errors = (
+                                            forge_backend.validate_authoring_model(
+                                                candidate
+                                            )
+                                        )
 
-                                        except Exception as exc:
+                                        if validation_errors:
 
-                                            st.session_state.manual_error = [
-                                                "Field was validated but "
-                                                f"could not be saved: {exc}"
-                                            ]
+                                            st.session_state.manual_error = (
+                                                validation_errors
+                                            )
 
                                             st.session_state.manual_success = None
 
                                         else:
 
-                                            st.session_state.model = candidate
-                                            st.session_state.editing_field = None
-                                            st.session_state.manual_success = (
-                                                f"Deleted **{reference}** and saved."
-                                            )
+                                            try:
+
+                                                save_specification(candidate)
+
+                                            except Exception as exc:
+
+                                                st.session_state.manual_error = [
+                                                    "Field was validated but "
+                                                    f"could not be saved: {exc}"
+                                                ]
+
+                                                st.session_state.manual_success = None
+
+                                            else:
+
+                                                st.session_state.model = candidate
+                                                st.session_state.editing_field = None
+                                                st.session_state.manual_success = (
+                                                    f"Deleted **{reference}** and saved."
+                                                )
 
                             st.rerun()
 
@@ -1923,6 +2198,7 @@ with model_column:
                     new_identity = None
                     new_strategy = None
                     new_distribution = None
+                    new_generator = None
                     new_categorical_values = None
                     new_minimum = None
                     new_maximum = None
@@ -3285,9 +3561,7 @@ with model_column:
                 )
 
                 constraint_operators = (
-                    ["==", "!="]
-                    if is_categorical
-                    else SUPPORTED_OPERATORS
+                    ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
                 )
 
                 constraint_operator = st.selectbox(
@@ -3605,9 +3879,7 @@ with model_column:
                 )
 
                 constraint_operators = (
-                    ["==", "!="]
-                    if is_categorical
-                    else SUPPORTED_OPERATORS
+                    ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
                 )
 
                 constraint_operator = st.selectbox(
@@ -3737,11 +4009,7 @@ with model_column:
 
                         constraint_value = st.text_input(
                             "Value",
-                            value=(
-                                ""
-                                if current_value is None
-                                else str(current_value)
-                            ),
+                            value=("" if current_value is None else str(current_value)),
                             key=f"edit_constraint_value_text_{index}",
                         )
 
