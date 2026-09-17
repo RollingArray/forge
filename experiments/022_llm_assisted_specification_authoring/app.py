@@ -1378,7 +1378,12 @@ with model_column:
 
                     if new_field_type == "BOOLEAN":
 
-                        new_generation_strategy = "RANDOM"
+                        new_generation_strategy = st.selectbox(
+                            "Generation strategy",
+                            ["RANDOM"],
+                            index=0,
+                            key=f"new_boolean_generation_strategy_{entity_name}",
+                        )
 
                         st.caption("Randomly generate true / false.")
 
@@ -1718,6 +1723,28 @@ with model_column:
                                         )
 
                         # ----------------------------------------------------
+                        # DECIMAL PARAMETERS
+                        # ----------------------------------------------------
+
+                        elif new_field_type == "DECIMAL":
+
+                            if new_distribution == "UNIFORM":
+
+                                new_minimum = st.number_input(
+                                    "Minimum",
+                                    value=0.0,
+                                    step=0.01,
+                                    key=f"new_decimal_minimum_{entity_name}",
+                                )
+
+                                new_maximum = st.number_input(
+                                    "Maximum",
+                                    value=100.0,
+                                    step=0.01,
+                                    key=f"new_decimal_maximum_{entity_name}",
+                                )
+
+                        # ----------------------------------------------------
                         # OTHER CATEGORICAL TYPES
                         # ----------------------------------------------------
 
@@ -1863,6 +1890,12 @@ with model_column:
                                 },
                             }
 
+                        elif new_field_type == "BOOLEAN":
+
+                            operation["field"]["generation"] = {
+                                "strategy": new_generation_strategy,
+                            }
+
                         else:
 
                             operation["field"]["generation"] = {
@@ -1888,6 +1921,20 @@ with model_column:
                                 operation["field"]["generation"]["parameters"] = {
                                     "values": new_categorical_values or [],
                                 }
+
+                        # ------------------------------------------------
+                        # DECIMAL PARAMETERS
+                        # ------------------------------------------------
+
+                        elif (
+                            new_field_type == "DECIMAL"
+                            and new_distribution == "UNIFORM"
+                        ):
+
+                            operation["field"]["generation"]["parameters"] = {
+                                "minimum": float(new_minimum),
+                                "maximum": float(new_maximum),
+                            }
 
                         # ------------------------------------------------
                         # OTHER CATEGORICAL TYPES
@@ -2335,339 +2382,292 @@ with model_column:
 
                                 current_generator = generation.get("generator")
 
-                                if current_generator in {
+                                current_parameters = generation.get(
+                                    "parameters",
+                                    {},
+                                )
+
+                                if not isinstance(current_parameters, dict):
+                                    current_parameters = {}
+
+                                string_generation_modes = [
+                                    "CATEGORICAL",
                                     "RANDOM_STRING",
                                     "PATTERN",
                                     "SEMANTIC",
-                                }:
+                                ]
 
-                                    current_parameters = generation.get(
-                                        "parameters",
-                                        {},
+                                string_generation_mode = st.selectbox(
+                                    "String generation",
+                                    string_generation_modes,
+                                    index=(
+                                        string_generation_modes.index(
+                                            current_generator
+                                        )
+                                        if current_generator
+                                        in string_generation_modes
+                                        else 0
+                                    ),
+                                    key=f"edit_string_generation_mode_{reference}",
+                                )
+
+                                if string_generation_mode == "RANDOM_STRING":
+
+                                    new_generator = "RANDOM_STRING"
+
+                                    current_minimum = current_parameters.get(
+                                        "minimum_length",
+                                        8,
                                     )
 
-                                    string_generation_modes = [
-                                        "CATEGORICAL",
-                                        "RANDOM_STRING",
-                                        "PATTERN",
-                                        "SEMANTIC",
-                                    ]
+                                    current_maximum = current_parameters.get(
+                                        "maximum_length",
+                                        12,
+                                    )
 
-                                    string_generation_mode = st.selectbox(
-                                        "String generation",
-                                        string_generation_modes,
+                                    current_character_set = current_parameters.get(
+                                        "character_set",
+                                        SUPPORTED_STRING_CHARACTER_SETS[0],
+                                    )
+
+                                    new_minimum = st.number_input(
+                                        "Minimum length",
+                                        min_value=1,
+                                        value=int(current_minimum),
+                                        step=1,
+                                        format="%d",
+                                        key=f"edit_random_string_minimum_{reference}",
+                                    )
+
+                                    new_maximum = st.number_input(
+                                        "Maximum length",
+                                        min_value=1,
+                                        value=int(current_maximum),
+                                        step=1,
+                                        format="%d",
+                                        key=f"edit_random_string_maximum_{reference}",
+                                    )
+
+                                    new_character_set = st.selectbox(
+                                        "Character set",
+                                        SUPPORTED_STRING_CHARACTER_SETS,
                                         index=(
-                                            string_generation_modes.index(
-                                                current_generator
+                                            SUPPORTED_STRING_CHARACTER_SETS.index(
+                                                current_character_set
                                             )
-                                            if current_generator
-                                            in string_generation_modes
+                                            if current_character_set
+                                            in SUPPORTED_STRING_CHARACTER_SETS
                                             else 0
                                         ),
-                                        key=f"edit_string_generation_mode_{reference}",
+                                        key=f"edit_random_string_character_set_{reference}",
                                     )
 
-                                    if string_generation_mode == "RANDOM_STRING":
+                                elif string_generation_mode == "PATTERN":
 
-                                        new_generator = "RANDOM_STRING"
+                                    new_generator = "PATTERN"
 
-                                        current_minimum = current_parameters.get(
-                                            "minimum_length",
-                                            8,
+                                    current_pattern = current_parameters.get(
+                                        "pattern",
+                                        "AA-####-XX",
+                                    )
+
+                                    new_pattern = st.text_input(
+                                        "Pattern",
+                                        value=str(current_pattern),
+                                        key=f"edit_pattern_{reference}",
+                                        help=(
+                                            "# = digit | "
+                                            "A = uppercase letter | "
+                                            "a = lowercase letter | "
+                                            "X = alphanumeric. "
+                                            "All other characters are literals."
+                                        ),
+                                    )
+
+                                    st.caption(
+                                        r"\# digit · A uppercase · a lowercase · X alphanumeric"
+                                    )
+                                    st.caption(
+                                        f"Preview: `{preview_pattern(new_pattern)}`"
+                                    )
+
+                                elif string_generation_mode == "SEMANTIC":
+
+                                    new_generator = "SEMANTIC"
+
+                                    current_description = current_parameters.get(
+                                        "description",
+                                        "",
+                                    )
+
+                                    new_semantic_description = st.text_area(
+                                        "Semantic description",
+                                        value=str(current_description),
+                                        key=f"edit_semantic_description_{reference}",
+                                        placeholder=(
+                                            "Generate realistic engineering "
+                                            "document titles."
+                                        ),
+                                        help=(
+                                            "Describe the kind of realistic "
+                                            "STRING values you want FORGE "
+                                            "to generate."
+                                        ),
+                                    )
+
+                                    preview_col, clear_col = st.columns(2)
+
+                                    with preview_col:
+
+                                        preview_semantic = st.button(
+                                            "Interpret & Preview",
+                                            key=f"edit_preview_semantic_{reference}",
+                                            use_container_width=True,
                                         )
 
-                                        current_maximum = current_parameters.get(
-                                            "maximum_length",
-                                            12,
+                                    with clear_col:
+
+                                        clear_semantic = st.button(
+                                            "Clear Preview",
+                                            key=f"edit_clear_semantic_{reference}",
+                                            use_container_width=True,
                                         )
 
-                                        current_character_set = current_parameters.get(
-                                            "character_set",
-                                            SUPPORTED_STRING_CHARACTER_SETS[0],
+                                    if clear_semantic:
+
+                                        st.session_state.semantic_preview = None
+                                        st.session_state.semantic_preview_error = []
+                                        st.session_state.semantic_preview_description = (
+                                            ""
+                                        )
+                                        st.session_state.semantic_preview_field = (
+                                            None
                                         )
 
-                                        new_minimum = st.number_input(
-                                            "Minimum length",
-                                            min_value=1,
-                                            value=int(current_minimum),
-                                            step=1,
-                                            format="%d",
-                                            key=f"edit_random_string_minimum_{reference}",
+                                        st.rerun()
+
+                                    if preview_semantic:
+
+                                        description = (
+                                            new_semantic_description.strip()
                                         )
 
-                                        new_maximum = st.number_input(
-                                            "Maximum length",
-                                            min_value=1,
-                                            value=int(current_maximum),
-                                            step=1,
-                                            format="%d",
-                                            key=f"edit_random_string_maximum_{reference}",
-                                        )
-
-                                        new_character_set = st.selectbox(
-                                            "Character set",
-                                            SUPPORTED_STRING_CHARACTER_SETS,
-                                            index=(
-                                                SUPPORTED_STRING_CHARACTER_SETS.index(
-                                                    current_character_set
-                                                )
-                                                if current_character_set
-                                                in SUPPORTED_STRING_CHARACTER_SETS
-                                                else 0
-                                            ),
-                                            key=f"edit_random_string_character_set_{reference}",
-                                        )
-
-                                    elif string_generation_mode == "PATTERN":
-
-                                        new_generator = "PATTERN"
-
-                                        current_pattern = current_parameters.get(
-                                            "pattern",
-                                            "AA-####-XX",
-                                        )
-
-                                        new_pattern = st.text_input(
-                                            "Pattern",
-                                            value=str(current_pattern),
-                                            key=f"edit_pattern_{reference}",
-                                            help=(
-                                                "# = digit | "
-                                                "A = uppercase letter | "
-                                                "a = lowercase letter | "
-                                                "X = alphanumeric. "
-                                                "All other characters are literals."
-                                            ),
-                                        )
-
-                                        st.caption(
-                                            r"\# digit · A uppercase · a lowercase · X alphanumeric"
-                                        )
-                                        st.caption(
-                                            f"Preview: `{preview_pattern(new_pattern)}`"
-                                        )
-
-                                    elif string_generation_mode == "SEMANTIC":
-
-                                        new_generator = "SEMANTIC"
-
-                                        current_description = current_parameters.get(
-                                            "description",
-                                            "",
-                                        )
-
-                                        new_semantic_description = st.text_area(
-                                            "Semantic description",
-                                            value=str(current_description),
-                                            key=f"edit_semantic_description_{reference}",
-                                            placeholder=(
-                                                "Generate realistic engineering "
-                                                "document titles."
-                                            ),
-                                            help=(
-                                                "Describe the kind of realistic "
-                                                "STRING values you want FORGE "
-                                                "to generate."
-                                            ),
-                                        )
-
-                                        preview_col, clear_col = st.columns(2)
-
-                                        with preview_col:
-
-                                            preview_semantic = st.button(
-                                                "Interpret & Preview",
-                                                key=f"edit_preview_semantic_{reference}",
-                                                use_container_width=True,
-                                            )
-
-                                        with clear_col:
-
-                                            clear_semantic = st.button(
-                                                "Clear Preview",
-                                                key=f"edit_clear_semantic_{reference}",
-                                                use_container_width=True,
-                                            )
-
-                                        if clear_semantic:
+                                        if not description:
 
                                             st.session_state.semantic_preview = None
-                                            st.session_state.semantic_preview_error = []
+                                            st.session_state.semantic_preview_error = [
+                                                "Semantic description must not be empty."
+                                            ]
                                             st.session_state.semantic_preview_description = (
                                                 ""
                                             )
                                             st.session_state.semantic_preview_field = (
-                                                None
+                                                reference
                                             )
 
-                                            st.rerun()
+                                        else:
 
-                                        if preview_semantic:
+                                            try:
 
-                                            description = (
-                                                new_semantic_description.strip()
-                                            )
+                                                semantic_result = forge_backend.generate_semantic_preview(
+                                                    description
+                                                )
 
-                                            if not description:
+                                                st.session_state.semantic_preview = (
+                                                    semantic_result
+                                                )
 
-                                                st.session_state.semantic_preview = None
+                                                st.session_state.semantic_preview_error = (
+                                                    []
+                                                )
+
+                                                st.session_state.semantic_preview_description = (
+                                                    description
+                                                )
+
+                                                st.session_state.semantic_preview_field = (
+                                                    reference
+                                                )
+
+                                            except Exception as exc:
+
+                                                st.session_state.semantic_preview = (
+                                                    None
+                                                )
                                                 st.session_state.semantic_preview_error = [
-                                                    "Semantic description must not be empty."
+                                                    str(exc)
                                                 ]
                                                 st.session_state.semantic_preview_description = (
-                                                    ""
+                                                    description
                                                 )
                                                 st.session_state.semantic_preview_field = (
                                                     reference
                                                 )
 
-                                            else:
+                                    semantic_result = (
+                                        st.session_state.semantic_preview
+                                    )
 
-                                                try:
+                                    if (
+                                        semantic_result is not None
+                                        and st.session_state.semantic_preview_field
+                                        == reference
+                                    ):
 
-                                                    semantic_result = forge_backend.generate_semantic_preview(
-                                                        description
-                                                    )
+                                        status = semantic_result.get("status")
 
-                                                    st.session_state.semantic_preview = (
-                                                        semantic_result
-                                                    )
+                                        if status == "PROPOSE":
 
-                                                    st.session_state.semantic_preview_error = (
-                                                        []
-                                                    )
+                                            st.markdown("**LLM interpretation**")
 
-                                                    st.session_state.semantic_preview_description = (
-                                                        description
-                                                    )
-
-                                                    st.session_state.semantic_preview_field = (
-                                                        reference
-                                                    )
-
-                                                except Exception as exc:
-
-                                                    st.session_state.semantic_preview = (
-                                                        None
-                                                    )
-                                                    st.session_state.semantic_preview_error = [
-                                                        str(exc)
-                                                    ]
-                                                    st.session_state.semantic_preview_description = (
-                                                        description
-                                                    )
-                                                    st.session_state.semantic_preview_field = (
-                                                        reference
-                                                    )
-
-                                        semantic_result = (
-                                            st.session_state.semantic_preview
-                                        )
-
-                                        if (
-                                            semantic_result is not None
-                                            and st.session_state.semantic_preview_field
-                                            == reference
-                                        ):
-
-                                            status = semantic_result.get("status")
-
-                                            if status == "PROPOSE":
-
-                                                st.markdown("**LLM interpretation**")
-
-                                                st.info(
-                                                    semantic_result.get(
-                                                        "message",
-                                                        "",
-                                                    )
+                                            st.info(
+                                                semantic_result.get(
+                                                    "message",
+                                                    "",
                                                 )
+                                            )
 
-                                                st.markdown("**10-value preview**")
+                                            st.markdown("**10-value preview**")
 
-                                                preview_values = semantic_result.get(
-                                                    "preview_values",
-                                                    [],
+                                            preview_values = semantic_result.get(
+                                                "preview_values",
+                                                [],
+                                            )
+
+                                            for index, value in enumerate(
+                                                preview_values,
+                                                start=1,
+                                            ):
+
+                                                st.write(f"{index}. {value}")
+
+                                        elif status == "CLARIFY":
+
+                                            st.warning(
+                                                semantic_result.get(
+                                                    "message",
+                                                    "Additional clarification is required.",
                                                 )
+                                            )
 
-                                                for index, value in enumerate(
-                                                    preview_values,
-                                                    start=1,
-                                                ):
+                                        elif status == "UNSUPPORTED":
 
-                                                    st.write(f"{index}. {value}")
-
-                                            elif status == "CLARIFY":
-
-                                                st.warning(
-                                                    semantic_result.get(
-                                                        "message",
-                                                        "Additional clarification is required.",
-                                                    )
+                                            st.error(
+                                                semantic_result.get(
+                                                    "message",
+                                                    "This semantic requirement is unsupported.",
                                                 )
+                                            )
 
-                                            elif status == "UNSUPPORTED":
+                                    for (
+                                        error
+                                    ) in st.session_state.semantic_preview_error:
 
-                                                st.error(
-                                                    semantic_result.get(
-                                                        "message",
-                                                        "This semantic requirement is unsupported.",
-                                                    )
-                                                )
-
-                                        for (
-                                            error
-                                        ) in st.session_state.semantic_preview_error:
-
-                                            st.error(error)
-
-                                    else:
-
-                                        new_generator = None
-
-                                        parameters = generation.get(
-                                            "parameters",
-                                            {},
-                                        )
-
-                                        current_values = parameters.get(
-                                            "values",
-                                            [],
-                                        )
-
-                                        if not isinstance(
-                                            current_values,
-                                            list,
-                                        ):
-                                            current_values = []
-
-                                        categorical_text = st.text_area(
-                                            "Categorical values",
-                                            value="\n".join(
-                                                str(value) for value in current_values
-                                            ),
-                                            help="Enter one generated value per line.",
-                                            placeholder="RETAIL\nWHOLESALE\nGOVERNMENT",
-                                            key=f"edit_string_categorical_values_{reference}",
-                                        )
-
-                                        new_categorical_values = [
-                                            value.strip()
-                                            for value in categorical_text.splitlines()
-                                            if value.strip()
-                                        ]
-
-                                        new_distribution = "CATEGORICAL"
+                                        st.error(error)
 
                                 else:
 
-                                    # Existing STRING categorical generation
-                                    current_distribution = generation.get(
-                                        "distribution",
-                                        "CATEGORICAL",
-                                    )
-
-                                    new_distribution = "CATEGORICAL"
+                                    new_generator = None
 
                                     parameters = generation.get(
                                         "parameters",
@@ -2700,6 +2700,9 @@ with model_column:
                                         for value in categorical_text.splitlines()
                                         if value.strip()
                                     ]
+
+                                    new_distribution = "CATEGORICAL"
+
 
                             # ------------------------------------------------
                             # NON-STRING TYPES
@@ -2824,6 +2827,49 @@ with model_column:
                                                 st.warning(
                                                     f"'{value}' is not a valid integer value."
                                                 )
+
+                                # --------------------------------------------
+                                # DECIMAL PARAMETERS
+                                # --------------------------------------------
+
+                                elif new_type == "DECIMAL":
+
+                                    parameters = generation.get(
+                                        "parameters",
+                                        {},
+                                    )
+
+                                    if not isinstance(
+                                        parameters,
+                                        dict,
+                                    ):
+                                        parameters = {}
+
+                                    if new_distribution == "UNIFORM":
+
+                                        current_minimum = parameters.get(
+                                            "minimum",
+                                            0.0,
+                                        )
+
+                                        current_maximum = parameters.get(
+                                            "maximum",
+                                            100.0,
+                                        )
+
+                                        new_minimum = st.number_input(
+                                            "Minimum",
+                                            value=float(current_minimum),
+                                            step=0.01,
+                                            key=f"edit_decimal_minimum_{reference}",
+                                        )
+
+                                        new_maximum = st.number_input(
+                                            "Maximum",
+                                            value=float(current_maximum),
+                                            step=0.01,
+                                            key=f"edit_decimal_maximum_{reference}",
+                                        )
 
                                 # --------------------------------------------
                                 # OTHER CATEGORICAL TYPES
@@ -3021,6 +3067,20 @@ with model_column:
                                 }
 
                             # ------------------------------------------------
+                            # STRING PATTERN
+                            # ------------------------------------------------
+
+                            elif new_type == "STRING" and new_generator == "PATTERN":
+
+                                target["generation"] = {
+                                    "strategy": new_strategy,
+                                    "generator": "PATTERN",
+                                    "parameters": {
+                                        "pattern": new_pattern,
+                                    },
+                                }
+
+                            # ------------------------------------------------
                             # STRING CATEGORICAL
                             # ------------------------------------------------
 
@@ -3067,6 +3127,20 @@ with model_column:
                                         target["generation"]["parameters"] = {
                                             "values": (new_categorical_values or []),
                                         }
+
+                                # --------------------------------------------
+                                # DECIMAL PARAMETERS
+                                # --------------------------------------------
+
+                                elif (
+                                    new_type == "DECIMAL"
+                                    and new_distribution == "UNIFORM"
+                                ):
+
+                                    target["generation"]["parameters"] = {
+                                        "minimum": float(new_minimum),
+                                        "maximum": float(new_maximum),
+                                    }
 
                                 # --------------------------------------------
                                 # OTHER CATEGORICAL TYPES
@@ -4241,40 +4315,350 @@ for index, foreign_key in enumerate(
 
 
 
-    # =========================================================================
-    # CONSTRAINTS
-    # =========================================================================
+# =========================================================================
+# CONSTRAINTS
+# =========================================================================
 
-    st.divider()
-    st.subheader("✓ Constraints")
+st.divider()
+st.subheader("✓ Constraints")
 
-    entity_list = entity_names(current_model)
+entity_list = entity_names(current_model)
 
-    if st.button(
-        "➕ Add constraint",
-        key="add_constraint_button",
-        use_container_width=True,
-    ):
-        st.session_state.adding_constraint = True
-        st.session_state.editing_constraint = None
-        st.rerun()
+if st.button(
+    "➕ Add constraint",
+    key="add_constraint_button",
+    use_container_width=True,
+):
+    st.session_state.adding_constraint = True
+    st.session_state.editing_constraint = None
+    st.rerun()
 
-    # -------------------------------------------------------------------------
-    # ADD CONSTRAINT
-    # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# ADD CONSTRAINT
+# -------------------------------------------------------------------------
 
-    if st.session_state.get("adding_constraint", False):
+if st.session_state.get("adding_constraint", False):
 
-        if not entity_list:
-            st.warning("Add an entity before creating a constraint.")
+    if not entity_list:
+        st.warning("Add an entity before creating a constraint.")
+
+    else:
+        st.markdown("**New constraint**")
+
+        constraint_entity = st.selectbox(
+            "Entity",
+            entity_list,
+            key="new_constraint_entity",
+        )
+
+        constraint_entity_object = get_entity(
+            current_model,
+            constraint_entity,
+        )
+
+        constraint_fields = [
+            field["name"]
+            for field in (constraint_entity_object or {}).get(
+                "fields",
+                [],
+            )
+        ]
+
+        if not constraint_fields:
+            st.warning(
+                f"Entity `{constraint_entity}` has no fields. "
+                "Add a field before creating a constraint."
+            )
 
         else:
-            st.markdown("**New constraint**")
+            constraint_field = st.selectbox(
+                "Field",
+                constraint_fields,
+                key="new_constraint_field",
+            )
+
+            selected_constraint_field = get_field(
+                current_model,
+                f"{constraint_entity}.{constraint_field}",
+            )
+
+            field_type = (
+                selected_constraint_field.get("type")
+                if selected_constraint_field
+                else None
+            )
+
+            generation = (
+                selected_constraint_field.get("generation", {})
+                if selected_constraint_field
+                else {}
+            )
+
+            is_categorical = field_type == "CATEGORICAL"
+
+            constraint_operators = (
+                ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
+            )
+
+            constraint_operator = st.selectbox(
+                "Operator",
+                constraint_operators,
+                key="new_constraint_operator",
+            )
+
+            # -------------------------------------------------------------
+            # VALUE
+            # -------------------------------------------------------------
+
+            if field_type == "INTEGER":
+
+                constraint_value = st.number_input(
+                    "Value",
+                    value=0,
+                    step=1,
+                    format="%d",
+                    key="new_constraint_value_integer",
+                )
+
+            elif field_type == "DECIMAL":
+
+                constraint_value = st.number_input(
+                    "Value",
+                    value=0.0,
+                    step=0.1,
+                    key="new_constraint_value_decimal",
+                )
+
+            elif field_type == "BOOLEAN":
+
+                constraint_value = st.selectbox(
+                    "Value",
+                    [True, False],
+                    key="new_constraint_value_boolean",
+                )
+
+            else:
+
+                generation = (
+                    selected_constraint_field.get("generation", {})
+                    if selected_constraint_field
+                    else {}
+                )
+
+                is_categorical = field_type == "CATEGORICAL" or (
+                    isinstance(generation, dict)
+                    and generation.get("distribution") == "CATEGORICAL"
+                )
+
+                if is_categorical:
+
+                    parameters = (
+                        generation.get(
+                            "parameters",
+                            {},
+                        )
+                        if isinstance(generation, dict)
+                        else {}
+                    )
+
+                    categorical_values = (
+                        parameters.get(
+                            "values",
+                            [],
+                        )
+                        if isinstance(parameters, dict)
+                        else []
+                    )
+
+                    if isinstance(categorical_values, list) and categorical_values:
+
+                        constraint_value = st.selectbox(
+                            "Value",
+                            categorical_values,
+                            key="new_constraint_value_categorical",
+                        )
+
+                    else:
+
+                        st.warning(
+                            "This categorical field has no declared "
+                            "vocabulary. Add categorical values to the "
+                            "field before creating a constraint."
+                        )
+
+                        constraint_value = None
+
+                else:
+
+                    constraint_value = st.text_input(
+                        "Value",
+                        key="new_constraint_value_text",
+                    )
+
+            add_col, cancel_col = st.columns(2)
+
+            with add_col:
+                add_constraint = st.button(
+                    "Add Constraint",
+                    type="primary",
+                    use_container_width=True,
+                    key="add_constraint_submit",
+                )
+
+            with cancel_col:
+                cancel_constraint = st.button(
+                    "Cancel",
+                    use_container_width=True,
+                    key="add_constraint_cancel",
+                )
+
+            if cancel_constraint:
+                st.session_state.adding_constraint = False
+                st.rerun()
+
+            if add_constraint:
+
+                candidate = copy.deepcopy(current_model)
+
+                candidate["constraints"].append(
+                    {
+                        "entity": constraint_entity,
+                        "field": constraint_field,
+                        "operator": constraint_operator,
+                        "value": constraint_value,
+                    }
+                )
+
+                errors = forge_backend.validate_authoring_model(candidate)
+
+                if errors:
+
+                    st.session_state.manual_error = errors
+                    st.session_state.manual_success = None
+
+                else:
+
+                    try:
+                        save_specification(candidate)
+
+                    except Exception as exc:
+
+                        st.session_state.manual_error = [
+                            "Constraint was validated but could not "
+                            f"be saved: {exc}"
+                        ]
+
+                    else:
+
+                        st.session_state.model = candidate
+                        st.session_state.adding_constraint = False
+                        st.session_state.manual_success = (
+                            "Constraint added, validated, and saved."
+                        )
+
+                st.rerun()
+
+# -------------------------------------------------------------------------
+# EXISTING CONSTRAINTS
+# -------------------------------------------------------------------------
+
+if not constraints:
+    st.caption("No constraints defined.")
+
+for index, constraint in enumerate(constraints):
+
+    with st.container(border=True):
+
+        st.markdown(
+            f"**{constraint.get('entity', '?')}."
+            f"{constraint.get('field', '?')}** "
+            f"`{constraint.get('operator', '?')}` "
+            f"**{constraint.get('value', '?')}**"
+        )
+
+        edit_col, delete_col = st.columns(2)
+
+        with edit_col:
+
+            if st.button(
+                "Edit constraint",
+                key=f"constraint_edit_{index}",
+                use_container_width=True,
+            ):
+                st.session_state.editing_constraint = index
+                st.session_state.adding_constraint = False
+                st.rerun()
+
+        with delete_col:
+
+            if st.button(
+                "Delete constraint",
+                key=f"constraint_delete_{index}",
+                use_container_width=True,
+            ):
+
+                candidate = copy.deepcopy(current_model)
+
+                candidate["constraints"].pop(index)
+
+                errors = forge_backend.validate_authoring_model(candidate)
+
+                if errors:
+
+                    st.session_state.manual_error = errors
+                    st.session_state.manual_success = None
+
+                else:
+
+                    try:
+                        save_specification(candidate)
+
+                    except Exception as exc:
+
+                        st.session_state.manual_error = [
+                            "Constraint was validated but could not "
+                            f"be deleted: {exc}"
+                        ]
+
+                    else:
+
+                        st.session_state.model = candidate
+                        st.session_state.editing_constraint = None
+                        st.session_state.manual_success = (
+                            "Constraint deleted, validated, and saved."
+                        )
+
+                st.rerun()
+
+# -------------------------------------------------------------------------
+# EDIT CONSTRAINT
+# -------------------------------------------------------------------------
+
+if st.session_state.editing_constraint is not None:
+
+    index = st.session_state.editing_constraint
+
+    if 0 <= index < len(constraints):
+
+        constraint = constraints[index]
+
+        entity_list = entity_names(current_model)
+
+        current_entity = constraint.get("entity", "")
+
+        with st.container(border=True):
+
+            st.markdown("**Edit constraint**")
 
             constraint_entity = st.selectbox(
                 "Entity",
                 entity_list,
-                key="new_constraint_entity",
+                index=(
+                    entity_list.index(current_entity)
+                    if current_entity in entity_list
+                    else 0
+                ),
+                key=f"edit_constraint_entity_{index}",
             )
 
             constraint_entity_object = get_entity(
@@ -4290,29 +4674,105 @@ for index, foreign_key in enumerate(
                 )
             ]
 
-            if not constraint_fields:
-                st.warning(
-                    f"Entity `{constraint_entity}` has no fields. "
-                    "Add a field before creating a constraint."
+            current_field = constraint.get("field", "")
+
+            constraint_field = st.selectbox(
+                "Field",
+                constraint_fields,
+                index=(
+                    constraint_fields.index(current_field)
+                    if current_field in constraint_fields
+                    else 0
+                ),
+                key=f"edit_constraint_field_{index}",
+            )
+
+            selected_constraint_field = get_field(
+                current_model,
+                f"{constraint_entity}.{constraint_field}",
+            )
+
+            current_operator = constraint.get(
+                "operator",
+                ">=",
+            )
+
+            field_type = (
+                selected_constraint_field.get("type")
+                if selected_constraint_field
+                else None
+            )
+
+            generation = (
+                selected_constraint_field.get("generation", {})
+                if selected_constraint_field
+                else {}
+            )
+
+            is_categorical = field_type == "CATEGORICAL"
+
+            constraint_operators = (
+                ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
+            )
+
+            constraint_operator = st.selectbox(
+                "Operator",
+                constraint_operators,
+                index=(
+                    constraint_operators.index(current_operator)
+                    if current_operator in constraint_operators
+                    else 0
+                ),
+                key=f"edit_constraint_operator_{index}",
+            )
+
+            field_type = (
+                selected_constraint_field.get("type")
+                if selected_constraint_field
+                else None
+            )
+
+            current_value = constraint.get("value")
+
+            if field_type == "INTEGER":
+
+                constraint_value = st.number_input(
+                    "Value",
+                    value=(
+                        int(current_value)
+                        if isinstance(current_value, int)
+                        and not isinstance(current_value, bool)
+                        else 0
+                    ),
+                    step=1,
+                    format="%d",
+                    key=f"edit_constraint_value_integer_{index}",
+                )
+
+            elif field_type == "DECIMAL":
+
+                constraint_value = st.number_input(
+                    "Value",
+                    value=(
+                        float(current_value)
+                        if isinstance(current_value, (int, float))
+                        and not isinstance(current_value, bool)
+                        else 0.0
+                    ),
+                    step=0.1,
+                    key=f"edit_constraint_value_decimal_{index}",
+                )
+
+            elif field_type == "BOOLEAN":
+
+                constraint_value = st.selectbox(
+                    "Value",
+                    [True, False],
+                    index=(0 if current_value is True else 1),
+                    key=f"edit_constraint_value_boolean_{index}",
                 )
 
             else:
-                constraint_field = st.selectbox(
-                    "Field",
-                    constraint_fields,
-                    key="new_constraint_field",
-                )
-
-                selected_constraint_field = get_field(
-                    current_model,
-                    f"{constraint_entity}.{constraint_field}",
-                )
-
-                field_type = (
-                    selected_constraint_field.get("type")
-                    if selected_constraint_field
-                    else None
-                )
 
                 generation = (
                     selected_constraint_field.get("generation", {})
@@ -4325,542 +4785,150 @@ for index, foreign_key in enumerate(
                     and generation.get("distribution") == "CATEGORICAL"
                 )
 
-                constraint_operators = (
-                    ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
-                )
+                if is_categorical:
 
-                constraint_operator = st.selectbox(
-                    "Operator",
-                    constraint_operators,
-                    key="new_constraint_operator",
-                )
-
-                # -------------------------------------------------------------
-                # VALUE
-                # -------------------------------------------------------------
-
-                if field_type == "INTEGER":
-
-                    constraint_value = st.number_input(
-                        "Value",
-                        value=0,
-                        step=1,
-                        format="%d",
-                        key="new_constraint_value_integer",
-                    )
-
-                elif field_type == "DECIMAL":
-
-                    constraint_value = st.number_input(
-                        "Value",
-                        value=0.0,
-                        step=0.1,
-                        key="new_constraint_value_decimal",
-                    )
-
-                elif field_type == "BOOLEAN":
-
-                    constraint_value = st.selectbox(
-                        "Value",
-                        [True, False],
-                        key="new_constraint_value_boolean",
-                    )
-
-                else:
-
-                    generation = (
-                        selected_constraint_field.get("generation", {})
-                        if selected_constraint_field
+                    parameters = (
+                        generation.get(
+                            "parameters",
+                            {},
+                        )
+                        if isinstance(generation, dict)
                         else {}
                     )
 
-                    is_categorical = field_type == "CATEGORICAL" or (
-                        isinstance(generation, dict)
-                        and generation.get("distribution") == "CATEGORICAL"
+                    categorical_values = (
+                        parameters.get(
+                            "values",
+                            [],
+                        )
+                        if isinstance(parameters, dict)
+                        else []
                     )
 
-                    if is_categorical:
+                    if isinstance(categorical_values, list) and categorical_values:
 
-                        parameters = (
-                            generation.get(
-                                "parameters",
-                                {},
+                        if current_value in categorical_values:
+                            categorical_index = categorical_values.index(
+                                current_value
                             )
-                            if isinstance(generation, dict)
-                            else {}
-                        )
-
-                        categorical_values = (
-                            parameters.get(
-                                "values",
-                                [],
-                            )
-                            if isinstance(parameters, dict)
-                            else []
-                        )
-
-                        if isinstance(categorical_values, list) and categorical_values:
-
-                            constraint_value = st.selectbox(
-                                "Value",
-                                categorical_values,
-                                key="new_constraint_value_categorical",
-                            )
-
                         else:
+                            categorical_index = 0
 
                             st.warning(
-                                "This categorical field has no declared "
-                                "vocabulary. Add categorical values to the "
-                                "field before creating a constraint."
+                                f"Current constraint value "
+                                f"`{current_value}` is not in the "
+                                "field's declared vocabulary. "
+                                "Select a valid value before saving."
                             )
 
-                            constraint_value = None
-
-                    else:
-
-                        constraint_value = st.text_input(
+                        constraint_value = st.selectbox(
                             "Value",
-                            key="new_constraint_value_text",
+                            categorical_values,
+                            index=categorical_index,
+                            key=f"edit_constraint_value_categorical_{index}",
                         )
 
-                add_col, cancel_col = st.columns(2)
-
-                with add_col:
-                    add_constraint = st.button(
-                        "Add Constraint",
-                        type="primary",
-                        use_container_width=True,
-                        key="add_constraint_submit",
-                    )
-
-                with cancel_col:
-                    cancel_constraint = st.button(
-                        "Cancel",
-                        use_container_width=True,
-                        key="add_constraint_cancel",
-                    )
-
-                if cancel_constraint:
-                    st.session_state.adding_constraint = False
-                    st.rerun()
-
-                if add_constraint:
-
-                    candidate = copy.deepcopy(current_model)
-
-                    candidate["constraints"].append(
-                        {
-                            "entity": constraint_entity,
-                            "field": constraint_field,
-                            "operator": constraint_operator,
-                            "value": constraint_value,
-                        }
-                    )
-
-                    errors = forge_backend.validate_authoring_model(candidate)
-
-                    if errors:
-
-                        st.session_state.manual_error = errors
-                        st.session_state.manual_success = None
-
                     else:
 
-                        try:
-                            save_specification(candidate)
+                        st.warning(
+                            "This categorical field has no declared "
+                            "vocabulary. Add categorical values to the "
+                            "field before editing this constraint."
+                        )
 
-                        except Exception as exc:
-
-                            st.session_state.manual_error = [
-                                "Constraint was validated but could not "
-                                f"be saved: {exc}"
-                            ]
-
-                        else:
-
-                            st.session_state.model = candidate
-                            st.session_state.adding_constraint = False
-                            st.session_state.manual_success = (
-                                "Constraint added, validated, and saved."
-                            )
-
-                    st.rerun()
-
-    # -------------------------------------------------------------------------
-    # EXISTING CONSTRAINTS
-    # -------------------------------------------------------------------------
-
-    if not constraints:
-        st.caption("No constraints defined.")
-
-    for index, constraint in enumerate(constraints):
-
-        with st.container(border=True):
-
-            st.markdown(
-                f"**{constraint.get('entity', '?')}."
-                f"{constraint.get('field', '?')}** "
-                f"`{constraint.get('operator', '?')}` "
-                f"**{constraint.get('value', '?')}**"
-            )
-
-            edit_col, delete_col = st.columns(2)
-
-            with edit_col:
-
-                if st.button(
-                    "Edit constraint",
-                    key=f"constraint_edit_{index}",
-                    use_container_width=True,
-                ):
-                    st.session_state.editing_constraint = index
-                    st.session_state.adding_constraint = False
-                    st.rerun()
-
-            with delete_col:
-
-                if st.button(
-                    "Delete constraint",
-                    key=f"constraint_delete_{index}",
-                    use_container_width=True,
-                ):
-
-                    candidate = copy.deepcopy(current_model)
-
-                    candidate["constraints"].pop(index)
-
-                    errors = forge_backend.validate_authoring_model(candidate)
-
-                    if errors:
-
-                        st.session_state.manual_error = errors
-                        st.session_state.manual_success = None
-
-                    else:
-
-                        try:
-                            save_specification(candidate)
-
-                        except Exception as exc:
-
-                            st.session_state.manual_error = [
-                                "Constraint was validated but could not "
-                                f"be deleted: {exc}"
-                            ]
-
-                        else:
-
-                            st.session_state.model = candidate
-                            st.session_state.editing_constraint = None
-                            st.session_state.manual_success = (
-                                "Constraint deleted, validated, and saved."
-                            )
-
-                    st.rerun()
-
-    # -------------------------------------------------------------------------
-    # EDIT CONSTRAINT
-    # -------------------------------------------------------------------------
-
-    if st.session_state.editing_constraint is not None:
-
-        index = st.session_state.editing_constraint
-
-        if 0 <= index < len(constraints):
-
-            constraint = constraints[index]
-
-            entity_list = entity_names(current_model)
-
-            current_entity = constraint.get("entity", "")
-
-            with st.container(border=True):
-
-                st.markdown("**Edit constraint**")
-
-                constraint_entity = st.selectbox(
-                    "Entity",
-                    entity_list,
-                    index=(
-                        entity_list.index(current_entity)
-                        if current_entity in entity_list
-                        else 0
-                    ),
-                    key=f"edit_constraint_entity_{index}",
-                )
-
-                constraint_entity_object = get_entity(
-                    current_model,
-                    constraint_entity,
-                )
-
-                constraint_fields = [
-                    field["name"]
-                    for field in (constraint_entity_object or {}).get(
-                        "fields",
-                        [],
-                    )
-                ]
-
-                current_field = constraint.get("field", "")
-
-                constraint_field = st.selectbox(
-                    "Field",
-                    constraint_fields,
-                    index=(
-                        constraint_fields.index(current_field)
-                        if current_field in constraint_fields
-                        else 0
-                    ),
-                    key=f"edit_constraint_field_{index}",
-                )
-
-                selected_constraint_field = get_field(
-                    current_model,
-                    f"{constraint_entity}.{constraint_field}",
-                )
-
-                current_operator = constraint.get(
-                    "operator",
-                    ">=",
-                )
-
-                field_type = (
-                    selected_constraint_field.get("type")
-                    if selected_constraint_field
-                    else None
-                )
-
-                generation = (
-                    selected_constraint_field.get("generation", {})
-                    if selected_constraint_field
-                    else {}
-                )
-
-                is_categorical = field_type == "CATEGORICAL" or (
-                    isinstance(generation, dict)
-                    and generation.get("distribution") == "CATEGORICAL"
-                )
-
-                constraint_operators = (
-                    ["==", "!="] if is_categorical else SUPPORTED_OPERATORS
-                )
-
-                constraint_operator = st.selectbox(
-                    "Operator",
-                    constraint_operators,
-                    index=(
-                        constraint_operators.index(current_operator)
-                        if current_operator in constraint_operators
-                        else 0
-                    ),
-                    key=f"edit_constraint_operator_{index}",
-                )
-
-                field_type = (
-                    selected_constraint_field.get("type")
-                    if selected_constraint_field
-                    else None
-                )
-
-                current_value = constraint.get("value")
-
-                if field_type == "INTEGER":
-
-                    constraint_value = st.number_input(
-                        "Value",
-                        value=(
-                            int(current_value)
-                            if isinstance(current_value, int)
-                            and not isinstance(current_value, bool)
-                            else 0
-                        ),
-                        step=1,
-                        format="%d",
-                        key=f"edit_constraint_value_integer_{index}",
-                    )
-
-                elif field_type == "DECIMAL":
-
-                    constraint_value = st.number_input(
-                        "Value",
-                        value=(
-                            float(current_value)
-                            if isinstance(current_value, (int, float))
-                            and not isinstance(current_value, bool)
-                            else 0.0
-                        ),
-                        step=0.1,
-                        key=f"edit_constraint_value_decimal_{index}",
-                    )
-
-                elif field_type == "BOOLEAN":
-
-                    constraint_value = st.selectbox(
-                        "Value",
-                        [True, False],
-                        index=(0 if current_value is True else 1),
-                        key=f"edit_constraint_value_boolean_{index}",
-                    )
+                        constraint_value = None
 
                 else:
 
-                    generation = (
-                        selected_constraint_field.get("generation", {})
-                        if selected_constraint_field
-                        else {}
+                    constraint_value = st.text_input(
+                        "Value",
+                        value=("" if current_value is None else str(current_value)),
+                        key=f"edit_constraint_value_text_{index}",
                     )
 
-                    is_categorical = field_type == "CATEGORICAL" or (
-                        isinstance(generation, dict)
-                        and generation.get("distribution") == "CATEGORICAL"
-                    )
+            save_col, cancel_col = st.columns(2)
 
-                    if is_categorical:
+            with save_col:
 
-                        parameters = (
-                            generation.get(
-                                "parameters",
-                                {},
-                            )
-                            if isinstance(generation, dict)
-                            else {}
-                        )
+                save_constraint = st.button(
+                    "Save",
+                    type="primary",
+                    use_container_width=True,
+                    key=f"save_constraint_{index}",
+                )
 
-                        categorical_values = (
-                            parameters.get(
-                                "values",
-                                [],
-                            )
-                            if isinstance(parameters, dict)
-                            else []
-                        )
+            with cancel_col:
 
-                        if isinstance(categorical_values, list) and categorical_values:
+                cancel_constraint = st.button(
+                    "Cancel",
+                    use_container_width=True,
+                    key=f"cancel_constraint_{index}",
+                )
 
-                            if current_value in categorical_values:
-                                categorical_index = categorical_values.index(
-                                    current_value
-                                )
-                            else:
-                                categorical_index = 0
+            if cancel_constraint:
 
-                                st.warning(
-                                    f"Current constraint value "
-                                    f"`{current_value}` is not in the "
-                                    "field's declared vocabulary. "
-                                    "Select a valid value before saving."
-                                )
+                st.session_state.editing_constraint = None
+                st.rerun()
 
-                            constraint_value = st.selectbox(
-                                "Value",
-                                categorical_values,
-                                index=categorical_index,
-                                key=f"edit_constraint_value_categorical_{index}",
-                            )
+            if save_constraint:
 
-                        else:
+                candidate = copy.deepcopy(current_model)
 
-                            st.warning(
-                                "This categorical field has no declared "
-                                "vocabulary. Add categorical values to the "
-                                "field before editing this constraint."
-                            )
+                candidate["constraints"][index] = {
+                    "entity": constraint_entity,
+                    "field": constraint_field,
+                    "operator": constraint_operator,
+                    "value": constraint_value,
+                }
 
-                            constraint_value = None
+                errors = forge_backend.validate_authoring_model(candidate)
+
+                if errors:
+
+                    st.session_state.manual_error = errors
+                    st.session_state.manual_success = None
+
+                else:
+
+                    try:
+                        save_specification(candidate)
+
+                    except Exception as exc:
+
+                        st.session_state.manual_error = [
+                            "Constraint was validated but could not "
+                            f"be saved: {exc}"
+                        ]
 
                     else:
 
-                        constraint_value = st.text_input(
-                            "Value",
-                            value=("" if current_value is None else str(current_value)),
-                            key=f"edit_constraint_value_text_{index}",
+                        st.session_state.model = candidate
+                        st.session_state.editing_constraint = None
+                        st.session_state.manual_success = (
+                            "Constraint updated, validated, and saved."
                         )
 
-                save_col, cancel_col = st.columns(2)
+                st.rerun()
 
-                with save_col:
+# =========================================================================
+# DEPENDENCIES
+# =========================================================================
 
-                    save_constraint = st.button(
-                        "Save",
-                        type="primary",
-                        use_container_width=True,
-                        key=f"save_constraint_{index}",
-                    )
+st.divider()
 
-                with cancel_col:
+st.subheader("↳ Dependencies")
 
-                    cancel_constraint = st.button(
-                        "Cancel",
-                        use_container_width=True,
-                        key=f"cancel_constraint_{index}",
-                    )
+if not dependencies:
 
-                if cancel_constraint:
+    st.caption("No dependencies defined.")
 
-                    st.session_state.editing_constraint = None
-                    st.rerun()
+for dependency in dependencies:
 
-                if save_constraint:
-
-                    candidate = copy.deepcopy(current_model)
-
-                    candidate["constraints"][index] = {
-                        "entity": constraint_entity,
-                        "field": constraint_field,
-                        "operator": constraint_operator,
-                        "value": constraint_value,
-                    }
-
-                    errors = forge_backend.validate_authoring_model(candidate)
-
-                    if errors:
-
-                        st.session_state.manual_error = errors
-                        st.session_state.manual_success = None
-
-                    else:
-
-                        try:
-                            save_specification(candidate)
-
-                        except Exception as exc:
-
-                            st.session_state.manual_error = [
-                                "Constraint was validated but could not "
-                                f"be saved: {exc}"
-                            ]
-
-                        else:
-
-                            st.session_state.model = candidate
-                            st.session_state.editing_constraint = None
-                            st.session_state.manual_success = (
-                                "Constraint updated, validated, and saved."
-                            )
-
-                    st.rerun()
-
-    # =========================================================================
-    # DEPENDENCIES
-    # =========================================================================
-
-    st.divider()
-
-    st.subheader("↳ Dependencies")
-
-    if not dependencies:
-
-        st.caption("No dependencies defined.")
-
-    for dependency in dependencies:
-
-        st.markdown(
-            f"• **{dependency.get('type', '?')}** "
-            f"**{dependency.get('target', '?')}** ← "
-            f"{', '.join(dependency.get('source_fields', []))}"
-        )
+    st.markdown(
+        f"• **{dependency.get('type', '?')}** "
+        f"**{dependency.get('target', '?')}** ← "
+        f"{', '.join(dependency.get('source_fields', []))}"
+    )
 
 
 # ============================================================================

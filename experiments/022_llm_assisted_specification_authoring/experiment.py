@@ -1445,10 +1445,7 @@ def validate_constraints(
                 "generation",
             )
 
-            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
-                isinstance(generation, dict)
-                and generation.get("distribution") == "CATEGORICAL"
-            )
+            is_categorical = referenced_field.get("type") == "CATEGORICAL"
 
             if is_categorical and operator not in {"==", "!="}:
                 errors.append(
@@ -2072,10 +2069,7 @@ def validate_authoring_model(
                 "generation",
             )
 
-            is_categorical = referenced_field.get("type") == "CATEGORICAL" or (
-                isinstance(generation, dict)
-                and generation.get("distribution") == "CATEGORICAL"
-            )
+            is_categorical = referenced_field.get("type") == "CATEGORICAL"
 
             if is_categorical and operator not in {"==", "!="}:
                 errors.append(
