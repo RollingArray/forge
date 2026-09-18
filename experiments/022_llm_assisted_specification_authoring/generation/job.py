@@ -11,6 +11,31 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from uuid import uuid4
+import importlib.util
+import sys
+from pathlib import Path
+
+
+RESULT_PATH = Path(__file__).resolve().parent / "result.py"
+
+result_spec = importlib.util.spec_from_file_location(
+    "forge_generation_result",
+    RESULT_PATH,
+)
+
+if result_spec is None or result_spec.loader is None:
+    raise RuntimeError(
+        f"Unable to load generation result contract from {RESULT_PATH}"
+    )
+
+result_module = importlib.util.module_from_spec(result_spec)
+
+sys.modules["forge_generation_result"] = result_module
+
+result_spec.loader.exec_module(result_module)
+
+GenerationChunkResult = result_module.GenerationChunkResult
+GenerationChunkStatus = result_module.GenerationChunkStatus
 
 
 class GenerationJobStatus(str, Enum):
@@ -107,6 +132,46 @@ class GenerationJob:
             self.total_generated_rows / self.total_target_rows,
             1.0,
         )
+
+
+    def record_chunk_result(
+        self,
+        result: GenerationChunkResult,
+    ) -> None:
+        """Apply one completed chunk result to job progress."""
+
+        entity_progress = self.entities.get(
+            result.entity_name
+        )
+
+        if entity_progress is None:
+            raise ValueError(
+                f"Unknown entity in chunk result: {result.entity_name!r}"
+            )
+
+        if result.row_count < 0:
+            raise ValueError(
+                "Chunk result row_count cannot be negative."
+            )
+
+        if result.status == GenerationChunkStatus.COMPLETED:
+            entity_progress.generated_rows += result.row_count
+            entity_progress.status = EntityGenerationStatus.COMPLETED
+            return
+
+        if result.status == GenerationChunkStatus.FAILED:
+            entity_progress.status = EntityGenerationStatus.FAILED
+            self.error = result.error
+            return
+
+        if result.status == GenerationChunkStatus.CANCELLED:
+            entity_progress.status = EntityGenerationStatus.CANCELLED
+            return
+
+        raise ValueError(
+            f"Unsupported chunk result status: {result.status!r}"
+        )
+
 
 
 def create_generation_job(
