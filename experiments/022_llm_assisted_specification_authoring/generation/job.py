@@ -134,6 +134,31 @@ class GenerationJob:
         )
 
 
+    def start_planning(self) -> None:
+        """Move the job into the planning state."""
+
+        self.status = GenerationJobStatus.PLANNING
+
+    def start_running(self) -> None:
+        """Move the job into the running state and record its start time."""
+
+        self.status = GenerationJobStatus.RUNNING
+        self.started_at = utc_now()
+
+    def complete(self) -> None:
+        """Mark the job as successfully completed."""
+
+        self.status = GenerationJobStatus.COMPLETED
+        self.completed_at = utc_now()
+
+    def fail(self, error: str) -> None:
+        """Mark the job as failed and record the error."""
+
+        self.status = GenerationJobStatus.FAILED
+        self.error = error
+        self.completed_at = utc_now()
+
+
     def record_chunk_result(
         self,
         result: GenerationChunkResult,

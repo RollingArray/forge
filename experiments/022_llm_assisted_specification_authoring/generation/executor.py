@@ -15,7 +15,7 @@ from typing import Any
 
 from .chunking import build_chunks
 from .generator import generate_entity_chunk_result
-from .job import GenerationJob
+from .job import GenerationJob, GenerationJobStatus
 from .planner import GenerationPlan
 
 
@@ -84,14 +84,27 @@ def execute_generation_plan(
     It does not persist output or manage asynchronous execution.
     """
 
-    for entity_plan in plan.entities:
-        execute_entity(
-            specification=specification,
-            job=job,
-            entity_name=entity_plan.entity_name,
-            target_rows=entity_plan.target_rows,
-            seed=seed,
-            chunk_size=chunk_size,
-        )
+    job.start_planning()
+
+    try:
+        job.start_running()
+
+        for entity_plan in plan.entities:
+            execute_entity(
+                specification=specification,
+                job=job,
+                entity_name=entity_plan.entity_name,
+                target_rows=entity_plan.target_rows,
+                seed=seed,
+                chunk_size=chunk_size,
+            )
+
+            if job.status == GenerationJobStatus.FAILED:
+                return job
+
+        job.complete()
+
+    except Exception as exc:
+        job.fail(str(exc))
 
     return job
