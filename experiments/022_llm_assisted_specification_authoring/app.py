@@ -64,6 +64,29 @@ spec.loader.exec_module(forge_backend)
 
 
 # ============================================================================
+# LOAD FORGE GENERATION CORE
+# ============================================================================
+
+GENERATOR_PATH = APP_DIR / "generation" / "generator.py"
+
+generator_spec = importlib.util.spec_from_file_location(
+    "forge_generation_generator",
+    GENERATOR_PATH,
+)
+
+if generator_spec is None or generator_spec.loader is None:
+    raise RuntimeError(
+        f"Unable to load FORGE generation core from {GENERATOR_PATH}"
+    )
+
+forge_generator = importlib.util.module_from_spec(generator_spec)
+
+sys.modules["forge_generation_generator"] = forge_generator
+
+generator_spec.loader.exec_module(forge_generator)
+
+
+# ============================================================================
 # PAGE
 # ============================================================================
 
@@ -122,33 +145,20 @@ SUPPORTED_OPERATORS = sorted(forge_backend.SUPPORTED_OPERATORS)
 def preview_pattern(pattern: str) -> str:
     """Render one deterministic illustrative value from a FORGE PATTERN."""
 
-    rng = random.Random(f"FORGE_PATTERN_PREVIEW:{pattern}")
+    generation = {
+        "parameters": {
+            "pattern": pattern,
+        }
+    }
 
-    uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    lowercase = "abcdefghijklmnopqrstuvwxyz"
-    digits = "0123456789"
-    alphanumeric = uppercase + lowercase + digits
+    rng = random.Random(
+        f"FORGE_PATTERN_PREVIEW:{pattern}"
+    )
 
-    result = []
-
-    for character in pattern:
-
-        if character == "#":
-            result.append(rng.choice(digits))
-
-        elif character == "A":
-            result.append(rng.choice(uppercase))
-
-        elif character == "a":
-            result.append(rng.choice(lowercase))
-
-        elif character == "X":
-            result.append(rng.choice(alphanumeric))
-
-        else:
-            result.append(character)
-
-    return "".join(result)
+    return forge_generator.generate_pattern(
+        generation,
+        rng,
+    )
 
 
 def integer_distribution_requires_range(distribution: str) -> bool:
@@ -1457,12 +1467,13 @@ with model_column:
                                         "A = uppercase letter | "
                                         "a = lowercase letter | "
                                         "X = alphanumeric. "
-                                        "All other characters are literals."
+                                        "Use single quotes for literal text. ""Example: 'ADDR'-##### → ADDR-12345."
                                     ),
                                 )
 
                                 st.caption(
-                                    r"\# = digit · A = uppercase · a = lowercase · X = alphanumeric"
+                                    "Use single quotes for literal text. "
+                                    "Example: 'ADDR'-##### → ADDR-12345"
                                 )
 
                                 st.caption(f"Preview: `{preview_pattern(new_pattern)}`")
@@ -2480,12 +2491,13 @@ with model_column:
                                             "A = uppercase letter | "
                                             "a = lowercase letter | "
                                             "X = alphanumeric. "
-                                            "All other characters are literals."
+                                            "Use single quotes for literal text. ""Example: 'ADDR'-##### → ADDR-12345."
                                         ),
                                     )
 
                                     st.caption(
-                                        r"\# digit · A uppercase · a lowercase · X alphanumeric"
+                                        "Use single quotes for literal text. "
+                                        "Example: 'ADDR'-##### → ADDR-12345"
                                     )
                                     st.caption(
                                         f"Preview: `{preview_pattern(new_pattern)}`"

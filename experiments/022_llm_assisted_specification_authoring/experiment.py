@@ -378,6 +378,31 @@ def validate_entity_identity(
             )
 
 
+def validate_pattern(
+    pattern: str,
+) -> str | None:
+    """
+    Validate the FORGE PATTERN literal syntax.
+
+    Single quotes delimit literal text. Quotes must occur in
+    balanced pairs. Empty literal sections are allowed.
+
+    Returns an error message when invalid, otherwise None.
+    """
+
+    literal_mode = False
+
+    for character in pattern:
+
+        if character == "'":
+            literal_mode = not literal_mode
+
+    if literal_mode:
+        return "PATTERN contains an unterminated literal section."
+
+    return None
+
+
 # ============================================================================
 # STRICT FORGE SPECIFICATION VALIDATION
 # ============================================================================
@@ -719,6 +744,13 @@ def validate_specification(
                                     f"{name}.{field_name}: PATTERN "
                                     "pattern must not be empty."
                                 )
+                            else:
+                                pattern_error = validate_pattern(pattern)
+
+                                if pattern_error:
+                                    errors.append(
+                                        f"{name}.{field_name}: {pattern_error}"
+                                    )
                     elif generator == "SEMANTIC":
 
                         parameters = generation.get("parameters")
@@ -1797,6 +1829,13 @@ def validate_authoring_model(
                                     f"{name}.{field_name}: PATTERN "
                                     "pattern must not be empty."
                                 )
+                            else:
+                                pattern_error = validate_pattern(pattern)
+
+                                if pattern_error:
+                                    errors.append(
+                                        f"{name}.{field_name}: {pattern_error}"
+                                    )
 
                     elif generator == "SEMANTIC":
 

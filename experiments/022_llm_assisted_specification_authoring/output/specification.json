@@ -491,7 +491,7 @@
             "strategy": "RANDOM",
             "generator": "PATTERN",
             "parameters": {
-              "pattern": "ADDR-#####"
+              "pattern": "'ACONT'-AA-#####"
             }
           }
         },
@@ -535,7 +535,7 @@
             "strategy": "RANDOM",
             "generator": "PATTERN",
             "parameters": {
-              "pattern": "ADDR-#####"
+              "pattern": "'ACONT'-#####"
             }
           }
         },
