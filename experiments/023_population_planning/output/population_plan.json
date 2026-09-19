@@ -1,0 +1,159 @@
+{
+  "populations": {
+    "KNA1": {
+      "mode": "EXPLICIT",
+      "requested": 20,
+      "minimum_feasible": 1,
+      "resolved": 20,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "MARA": {
+      "mode": "EXPLICIT",
+      "requested": 10,
+      "minimum_feasible": null,
+      "resolved": 10,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "VBAK": {
+      "mode": "EXPLICIT",
+      "requested": 10,
+      "minimum_feasible": 10,
+      "resolved": 10,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "VBAP": {
+      "mode": "EXPLICIT",
+      "requested": 20,
+      "minimum_feasible": 20,
+      "resolved": 20,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "VBPA": {
+      "mode": "EXPLICIT",
+      "requested": 20,
+      "minimum_feasible": 10,
+      "resolved": 20,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "ADRC": {
+      "mode": "EXPLICIT",
+      "requested": 10,
+      "minimum_feasible": null,
+      "resolved": 10,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "VBAK_STATUS": {
+      "mode": "EXPLICIT",
+      "requested": 10,
+      "minimum_feasible": 10,
+      "resolved": 10,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "VBEP": {
+      "mode": "EXPLICIT",
+      "requested": 20,
+      "minimum_feasible": null,
+      "resolved": 20,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    }
+  },
+  "minimums": {
+    "KNA1": 1,
+    "VBAK": 10,
+    "VBPA": 10,
+    "VBAK_STATUS": 10,
+    "VBAP": 20
+  },
+  "maximums": {
+    "VBAK_STATUS": 10,
+    "VBEP": 20
+  },
+  "relationship_requirements": [
+    {
+      "entity": "KNA1",
+      "minimum": 1,
+      "relationship": "KNA1.KUNNR -> VBAK.KUNNR",
+      "reason": "ONE_TO_MANY relationship requires at least one KNA1 record because VBAK participation is mandatory."
+    },
+    {
+      "entity": "VBAK",
+      "minimum": 1,
+      "relationship": "VBAK.VBELN -> VBAP.VBELN",
+      "reason": "ONE_TO_MANY relationship requires at least one VBAK record because VBAP participation is mandatory."
+    },
+    {
+      "entity": "VBAK",
+      "minimum": 1,
+      "relationship": "VBAK.VBELN -> VBPA.VBELN",
+      "reason": "ONE_TO_MANY relationship requires at least one VBAK record because VBPA participation is mandatory."
+    },
+    {
+      "entity": "VBPA",
+      "minimum": 10,
+      "relationship": "VBPA.ADRNR -> ADRC.ADDRNUMBER",
+      "reason": "MANY_TO_ONE relationship requires at least 10 VBPA records because every ADRC must participate."
+    },
+    {
+      "entity": "VBAK_STATUS",
+      "minimum": 10,
+      "relationship": "VBAK.VBELN -> VBAK_STATUS.VBELN",
+      "reason": "ONE_TO_ONE relationship requires at least 10 VBAK_STATUS records to support the mandatory participation of VBAK."
+    },
+    {
+      "entity": "VBAK",
+      "minimum": 10,
+      "relationship": "VBAK.VBELN -> VBAK_STATUS.VBELN",
+      "reason": "ONE_TO_ONE relationship requires at least 10 VBAK records to support the mandatory participation of VBAK_STATUS."
+    },
+    {
+      "entity": "VBAP",
+      "minimum": 1,
+      "relationship": "VBAP.VBELN -> VBEP.VBELN",
+      "reason": "ONE_TO_MANY relationship requires at least one VBAP record because VBEP participation is mandatory."
+    }
+  ],
+  "capacity_requirements": [
+    {
+      "entity": "VBAK",
+      "minimum": 10,
+      "relationship": "VBAK_STATUS.(VBELN) -> VBAK.(VBELN)",
+      "reason": "Every VBAK_STATUS record requires a distinct compatible VBAK identity key because the foreign key covers the complete child identity."
+    },
+    {
+      "entity": "VBAP",
+      "minimum": 20,
+      "relationship": "VBEP.(VBELN, POSNR) -> VBAP.(VBELN, POSNR)",
+      "reason": "Every VBEP record requires a distinct compatible VBAP identity key because the foreign key covers the complete child identity."
+    }
+  ],
+  "capacity_limits": [
+    {
+      "entity": "VBAK_STATUS",
+      "maximum": 10,
+      "relationship": "VBAK_STATUS.(VBELN) -> VBAK.(VBELN)",
+      "reason": "The available VBAK identity keys can support at most 10 VBAK_STATUS records because each child requires a distinct compatible parent key."
+    },
+    {
+      "entity": "VBEP",
+      "maximum": 20,
+      "relationship": "VBEP.(VBELN, POSNR) -> VBAP.(VBELN, POSNR)",
+      "reason": "The available VBAP identity keys can support at most 20 VBEP records because each child requires a distinct compatible parent key."
+    }
+  ]
+}
