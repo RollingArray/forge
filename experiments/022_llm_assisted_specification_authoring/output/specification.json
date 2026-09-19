@@ -666,7 +666,8 @@
       ],
       "identity": {
         "fields": [
-          "POSNR"
+          "POSNR",
+          "VBELN"
         ]
       }
     }
