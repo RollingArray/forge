@@ -64,29 +64,6 @@ spec.loader.exec_module(forge_backend)
 
 
 # ============================================================================
-# LOAD FORGE GENERATION CORE
-# ============================================================================
-
-GENERATOR_PATH = APP_DIR / "generation" / "generator.py"
-
-generator_spec = importlib.util.spec_from_file_location(
-    "forge_generation_generator",
-    GENERATOR_PATH,
-)
-
-if generator_spec is None or generator_spec.loader is None:
-    raise RuntimeError(
-        f"Unable to load FORGE generation core from {GENERATOR_PATH}"
-    )
-
-forge_generator = importlib.util.module_from_spec(generator_spec)
-
-sys.modules["forge_generation_generator"] = forge_generator
-
-generator_spec.loader.exec_module(forge_generator)
-
-
-# ============================================================================
 # PAGE
 # ============================================================================
 
@@ -142,6 +119,52 @@ SUPPORTED_RELATIONSHIP_TYPES = [
 SUPPORTED_OPERATORS = sorted(forge_backend.SUPPORTED_OPERATORS)
 
 
+def _generate_pattern(
+    generation: dict[str, Any],
+    rng: random.Random,
+) -> str:
+    """Generate one value from a FORGE PATTERN for authoring preview."""
+
+    pattern = generation.get(
+        "parameters",
+        {},
+    )["pattern"]
+
+    uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    lowercase = "abcdefghijklmnopqrstuvwxyz"
+    digits = "0123456789"
+    alphanumeric = uppercase + lowercase + digits
+
+    result: list[str] = []
+    literal_mode = False
+
+    for character in pattern:
+
+        if character == "'":
+            literal_mode = not literal_mode
+            continue
+
+        if literal_mode:
+            result.append(character)
+
+        elif character == "#":
+            result.append(rng.choice(digits))
+
+        elif character == "A":
+            result.append(rng.choice(uppercase))
+
+        elif character == "a":
+            result.append(rng.choice(lowercase))
+
+        elif character == "X":
+            result.append(rng.choice(alphanumeric))
+
+        else:
+            result.append(character)
+
+    return "".join(result)
+
+
 def preview_pattern(pattern: str) -> str:
     """Render one deterministic illustrative value from a FORGE PATTERN."""
 
@@ -155,7 +178,7 @@ def preview_pattern(pattern: str) -> str:
         f"FORGE_PATTERN_PREVIEW:{pattern}"
     )
 
-    return forge_generator.generate_pattern(
+    return _generate_pattern(
         generation,
         rng,
     )
