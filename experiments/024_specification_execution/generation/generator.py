@@ -12,6 +12,7 @@ import random
 import string
 import sys
 import time
+from itertools import product
 from pathlib import Path
 from typing import Any
 
@@ -683,6 +684,259 @@ def resolve_foreign_key_value(
         )
     )
 
+
+def _resolve_composite_foreign_key_assignments(
+    row: dict[str, Any],
+    dependencies: tuple[Any, ...],
+    identity_fields: tuple[str, ...],
+    context: Any | None,
+    rng: random.Random,
+) -> dict[str, Any]:
+    """Resolve multi-field foreign keys as complete parent-key units.
+
+    This handles composite foreign keys whose source fields do not
+    necessarily cover the complete child identity.
+
+    Relationship assignments may have populated the individual source
+    fields independently. Those values are intentionally replaced by
+    one complete parent key so the composite foreign key remains
+    referentially valid.
+
+    The existing complete composite-identity FK path is left untouched.
+    """
+
+    if context is None:
+        return {}
+
+    assignments: dict[str, Any] = {}
+
+    for dependency in dependencies:
+        source_fields = tuple(
+            dependency.source_fields
+        )
+
+        # Only handle genuinely composite foreign keys.
+        if len(source_fields) < 2:
+            continue
+
+        # Preserve the existing complete composite-identity path.
+        if (
+            set(source_fields) == set(identity_fields)
+            and len(source_fields) == len(identity_fields)
+        ):
+            continue
+
+        parent_keys = context.get_key_values(
+            dependency.parent_entity,
+            dependency.target_fields,
+        )
+
+        if not parent_keys:
+            raise ValueError(
+                "No generated parent keys available for "
+                f"{dependency.parent_entity}."
+            )
+
+        selected_key = rng.choice(parent_keys)
+
+        assignments.update(
+            dict(
+                zip(
+                    source_fields,
+                    selected_key,
+                )
+            )
+        )
+
+    return assignments
+
+
+def _resolve_composite_identity_fk_assignments(
+    row: dict[str, Any],
+    dependencies: tuple[Any, ...],
+    identity_fields: tuple[str, ...],
+    context: Any | None,
+    existing_identities: set[tuple[Any, ...]],
+    rng: random.Random,
+) -> dict[str, Any]:
+    """Allocate a unique identity formed by multiple independent FKs.
+
+    This path is intentionally limited to the previously unsupported
+    topology where multiple independent foreign keys collectively cover
+    the complete child identity.
+
+    Existing relationship-managed values in ``row`` remain authoritative.
+    All other FK behavior continues through the existing resolver.
+    """
+
+    if (
+        context is None
+        or len(identity_fields) < 2
+        or len(dependencies) < 2
+    ):
+        return {}
+
+    identity_field_set = set(identity_fields)
+
+    candidate_dependencies: list[Any] = []
+
+    for dependency in dependencies:
+        source_fields = tuple(dependency.source_fields)
+
+        if not source_fields:
+            return {}
+
+        source_field_set = set(source_fields)
+
+        # This helper only handles FK fields that are part of the
+        # child identity.
+        if not source_field_set.issubset(identity_field_set):
+            return {}
+
+        # A dependency must not repeat a source field internally.
+        if len(source_field_set) != len(source_fields):
+            return {}
+
+        candidate_dependencies.append(dependency)
+
+    # The existing complete-identity FK path must remain untouched.
+    for dependency in candidate_dependencies:
+        if (
+            set(dependency.source_fields)
+            == identity_field_set
+            and len(dependency.source_fields)
+            == len(identity_fields)
+        ):
+            return {}
+
+    # Independent FKs must not overlap. Their union must cover the
+    # complete child identity.
+    covered_fields: set[str] = set()
+
+    for dependency in candidate_dependencies:
+        source_fields = set(dependency.source_fields)
+
+        if covered_fields.intersection(source_fields):
+            return {}
+
+        covered_fields.update(source_fields)
+
+    if covered_fields != identity_field_set:
+        return {}
+
+    # Build compatible candidate values for each independent FK.
+    candidate_values: list[
+        tuple[Any, list[tuple[Any, ...]]]
+    ] = []
+
+    for dependency in candidate_dependencies:
+        parent_keys = context.get_key_values(
+            dependency.parent_entity,
+            dependency.target_fields,
+        )
+
+        if not parent_keys:
+            raise ValueError(
+                "No generated parent keys available for "
+                f"{dependency.parent_entity}."
+            )
+
+        compatible_keys: list[tuple[Any, ...]] = []
+
+        for parent_key in parent_keys:
+            compatible = True
+
+            for source_field, target_value in zip(
+                dependency.source_fields,
+                parent_key,
+            ):
+                # For this special composite-identity topology,
+                # the independent FK allocator owns the identity
+                # fields. Relationship assignments may already have
+                # populated those fields, but they must not constrain
+                # the Cartesian identity space.
+                if (
+                    source_field in row
+                    and source_field not in identity_field_set
+                ):
+                    if row[source_field] != target_value:
+                        compatible = False
+                        break
+
+            if compatible:
+                compatible_keys.append(parent_key)
+
+        if not compatible_keys:
+            raise ValueError(
+                f"No compatible parent key found for foreign-key "
+                f"{dependency!r} given existing values "
+                f"{row!r}."
+            )
+
+        candidate_values.append(
+            (
+                dependency,
+                compatible_keys,
+            )
+        )
+
+    # Build the Cartesian product of the independent FK choices.
+    combinations: list[dict[str, Any]] = []
+
+    for selected_keys in product(
+        *[
+            keys
+            for _, keys in candidate_values
+        ]
+    ):
+        assignment = row.copy()
+
+        for (
+            dependency,
+            parent_key,
+        ) in zip(
+            (
+                dependency
+                for dependency, _ in candidate_values
+            ),
+            selected_keys,
+        ):
+            for source_field, value in zip(
+                dependency.source_fields,
+                parent_key,
+            ):
+                assignment[source_field] = value
+
+        identity = build_identity(
+            assignment,
+            identity_fields,
+        )
+
+        if identity not in existing_identities:
+            combinations.append(
+                {
+                    field: assignment[field]
+                    for field in identity_fields
+                }
+            )
+
+    if not combinations:
+        identity_capacity = 1
+
+        for _, keys in candidate_values:
+            identity_capacity *= len(keys)
+
+        raise ValueError(
+            f"Unable to generate a unique identity for "
+            f"{identity_fields}. The available composite FK "
+            f"identity space is exhausted "
+            f"(capacity={identity_capacity}, "
+            f"existing={len(existing_identities)})."
+        )
+
+    return rng.choice(combinations)
+
+
 def find_field_dependency(
     field_name: str,
     dependencies: tuple[Any, ...],
@@ -1038,6 +1292,35 @@ def _generate_row(
     """Generate one row before identity uniqueness resolution."""
 
     row = relationship_assignment.copy()
+
+    # Resolve multi-field foreign keys as complete parent-key units
+    # before normal field generation. This prevents independently
+    # assigned relationship fields from creating invalid composite
+    # foreign-key combinations.
+    composite_fk_assignment = (
+        _resolve_composite_foreign_key_assignments(
+            row=row,
+            dependencies=dependencies,
+            identity_fields=identity_fields,
+            context=context,
+            rng=rng,
+        )
+    )
+
+    row.update(composite_fk_assignment)
+
+    composite_identity_assignment = (
+        _resolve_composite_identity_fk_assignments(
+            row=row,
+            dependencies=dependencies,
+            identity_fields=identity_fields,
+            context=context,
+            existing_identities=existing_identities,
+            rng=rng,
+        )
+    )
+
+    row.update(composite_identity_assignment)
 
     for field in fields:
         field_name = field.get("name")

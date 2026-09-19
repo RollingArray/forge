@@ -1,0 +1,852 @@
+{
+  "version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "llm_authored_model",
+    "description": "Progressively authored FORGE model."
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL"
+  },
+  "entities": [
+    {
+      "name": "KNA1",
+      "population": {
+        "count": 20
+      },
+      "fields": [
+        {
+          "name": "KUNNR",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "LAND1",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "US",
+                "DE",
+                "IN",
+                "GB",
+                "FR"
+              ]
+            }
+          }
+        },
+        {
+          "name": "NAME1",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "RANDOM_STRING",
+            "parameters": {
+              "minimum_length": 8,
+              "maximum_length": 20,
+              "character_set": "ALPHA"
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_CODE",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "CUST-####-XX"
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_GROUP",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "DOMESTIC",
+                "EXPORT",
+                "GOVERNMENT"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CREDIT_LIMIT",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 1000.0,
+              "maximum": 100000.0
+            }
+          }
+        },
+        {
+          "name": "ACTIVE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "KUNNR"
+        ]
+      }
+    },
+    {
+      "name": "MARA",
+      "population": {
+        "count": 10
+      },
+      "fields": [
+        {
+          "name": "MATNR",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "MTART",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "FERT",
+                "HALB",
+                "ROH",
+                "HAWA"
+              ]
+            }
+          }
+        },
+        {
+          "name": "MATKL",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "RANDOM_STRING",
+            "parameters": {
+              "minimum_length": 5,
+              "maximum_length": 10,
+              "character_set": "ALPHANUMERIC"
+            }
+          }
+        },
+        {
+          "name": "MEINS",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "EA",
+                "KG",
+                "L",
+                "M"
+              ]
+            }
+          }
+        },
+        {
+          "name": "BRGEW",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "LAENG",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 10,
+              "maximum": 1000
+            }
+          }
+        },
+        {
+          "name": "HOEHE",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        },
+        {
+          "name": "LVORM",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "MATNR"
+        ]
+      }
+    },
+    {
+      "name": "VBAK",
+      "population": {
+        "count": 10
+      },
+      "fields": [
+        {
+          "name": "VBELN",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "AUART",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "OR",
+                "TA",
+                "RE",
+                "CR"
+              ]
+            }
+          }
+        },
+        {
+          "name": "VKORG",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "1000",
+                "2000",
+                "3000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "VTWEG",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "10",
+                "20",
+                "30"
+              ]
+            }
+          }
+        },
+        {
+          "name": "KUNNR",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "ERDAT",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "####-##-##"
+            }
+          }
+        },
+        {
+          "name": "GBSTK",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "A",
+                "B",
+                "C"
+              ]
+            }
+          }
+        },
+        {
+          "name": "NETWR",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 100.0,
+              "maximum": 50000.0
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "VBELN"
+        ]
+      }
+    },
+    {
+      "name": "VBAP",
+      "population": {
+        "count": 20
+      },
+      "fields": [
+        {
+          "name": "VBELN",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "POSNR",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 10,
+              "maximum": 100
+            }
+          }
+        },
+        {
+          "name": "MATNR",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+              ]
+            }
+          }
+        },
+        {
+          "name": "KWMENG",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                1,
+                5,
+                10,
+                25,
+                50,
+                100
+              ]
+            }
+          }
+        },
+        {
+          "name": "VRKME",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "EA",
+                "KG",
+                "L",
+                "M"
+              ]
+            }
+          }
+        },
+        {
+          "name": "NETWR",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "NORMAL"
+          }
+        },
+        {
+          "name": "PSTYV",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "TAN",
+                "TAD",
+                "TAS",
+                "TANN"
+              ]
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "VBELN",
+          "POSNR"
+        ]
+      }
+    },
+    {
+      "name": "VBPA",
+      "population": {
+        "count": 20
+      },
+      "fields": [
+        {
+          "name": "VBELN",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "PARVW",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "AG",
+                "WE",
+                "RE",
+                "RG"
+              ]
+            }
+          }
+        },
+        {
+          "name": "KUNNR",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+              ]
+            }
+          }
+        },
+        {
+          "name": "ADRNR",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "'ACONT'-AA-#####"
+            }
+          }
+        },
+        {
+          "name": "PARZA",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        },
+        {
+          "name": "DEFPA",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "VBELN",
+          "PARVW"
+        ]
+      }
+    },
+    {
+      "name": "ADRC",
+      "population": {
+        "count": 10
+      },
+      "fields": [
+        {
+          "name": "ADDRNUMBER",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "'ACONT'-#####"
+            }
+          }
+        },
+        {
+          "name": "COUNTRY",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "US",
+                "DE",
+                "IN",
+                "GB",
+                "FR"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CITY",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "SEMANTIC",
+            "parameters": {
+              "description": "Generate realistic city names from different countries."
+            }
+          }
+        },
+        {
+          "name": "POSTAL_CODE",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "#####"
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "ADDRNUMBER"
+        ]
+      }
+    },
+    {
+      "name": "VBAK_STATUS",
+      "population": {
+        "count": 10
+      },
+      "fields": [
+        {
+          "name": "VBELN",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "STATUS",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "OPEN",
+                "RELEASED",
+                "COMPLETED",
+                "BLOCKED"
+              ]
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "VBELN"
+        ]
+      }
+    },
+    {
+      "name": "VBEP",
+      "population": {
+        "count": 20
+      },
+      "fields": [
+        {
+          "name": "VBELN",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "POSNR",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                10,
+                20,
+                30,
+                40,
+                50
+              ]
+            }
+          }
+        },
+        {
+          "name": "ETENR",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "POSNR",
+          "VBELN"
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "KNA1.KUNNR",
+      "target": "VBAK.KUNNR",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "VBAK.VBELN",
+      "target": "VBAP.VBELN",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "VBAK.VBELN",
+      "target": "VBPA.VBELN",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "KNA1.KUNNR",
+      "target": "VBPA.KUNNR",
+      "type": "MANY_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "OPTIONAL"
+    },
+    {
+      "source": "VBPA.ADRNR",
+      "target": "ADRC.ADDRNUMBER",
+      "type": "MANY_TO_ONE",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "VBAK.VBELN",
+      "target": "VBAK_STATUS.VBELN",
+      "type": "ONE_TO_ONE",
+      "source_participation": "MANDATORY",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "VBAP.VBELN",
+      "target": "VBEP.VBELN",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "name": "FK_VBAK_KNA1",
+      "source": {
+        "entity": "VBAK",
+        "fields": [
+          "KUNNR"
+        ]
+      },
+      "target": {
+        "entity": "KNA1",
+        "fields": [
+          "KUNNR"
+        ]
+      }
+    },
+    {
+      "name": "FK_VBAP_VBAK",
+      "source": {
+        "entity": "VBAP",
+        "fields": [
+          "VBELN"
+        ]
+      },
+      "target": {
+        "entity": "VBAK",
+        "fields": [
+          "VBELN"
+        ]
+      }
+    },
+    {
+      "name": "FK_VBAK_STATUS_VBAK",
+      "source": {
+        "entity": "VBAK_STATUS",
+        "fields": [
+          "VBELN"
+        ]
+      },
+      "target": {
+        "entity": "VBAK",
+        "fields": [
+          "VBELN"
+        ]
+      }
+    },
+    {
+      "name": "FK_VBPA_ADRC",
+      "source": {
+        "entity": "VBPA",
+        "fields": [
+          "ADRNR"
+        ]
+      },
+      "target": {
+        "entity": "ADRC",
+        "fields": [
+          "ADDRNUMBER"
+        ]
+      }
+    },
+    {
+      "name": "FK_VBEP_VBAP",
+      "source": {
+        "entity": "VBEP",
+        "fields": [
+          "VBELN",
+          "POSNR"
+        ]
+      },
+      "target": {
+        "entity": "VBAP",
+        "fields": [
+          "VBELN",
+          "POSNR"
+        ]
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "entity": "VBAK",
+      "field": "NETWR",
+      "operator": ">=",
+      "value": 100.0
+    },
+    {
+      "entity": "MARA",
+      "field": "LAENG",
+      "operator": ">=",
+      "value": 10
+    },
+    {
+      "entity": "VBAK",
+      "field": "GBSTK",
+      "operator": "==",
+      "value": "A"
+    },
+    {
+      "entity": "KNA1",
+      "field": "CREDIT_LIMIT",
+      "operator": ">",
+      "value": 1000.0
+    },
+    {
+      "entity": "MARA",
+      "field": "HOEHE",
+      "operator": "<",
+      "value": 500
+    },
+    {
+      "entity": "KNA1",
+      "field": "CUSTOMER_GROUP",
+      "operator": "!=",
+      "value": "GOVERNMENT"
+    },
+    {
+      "entity": "VBAP",
+      "field": "KWMENG",
+      "operator": "<=",
+      "value": 100
+    }
+  ],
+  "dependencies": [],
+  "statistical_behavior": [],
+  "scenarios": []
+}

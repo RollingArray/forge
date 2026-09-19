@@ -1,159 +1,190 @@
 {
   "populations": {
-    "KNA1": {
+    "CUSTOMER": {
       "mode": "EXPLICIT",
-      "requested": 20,
+      "requested": 25,
       "minimum_feasible": 1,
-      "resolved": 20,
+      "resolved": 25,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "MARA": {
+    "PRODUCT": {
       "mode": "EXPLICIT",
-      "requested": 10,
+      "requested": 15,
+      "minimum_feasible": 1,
+      "resolved": 15,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PLANT": {
+      "mode": "EXPLICIT",
+      "requested": 5,
+      "minimum_feasible": 1,
+      "resolved": 5,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PRODUCT_PLANT": {
+      "mode": "EXPLICIT",
+      "requested": 30,
       "minimum_feasible": null,
-      "resolved": 10,
+      "resolved": 30,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "VBAK": {
+    "SALES_ORDER": {
       "mode": "EXPLICIT",
-      "requested": 10,
-      "minimum_feasible": 10,
-      "resolved": 10,
+      "requested": 12,
+      "minimum_feasible": 12,
+      "resolved": 12,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "VBAP": {
+    "SALES_ITEM": {
       "mode": "EXPLICIT",
-      "requested": 20,
-      "minimum_feasible": 20,
-      "resolved": 20,
+      "requested": 24,
+      "minimum_feasible": 1,
+      "resolved": 24,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "VBPA": {
+    "ADDRESS": {
       "mode": "EXPLICIT",
-      "requested": 20,
-      "minimum_feasible": 10,
-      "resolved": 20,
+      "requested": 12,
+      "minimum_feasible": 1,
+      "resolved": 12,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "ADRC": {
+    "ORDER_PARTNER": {
       "mode": "EXPLICIT",
-      "requested": 10,
+      "requested": 24,
       "minimum_feasible": null,
-      "resolved": 10,
+      "resolved": 24,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "VBAK_STATUS": {
+    "ORDER_STATUS": {
       "mode": "EXPLICIT",
-      "requested": 10,
-      "minimum_feasible": 10,
-      "resolved": 10,
+      "requested": 12,
+      "minimum_feasible": 12,
+      "resolved": 12,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     },
-    "VBEP": {
+    "DELIVERY_SCHEDULE": {
       "mode": "EXPLICIT",
-      "requested": 20,
+      "requested": 24,
       "minimum_feasible": null,
-      "resolved": 20,
+      "resolved": 24,
       "status": "FEASIBLE",
       "reason": "Requested population is within the derived feasible bounds.",
       "recommendation": null
     }
   },
   "minimums": {
-    "KNA1": 1,
-    "VBAK": 10,
-    "VBPA": 10,
-    "VBAK_STATUS": 10,
-    "VBAP": 20
+    "CUSTOMER": 1,
+    "SALES_ORDER": 12,
+    "PRODUCT": 1,
+    "ORDER_STATUS": 12,
+    "ADDRESS": 1,
+    "SALES_ITEM": 1,
+    "PLANT": 1
   },
   "maximums": {
-    "VBAK_STATUS": 10,
-    "VBEP": 20
+    "ORDER_STATUS": 12
   },
   "relationship_requirements": [
     {
-      "entity": "KNA1",
+      "entity": "CUSTOMER",
       "minimum": 1,
-      "relationship": "KNA1.KUNNR -> VBAK.KUNNR",
-      "reason": "ONE_TO_MANY relationship requires at least one KNA1 record because VBAK participation is mandatory."
+      "relationship": "CUSTOMER.CUSTOMER_ID -> SALES_ORDER.CUSTOMER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one CUSTOMER record because SALES_ORDER participation is mandatory."
     },
     {
-      "entity": "VBAK",
+      "entity": "SALES_ORDER",
       "minimum": 1,
-      "relationship": "VBAK.VBELN -> VBAP.VBELN",
-      "reason": "ONE_TO_MANY relationship requires at least one VBAK record because VBAP participation is mandatory."
+      "relationship": "SALES_ORDER.ORDER_ID -> SALES_ITEM.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because SALES_ITEM participation is mandatory."
     },
     {
-      "entity": "VBAK",
+      "entity": "PRODUCT",
       "minimum": 1,
-      "relationship": "VBAK.VBELN -> VBPA.VBELN",
-      "reason": "ONE_TO_MANY relationship requires at least one VBAK record because VBPA participation is mandatory."
+      "relationship": "PRODUCT.PRODUCT_ID -> SALES_ITEM.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because SALES_ITEM participation is mandatory."
     },
     {
-      "entity": "VBPA",
-      "minimum": 10,
-      "relationship": "VBPA.ADRNR -> ADRC.ADDRNUMBER",
-      "reason": "MANY_TO_ONE relationship requires at least 10 VBPA records because every ADRC must participate."
+      "entity": "ORDER_STATUS",
+      "minimum": 12,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_STATUS.ORDER_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 12 ORDER_STATUS records to support the mandatory participation of SALES_ORDER."
     },
     {
-      "entity": "VBAK_STATUS",
-      "minimum": 10,
-      "relationship": "VBAK.VBELN -> VBAK_STATUS.VBELN",
-      "reason": "ONE_TO_ONE relationship requires at least 10 VBAK_STATUS records to support the mandatory participation of VBAK."
+      "entity": "SALES_ORDER",
+      "minimum": 12,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_STATUS.ORDER_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 12 SALES_ORDER records to support the mandatory participation of ORDER_STATUS."
     },
     {
-      "entity": "VBAK",
-      "minimum": 10,
-      "relationship": "VBAK.VBELN -> VBAK_STATUS.VBELN",
-      "reason": "ONE_TO_ONE relationship requires at least 10 VBAK records to support the mandatory participation of VBAK_STATUS."
-    },
-    {
-      "entity": "VBAP",
+      "entity": "SALES_ORDER",
       "minimum": 1,
-      "relationship": "VBAP.VBELN -> VBEP.VBELN",
-      "reason": "ONE_TO_MANY relationship requires at least one VBAP record because VBEP participation is mandatory."
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_PARTNER.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because ORDER_PARTNER participation is mandatory."
+    },
+    {
+      "entity": "ADDRESS",
+      "minimum": 1,
+      "relationship": "ADDRESS.ADDRESS_ID -> ORDER_PARTNER.ADDRESS_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one ADDRESS record because ORDER_PARTNER participation is mandatory."
+    },
+    {
+      "entity": "SALES_ITEM",
+      "minimum": 1,
+      "relationship": "SALES_ITEM.ORDER_ID -> DELIVERY_SCHEDULE.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ITEM record because DELIVERY_SCHEDULE participation is mandatory."
+    },
+    {
+      "entity": "SALES_ITEM",
+      "minimum": 1,
+      "relationship": "SALES_ITEM.ITEM_NO -> DELIVERY_SCHEDULE.ITEM_NO",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ITEM record because DELIVERY_SCHEDULE participation is mandatory."
+    },
+    {
+      "entity": "PRODUCT",
+      "minimum": 1,
+      "relationship": "PRODUCT.PRODUCT_ID -> PRODUCT_PLANT.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because PRODUCT_PLANT participation is mandatory."
+    },
+    {
+      "entity": "PLANT",
+      "minimum": 1,
+      "relationship": "PLANT.PLANT_ID -> PRODUCT_PLANT.PLANT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PLANT record because PRODUCT_PLANT participation is mandatory."
     }
   ],
   "capacity_requirements": [
     {
-      "entity": "VBAK",
-      "minimum": 10,
-      "relationship": "VBAK_STATUS.(VBELN) -> VBAK.(VBELN)",
-      "reason": "Every VBAK_STATUS record requires a distinct compatible VBAK identity key because the foreign key covers the complete child identity."
-    },
-    {
-      "entity": "VBAP",
-      "minimum": 20,
-      "relationship": "VBEP.(VBELN, POSNR) -> VBAP.(VBELN, POSNR)",
-      "reason": "Every VBEP record requires a distinct compatible VBAP identity key because the foreign key covers the complete child identity."
+      "entity": "SALES_ORDER",
+      "minimum": 12,
+      "relationship": "ORDER_STATUS.(ORDER_ID) -> SALES_ORDER.(ORDER_ID)",
+      "reason": "Every ORDER_STATUS record requires a distinct compatible SALES_ORDER identity key because the foreign key covers the complete child identity."
     }
   ],
   "capacity_limits": [
     {
-      "entity": "VBAK_STATUS",
-      "maximum": 10,
-      "relationship": "VBAK_STATUS.(VBELN) -> VBAK.(VBELN)",
-      "reason": "The available VBAK identity keys can support at most 10 VBAK_STATUS records because each child requires a distinct compatible parent key."
-    },
-    {
-      "entity": "VBEP",
-      "maximum": 20,
-      "relationship": "VBEP.(VBELN, POSNR) -> VBAP.(VBELN, POSNR)",
-      "reason": "The available VBAP identity keys can support at most 20 VBEP records because each child requires a distinct compatible parent key."
+      "entity": "ORDER_STATUS",
+      "maximum": 12,
+      "relationship": "ORDER_STATUS.(ORDER_ID) -> SALES_ORDER.(ORDER_ID)",
+      "reason": "The available SALES_ORDER identity keys can support at most 12 ORDER_STATUS records because each child requires a distinct compatible parent key."
     }
   ]
 }
