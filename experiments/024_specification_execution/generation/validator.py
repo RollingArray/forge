@@ -9,6 +9,7 @@ It does not modify or repair generated data.
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,44 @@ class ValidationEvidence:
             "coverage": self.coverage,
         }
 
+
+
+def build_validation_report(
+    job_id: str,
+    specification_path: str | Path,
+    output_directory: str | Path,
+    evidence: ValidationEvidence,
+    errors: list[str],
+) -> dict[str, Any]:
+    """Build the machine-readable validation artifact for a generation job."""
+
+    return {
+        "job_id": job_id,
+        "specification": str(specification_path),
+        "dataset": str(output_directory),
+        "valid": not errors,
+        "errors": errors,
+        "validation": evidence.to_dict(),
+    }
+
+
+def write_validation_report(
+    report: dict[str, Any],
+    output_path: str | Path,
+) -> Path:
+    """Write a validation report as a UI/API-consumable JSON artifact."""
+
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            report,
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    return path
 
 
 def load_entity_rows(

@@ -55,3 +55,6 @@ experiments/024_specification_execution/output/generated/
 
 # FORGE runtime-generated artifacts
 experiments/024_specification_execution/output/validation/
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/quality/

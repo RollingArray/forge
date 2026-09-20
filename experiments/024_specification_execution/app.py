@@ -4,6 +4,7 @@ Console demonstration consuming the Experiment 022 specification.
 """
 
 import importlib.util
+import json
 import sys
 import types
 from pathlib import Path
@@ -20,6 +21,7 @@ SPECIFICATION_PATH = (
 )
 
 VALIDATION_OUTPUT_DIRECTORY = EXPERIMENT_ROOT / "output" / "validation"
+QUALITY_OUTPUT_DIRECTORY = EXPERIMENT_ROOT / "output" / "quality"
 
 PACKAGE_NAME = "forge_generation_console"
 
@@ -56,28 +58,11 @@ load_module("semantic")
 progress_module = load_module("progress")
 load_module("generator")
 validator = load_module("validator")
+quality = load_module("quality")
 job_module = load_module("job")
 planner = load_module("planner")
 executor = load_module("executor")
 specification_module = load_module("specification")
-
-
-class Tee:
-    """Write console output to both the terminal and a file."""
-
-    def __init__(self, terminal, file_handle):
-        self.terminal = terminal
-        self.file_handle = file_handle
-
-    def write(self, text: str) -> int:
-        self.terminal.write(text)
-        self.file_handle.write(text)
-        self.file_handle.flush()
-        return len(text)
-
-    def flush(self) -> None:
-        self.terminal.flush()
-        self.file_handle.flush()
 
 
 def main() -> None:
@@ -143,9 +128,12 @@ def main() -> None:
 
     if result.status.value == "COMPLETED":
 
+        validation_evidence = validator.ValidationEvidence()
+
         validation_errors = validator.validate_dataset(
             specification=specification,
             output_directory=output_directory,
+            evidence=validation_evidence,
         )
 
         print()
@@ -156,8 +144,35 @@ def main() -> None:
         print(f"Dataset       : {output_directory}")
         print()
 
+        validation_report = validator.build_validation_report(
+            job_id=job.job_id,
+            specification_path=SPECIFICATION_PATH,
+            output_directory=output_directory,
+            evidence=validation_evidence,
+            errors=validation_errors,
+        )
+
+        validation_output_directory = VALIDATION_OUTPUT_DIRECTORY
+        validation_output_directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        validation_path = (
+            validation_output_directory
+            / f"{job.job_id}_validation.json"
+        )
+
+        validator.write_validation_report(
+            report=validation_report,
+            output_path=validation_path,
+        )
+
         if validation_errors:
-            print(f"VALIDATION FAILED — " f"{len(validation_errors)} issue(s)")
+            print(
+                f"VALIDATION FAILED — "
+                f"{len(validation_errors)} issue(s)"
+            )
             print("-" * 70)
 
             for error in validation_errors:
@@ -169,6 +184,49 @@ def main() -> None:
             print("Foreign keys        : PASS")
             print("Constraints         : PASS")
 
+            quality_output_directory = QUALITY_OUTPUT_DIRECTORY
+            quality_output_directory.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            quality_profile = quality.build_quality_profile(
+                specification=specification,
+                output_directory=output_directory,
+                validation_evidence=validation_evidence.to_dict(),
+                generation_result=result,
+                generation_plan=plan,
+            )
+
+            quality_profile = {
+                "job_id": job.job_id,
+                "specification": str(SPECIFICATION_PATH),
+                "dataset": str(output_directory),
+                "quality": quality_profile,
+            }
+
+            quality_path = (
+                quality_output_directory
+                / f"{job.job_id}_quality.json"
+            )
+
+            quality_path.write_text(
+                json.dumps(
+                    quality_profile,
+                    indent=2,
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
+            )
+
+            print()
+            print("FORGE QUALITY PROFILE")
+            print("-" * 70)
+            print(f"Quality profile : {quality_path}")
+            print("Quality analysis: COMPLETED")
+
+        print()
+        print(f"Validation report : {validation_path}")
         print("=" * 70)
 
     else:
@@ -181,46 +239,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    VALIDATION_OUTPUT_DIRECTORY.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    original_stdout = sys.stdout
-
-    # The job ID is created inside main(), so capture the console output
-    # first and persist it under the generated job ID after execution.
-    from io import StringIO
-
-    captured_output = StringIO()
-
-    sys.stdout = Tee(
-        terminal=original_stdout,
-        file_handle=captured_output,
-    )
-
-    try:
-        main()
-    finally:
-        sys.stdout = original_stdout
-
-    output = captured_output.getvalue()
-
-    job_id = None
-
-    for line in output.splitlines():
-        if line.startswith("Job           : "):
-            job_id = line.split(":", 1)[1].strip()
-            break
-
-    if job_id is None:
-        raise RuntimeError("Unable to determine generation job ID from console output.")
-
-    validation_run_output = VALIDATION_OUTPUT_DIRECTORY / f"{job_id}_run.txt"
-
-    validation_run_output.write_text(
-        output,
-        encoding="utf-8",
-    )
-
-    print(f"Run output saved : {validation_run_output}")
+    main()
