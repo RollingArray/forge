@@ -49,3 +49,9 @@ build/
 # Temporary files
 *.tmp
 *.temp
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/generated/
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/validation/
