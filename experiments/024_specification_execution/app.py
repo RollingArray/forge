@@ -19,11 +19,7 @@ SPECIFICATION_PATH = (
     / "specification.json"
 )
 
-VALIDATION_OUTPUT_DIRECTORY = (
-    EXPERIMENT_ROOT
-    / "output"
-    / "validation"
-)
+VALIDATION_OUTPUT_DIRECTORY = EXPERIMENT_ROOT / "output" / "validation"
 
 PACKAGE_NAME = "forge_generation_console"
 
@@ -57,6 +53,7 @@ def load_module(name: str):
 load_module("result")
 load_module("chunking")
 load_module("semantic")
+progress_module = load_module("progress")
 load_module("generator")
 validator = load_module("validator")
 job_module = load_module("job")
@@ -110,13 +107,18 @@ def main() -> None:
 
     output_directory = BASE.parent / "output" / "generated" / job.job_id
 
+    progress_reporter = progress_module.CLIProgressReporter(
+        total_target_rows=plan.total_target_rows,
+    )
+
     result = executor.execute_generation_plan(
         specification=specification,
         job=job,
         plan=plan,
         seed=42,
-        chunk_size=5,
+        chunk_size=1000,
         output_directory=str(output_directory),
+        progress_reporter=progress_reporter,
     )
 
     print(f"Output        : {output_directory}")
@@ -155,10 +157,7 @@ def main() -> None:
         print()
 
         if validation_errors:
-            print(
-                f"VALIDATION FAILED — "
-                f"{len(validation_errors)} issue(s)"
-            )
+            print(f"VALIDATION FAILED — " f"{len(validation_errors)} issue(s)")
             print("-" * 70)
 
             for error in validation_errors:
@@ -215,20 +214,13 @@ if __name__ == "__main__":
             break
 
     if job_id is None:
-        raise RuntimeError(
-            "Unable to determine generation job ID from console output."
-        )
+        raise RuntimeError("Unable to determine generation job ID from console output.")
 
-    validation_run_output = (
-        VALIDATION_OUTPUT_DIRECTORY
-        / f"{job_id}_run.txt"
-    )
+    validation_run_output = VALIDATION_OUTPUT_DIRECTORY / f"{job_id}_run.txt"
 
     validation_run_output.write_text(
         output,
         encoding="utf-8",
     )
 
-    print(
-        f"Run output saved : {validation_run_output}"
-    )
+    print(f"Run output saved : {validation_run_output}")

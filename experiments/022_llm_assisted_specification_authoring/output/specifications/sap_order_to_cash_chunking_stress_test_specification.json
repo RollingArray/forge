@@ -1324,6 +1324,13 @@
       "target_participation": "MANDATORY"
     },
     {
+      "source": "SHIPMENT_ITEM.DELIVERY_ID",
+      "target": "SHIPMENT_ITEM.DELIVERY_ID",
+      "type": "ONE_TO_ONE",
+      "source_participation": "MANDATORY",
+      "target_participation": "MANDATORY"
+    },
+    {
       "source": "SALES_ORDER.ORDER_ID",
       "target": "INVOICE.ORDER_ID",
       "type": "ONE_TO_MANY",

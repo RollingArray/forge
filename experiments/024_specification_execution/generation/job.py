@@ -158,7 +158,12 @@ class GenerationJob:
 
         if result.status == GenerationChunkStatus.COMPLETED:
             entity_progress.generated_rows += result.row_count
-            entity_progress.status = EntityGenerationStatus.COMPLETED
+
+            if entity_progress.generated_rows >= entity_progress.target_rows:
+                entity_progress.status = EntityGenerationStatus.COMPLETED
+            else:
+                entity_progress.status = EntityGenerationStatus.RUNNING
+
             return
 
         if result.status == GenerationChunkStatus.FAILED:

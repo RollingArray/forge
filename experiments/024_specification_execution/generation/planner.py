@@ -40,6 +40,26 @@ class RelationshipDependency:
 
 
 @dataclass(frozen=True)
+class RelationshipGroup:
+    """
+    Canonical grouped relationship semantics.
+
+    A relationship group represents one logical parent-child key
+    mapping. Multiple specification-level relationship declarations
+    may belong to the same group when they describe different fields
+    of the same parent-child relationship.
+    """
+
+    parent_entity: str
+    child_entity: str
+    parent_fields: tuple[str, ...]
+    child_fields: tuple[str, ...]
+    relationship_type: str
+    parent_participation: str
+    child_participation: str
+
+
+@dataclass(frozen=True)
 class ConstraintDefinition:
     """Constraint that must be satisfied during generation."""
 
@@ -70,6 +90,7 @@ class GenerationPlan:
 
     entities: tuple[EntityGenerationPlan, ...]
     relationships: tuple[RelationshipDependency, ...] = ()
+    relationship_groups: tuple[RelationshipGroup, ...] = ()
     constraints: tuple[ConstraintDefinition, ...] = ()
 
     @property
@@ -381,6 +402,83 @@ def _build_relationship_dependencies(
     return tuple(result)
 
 
+def _build_relationship_groups(
+    relationships: tuple[RelationshipDependency, ...],
+) -> tuple[RelationshipGroup, ...]:
+    """
+    Normalize relationship declarations into logical parent-child groups.
+
+    Declarations are grouped only when they describe the same parent
+    entity, child entity, relationship type, and participation semantics.
+    Field mappings are preserved in declaration order.
+    """
+
+    groups: dict[
+        tuple[
+            str,
+            str,
+            str,
+            str,
+            str,
+        ],
+        list[RelationshipDependency],
+    ] = {}
+
+    for relationship in relationships:
+        key = (
+            relationship.source_entity,
+            relationship.target_entity,
+            relationship.relationship_type,
+            relationship.source_participation,
+            relationship.target_participation,
+        )
+
+        groups.setdefault(key, []).append(relationship)
+
+    result: list[RelationshipGroup] = []
+
+    for grouped_relationships in groups.values():
+        first = grouped_relationships[0]
+
+        parent_fields = tuple(
+            field
+            for relationship in grouped_relationships
+            for field in relationship.source_fields
+        )
+
+        child_fields = tuple(
+            field
+            for relationship in grouped_relationships
+            for field in relationship.target_fields
+        )
+
+        if len(parent_fields) != len(set(parent_fields)):
+            raise SpecificationError(
+                "Relationship group contains duplicate parent fields: "
+                f"{first.source_entity} -> {first.target_entity}."
+            )
+
+        if len(child_fields) != len(set(child_fields)):
+            raise SpecificationError(
+                "Relationship group contains duplicate child fields: "
+                f"{first.source_entity} -> {first.target_entity}."
+            )
+
+        result.append(
+            RelationshipGroup(
+                parent_entity=first.source_entity,
+                child_entity=first.target_entity,
+                parent_fields=parent_fields,
+                child_fields=child_fields,
+                relationship_type=first.relationship_type,
+                parent_participation=first.source_participation,
+                child_participation=first.target_participation,
+            )
+        )
+
+    return tuple(result)
+
+
 def _parse_constraint(
     constraint: dict,
     entity_names: set[str],
@@ -545,6 +643,10 @@ def build_generation_plan(
         entity_names,
     )
 
+    relationship_groups = _build_relationship_groups(
+        relationships,
+    )
+
     constraints = _build_constraints(
         specification,
         entity_names,
@@ -558,6 +660,7 @@ def build_generation_plan(
     plan = GenerationPlan(
         entities=entity_plans,
         relationships=relationships,
+        relationship_groups=relationship_groups,
         constraints=constraints,
     )
 

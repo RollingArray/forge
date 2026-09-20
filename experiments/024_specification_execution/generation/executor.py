@@ -19,6 +19,7 @@ from .generator import generate_entity_chunk
 from .job import GenerationJob
 from .output import get_entity_output_path, write_rows
 from .planner import GenerationPlan
+from .progress import CLIProgressReporter
 from .result import GenerationChunkResult, GenerationChunkStatus
 from .semantic import generate_semantic_values
 
@@ -175,6 +176,7 @@ def _execute_chunk(
     semantic_values_by_field: dict[str, list[str]],
     dependencies: tuple[Any, ...],
     relationships: tuple[Any, ...],
+    relationship_groups: tuple[Any, ...],
     constraints: tuple[Any, ...],
     context: GenerationContext,
     existing_identities: set[tuple[Any, ...]],
@@ -193,6 +195,7 @@ def _execute_chunk(
             dependencies=dependencies,
             context=context,
             relationships=relationships,
+            relationship_groups=relationship_groups,
             existing_identities=existing_identities,
             constraints=constraints,
         )
@@ -292,67 +295,6 @@ def _build_chunk_result(
     )
 
 
-def _execute_chunk(
-    entity: dict[str, Any],
-    chunk: Any,
-    seed: int,
-    output_path: Any,
-    identity_fields: tuple[str, ...],
-    semantic_values_by_field: dict[str, list[str]],
-    dependencies: tuple[Any, ...],
-    relationships: tuple[Any, ...],
-    constraints: tuple[Any, ...],
-    context: GenerationContext,
-    existing_identities: set[tuple[Any, ...]],
-) -> GenerationChunkResult:
-    """Generate, persist, and register one generation chunk."""
-
-    entity_name = entity["name"]
-
-    try:
-        rows = generate_entity_chunk(
-            entity=entity,
-            start_row=chunk.start_row,
-            row_count=chunk.row_count,
-            seed=seed,
-            semantic_values_by_field=semantic_values_by_field,
-            dependencies=dependencies,
-            context=context,
-            relationships=relationships,
-            existing_identities=existing_identities,
-            constraints=constraints,
-        )
-
-        write_rows(
-            output_path=output_path,
-            rows=rows,
-        )
-
-        context.add_rows(
-            entity_name,
-            rows,
-            identity_fields,
-        )
-
-        return _build_chunk_result(
-            entity_name=entity_name,
-            chunk_number=chunk.chunk_number,
-            row_count=len(rows),
-            output_path=output_path,
-            status=GenerationChunkStatus.COMPLETED,
-        )
-
-    except Exception as exc:
-        return _build_chunk_result(
-            entity_name=entity_name,
-            chunk_number=chunk.chunk_number,
-            row_count=0,
-            output_path=output_path,
-            status=GenerationChunkStatus.FAILED,
-            error=str(exc),
-        )
-
-
 def execute_entity(
     specification: dict[str, Any],
     job: GenerationJob,
@@ -364,7 +306,9 @@ def execute_entity(
     context: GenerationContext,
     dependencies: tuple[Any, ...] = (),
     relationships: tuple[Any, ...] = (),
+    relationship_groups: tuple[Any, ...] = (),
     constraints: tuple[Any, ...] = (),
+    progress_reporter: CLIProgressReporter | None = None,
 ) -> bool:
     """Synchronously execute all chunks for one entity."""
 
@@ -384,6 +328,13 @@ def execute_entity(
 
     existing_identities: set[tuple[Any, ...]] = set()
 
+    if progress_reporter is not None:
+        progress_reporter.start_entity(
+            entity_name=entity_name,
+            target_rows=target_rows,
+            total_chunks=len(chunks),
+        )
+
     for chunk in chunks:
         result = _execute_chunk(
             entity=entity,
@@ -394,6 +345,7 @@ def execute_entity(
             semantic_values_by_field=semantic_values_by_field,
             dependencies=dependencies,
             relationships=relationships,
+            relationship_groups=relationship_groups,
             constraints=constraints,
             context=context,
             existing_identities=existing_identities,
@@ -402,7 +354,25 @@ def execute_entity(
         job.record_chunk_result(result)
 
         if result.status == GenerationChunkStatus.FAILED:
+            if progress_reporter is not None:
+                progress_reporter.fail_entity(
+                    entity_name=entity_name,
+                    error=result.error or "Chunk generation failed.",
+                )
             return False
+
+        if progress_reporter is not None:
+            progress_reporter.update_chunk(
+                chunk_number=result.chunk_number,
+                generated_rows=job.entities[entity_name].generated_rows,
+                total_generated_rows=job.total_generated_rows,
+            )
+
+    if progress_reporter is not None:
+        progress_reporter.complete_entity(
+            entity_name=entity_name,
+            generated_rows=job.entities[entity_name].generated_rows,
+        )
 
     return True
 
@@ -414,6 +384,7 @@ def execute_generation_plan(
     seed: int,
     chunk_size: int,
     output_directory: str,
+    progress_reporter: CLIProgressReporter | None = None,
 ) -> GenerationJob:
     """
     Execute a generation plan synchronously.
@@ -446,7 +417,9 @@ def execute_generation_plan(
                 context=context,
                 dependencies=entity_plan.dependencies,
                 relationships=plan.relationships,
+                relationship_groups=plan.relationship_groups,
                 constraints=plan.constraints,
+                progress_reporter=progress_reporter,
             )
 
             if not entity_completed:
@@ -455,7 +428,13 @@ def execute_generation_plan(
 
         job.complete()
 
+        if progress_reporter is not None:
+            progress_reporter.finish()
+
     except Exception as exc:
         job.fail(str(exc))
+
+        if progress_reporter is not None:
+            progress_reporter.finish()
 
     return job
