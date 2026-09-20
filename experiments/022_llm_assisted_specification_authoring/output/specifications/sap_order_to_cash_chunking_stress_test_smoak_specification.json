@@ -13,7 +13,7 @@
     {
       "name": "CUSTOMER",
       "population": {
-        "count": 1000
+        "count": 10000
       },
       "fields": [
         {
@@ -87,7 +87,7 @@
     {
       "name": "CUSTOMER_ADDRESS",
       "population": {
-        "count": 1500
+        "count": 15000
       },
       "fields": [
         {
@@ -156,7 +156,7 @@
     {
       "name": "PRODUCT",
       "population": {
-        "count": 500
+        "count": 5000
       },
       "fields": [
         {
@@ -349,7 +349,7 @@
     {
       "name": "PRODUCT_PLANT",
       "population": {
-        "count": 2000
+        "count": 20000
       },
       "fields": [
         {
@@ -402,7 +402,7 @@
     {
       "name": "INVENTORY",
       "population": {
-        "count": 10000
+        "count": 100000
       },
       "fields": [
         {
@@ -459,7 +459,7 @@
     {
       "name": "SALES_ORDER",
       "population": {
-        "count": 2500
+        "count": 25000
       },
       "fields": [
         {
@@ -527,7 +527,7 @@
     {
       "name": "SALES_ITEM",
       "population": {
-        "count": 10000
+        "count": 100000
       },
       "fields": [
         {
@@ -597,7 +597,7 @@
     {
       "name": "ORDER_PARTNER",
       "population": {
-        "count": 7500
+        "count": 75000
       },
       "fields": [
         {
@@ -647,7 +647,7 @@
     {
       "name": "ORDER_STATUS",
       "population": {
-        "count": 2500
+        "count": 25000
       },
       "fields": [
         {
@@ -686,7 +686,7 @@
     {
       "name": "DELIVERY",
       "population": {
-        "count": 3000
+        "count": 30000
       },
       "fields": [
         {
@@ -736,7 +736,7 @@
     {
       "name": "DELIVERY_ITEM",
       "population": {
-        "count": 12000
+        "count": 120000
       },
       "fields": [
         {
@@ -816,7 +816,7 @@
     {
       "name": "DELIVERY_EVENT",
       "population": {
-        "count": 50000
+        "count": 500000
       },
       "fields": [
         {
@@ -883,7 +883,7 @@
     {
       "name": "SHIPMENT",
       "population": {
-        "count": 3500
+        "count": 35000
       },
       "fields": [
         {
@@ -939,7 +939,7 @@
     {
       "name": "SHIPMENT_ITEM",
       "population": {
-        "count": 12000
+        "count": 120000
       },
       "fields": [
         {
@@ -1044,7 +1044,7 @@
     {
       "name": "INVOICE",
       "population": {
-        "count": 3000
+        "count": 30000
       },
       "fields": [
         {
@@ -1096,7 +1096,7 @@
     {
       "name": "INVOICE_ITEM",
       "population": {
-        "count": 12000
+        "count": 120000
       },
       "fields": [
         {
@@ -1154,7 +1154,7 @@
     {
       "name": "PAYMENT",
       "population": {
-        "count": 4000
+        "count": 40000
       },
       "fields": [
         {
@@ -1320,6 +1320,13 @@
       "source": "SHIPMENT.SHIPMENT_ID",
       "target": "SHIPMENT_ITEM.SHIPMENT_ID",
       "type": "ONE_TO_MANY",
+      "source_participation": "MANDATORY",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "SHIPMENT_ITEM.DELIVERY_ID",
+      "target": "SHIPMENT_ITEM.DELIVERY_ID",
+      "type": "ONE_TO_ONE",
       "source_participation": "MANDATORY",
       "target_participation": "MANDATORY"
     },
