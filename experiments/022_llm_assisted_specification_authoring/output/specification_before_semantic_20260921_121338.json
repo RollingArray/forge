@@ -100,6 +100,9 @@
         {
           "name": "CUSTOMER_ID",
           "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "RANDOM"
+          },
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }
@@ -164,17 +167,6 @@
           }
         },
         {
-          "name": "PRODUCT_NAME",
-          "type": "STRING",
-          "generation": {
-            "generator": "SEMANTIC",
-            "parameters": {
-              "description": "Realistic individual aerospace product names suitable for uniquely identified products.",
-              "mode": "UNIQUE"
-            }
-          }
-        },
-        {
           "name": "PRODUCT_TYPE",
           "type": "CATEGORICAL",
           "generation": {
@@ -194,10 +186,12 @@
           "name": "PRODUCT_GROUP",
           "type": "STRING",
           "generation": {
-            "generator": "SEMANTIC",
+            "strategy": "RANDOM",
+            "generator": "RANDOM_STRING",
             "parameters": {
-              "description": "Realistic aerospace product group or product category names.",
-              "mode": "VOCABULARY"
+              "minimum_length": 5,
+              "maximum_length": 10,
+              "character_set": "ALPHANUMERIC"
             }
           }
         },
@@ -322,6 +316,9 @@
         {
           "name": "PLANT_ID",
           "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "RANDOM"
+          },
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }
@@ -358,6 +355,9 @@
         {
           "name": "PRODUCT_ID",
           "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "RANDOM"
+          },
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }
@@ -365,6 +365,9 @@
         {
           "name": "PLANT_ID",
           "type": "IDENTIFIER",
+          "generation": {
+            "strategy": "RANDOM"
+          },
           "identity": {
             "strategy": "SEQUENTIAL_ID"
           }

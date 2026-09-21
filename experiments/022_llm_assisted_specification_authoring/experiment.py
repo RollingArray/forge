@@ -620,8 +620,23 @@ def validate_specification(
             ):
 
                 strategy = generation.get("strategy")
+                generator = generation.get("generator")
 
-                if strategy not in SUPPORTED_GENERATION_STRATEGIES:
+                # STRING generator configurations such as SEMANTIC,
+                # RANDOM_STRING, and PATTERN are identified by their
+                # generator rather than by the legacy strategy field.
+                if (
+                    field_type == "STRING"
+                    and isinstance(generator, str)
+                    and generator
+                ):
+                    strategy_valid = True
+                else:
+                    strategy_valid = (
+                        strategy in SUPPORTED_GENERATION_STRATEGIES
+                    )
+
+                if not strategy_valid:
                     errors.append(
                         f"{name}.{field_name}: unsupported "
                         f"generation strategy {strategy!r}."
@@ -773,7 +788,7 @@ def validate_specification(
                                     "description must not be empty."
                                 )
 
-                else:
+                elif not managed_by_relationship_or_dependency:
                     distribution = generation.get("distribution")
 
                     if distribution not in SUPPORTED_DISTRIBUTIONS:
@@ -928,6 +943,39 @@ def is_field_relationship_managed(
         source = relationship.get("source")
 
         if source == field_reference:
+            return True
+
+    # Foreign-key source fields are also relationship-managed.
+    # Their values are supplied from the referenced parent entity
+    # rather than generated independently.
+    foreign_keys = specification.get(
+        "foreign_keys",
+        [],
+    )
+
+    for foreign_key in foreign_keys:
+
+        if not isinstance(foreign_key, dict):
+            continue
+
+        source = foreign_key.get(
+            "source",
+            {},
+        )
+
+        if not isinstance(source, dict):
+            continue
+
+        source_entity = source.get("entity")
+        source_fields = source.get(
+            "fields",
+            [],
+        )
+
+        if (
+            source_entity == entity_name
+            and field_name in source_fields
+        ):
             return True
 
     return False
@@ -1698,16 +1746,75 @@ def validate_authoring_model(
                 )
 
             # ------------------------------------------------------------
+            # IDENTIFIER FIELDS
+            # ------------------------------------------------------------
+            #
+            # IDENTIFIER generation is governed by the identity
+            # configuration, not by distribution-based generation.
+            # Relationship/FK-managed identifiers may also carry a
+            # generation.strategy for compatibility, but they must
+            # never be evaluated as statistical distributions here.
+            if field_type == "IDENTIFIER":
+                identity = field.get("identity")
+
+                if not isinstance(identity, dict):
+                    errors.append(
+                        f"{name}.{field_name}: IDENTIFIER "
+                        "requires identity configuration."
+                    )
+                else:
+                    identity_strategy = identity.get("strategy")
+
+                    if identity_strategy not in SUPPORTED_IDENTITY_STRATEGIES:
+                        errors.append(
+                            f"{name}.{field_name}: unsupported "
+                            f"identity strategy {identity_strategy!r}."
+                        )
+
+                continue
+
+            # ------------------------------------------------------------
             # GENERATION SEMANTICS
             # ------------------------------------------------------------
 
             generation = field.get("generation")
 
+            relationship_managed = is_field_relationship_managed(
+                model,
+                name,
+                field_name,
+            )
+
+            dependency_managed = is_field_dependency_managed(
+                model,
+                name,
+                field_name,
+            )
+
+            managed_by_relationship_or_dependency = (
+                relationship_managed or dependency_managed
+            )
+
             if isinstance(generation, dict):
 
                 strategy = generation.get("strategy")
+                generator = generation.get("generator")
 
-                if strategy not in SUPPORTED_GENERATION_STRATEGIES:
+                # STRING generator configurations such as SEMANTIC,
+                # RANDOM_STRING, and PATTERN are identified by their
+                # generator rather than by the legacy strategy field.
+                if (
+                    field_type == "STRING"
+                    and isinstance(generator, str)
+                    and generator
+                ):
+                    strategy_valid = True
+                else:
+                    strategy_valid = (
+                        strategy in SUPPORTED_GENERATION_STRATEGIES
+                    )
+
+                if not strategy_valid:
                     errors.append(
                         f"{name}.{field_name}: unsupported "
                         f"generation strategy {strategy!r}."
@@ -1861,9 +1968,15 @@ def validate_authoring_model(
 
                 else:
 
+                    # Relationship/dependency-managed fields do not require
+                    # an independent distribution. Their values are supplied
+                    # by the relationship/dependency execution logic.
                     distribution = generation.get("distribution")
 
-                    if distribution not in SUPPORTED_DISTRIBUTIONS:
+                    if (
+                        not managed_by_relationship_or_dependency
+                        and distribution not in SUPPORTED_DISTRIBUTIONS
+                    ):
                         errors.append(
                             f"{name}.{field_name}: unsupported "
                             f"distribution {distribution!r}."

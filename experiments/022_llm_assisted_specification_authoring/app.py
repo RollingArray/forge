@@ -1505,6 +1505,22 @@ with model_column:
 
                                 new_generator = "SEMANTIC"
 
+                                semantic_mode = st.selectbox(
+                                    "Semantic mode",
+                                    [
+                                        "VOCABULARY",
+                                        "UNIQUE",
+                                    ],
+                                    index=0,
+                                    key=f"new_semantic_mode_{entity_name}",
+                                    help=(
+                                        "VOCABULARY creates reusable semantic "
+                                        "values. UNIQUE creates a distinct "
+                                        "value for each record while preserving "
+                                        "the semantic meaning."
+                                    ),
+                                )
+
                                 semantic_description = st.text_area(
                                     "Semantic description",
                                     key=f"new_semantic_description_{entity_name}",
@@ -1917,10 +1933,10 @@ with model_column:
                                 st.rerun()
 
                             operation["field"]["generation"] = {
-                                "strategy": new_generation_strategy,
                                 "generator": "SEMANTIC",
                                 "parameters": {
                                     "description": semantic_description,
+                                    "mode": semantic_mode,
                                 },
                             }
 
@@ -2048,7 +2064,7 @@ with model_column:
 
                     generation = field.get("generation")
 
-                    if generation:
+                    if generation and field_type != "IDENTIFIER":
 
                         if field_type == "BOOLEAN":
 
@@ -2533,6 +2549,38 @@ with model_column:
                                     current_description = current_parameters.get(
                                         "description",
                                         "",
+                                    )
+
+                                    current_semantic_mode = str(
+                                        current_parameters.get(
+                                            "mode",
+                                            "VOCABULARY",
+                                        )
+                                    ).strip().upper()
+
+                                    if current_semantic_mode not in {
+                                        "VOCABULARY",
+                                        "UNIQUE",
+                                    }:
+                                        current_semantic_mode = "VOCABULARY"
+
+                                    semantic_mode = st.selectbox(
+                                        "Semantic mode",
+                                        [
+                                            "VOCABULARY",
+                                            "UNIQUE",
+                                        ],
+                                        index=[
+                                            "VOCABULARY",
+                                            "UNIQUE",
+                                        ].index(current_semantic_mode),
+                                        key=f"edit_semantic_mode_{reference}",
+                                        help=(
+                                            "VOCABULARY creates reusable semantic "
+                                            "values. UNIQUE creates a distinct "
+                                            "value for each record while preserving "
+                                            "the semantic meaning."
+                                        ),
                                     )
 
                                     new_semantic_description = st.text_area(
@@ -3094,10 +3142,10 @@ with model_column:
                                     st.rerun()
 
                                 target["generation"] = {
-                                    "strategy": new_strategy,
                                     "generator": "SEMANTIC",
                                     "parameters": {
                                         "description": semantic_description,
+                                        "mode": semantic_mode,
                                     },
                                 }
 
