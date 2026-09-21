@@ -21,6 +21,14 @@ DEFAULT_OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "gemma4:12b"
 SEMANTIC_VALUE_COUNT = 10
 
+SEMANTIC_MODE_VOCABULARY = "VOCABULARY"
+SEMANTIC_MODE_UNIQUE = "UNIQUE"
+
+SUPPORTED_SEMANTIC_MODES = {
+    SEMANTIC_MODE_VOCABULARY,
+    SEMANTIC_MODE_UNIQUE,
+}
+
 
 def get_ollama_url() -> str:
     """Return the configured Ollama endpoint."""
@@ -40,8 +48,38 @@ def get_model() -> str:
     )
 
 
-def build_semantic_system_prompt() -> str:
+def normalize_semantic_mode(mode: str | None) -> str:
+    """Return a validated semantic generation mode."""
+
+    if mode is None:
+        return SEMANTIC_MODE_VOCABULARY
+
+    normalized = str(mode).strip().upper()
+
+    if normalized not in SUPPORTED_SEMANTIC_MODES:
+        raise ValueError(
+            f"Unsupported SEMANTIC mode: {mode!r}. "
+            f"Supported modes: {sorted(SUPPORTED_SEMANTIC_MODES)}"
+        )
+
+    return normalized
+
+
+def build_semantic_system_prompt(
+    mode: str = SEMANTIC_MODE_VOCABULARY,
+) -> str:
     """Build the semantic generation contract."""
+
+    normalized_mode = normalize_semantic_mode(mode)
+
+    mode_instruction = (
+        "Generate reusable categorical values. "
+        "The values may intentionally repeat across records."
+        if normalized_mode == SEMANTIC_MODE_VOCABULARY
+        else
+        "Generate representative semantic base values that FORGE "
+        "will use to construct unique record-level values."
+    )
 
     return f"""
 You are the FORGE Semantic Data Generation Service.
@@ -51,6 +89,10 @@ for a declared semantic field.
 
 You will receive one natural-language description of the values
 that are required.
+
+Semantic mode: {normalized_mode}
+
+{mode_instruction}
 
 Return ONLY valid JSON with exactly these keys:
 
@@ -88,13 +130,17 @@ Do not return markdown.
 
 def call_semantic_llm(
     description: str,
+    mode: str = SEMANTIC_MODE_VOCABULARY,
 ) -> str:
     """Call the configured Ollama model for semantic values."""
+
+    normalized_mode = normalize_semantic_mode(mode)
 
     payload = {
         "model": get_model(),
         "prompt": (
             "SEMANTIC STRING REQUIREMENT:\n\n"
+            f"MODE: {normalized_mode}\n\n"
             f"{description}\n\n"
             "Generate representative values according to the semantic contract."
         ),
@@ -241,16 +287,20 @@ def parse_semantic_response(
 
 def generate_semantic_values(
     description: str,
+    mode: str = SEMANTIC_MODE_VOCABULARY,
 ) -> list[str]:
-    """Generate a semantic vocabulary from a field description."""
+    """Generate semantic values from a field description."""
 
     if not isinstance(description, str) or not description.strip():
         raise ValueError(
             "SEMANTIC description must be a non-empty string."
         )
 
+    normalized_mode = normalize_semantic_mode(mode)
+
     raw_response = call_semantic_llm(
         description.strip(),
+        mode=normalized_mode,
     )
 
     return parse_semantic_response(

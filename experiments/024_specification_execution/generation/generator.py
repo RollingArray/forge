@@ -477,6 +477,24 @@ def apply_field_constraints(
     return effective
 
 
+def generate_unique_semantic_value(
+    semantic_values: list[str],
+    row_number: int,
+) -> str:
+    """Create a deterministic unique semantic value for one record."""
+
+    if not semantic_values:
+        raise ValueError(
+            "SEMANTIC values were not provided for a UNIQUE semantic field."
+        )
+
+    base_value = semantic_values[
+        row_number % len(semantic_values)
+    ]
+
+    return f"{base_value} {row_number + 1:06d}"
+
+
 def generate_field_value(
     entity_name: str,
     field: dict[str, Any],
@@ -554,7 +572,31 @@ def generate_field_value(
                     f"{field.get('name')!r}."
                 )
 
-            return rng.choice(semantic_values)
+            parameters = generation.get("parameters", {})
+
+            if not isinstance(parameters, dict):
+                raise ValueError(
+                    f"SEMANTIC parameters must be an object for field "
+                    f"{field.get('name')!r}."
+                )
+
+            mode = str(
+                parameters.get("mode", "VOCABULARY")
+            ).strip().upper()
+
+            if mode == "VOCABULARY":
+                return rng.choice(semantic_values)
+
+            if mode == "UNIQUE":
+                return generate_unique_semantic_value(
+                    semantic_values=semantic_values,
+                    row_number=row_number,
+                )
+
+            raise ValueError(
+                f"Unsupported SEMANTIC mode {mode!r} for field "
+                f"{field.get('name')!r}."
+            )
 
         if generation.get("distribution") == "CATEGORICAL":
             return generate_categorical(

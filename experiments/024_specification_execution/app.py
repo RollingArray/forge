@@ -54,6 +54,8 @@ def load_module(name: str):
 
 load_module("result")
 load_module("chunking")
+load_module("checkpoint")
+output_module = load_module("output")
 load_module("semantic")
 progress_module = load_module("progress")
 load_module("generator")
@@ -127,6 +129,24 @@ def main() -> None:
     print("=" * 70)
 
     if result.status.value == "COMPLETED":
+
+        print()
+        print("=" * 70)
+        print("FORGE DATASET FINALIZATION")
+        print("=" * 70)
+
+        for entity_name in plan.generation_order:
+            final_path = output_module.assemble_entity_output(
+                output_directory=output_directory,
+                entity_name=entity_name,
+            )
+
+            print(
+                f"{entity_name:20}"
+                f"{final_path.name}"
+            )
+
+        print("=" * 70)
 
         validation_evidence = validator.ValidationEvidence()
 

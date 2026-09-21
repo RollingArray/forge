@@ -11,13 +11,25 @@ worker logic.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from .checkpoint import (
+    GenerationCheckpoint,
+    compute_specification_hash,
+    create_checkpoint,
+    load_checkpoint,
+    write_checkpoint,
+)
 from .chunking import build_chunks
 from .context import GenerationContext
 from .generator import generate_entity_chunk
-from .job import GenerationJob
-from .output import get_entity_output_path, write_rows
+from .job import EntityGenerationStatus, GenerationJob
+from .output import (
+    get_chunk_output_path,
+    read_rows,
+    write_chunk_atomically,
+)
 from .planner import GenerationPlan
 from .progress import CLIProgressReporter
 from .result import GenerationChunkResult, GenerationChunkStatus
@@ -89,6 +101,12 @@ def build_semantic_values(
                 {},
             )
 
+            if not isinstance(parameters, dict):
+                raise ValueError(
+                    f"{entity.get('name')}.{field_name}: "
+                    "SEMANTIC generation parameters must be an object."
+                )
+
             description = parameters.get("description")
 
             if not isinstance(description, str) or not description:
@@ -97,9 +115,82 @@ def build_semantic_values(
                     "SEMANTIC generation requires a description."
                 )
 
-            semantic_values_by_field[field_name] = generate_semantic_values(description)
+            mode = parameters.get(
+                "mode",
+                "VOCABULARY",
+            )
+
+            if not isinstance(mode, str) or not mode.strip():
+                raise ValueError(
+                    f"{entity.get('name')}.{field_name}: "
+                    "SEMANTIC generation mode must be a non-empty string."
+                )
+
+            semantic_values_by_field[field_name] = generate_semantic_values(
+                description,
+                mode=mode,
+            )
 
     return semantic_values_by_field
+
+
+def _build_entity_targets(
+    plan: GenerationPlan,
+) -> dict[str, int]:
+    """Return target row counts keyed by entity name."""
+
+    return {
+        entity.entity_name: entity.target_rows
+        for entity in plan.entities
+    }
+
+
+def _load_or_create_checkpoint(
+    *,
+    checkpoint_path: str,
+    job: GenerationJob,
+    specification: dict[str, Any],
+    plan: GenerationPlan,
+    seed: int,
+    chunk_size: int,
+) -> GenerationCheckpoint:
+    """
+    Load an existing checkpoint or create a new one.
+
+    Existing checkpoints are accepted only when their generation
+    identity matches the current job and specification.
+    """
+
+    path = Path(checkpoint_path)
+
+    if path.exists():
+        checkpoint = load_checkpoint(path)
+
+        checkpoint.validate_identity(
+            job_id=job.job_id,
+            specification_hash=compute_specification_hash(
+                specification
+            ),
+            seed=seed,
+            chunk_size=chunk_size,
+        )
+
+        return checkpoint
+
+    checkpoint = create_checkpoint(
+        job_id=job.job_id,
+        specification=specification,
+        seed=seed,
+        chunk_size=chunk_size,
+        entity_targets=_build_entity_targets(plan),
+    )
+
+    write_checkpoint(
+        checkpoint,
+        path,
+    )
+
+    return checkpoint
 
 
 def _prepare_entity_execution(
@@ -128,11 +219,6 @@ def _prepare_entity_execution(
         chunk_size=chunk_size,
     )
 
-    output_path = get_entity_output_path(
-        output_directory=output_directory,
-        entity_name=entity_name,
-    )
-
     identity_fields = get_identity_fields(entity)
 
     semantic_values_by_field = build_semantic_values(entity)
@@ -140,7 +226,6 @@ def _prepare_entity_execution(
     return (
         entity,
         chunks,
-        output_path,
         identity_fields,
         semantic_values_by_field,
     )
@@ -171,7 +256,7 @@ def _execute_chunk(
     entity: dict[str, Any],
     chunk: Any,
     seed: int,
-    output_path: Any,
+    output_directory: str | Path,
     identity_fields: tuple[str, ...],
     semantic_values_by_field: dict[str, list[str]],
     dependencies: tuple[Any, ...],
@@ -184,6 +269,12 @@ def _execute_chunk(
     """Generate, persist, and register one generation chunk."""
 
     entity_name = entity["name"]
+
+    chunk_output_path = get_chunk_output_path(
+        output_directory=output_directory,
+        entity_name=entity_name,
+        chunk_number=chunk.chunk_number,
+    )
 
     try:
         rows = generate_entity_chunk(
@@ -200,8 +291,8 @@ def _execute_chunk(
             constraints=constraints,
         )
 
-        write_rows(
-            output_path=output_path,
+        write_chunk_atomically(
+            output_path=chunk_output_path,
             rows=rows,
         )
 
@@ -215,7 +306,7 @@ def _execute_chunk(
             entity_name=entity_name,
             chunk_number=chunk.chunk_number,
             row_count=len(rows),
-            output_path=output_path,
+            output_path=chunk_output_path,
             status=GenerationChunkStatus.COMPLETED,
         )
 
@@ -224,75 +315,82 @@ def _execute_chunk(
             entity_name=entity_name,
             chunk_number=chunk.chunk_number,
             row_count=0,
-            output_path=output_path,
+            output_path=chunk_output_path,
             status=GenerationChunkStatus.FAILED,
             error=str(exc),
         )
 
 
-def _prepare_entity_execution(
-    specification: dict[str, Any],
+def _restore_completed_chunks(
+    *,
     entity_name: str,
-    target_rows: int,
-    chunk_size: int,
-    output_directory: str,
-) -> tuple[
-    dict[str, Any],
-    list[Any],
-    Any,
-    tuple[str, ...],
-    dict[str, list[str]],
-]:
-    """Prepare all immutable state required for entity execution."""
+    chunks: tuple[Any, ...],
+    completed_chunks: set[int],
+    output_directory: str | Path,
+    identity_fields: tuple[str, ...],
+    context: GenerationContext,
+    existing_identities: set[tuple[Any, ...]],
+    job: GenerationJob,
+) -> None:
+    """Restore checkpointed chunks into the in-memory generation state."""
 
-    entity = find_entity(
-        specification,
-        entity_name,
-    )
+    if not completed_chunks:
+        return
 
-    chunks = build_chunks(
-        entity_name=entity_name,
-        total_rows=target_rows,
-        chunk_size=chunk_size,
-    )
+    for chunk in chunks:
+        if chunk.chunk_number not in completed_chunks:
+            continue
 
-    output_path = get_entity_output_path(
-        output_directory=output_directory,
-        entity_name=entity_name,
-    )
+        chunk_path = get_chunk_output_path(
+            output_directory=output_directory,
+            entity_name=entity_name,
+            chunk_number=chunk.chunk_number,
+        )
 
-    identity_fields = get_identity_fields(entity)
+        if not chunk_path.exists():
+            raise FileNotFoundError(
+                "Checkpoint marks chunk as completed, but the committed "
+                f"chunk file does not exist: {chunk_path}"
+            )
 
-    semantic_values_by_field = build_semantic_values(entity)
+        rows = read_rows(chunk_path)
 
-    return (
-        entity,
-        chunks,
-        output_path,
-        identity_fields,
-        semantic_values_by_field,
-    )
+        if len(rows) != chunk.row_count:
+            raise ValueError(
+                f"Committed chunk row count mismatch for "
+                f"{entity_name} chunk {chunk.chunk_number}: "
+                f"expected {chunk.row_count}, found {len(rows)}."
+            )
 
+        context.add_rows(
+            entity_name,
+            rows,
+            identity_fields,
+        )
 
-def _build_chunk_result(
-    entity_name: str,
-    chunk_number: int,
-    row_count: int,
-    output_path: Any,
-    status: GenerationChunkStatus,
-    error: str | None = None,
-) -> GenerationChunkResult:
-    """Build a generation result for one chunk."""
+        if identity_fields:
+            for row in rows:
+                identity = context.entities[
+                    entity_name
+                ].build_identity(
+                    row,
+                    identity_fields,
+                )
+                existing_identities.add(identity)
 
-    return GenerationChunkResult(
-        entity_name=entity_name,
-        chunk_number=chunk_number,
-        row_count=row_count,
-        status=status,
-        elapsed_seconds=0.0,
-        output_path=str(output_path),
-        error=error,
-    )
+        job.entities[entity_name].generated_rows += len(rows)
+
+        if (
+            job.entities[entity_name].generated_rows
+            >= job.entities[entity_name].target_rows
+        ):
+            job.entities[entity_name].status = (
+                EntityGenerationStatus.COMPLETED
+            )
+        else:
+            job.entities[entity_name].status = (
+                EntityGenerationStatus.RUNNING
+            )
 
 
 def execute_entity(
@@ -304,6 +402,8 @@ def execute_entity(
     chunk_size: int,
     output_directory: str,
     context: GenerationContext,
+    checkpoint: GenerationCheckpoint,
+    checkpoint_path: str,
     dependencies: tuple[Any, ...] = (),
     relationships: tuple[Any, ...] = (),
     relationship_groups: tuple[Any, ...] = (),
@@ -315,7 +415,6 @@ def execute_entity(
     (
         entity,
         chunks,
-        output_path,
         identity_fields,
         semantic_values_by_field,
     ) = _prepare_entity_execution(
@@ -328,6 +427,21 @@ def execute_entity(
 
     existing_identities: set[tuple[Any, ...]] = set()
 
+    completed_chunks = set(
+        checkpoint.entities[entity_name].completed_chunks
+    )
+
+    _restore_completed_chunks(
+        entity_name=entity_name,
+        chunks=chunks,
+        completed_chunks=completed_chunks,
+        output_directory=output_directory,
+        identity_fields=identity_fields,
+        context=context,
+        existing_identities=existing_identities,
+        job=job,
+    )
+
     if progress_reporter is not None:
         progress_reporter.start_entity(
             entity_name=entity_name,
@@ -336,11 +450,17 @@ def execute_entity(
         )
 
     for chunk in chunks:
+        if checkpoint.is_chunk_completed(
+            entity_name=entity_name,
+            chunk_number=chunk.chunk_number,
+        ):
+            continue
+
         result = _execute_chunk(
             entity=entity,
             chunk=chunk,
             seed=seed,
-            output_path=output_path,
+            output_directory=output_directory,
             identity_fields=identity_fields,
             semantic_values_by_field=semantic_values_by_field,
             dependencies=dependencies,
@@ -360,6 +480,16 @@ def execute_entity(
                     error=result.error or "Chunk generation failed.",
                 )
             return False
+
+        checkpoint.mark_chunk_completed(
+            entity_name=entity_name,
+            chunk_number=result.chunk_number,
+        )
+
+        write_checkpoint(
+            checkpoint=checkpoint,
+            checkpoint_path=checkpoint_path,
+        )
 
         if progress_reporter is not None:
             progress_reporter.update_chunk(
@@ -384,6 +514,7 @@ def execute_generation_plan(
     seed: int,
     chunk_size: int,
     output_directory: str,
+    checkpoint_path: str | None = None,
     progress_reporter: CLIProgressReporter | None = None,
 ) -> GenerationJob:
     """
@@ -400,6 +531,21 @@ def execute_generation_plan(
 
         context = GenerationContext()
 
+        if checkpoint_path is None:
+            checkpoint_path = str(
+                Path(output_directory).parent
+                / f"{job.job_id}_checkpoint.json"
+            )
+
+        checkpoint = _load_or_create_checkpoint(
+            checkpoint_path=checkpoint_path,
+            job=job,
+            specification=specification,
+            plan=plan,
+            seed=seed,
+            chunk_size=chunk_size,
+        )
+
         entity_plans = {entity.entity_name: entity for entity in plan.entities}
 
         for entity_name in plan.generation_order:
@@ -415,6 +561,8 @@ def execute_generation_plan(
                 chunk_size=chunk_size,
                 output_directory=output_directory,
                 context=context,
+                checkpoint=checkpoint,
+                checkpoint_path=checkpoint_path,
                 dependencies=entity_plan.dependencies,
                 relationships=plan.relationships,
                 relationship_groups=plan.relationship_groups,
