@@ -1,0 +1,18 @@
+<aside class="right-rail">
+  <app-quick-actions
+    (actionSelected)="quickActionSelected.emit($event)"
+  />
+
+  <div class="rail-divider"></div>
+
+  <app-recent-activity
+    [activities]="activities()"
+    (viewAll)="viewAllActivity.emit()"
+  />
+
+  <div class="rail-divider"></div>
+
+  <app-help-card
+    (actionSelected)="documentationRequested.emit()"
+  />
+</aside>

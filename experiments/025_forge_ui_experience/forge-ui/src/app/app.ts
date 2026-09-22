@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
-import { LoginComponent } from './screens/login/login.component';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [LoginComponent],
-  template: '<app-login />',
+  imports: [RouterOutlet],
+  template: '<router-outlet />',
 })
-export class App {
-}
+export class App {}

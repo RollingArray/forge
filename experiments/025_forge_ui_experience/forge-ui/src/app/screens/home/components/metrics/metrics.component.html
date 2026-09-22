@@ -1,0 +1,11 @@
+<section class="metrics-grid">
+
+  @for (metric of metrics(); track metric.label) {
+
+    <app-metric-card
+      [metric]="metric"
+    />
+
+  }
+
+</section>

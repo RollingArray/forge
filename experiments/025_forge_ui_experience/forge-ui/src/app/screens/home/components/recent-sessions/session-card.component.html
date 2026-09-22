@@ -1,0 +1,52 @@
+<button type="button" class="session-card" [class.selected]="selected()" (click)="select()">
+  <div class="session-card-header">
+    <div
+      class="session-icon"
+      [class.purple]="session().accent === 'purple'"
+      [class.green]="session().accent === 'green'"
+      [class.blue]="session().accent === 'blue'"
+      [class.gray]="session().accent === 'gray'"
+      [class.orange]="session().accent === 'orange'"
+    >
+      <span class="material-symbols-outlined">
+        {{ session().icon }}
+      </span>
+    </div>
+
+    <div class="session-title">
+      <h3>{{ session().name }}</h3>
+
+      <p>{{ session().description }}</p>
+    </div>
+
+    <span class="material-symbols-outlined more-icon"> more_vert </span>
+  </div>
+
+  <div class="session-stats">
+    <span>
+      <span class="material-symbols-outlined"> database </span>
+
+      {{ session().entities }} entities
+    </span>
+
+    <span>
+      <span class="material-symbols-outlined"> link </span>
+
+      {{ session().relationships }} relationships
+    </span>
+  </div>
+
+  <div class="session-footer">
+    <span>
+      {{ session().updated }}
+    </span>
+
+    <span class="status-pill" [class]="session().status.toLowerCase()">
+      @if (session().status === 'Generated') {
+        <span class="material-symbols-outlined"> check_circle </span>
+      }
+
+      {{ session().status }}
+    </span>
+  </div>
+</button>

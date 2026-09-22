@@ -1,0 +1,37 @@
+<article class="template-card">
+
+  <div class="template-top">
+
+    <div
+      class="template-icon"
+      [class]="template().accent"
+    >
+      <span class="material-symbols-outlined">
+        {{ template().icon }}
+      </span>
+    </div>
+
+    <div class="template-copy">
+
+      <h3>
+        {{ template().name }}
+      </h3>
+
+      <p>
+        {{ template().description }}
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <button
+    type="button"
+    class="use-template-button"
+    (click)="useTemplate()"
+  >
+    Use Template
+  </button>
+
+</article>

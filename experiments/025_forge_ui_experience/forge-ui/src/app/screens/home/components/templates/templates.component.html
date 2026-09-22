@@ -1,0 +1,37 @@
+<section class="templates-section">
+
+  <div class="section-heading">
+
+    <h2>
+      Templates
+    </h2>
+
+    <button
+      type="button"
+      class="view-all"
+      (click)="showAll()"
+    >
+      <span>View all</span>
+
+      <span class="material-symbols-outlined">
+        arrow_forward
+      </span>
+    </button>
+
+  </div>
+
+
+  <div class="template-grid">
+
+    @for (template of templates(); track template.name) {
+
+      <app-template-card
+        [template]="template"
+        (use)="useTemplate($event)"
+      />
+
+    }
+
+  </div>
+
+</section>

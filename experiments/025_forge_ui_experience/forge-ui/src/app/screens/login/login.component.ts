@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -11,6 +12,8 @@ import { FormsModule } from '@angular/forms';
 export class LoginComponent {
   readonly email = signal('');
 
+  constructor(private readonly router: Router) {}
+
   continue(): void {
     const value = this.email().trim();
 
@@ -19,6 +22,7 @@ export class LoginComponent {
     }
 
     console.log('FORGE login:', value);
+    this.router.navigate(['/home']);
   }
 
   continueWithMicrosoft(): void {

@@ -1,0 +1,196 @@
+.topbar {
+  display: flex;
+
+  height: 67px;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding:
+    0
+    24px;
+
+  border-bottom: 1px solid #e7e9f0;
+
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.search-box {
+  display: flex;
+
+  width: min(555px, 50vw);
+  height: 39px;
+
+  align-items: center;
+
+  padding:
+    0
+    10px
+    0
+    12px;
+
+  gap: 10px;
+
+  border: 1px solid #e1e4ec;
+  border-radius: 7px;
+
+  background: #fafbfe;
+}
+
+.search-box > .material-symbols-outlined {
+  color: #5f6885;
+  font-size: 20px;
+}
+
+.search-box input {
+  min-width: 0;
+  flex: 1;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: #252a45;
+
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.search-box input::placeholder {
+  color: #7d86a4;
+}
+
+.search-shortcut {
+  padding:
+    4px
+    8px;
+
+  border-radius: 5px;
+
+  background: #eef0f6;
+
+  color: #70788f;
+
+  font-size: 11px;
+  line-height: 1;
+}
+
+.topbar-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 17px;
+}
+
+.topbar-icon {
+  position: relative;
+
+  display: grid;
+
+  width: 35px;
+  height: 35px;
+
+  place-items: center;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: #4d5673;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.topbar-icon:hover {
+  background: #f5f5fa;
+  color: #3f43a8;
+}
+
+.topbar-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.notification-dot {
+  position: absolute;
+
+  top: 5px;
+  right: 6px;
+
+  width: 6px;
+  height: 6px;
+
+  border: 1px solid white;
+  border-radius: 50%;
+
+  background: #ee4c5c;
+}
+
+.profile {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #11152f;
+
+  font-family: inherit;
+
+  cursor: pointer;
+}
+
+.avatar {
+  display: grid;
+
+  width: 34px;
+  height: 34px;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #665be2,
+      #4b42c5
+    );
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.profile > .material-symbols-outlined {
+  color: #7d8498;
+  font-size: 17px;
+}
+
+@media (max-width: 800px) {
+  .profile-name {
+    display: none;
+  }
+
+  .search-box {
+    width: min(500px, 65vw);
+  }
+}

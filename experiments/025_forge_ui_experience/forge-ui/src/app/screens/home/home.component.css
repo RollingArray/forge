@@ -1,0 +1,109 @@
+.home-shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+app-home-sidebar {
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.workspace {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+app-home-topbar {
+  flex: 0 0 auto;
+}
+
+.workspace-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.center-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 30px 24px 44px;
+}
+
+app-home-right-rail {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid #eeeef3;
+  background: #fafafa;
+}
+
+@media (max-width: 1180px) {
+  .workspace-body {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+
+  .center-panel {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 980px) {
+  .workspace-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .center-panel {
+    overflow: visible;
+  }
+
+  app-home-right-rail {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid #eeeef3;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-shell {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  app-home-sidebar {
+    height: auto;
+    overflow: visible;
+  }
+
+  .workspace {
+    overflow: visible;
+  }
+
+  .workspace-body {
+    display: block;
+    overflow: visible;
+  }
+
+  .center-panel {
+    overflow: visible;
+    padding: 22px 18px 32px;
+  }
+}

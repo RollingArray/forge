@@ -1,0 +1,22 @@
+<section class="recent-activity">
+  <div class="section-header">
+    <div>
+      <h2>Recent Activity</h2>
+      <p>What's happening in FORGE</p>
+    </div>
+
+    <button
+      type="button"
+      class="view-all"
+      (click)="viewAll.emit()"
+    >
+      View all
+    </button>
+  </div>
+
+  <div class="activity-list">
+    @for (activity of activities(); track activity.session + activity.time) {
+      <app-activity-item [activity]="activity" />
+    }
+  </div>
+</section>

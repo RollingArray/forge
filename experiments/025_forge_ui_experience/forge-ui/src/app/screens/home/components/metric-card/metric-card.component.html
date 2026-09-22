@@ -1,0 +1,51 @@
+<div class="metric-card">
+
+  <div
+    class="metric-icon"
+    [class]="metric().accent"
+  >
+    <span class="material-symbols-outlined">
+      {{ metric().icon }}
+    </span>
+  </div>
+
+  <div class="metric-content">
+
+    <span class="metric-label">
+      {{ metric().label }}
+    </span>
+
+    <strong>
+      {{ metric().value }}
+    </strong>
+
+    @switch (metric().supportingType) {
+
+      @case ('positive') {
+        <span class="metric-change">
+          <span class="material-symbols-outlined">
+            trending_up
+          </span>
+
+          {{ metric().supportingText }}
+        </span>
+      }
+
+      @case ('progress') {
+        <span class="metric-progress">
+          <span></span>
+          {{ metric().supportingText }}
+        </span>
+      }
+
+      @default {
+        <span class="metric-subtext">
+          {{ metric().supportingText }}
+        </span>
+      }
+
+    }
+
+  </div>
+
+</div>

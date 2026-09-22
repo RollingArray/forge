@@ -1,0 +1,58 @@
+<button
+  type="button"
+  class="session-card"
+  [class.selected]="selected()"
+  (click)="select()"
+>
+  <div class="session-card-header">
+    <div class="session-icon">
+      <span class="material-symbols-outlined">
+        deployed_code
+      </span>
+    </div>
+
+    <div class="session-title">
+      <h3>{{ session().name }}</h3>
+
+      <p>{{ session().description }}</p>
+    </div>
+
+    <span class="material-symbols-outlined more-icon">
+      more_vert
+    </span>
+  </div>
+
+  <div class="session-stats">
+    <span>
+      <span class="material-symbols-outlined">database</span>
+      {{ session().entities }} entities
+    </span>
+
+    <span>
+      <span class="material-symbols-outlined">link</span>
+      {{ session().relationships }} relationships
+    </span>
+  </div>
+
+  <div class="session-footer">
+    <span class="updated">
+      {{ session().updated }}
+    </span>
+
+    <span
+      class="status-pill"
+      [class.modeling]="session().status === 'Modeling'"
+      [class.validated]="session().status === 'Validated'"
+      [class.draft]="session().status === 'Draft'"
+      [class.generated]="session().status === 'Generated'"
+    >
+      @if (session().status === 'Generated') {
+        <span class="material-symbols-outlined">
+          check_circle
+        </span>
+      }
+
+      {{ session().status }}
+    </span>
+  </div>
+</button>

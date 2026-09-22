@@ -1,0 +1,205 @@
+.session-card {
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  min-height: 162px;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #e9e7ef;
+  border-radius: 11px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.session-card:hover {
+  border-color: #d8d0ff;
+  box-shadow: 0 6px 18px rgba(39, 39, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.session-card.selected {
+  border-color: #6252e8;
+  box-shadow: 0 0 0 1px #6252e8;
+}
+
+.session-card:focus-visible {
+  outline: 2px solid #8b7cf6;
+  outline-offset: 2px;
+}
+
+/* Header */
+
+.session-card-header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 22px;
+  align-items: start;
+  gap: 9px;
+}
+
+.session-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+}
+
+.session-icon .material-symbols-outlined {
+  font-size: 21px;
+}
+
+.session-icon.purple {
+  background: #f0ecff;
+  color: #6951d9;
+}
+
+.session-icon.green {
+  background: #e8f8f0;
+  color: #319267;
+}
+
+.session-icon.blue {
+  background: #eaf3ff;
+  color: #4380cf;
+}
+
+.session-icon.gray {
+  background: #f1f1f3;
+  color: #62636a;
+}
+
+.session-icon.orange {
+  background: #fff1e5;
+  color: #c77731;
+}
+
+.session-title {
+  min-width: 0;
+}
+
+.session-title h3 {
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: #171a36;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-title p {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #72789a;
+  font-size: 11px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.more-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  margin-top: -2px;
+  border-radius: 6px;
+  color: #8d92aa;
+  font-size: 18px;
+}
+
+.more-icon:hover {
+  background: #f4f4f6;
+  color: #555a73;
+}
+
+/* Statistics */
+
+.session-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.session-stats > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #454b68;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.session-stats .material-symbols-outlined {
+  color: #747991;
+  font-size: 14px;
+}
+
+/* Footer */
+
+.session-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0eff4;
+}
+
+.session-footer > span:first-child {
+  overflow: hidden;
+  color: #9297ae;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-pill .material-symbols-outlined {
+  font-size: 12px;
+}
+
+.status-pill.modeling {
+  background: #e9f8ed;
+  color: #169447;
+}
+
+.status-pill.validated {
+  background: #e7f3ff;
+  color: #1680df;
+}
+
+.status-pill.draft {
+  background: #f0f1f3;
+  color: #666b79;
+}
+
+.status-pill.generated {
+  background: #f0eaff;
+  color: #6545df;
+}

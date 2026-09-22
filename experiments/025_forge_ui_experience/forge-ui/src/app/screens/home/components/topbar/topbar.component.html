@@ -1,0 +1,73 @@
+<header class="topbar">
+
+  <div class="search-box">
+
+    <span class="material-symbols-outlined">
+      search
+    </span>
+
+    <input
+      type="text"
+      placeholder="Search sessions, models, entities..."
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+    />
+
+    <span class="search-shortcut">
+      ⌘ K
+    </span>
+
+  </div>
+
+
+  <div class="topbar-actions">
+
+    <button
+      type="button"
+      class="topbar-icon"
+      aria-label="Help"
+      (click)="emitAction('help')"
+    >
+      <span class="material-symbols-outlined">
+        help
+      </span>
+    </button>
+
+
+    <button
+      type="button"
+      class="topbar-icon notification"
+      aria-label="Notifications"
+      (click)="emitAction('notifications')"
+    >
+      <span class="material-symbols-outlined">
+        notifications
+      </span>
+
+      <span class="notification-dot"></span>
+    </button>
+
+
+    <button
+      type="button"
+      class="profile"
+      (click)="emitAction('profile')"
+    >
+
+      <div class="avatar">
+        RS
+      </div>
+
+      <span class="profile-name">
+        Ranjoy Sen
+      </span>
+
+      <span class="material-symbols-outlined">
+        expand_more
+      </span>
+
+    </button>
+
+  </div>
+
+</header>

@@ -1,0 +1,61 @@
+<section class="recent-sessions">
+
+  <div class="section-heading">
+
+    <h2>
+      Recent Sessions
+    </h2>
+
+    <button
+      type="button"
+      class="view-all"
+      (click)="showAll()"
+    >
+      <span>View all</span>
+
+      <span class="material-symbols-outlined">
+        arrow_forward
+      </span>
+    </button>
+
+  </div>
+
+
+  <div class="session-grid">
+
+    @for (session of sessions(); track session.name) {
+
+      <app-session-card
+        [session]="session"
+        [selected]="selectedSession() === session.name"
+        (selectedChange)="selectSession($event)"
+      />
+
+    }
+
+
+    <button
+      type="button"
+      class="create-session-card"
+      (click)="createSession()"
+    >
+
+      <div class="create-icon">
+        <span class="material-symbols-outlined">
+          add
+        </span>
+      </div>
+
+      <h3>
+        Create New Session
+      </h3>
+
+      <p>
+        Start from scratch or use a template
+      </p>
+
+    </button>
+
+  </div>
+
+</section>

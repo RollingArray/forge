@@ -1,0 +1,17 @@
+<div class="home-content">
+  <app-home-metrics [metrics]="metrics()" />
+
+  <app-home-recent-sessions
+    [sessions]="sessions()"
+    [selectedSession]="selectedSession()"
+    (sessionSelected)="sessionSelected.emit($event)"
+    (newSession)="newSession.emit()"
+    (viewAll)="viewAllSessions.emit()"
+  />
+
+  <app-home-templates
+    [templates]="templates()"
+    (templateSelected)="templateSelected.emit($event)"
+    (viewAll)="viewAllSessions.emit()"
+  />
+</div>

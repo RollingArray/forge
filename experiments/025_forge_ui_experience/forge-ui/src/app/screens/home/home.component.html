@@ -1,0 +1,37 @@
+<div class="home-shell">
+  <app-forge-sidebar
+    (action)="handleSidebarAction($event)"
+  />
+
+  <section class="workspace">
+    <app-home-topbar
+      (action)="handleTopbarAction($event)"
+    />
+
+    <div class="workspace-body">
+      <main class="center-panel">
+        <app-home-welcome-header
+          (newSession)="handleNewSession()"
+        />
+
+        <app-home-content
+          [metrics]="metrics"
+          [sessions]="sessions"
+          [templates]="templates"
+          [selectedSession]="selectedSession()"
+          (newSession)="handleNewSession()"
+          (sessionSelected)="handleSessionSelected($event)"
+          (templateSelected)="handleTemplateSelected($event)"
+          (viewAllSessions)="handleViewAllSessions()"
+        />
+      </main>
+
+      <app-home-right-rail
+        [activities]="activities"
+        (quickActionSelected)="handleQuickAction($event)"
+        (viewAllActivity)="handleViewAllActivity()"
+        (documentationRequested)="handleDocumentation()"
+      />
+    </div>
+  </section>
+</div>
