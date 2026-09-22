@@ -1,0 +1,48 @@
+<section class="inspector-section">
+
+  @if (entity().primaryKey.composite) {
+  <div class="composite-key-banner">
+    <span class="material-symbols-outlined">key</span>
+
+    <div class="composite-key-copy">
+      <strong>Composite Primary Key</strong>
+      <span>
+        {{ entity().primaryKey.fields.length }} fields
+      </span>
+    </div>
+  </div>
+}
+
+<div class="section-heading">
+
+    <h3>
+      Fields
+    </h3>
+
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Add field"
+      (click)="add()"
+    >
+      <span class="material-symbols-outlined">
+        add
+      </span>
+    </button>
+
+  </div>
+
+
+  <div class="field-list">
+
+    @for (field of entity().fields; track field.name) {
+
+      <app-entity-inspector-field
+        [field]="field"
+      />
+
+    }
+
+  </div>
+
+</section>

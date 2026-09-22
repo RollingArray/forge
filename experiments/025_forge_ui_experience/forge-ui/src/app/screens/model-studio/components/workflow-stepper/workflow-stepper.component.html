@@ -1,0 +1,31 @@
+<nav class="workflow-stepper" aria-label="FORGE workflow">
+
+  @for (step of steps(); track step.id; let last = $last) {
+
+    <button
+      type="button"
+      class="step"
+      [class.active]="activeStep() === step.id"
+      [class.completed]="step.number < 1"
+      (click)="selectStep(step.id)"
+    >
+
+      <span class="step-number">
+        {{ step.number }}
+      </span>
+
+      <span class="step-label">
+        {{ step.label }}
+      </span>
+
+    </button>
+
+    @if (!last) {
+      <span class="step-chevron material-symbols-outlined">
+        chevron_right
+      </span>
+    }
+
+  }
+
+</nav>

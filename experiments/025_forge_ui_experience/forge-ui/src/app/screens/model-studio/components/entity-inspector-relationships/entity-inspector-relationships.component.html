@@ -1,0 +1,251 @@
+<section class="relationships">
+  <header class="relationships-header">
+    <div>
+      <h3>Relationships</h3>
+      <span>{{ selectedRelationships().length }} relationships</span>
+    </div>
+
+    <button type="button" class="add-button" (click)="startAdd()">
+      <span class="material-symbols-outlined">add</span>
+      <span>Add</span>
+    </button>
+  </header>
+
+  <!-- Participation -->
+  <section class="legend-card participation-card">
+    <div class="legend-heading">
+      <strong>Participation</strong>
+      <span class="material-symbols-outlined">info</span>
+    </div>
+
+    <div class="participation-options">
+      <div class="legend-option">
+        <span class="participation-dot optional"></span>
+        <span>Optional</span>
+      </div>
+
+      <div class="legend-option">
+        <span class="participation-dot mandatory"></span>
+        <span>Mandatory</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cardinality -->
+  <section class="legend-card cardinality-card">
+    <div class="legend-heading">
+      <strong>Cardinality</strong>
+      <span class="material-symbols-outlined">info</span>
+    </div>
+
+    <div class="cardinality-grid">
+      <div class="cardinality-option">
+        <span class="cardinality-value">1..1</span>
+        <span>One to one</span>
+      </div>
+
+      <div class="cardinality-option">
+        <span class="cardinality-value">1..N</span>
+        <span>One to many</span>
+      </div>
+
+      <div class="cardinality-option">
+        <span class="cardinality-value">N..1</span>
+        <span>Many to one</span>
+      </div>
+
+      <div class="cardinality-option">
+        <span class="cardinality-value">N..N</span>
+        <span>Many to many</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Relationship list -->
+  <div class="relationship-list">
+    @for (relationship of selectedRelationships(); track $index; let index = $index) {
+      <article class="relationship-card">
+        <button
+          type="button"
+          class="relationship-menu-button"
+          aria-label="Relationship actions"
+          (click)="toggleMenu(index)"
+        >
+          <span class="material-symbols-outlined">more_vert</span>
+        </button>
+
+        @if (openMenuIndex() === index) {
+          <div class="relationship-menu">
+            <button type="button" (click)="editRelationship(relationship)">
+              <span class="material-symbols-outlined">edit</span>
+              Edit
+            </button>
+
+            <button type="button" class="delete-action" (click)="deleteRelationship(relationship)">
+              <span class="material-symbols-outlined">delete</span>
+              Delete
+            </button>
+          </div>
+        }
+
+        <!-- Source -->
+        <div class="entity-row" [class]="accentClass(sourceEntity(relationship))">
+          <div class="entity-icon">
+            <span class="material-symbols-outlined">database</span>
+          </div>
+
+          <div class="entity-details">
+            <strong>
+              {{ relationship.source }}
+            </strong>
+
+            <span>
+              {{ sourceFields(relationship).join(', ') || 'No field mapping' }}
+            </span>
+          </div>
+
+          <div class="participation-state">
+            <span
+              class="participation-dot"
+              [class]="participationClass(sourceParticipation(relationship))"
+              [attr.aria-label]="sourceParticipation(relationship)"
+            ></span>
+          </div>
+        </div>
+
+        <!-- Connector -->
+        <div class="relationship-connector">
+          <div class="connector-line"></div>
+
+          <div class="connector-label">
+            <strong>
+              {{ cardinality(relationship) }}
+            </strong>
+
+            <span>
+              {{ cardinalityDescription(relationship) }}
+            </span>
+          </div>
+
+          <div class="connector-arrow">
+            <span class="material-symbols-outlined"> arrow_downward </span>
+          </div>
+        </div>
+
+        <!-- Target -->
+        <div class="entity-row" [class]="accentClass(targetEntity(relationship))">
+          <div class="entity-icon">
+            <span class="material-symbols-outlined">database</span>
+          </div>
+
+          <div class="entity-details">
+            <strong>
+              {{ relationship.target }}
+            </strong>
+
+            <span>
+              {{ targetFields(relationship).join(', ') || 'No field mapping' }}
+            </span>
+          </div>
+
+          <div class="participation-state">
+            <span
+              class="participation-dot"
+              [class]="participationClass(targetParticipation(relationship))"
+              [attr.aria-label]="targetParticipation(relationship)"
+            ></span>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">account_tree</span>
+        <strong>No relationships</strong>
+        <span>This entity has no defined relationships.</span>
+      </div>
+    }
+  </div>
+
+  <!-- Add relationship -->
+  @if (adding()) {
+    <section class="add-panel">
+      <div class="add-panel-header">
+        <div>
+          <strong>Add relationship</strong>
+          <span>Define the relationship from the specification model.</span>
+        </div>
+
+        <button type="button" class="close-button" (click)="cancelAdd()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <label>
+        Related entity
+        <select [value]="newEntity()" (change)="newEntity.set($any($event.target).value)">
+          @for (item of availableEntities(); track item.name) {
+            <option [value]="item.name">
+              {{ item.name }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Relationship type
+        <select [value]="newType()" (change)="newType.set($any($event.target).value)">
+          <option value="ONE_TO_ONE">1..1 One to one</option>
+          <option value="ONE_TO_MANY">1..N One to many</option>
+          <option value="MANY_TO_ONE">N..1 Many to one</option>
+          <option value="MANY_TO_MANY">N..N Many to many</option>
+        </select>
+      </label>
+
+      <label>
+        Direction
+        <select [value]="newDirection()" (change)="newDirection.set($any($event.target).value)">
+          <option value="OUTGOING">{{ entity().name }} → {{ newEntity() }}</option>
+          <option value="INCOMING">{{ newEntity() }} → {{ entity().name }}</option>
+        </select>
+      </label>
+
+      <div class="field-grid">
+        <label>
+          Source field
+          <select
+            [value]="newSourceField()"
+            (change)="newSourceField.set($any($event.target).value)"
+          >
+            <option value="">Select field</option>
+
+            @for (field of newSourceFields(); track field) {
+              <option [value]="field">{{ field }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Target field
+          <select
+            [value]="newTargetField()"
+            (change)="newTargetField.set($any($event.target).value)"
+          >
+            <option value="">Select field</option>
+
+            @for (field of newTargetFields(); track field) {
+              <option [value]="field">{{ field }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="add-panel-actions">
+        <button type="button" class="secondary-button" (click)="cancelAdd()">Cancel</button>
+
+        <button type="button" class="primary-button" (click)="saveRelationship()">
+          Add relationship
+        </button>
+      </div>
+    </section>
+  }
+</section>

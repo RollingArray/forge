@@ -1,0 +1,165 @@
+<div class="model-toolbar">
+
+  <div class="toolbar-left">
+
+    <label class="search-box">
+
+      <span class="material-symbols-outlined">
+        search
+      </span>
+
+      <input
+        type="search"
+        placeholder="Search entities, fields, relationships..."
+        aria-label="Search model"
+      />
+
+    </label>
+
+
+    <div class="toolbar-tools">
+
+      <button
+        type="button"
+        class="tool-button active"
+        aria-label="Pan"
+        title="Pan"
+        (click)="selectAction('pan')"
+      >
+        <span class="material-symbols-outlined">
+          pan_tool
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tool-button"
+        aria-label="Select"
+        title="Select"
+        (click)="selectAction('select')"
+      >
+        <span class="material-symbols-outlined">
+          near_me
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tool-button"
+        aria-label="Zoom in"
+        title="Zoom in"
+        (click)="selectAction('zoom-in')"
+      >
+        <span class="material-symbols-outlined">
+          zoom_in
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tool-button"
+        aria-label="Zoom out"
+        title="Zoom out"
+        (click)="selectAction('zoom-out')"
+      >
+        <span class="material-symbols-outlined">
+          zoom_out
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tool-button"
+        aria-label="Fit model"
+        title="Fit model"
+        (click)="selectAction('fit')"
+      >
+        <span class="material-symbols-outlined">
+          fit_screen
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tool-button"
+        aria-label="Auto layout"
+        title="Auto layout"
+        (click)="selectAction('auto-layout')"
+      >
+        <span class="material-symbols-outlined">
+          account_tree
+        </span>
+      </button>
+
+    </div>
+
+    <button
+      type="button"
+      class="add-entity-button"
+      title="Add entity"
+      aria-label="Add entity"
+      (click)="selectAction('add-entity')"
+    >
+      <span class="material-symbols-outlined">
+        add
+      </span>
+      <span>Add entity</span>
+    </button>
+
+  </div>
+
+
+  <div class="toolbar-display">
+
+    <span class="show-label">
+      Show:
+    </span>
+
+
+    <label class="display-option">
+
+      <input
+        type="checkbox"
+        [checked]="showFields()"
+        (change)="toggleFields()"
+      />
+
+      <span>
+        Fields
+      </span>
+
+    </label>
+
+
+    <label class="display-option">
+
+      <input
+        type="checkbox"
+        [checked]="showKeys()"
+        (change)="toggleKeys()"
+      />
+
+      <span>
+        Keys
+      </span>
+
+    </label>
+
+
+    <label class="display-option">
+
+      <input
+        type="checkbox"
+        [checked]="showRelationships()"
+        (change)="toggleRelationships()"
+      />
+
+      <span>
+        Relationships
+      </span>
+
+    </label>
+
+  </div>
+
+</div>

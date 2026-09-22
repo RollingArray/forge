@@ -1,0 +1,81 @@
+<button
+  type="button"
+  class="entity-node"
+  [class.selected]="selected()"
+  [class.blue]="entity().accent === 'blue'"
+  [class.green]="entity().accent === 'green'"
+  [class.amber]="entity().accent === 'amber'"
+  [class.pink]="entity().accent === 'pink'"
+  [class.purple]="entity().accent === 'purple'"
+  [class.orange]="entity().accent === 'orange'"
+  [class.teal]="entity().accent === 'teal'"
+  [class.cyan]="entity().accent === 'cyan'"
+  [class.indigo]="entity().accent === 'indigo'"
+  [class.rose]="entity().accent === 'rose'"
+  [class.new-entity]="entity().isNew"
+  (click)="select()"
+>
+  @if (entity().isNew) {
+    <span class="new-entity-badge">NEW</span>
+  }
+
+  <div class="entity-header">
+    <div class="entity-title">
+      <span class="material-symbols-outlined entity-icon">
+        database
+      </span>
+
+      <strong>
+        {{ entity().name }}
+      </strong>
+    </div>
+
+    <span class="material-symbols-outlined menu-icon">
+      more_vert
+    </span>
+  </div>
+
+  <div class="entity-summary">
+
+    <div class="summary-row">
+      <span class="material-symbols-outlined summary-icon">
+        table_rows
+      </span>
+
+      <span class="summary-label">
+        {{ entity().fields.length }} fields
+      </span>
+    </div>
+
+    <div class="summary-row">
+      <span class="material-symbols-outlined summary-icon">
+        key
+      </span>
+
+      <span class="summary-label">
+        {{ entity().keyCount }} keys
+      </span>
+    </div>
+
+    <div class="summary-row">
+      <span class="material-symbols-outlined summary-icon">
+        account_tree
+      </span>
+
+      <span class="summary-label">
+        {{ entity().relationshipCount }} relationships
+      </span>
+    </div>
+
+    <div class="summary-row">
+      <span class="material-symbols-outlined summary-icon">
+        rule
+      </span>
+
+      <span class="summary-label">
+        {{ entity().constraintCount }} constraints
+      </span>
+    </div>
+
+  </div>
+</button>

@@ -1,0 +1,115 @@
+:host {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.inspector-section {
+  padding: 20px 18px 28px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  color: #46506b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.icon-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #dfe2eb;
+  border-radius: 9px;
+  background: #fff;
+  color: #635bdb;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #f8f8fc;
+}
+
+.icon-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.composite-key-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2ddff;
+  border-radius: 9px;
+  background: #f8f6ff;
+  color: #635bdb;
+}
+
+.composite-key-banner > .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.composite-key-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.composite-key-banner strong {
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.composite-key-banner span {
+  color: #8c86ba;
+  font-size: 9px;
+}
+
+.composite-key-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  padding: 10px 11px;
+  border: 1px solid #e1dcff;
+  border-radius: 9px;
+  background: #faf9ff;
+  color: #6259d6;
+}
+
+.composite-key-banner > .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.composite-key-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.composite-key-copy strong {
+  color: #46405f;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.composite-key-copy span {
+  color: #8b86a9;
+  font-size: 8px;
+}

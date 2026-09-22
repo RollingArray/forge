@@ -1,0 +1,181 @@
+<div class="editor-overlay">
+
+  <section
+    class="entity-editor"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="entity-editor-title"
+  >
+
+    <header class="editor-header">
+
+      <div>
+        <span class="eyebrow">
+          Model Entity
+        </span>
+
+        <h2 id="entity-editor-title">
+          Edit Entity
+        </h2>
+      </div>
+
+      <button
+        type="button"
+        class="icon-button"
+        aria-label="Close"
+        (click)="cancelled.emit()"
+      >
+        <span class="material-symbols-outlined">
+          close
+        </span>
+      </button>
+
+    </header>
+
+
+    <div class="editor-body">
+
+      <section class="form-section">
+
+        <label>
+          Entity Name
+
+          <input
+            type="text"
+            [value]="entityName()"
+            (input)="updateName($any($event.target).value)"
+          />
+        </label>
+
+
+        <label>
+          Description
+
+          <textarea
+            rows="3"
+            [value]="description()"
+            (input)="updateDescription($any($event.target).value)"
+          ></textarea>
+        </label>
+
+      </section>
+
+
+      <section class="fields-section">
+
+        <div class="section-heading">
+
+          <div>
+            <strong>
+              Fields
+            </strong>
+
+            <span>
+              {{ fields().length }} fields
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="add-field-button"
+          >
+            <span class="material-symbols-outlined">
+              add
+            </span>
+
+            Add Field
+          </button>
+
+        </div>
+
+
+        <div class="field-table">
+
+          <div class="field-table-header">
+            <span>Name</span>
+            <span>Type</span>
+            <span>Nullable</span>
+          </div>
+
+
+          @for (field of fields(); track field.name; let index = $index) {
+
+            <div class="field-row">
+
+              <input
+                type="text"
+                [value]="field.name"
+                (input)="updateFieldName(
+                  index,
+                  $any($event.target).value
+                )"
+              />
+
+
+              <select
+                [value]="field.type"
+                (change)="updateFieldType(
+                  index,
+                  $any($event.target).value
+                )"
+              >
+                <option value="int">int</option>
+                <option value="varchar">varchar</option>
+                <option value="date">date</option>
+                <option value="decimal">decimal</option>
+                <option value="boolean">boolean</option>
+              </select>
+
+
+              <label class="checkbox-cell">
+
+                <input
+                  type="checkbox"
+                  [checked]="field.nullable"
+                  (change)="toggleNullable(index)"
+                />
+
+                <span>
+                  Nullable
+                </span>
+
+              </label>
+
+            </div>
+
+          }
+
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <footer class="editor-footer">
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="cancelled.emit()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="save()"
+      >
+        <span class="material-symbols-outlined">
+          check
+        </span>
+
+        Save Changes
+      </button>
+
+    </footer>
+
+  </section>
+
+</div>

@@ -1,0 +1,85 @@
+:host {
+  display: block;
+}
+
+.studio-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+.valid-badge {
+  display: inline-flex;
+
+  height: 38px;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 0 14px;
+
+  border-radius: 9px;
+
+  background: #e9fbf3;
+
+  color: #14945d;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.valid-badge .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.action-button,
+.more-button {
+  display: inline-flex;
+
+  height: 38px;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 0 13px;
+
+  border: 1px solid #dce0e9;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #202641;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.action-button:hover,
+.more-button:hover {
+  border-color: #bfc4d3;
+  background: #fafaff;
+}
+
+.action-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.more-button {
+  width: 44px;
+  padding: 0;
+}
+
+.more-button .material-symbols-outlined {
+  font-size: 20px;
+}

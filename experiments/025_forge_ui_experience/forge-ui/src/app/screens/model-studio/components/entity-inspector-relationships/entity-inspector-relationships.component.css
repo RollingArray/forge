@@ -1,0 +1,525 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.relationships {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 18px 28px;
+  box-sizing: border-box;
+  color: #202946;
+}
+
+.relationships-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 6px;
+}
+
+.relationships-header h3 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 750;
+  color: #202946;
+}
+
+.relationships-header span {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  color: #8993ae;
+}
+
+.add-button,
+.primary-button,
+.secondary-button,
+.close-button,
+.relationship-menu-button,
+.relationship-menu button {
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+}
+
+.add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: 1px solid #d9def0;
+  border-radius: 12px;
+  background: #fff;
+  color: #5d55df;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.add-button .material-symbols-outlined {
+  font-size: 21px;
+}
+
+.legend-card {
+  border: 1px solid #dce3f4;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.participation-card {
+  background: #f6f9ff;
+}
+
+.cardinality-card {
+  background: #faf9ff;
+}
+
+.legend-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.legend-heading strong {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.legend-heading .material-symbols-outlined {
+  font-size: 13px;
+  color: #7d87a5;
+}
+
+.participation-options {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.legend-option,
+.participation-state {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #687390;
+}
+
+.participation-dot {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.participation-dot.optional {
+  background: #fff;
+  border: 3px solid #6257e8;
+}
+
+.participation-dot.mandatory {
+  background: #6257e8;
+  border: 3px solid #6257e8;
+}
+
+.cardinality-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+}
+
+.cardinality-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #687390;
+  font-size: 12px;
+  text-align: center;
+}
+
+.cardinality-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px;
+  box-sizing: border-box;
+  border: 1px solid #c8d6ff;
+  border-radius: 9px;
+  background: #f1f5ff;
+  color: #3156d4;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.relationship-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.relationship-card {
+  position: relative;
+  padding: 16px 16px 18px;
+  border: 1px solid #dfe3ef;
+  border-radius: 14px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.relationship-menu-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  background: transparent;
+  color: #8790a8;
+}
+
+.relationship-menu-button .material-symbols-outlined {
+  font-size: 21px;
+}
+
+.relationship-menu {
+  position: absolute;
+  top: 42px;
+  right: 10px;
+  z-index: 10;
+  min-width: 125px;
+  padding: 5px;
+  border: 1px solid #dce1ee;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(38 47 79 / 14%);
+}
+
+.relationship-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 7px;
+  background: transparent;
+  color: #34405f;
+  font-size: 13px;
+  text-align: left;
+}
+
+.relationship-menu button:hover {
+  background: #f4f5fb;
+}
+
+.relationship-menu .delete-action {
+  color: #c13b56;
+}
+
+.relationship-menu .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 74px;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid #dfe3ef;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.entity-row.blue {
+  background: #f7f6ff;
+  border-color: #e2dfff;
+}
+
+.entity-row.green {
+  background: #f1fbf7;
+  border-color: #d6f0e6;
+}
+
+.entity-row.amber {
+  background: #fff9ed;
+  border-color: #f5e5bd;
+}
+
+.entity-row.pink,
+.entity-row.rose {
+  background: #fff2f6;
+  border-color: #f7dce6;
+}
+
+.entity-row.purple {
+  background: #f7f2ff;
+  border-color: #e5d8fa;
+}
+
+.entity-row.orange {
+  background: #fff5ec;
+  border-color: #f5dfc7;
+}
+
+.entity-row.teal,
+.entity-row.cyan {
+  background: #eefafa;
+  border-color: #d5eeee;
+}
+
+.entity-row.indigo {
+  background: #f2f4ff;
+  border-color: #dce1fa;
+}
+
+.entity-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 65%);
+  color: #6257e8;
+}
+
+.entity-icon .material-symbols-outlined {
+  font-size: 28px;
+}
+
+.entity-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.entity-details strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 750;
+  color: #202946;
+}
+
+.entity-details span {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.25;
+  color: #71809e;
+}
+
+.participation-state {
+  flex: 0 0 16px;
+  width: 16px;
+  min-width: 16px;
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.relationship-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+}
+
+.connector-line {
+  width: 2px;
+  height: 14px;
+  background: #8b82ec;
+}
+
+.connector-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.connector-label strong {
+  padding: 7px 11px;
+  border: 1px solid #c6d5ff;
+  border-radius: 8px;
+  background: #f2f5ff;
+  color: #3156d4;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.connector-label span {
+  font-size: 11px;
+  color: #687390;
+}
+
+.connector-arrow {
+  color: #6257e8;
+  line-height: 1;
+}
+
+.connector-arrow .material-symbols-outlined {
+  display: block;
+  font-size: 23px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 35px 20px;
+  border: 1px dashed #d8deec;
+  border-radius: 14px;
+  color: #8791aa;
+  text-align: center;
+}
+
+.empty-state .material-symbols-outlined {
+  font-size: 30px;
+  color: #7068df;
+}
+
+.empty-state strong {
+  color: #34405f;
+}
+
+.empty-state span:last-child {
+  font-size: 13px;
+}
+
+.add-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid #d9def0;
+  border-radius: 14px;
+  background: #fafbff;
+}
+
+.add-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.add-panel-header strong,
+.add-panel-header span {
+  display: block;
+}
+
+.add-panel-header strong {
+  font-size: 15px;
+}
+
+.add-panel-header span {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #7d87a1;
+}
+
+.close-button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #7d87a1;
+}
+
+.close-button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.add-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #5d6783;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.add-panel select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d5dbea;
+  border-radius: 8px;
+  background: #fff;
+  color: #303b5a;
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.add-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.secondary-button,
+.primary-button {
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.secondary-button {
+  border: 1px solid #d6dbea;
+  background: #fff;
+  color: #5d6783;
+}
+
+.primary-button {
+  background: #6257e8;
+  color: #fff;
+}
+
+@media (max-width: 360px) {
+  .relationships {
+    padding-inline: 10px;
+  }
+
+  .entity-row {
+    padding-right: 34px;
+  }
+
+  .participation-state span:last-child {
+    display: none;
+  }
+
+  .cardinality-grid {
+    gap: 10px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}

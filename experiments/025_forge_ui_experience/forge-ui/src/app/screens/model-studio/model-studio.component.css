@@ -1,0 +1,133 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.studio-shell {
+  display: grid;
+
+  width: 100%;
+  height: 100vh;
+
+  min-width: 0;
+  min-height: 0;
+
+  grid-template-columns: 186px minmax(0, 1fr);
+
+  overflow: hidden;
+
+  background: #ffffff;
+}
+
+app-forge-sidebar {
+  display: block;
+
+  width: 250px;
+  height: 100vh;
+
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-workspace {
+  position: relative;
+
+  display: flex;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #ffffff;
+}
+
+.studio-toolbar {
+  display: flex;
+
+  height: 62px;
+  min-height: 62px;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 16px;
+
+  border-bottom: 1px solid #e7e9f0;
+
+  background: #ffffff;
+}
+
+.studio-body {
+  display: grid;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex: 1;
+
+  grid-template-columns: minmax(0, 1fr) 380px;
+
+  overflow: hidden;
+}
+
+.canvas-area {
+  position: relative;
+
+  display: flex;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #ffffff;
+}
+
+app-model-toolbar {
+  display: block;
+
+  flex: 0 0 auto;
+
+  z-index: 20;
+}
+
+app-model-canvas {
+  display: block;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex: 1;
+
+  overflow: hidden;
+}
+
+app-entity-inspector {
+  display: block;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  border-left: 1px solid #e5e7ee;
+
+  background: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .studio-shell {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .studio-body {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}

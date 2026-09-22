@@ -1,0 +1,122 @@
+:host {
+  position: absolute;
+
+  right: 14px;
+  bottom: 14px;
+
+  z-index: 10;
+
+  display: block;
+}
+
+.minimap {
+  width: 190px;
+
+  overflow: hidden;
+
+  border: 1px solid #dfe2ea;
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.97);
+
+  box-shadow:
+    0 6px 20px rgba(34, 40, 70, 0.10);
+}
+
+.minimap-header {
+  display: flex;
+
+  height: 27px;
+
+  align-items: center;
+
+  padding: 0 9px;
+
+  border-bottom: 1px solid #e8eaf0;
+
+  color: #777f95;
+
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.minimap-canvas {
+  position: relative;
+
+  width: 190px;
+  height: 160px;
+
+  overflow: hidden;
+
+  background-color: #fafbfc;
+
+  background-image:
+    radial-gradient(#d8dbe4 0.7px, transparent 0.7px);
+
+  background-size: 8px 8px;
+}
+
+.mini-node {
+  position: absolute;
+
+  width: 36px;
+  height: 25px;
+
+  border: 1px solid #9fa6b8;
+  border-radius: 3px;
+
+  background: #ffffff;
+}
+
+.mini-node::after {
+  content: '';
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 5px;
+
+  height: 2px;
+
+  background: currentColor;
+
+  opacity: 0.7;
+}
+
+.mini-node.blue {
+  color: #668fda;
+}
+
+.mini-node.green {
+  color: #62a184;
+}
+
+.mini-node.amber {
+  color: #c49b48;
+}
+
+.mini-node.pink {
+  color: #c579a2;
+}
+
+.mini-node.purple {
+  color: #8175ca;
+}
+
+.viewport {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: 0;
+  height: 0;
+
+  border: 1px solid #625bd5;
+  border-radius: 3px;
+
+  background: rgba(103, 94, 216, 0.04);
+
+  pointer-events: none;
+}

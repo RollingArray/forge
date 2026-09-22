@@ -1,0 +1,313 @@
+<aside class="inspector">
+
+  <div class="inspector-content">
+
+  <header class="inspector-header">
+    <div class="entity-heading">
+      <div class="entity-icon" [class]="entity().accent">
+        <span class="material-symbols-outlined">database</span>
+      </div>
+
+      <div class="entity-title">
+        <h2>{{ entity().name }}</h2>
+        <p>Entity definition</p>
+      </div>
+    </div>
+
+    <button
+      class="edit-button"
+      type="button"
+      (click)="startEdit()"
+    >
+      <span class="material-symbols-outlined">edit</span>
+      Edit
+    </button>
+  </header>
+
+
+  <app-entity-inspector-tabs
+  [activeTab]="tab()"
+  [fieldCount]="entity().fields.length"
+  [relationshipCount]="relationshipsForEntity().length"
+  [constraintCount]="constraintsForEntity().length"
+  (tabSelected)="selectTab($event)"
+/>
+
+
+  @if (editing()) {
+
+    <section class="edit-panel">
+
+      <div class="edit-field">
+        <label>Name</label>
+
+        <input
+          [value]="entity().name"
+          disabled
+        />
+      </div>
+
+      <div class="edit-field">
+        <label>Description</label>
+
+        <textarea
+          rows="3"
+          [value]="descriptionDraft()"
+          (input)="descriptionDraft.set($any($event.target).value)"
+          placeholder="Describe this entity..."
+        ></textarea>
+      </div>
+
+      <div class="edit-field">
+        <label>Color</label>
+
+        <div class="color-picker">
+
+          @for (accent of accents; track accent) {
+
+            <button
+              type="button"
+              class="color-option"
+              [class]="accent"
+              [class.selected]="accentDraft() === accent"
+              [attr.aria-label]="accent"
+              (click)="accentDraft.set(accent)"
+            ></button>
+
+          }
+
+        </div>
+      </div>
+
+      <div class="edit-actions">
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cancelEdit()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="saveEdit()"
+        >
+          Save
+        </button>
+
+      </div>
+
+    </section>
+
+  }
+
+
+  @if (!editing() && tab() === 'fields') {
+
+    <app-entity-inspector-fields
+      [entity]="entity()"
+      (addField)="startAddField()"
+    />
+
+  }
+
+  @if (!editing() && tab() === 'relationships') {
+    <app-entity-inspector-relationships
+      [entity]="entity()"
+      [entities]="entities()"
+      [relationships]="relationships()"
+      (relationshipAdded)="relationshipAdded.emit($event)"
+    />
+  }
+
+
+  @if (!editing() && tab() === 'constraints') {
+
+    <section class="inspector-section">
+
+      <div class="section-heading">
+
+        <h3>Constraints</h3>
+
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Add constraint"
+          (click)="startAddConstraint()"
+        >
+          <span class="material-symbols-outlined">add</span>
+        </button>
+
+      </div>
+
+
+      @if (addingConstraint()) {
+
+        <div class="add-panel">
+
+          <div class="edit-field">
+
+            <label>Field</label>
+
+            <select
+              [value]="newConstraintField()"
+              (change)="
+                newConstraintField.set(
+                  $any($event.target).value
+                )
+              "
+            >
+
+              @for (field of entity().fields; track field.name) {
+
+                <option [value]="field.name">
+                  {{ field.name }}
+                </option>
+
+              }
+
+            </select>
+
+          </div>
+
+
+          <div class="edit-field">
+
+            <label>Operator</label>
+
+            <select
+              [value]="newConstraintOperator()"
+              (change)="
+                newConstraintOperator.set(
+                  $any($event.target).value
+                )
+              "
+            >
+              <option value=">=">&gt;=</option>
+              <option value=">">&gt;</option>
+              <option value="<=">&lt;=</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+              <option value="!=">!=</option>
+            </select>
+
+          </div>
+
+
+          <div class="edit-field">
+
+            <label>Value</label>
+
+            <input
+              [value]="newConstraintValue()"
+              (input)="
+                newConstraintValue.set(
+                  $any($event.target).value
+                )
+              "
+              placeholder="Constraint value"
+            />
+
+          </div>
+
+
+          <div class="edit-actions">
+
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="cancelAddConstraint()"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              (click)="saveConstraint()"
+            >
+              Add Constraint
+            </button>
+
+          </div>
+
+        </div>
+
+      }
+
+
+      <div class="constraint-list">
+
+        @if (constraintsForEntity().length === 0) {
+
+          <div class="empty-state">
+
+            <span class="material-symbols-outlined">
+              rule
+            </span>
+
+            <strong>
+              No constraints configured
+            </strong>
+
+            <p>
+              Add a constraint for this entity.
+            </p>
+
+          </div>
+
+        }
+
+
+        @for (
+          constraint of constraintsForEntity();
+          track constraint.id
+        ) {
+
+          <article class="constraint-card">
+
+            <div class="constraint-icon">
+
+              <span class="material-symbols-outlined">
+                verified
+              </span>
+
+            </div>
+
+            <div class="constraint-copy">
+
+              <strong>
+                {{ constraint.field }}
+                {{ constraint.operator }}
+                {{ constraint.value }}
+              </strong>
+
+              <span>
+                {{
+                  constraint.source === 'specification'
+                    ? 'From specification'
+                    : 'Added in Model Studio'
+                }}
+              </span>
+
+            </div>
+
+          </article>
+
+        }
+
+      </div>
+
+    </section>
+
+  }
+
+  </div>
+
+  <div class="inspector-assistant">
+    <app-ask-forge />
+  </div>
+
+</aside>

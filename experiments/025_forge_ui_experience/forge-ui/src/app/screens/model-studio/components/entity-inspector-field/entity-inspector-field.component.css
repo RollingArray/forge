@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.field-card {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid #e2e5ed;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.field-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-icon {
+  color: #8a93aa;
+  font-size: 19px;
+}
+
+.field-copy {
+  min-width: 0;
+}
+
+.field-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-name-row strong {
+  overflow: hidden;
+  color: #4a536d;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-copy p {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #9ba3b7;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-meta {
+  display: flex;
+  min-width: 82px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.field-meta > span {
+  color: #7e879e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+}
+
+.field-meta small {
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: #fff4e2;
+  color: #bd791f;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-grid;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.badge.pk {
+  background: #e7f5ff;
+  color: #2996c9;
+}
+
+.badge.fk {
+  background: #eee8ff;
+  color: #7655d7;
+}

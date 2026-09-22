@@ -1,0 +1,75 @@
+:host {
+  display: block;
+}
+
+.workflow-stepper {
+  display: inline-flex;
+
+  height: 38px;
+
+  align-items: center;
+
+  padding: 0 7px;
+
+  border: 1px solid #e1e4ec;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.step {
+  display: inline-flex;
+
+  height: 30px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 7px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #8a92aa;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.step-number {
+  display: grid;
+
+  width: 21px;
+  height: 21px;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #e7e9ef;
+
+  color: #66708e;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.step.active {
+  color: #453dcc;
+  background: #f3f1ff;
+}
+
+.step.active .step-number {
+  background: #5b53dc;
+  color: #ffffff;
+}
+
+.step-chevron {
+  color: #b0b5c4;
+  font-size: 15px;
+}

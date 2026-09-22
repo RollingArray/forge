@@ -1,0 +1,32 @@
+<div class="minimap">
+
+  <div class="minimap-header">
+    <span>Overview</span>
+  </div>
+
+  <div class="minimap-canvas">
+
+    @for (entity of entities(); track entity.name) {
+      <div
+        class="mini-node"
+        [class.blue]="entity.accent === 'blue'"
+        [class.green]="entity.accent === 'green'"
+        [class.amber]="entity.accent === 'amber'"
+        [class.pink]="entity.accent === 'pink'"
+        [class.purple]="entity.accent === 'purple'"
+        [style.left.px]="entity.x * 0.075"
+        [style.top.px]="entity.y * 0.075"
+      ></div>
+    }
+
+    <div
+      class="viewport"
+      [style.left.px]="viewportLeft"
+      [style.top.px]="viewportTop"
+      [style.width.px]="viewportWidth"
+      [style.height.px]="viewportHeight"
+    ></div>
+
+  </div>
+
+</div>

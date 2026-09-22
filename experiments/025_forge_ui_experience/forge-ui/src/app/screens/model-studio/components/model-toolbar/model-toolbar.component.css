@@ -1,0 +1,201 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.model-toolbar {
+  display: flex;
+
+  min-width: 0;
+  min-height: 52px;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding: 0 14px;
+
+  border-bottom: 1px solid #e7e9f0;
+
+  background: #ffffff;
+}
+
+.toolbar-left {
+  display: flex;
+
+  min-width: 0;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.search-box {
+  display: flex;
+
+  width: 270px;
+  height: 32px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 10px;
+
+  border: 1px solid #dfe2ea;
+  border-radius: 6px;
+
+  background: #ffffff;
+}
+
+.search-box .material-symbols-outlined {
+  flex: 0 0 auto;
+
+  color: #68718f;
+  font-size: 18px;
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: #303650;
+
+  font-size: 11px;
+}
+
+.search-box input::placeholder {
+  color: #8990a7;
+}
+
+.toolbar-tools {
+  display: flex;
+
+  align-items: center;
+
+  gap: 3px;
+
+  padding: 3px;
+
+  border: 1px solid #dfe2ea;
+  border-radius: 7px;
+
+  background: #ffffff;
+}
+
+.tool-button {
+  display: grid;
+
+  width: 31px;
+  height: 31px;
+
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 5px;
+
+  background: transparent;
+
+  color: #66708e;
+
+  cursor: pointer;
+}
+
+.tool-button:hover {
+  background: #f4f3fb;
+  color: #4e47ca;
+}
+
+.tool-button.active {
+  background: #f0efff;
+  color: #4f47d0;
+}
+
+.tool-button .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.toolbar-display {
+  display: flex;
+
+  flex: 0 0 auto;
+
+  align-items: center;
+
+  gap: 13px;
+
+  color: #606985;
+
+  font-size: 11px;
+}
+
+.show-label {
+  color: #7d849b;
+}
+
+.display-option {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  cursor: pointer;
+  user-select: none;
+}
+
+.display-option input {
+  width: 14px;
+  height: 14px;
+
+  margin: 0;
+
+  accent-color: #5a52d9;
+
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .search-box {
+    width: 220px;
+  }
+
+  .toolbar-display {
+    gap: 8px;
+  }
+}
+
+
+.add-entity-button {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #d7dbe5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.add-entity-button:hover {
+  background: #f6f7fa;
+}
+
+.add-entity-button .material-symbols-outlined {
+  font-size: 18px;
+}

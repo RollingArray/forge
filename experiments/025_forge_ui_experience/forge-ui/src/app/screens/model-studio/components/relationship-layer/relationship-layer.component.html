@@ -1,0 +1,96 @@
+<div class="relationship-lines">
+  <svg
+    class="relationship-line-layer"
+    width="2100"
+    height="1250"
+    viewBox="0 0 2100 1250"
+    aria-hidden="true"
+  >
+    <defs>
+      @for (relationship of paths(); track relationship.key) {
+        <linearGradient
+          [attr.id]="relationship.gradientId"
+          [attr.x1]="relationship.sourceX"
+          [attr.y1]="relationship.sourceY"
+          [attr.x2]="relationship.targetX"
+          [attr.y2]="relationship.targetY"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop
+            offset="0%"
+            [attr.stop-color]="relationship.sourceColor"
+          />
+
+          <stop
+            offset="100%"
+            [attr.stop-color]="relationship.targetColor"
+          />
+        </linearGradient>
+      }
+    </defs>
+
+    @for (relationship of paths(); track relationship.key) {
+      <path
+        class="relationship-line"
+        [attr.d]="relationship.path"
+        [style.--relationship-stroke]="'url(#' + relationship.gradientId + ')'"
+      />
+    }
+  </svg>
+</div>
+
+<div class="relationship-overlays">
+  <svg
+    class="relationship-overlay-layer"
+    width="2100"
+    height="1250"
+    viewBox="0 0 2100 1250"
+    aria-hidden="true"
+  >
+    @for (relationship of paths(); track relationship.key) {
+      <circle
+        class="relationship-point"
+        [attr.cx]="relationship.sourceX"
+        [attr.cy]="relationship.sourceY"
+        [style.--relationship-point-color]="relationship.sourceColor"
+        r="6"
+      />
+
+      <circle
+        class="relationship-point"
+        [attr.cx]="relationship.targetX"
+        [attr.cy]="relationship.targetY"
+        [style.--relationship-point-color]="relationship.targetColor"
+        r="6"
+      />
+
+      <g
+        class="cardinality-label"
+        [attr.transform]="
+          'translate(' +
+          relationship.labelX +
+          ' ' +
+          relationship.labelY +
+          ')'
+        "
+      >
+        <rect
+          x="-22"
+          y="-12"
+          width="44"
+          height="24"
+          rx="7"
+          ry="7"
+        />
+
+        <text
+          x="0"
+          y="1"
+          text-anchor="middle"
+        >
+          {{ relationship.cardinality }}
+        </text>
+      </g>
+    }
+  </svg>
+</div>

@@ -1,0 +1,131 @@
+<aside class="ask-forge-panel">
+
+  <div class="assistant-header">
+
+    <div class="assistant-title">
+      <span class="material-symbols-outlined assistant-icon">
+        auto_awesome
+      </span>
+
+      <span>Ask FORGE</span>
+    </div>
+
+    <button
+      type="button"
+      class="model-selector"
+      aria-label="Select FORGE model"
+    >
+      <span>Llama 3.1 8B</span>
+
+      <span class="material-symbols-outlined">
+        expand_more
+      </span>
+    </button>
+
+  </div>
+
+
+  <p class="assistant-description">
+    Describe what you want to model, e.g.
+    "Add a shipment entity linked to delivery"
+    or "Create a product master with key fields"
+  </p>
+
+
+  <div class="quick-actions">
+
+    <button
+      type="button"
+      class="quick-action"
+      (click)="updatePrompt('Add a new entity to the model')"
+    >
+      <span class="material-symbols-outlined">
+        description
+      </span>
+      <span>Add entity</span>
+    </button>
+
+    <button
+      type="button"
+      class="quick-action"
+      (click)="updatePrompt('Add a relationship between two entities')"
+    >
+      <span class="material-symbols-outlined">
+        link
+      </span>
+      <span>Add relationship</span>
+    </button>
+
+    <button
+      type="button"
+      class="quick-action"
+      (click)="updatePrompt('Explain this entity and its relationships')"
+    >
+      <span class="material-symbols-outlined">
+        format_align_left
+      </span>
+      <span>Explain</span>
+    </button>
+
+    <button
+      type="button"
+      class="quick-action"
+      (click)="updatePrompt('Find issues in this model')"
+    >
+      <span class="material-symbols-outlined">
+        info
+      </span>
+      <span>Find issues</span>
+    </button>
+
+    <button
+      type="button"
+      class="quick-action"
+      (click)="updatePrompt('Auto layout the model')"
+    >
+      <span class="material-symbols-outlined">
+        account_tree
+      </span>
+      <span>Auto layout</span>
+    </button>
+
+  </div>
+
+
+  <div class="composer">
+
+    <textarea
+      rows="3"
+      placeholder="Ask a question about this entity, model or SAP metadata..."
+      [value]="prompt()"
+      (input)="updatePrompt($any($event.target).value)"
+      (keydown.control.enter)="submit()"
+    ></textarea>
+
+    <button
+      type="button"
+      class="send-button"
+      aria-label="Send question"
+      [disabled]="!prompt().trim() || isThinking()"
+      (click)="submit()"
+    >
+
+      @if (isThinking()) {
+
+        <span class="material-symbols-outlined spinning">
+          progress_activity
+        </span>
+
+      } @else {
+
+        <span class="material-symbols-outlined">
+          arrow_upward
+        </span>
+
+      }
+
+    </button>
+
+  </div>
+
+</aside>

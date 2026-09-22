@@ -1,0 +1,56 @@
+<article class="field-card">
+
+  <div class="field-main">
+
+    <span class="material-symbols-outlined field-icon">
+      {{
+        field().primaryKey
+          ? 'key'
+          : field().foreignKey
+            ? 'link'
+            : 'description'
+      }}
+    </span>
+
+    <div class="field-copy">
+
+      <div class="field-name-row">
+
+        <strong>
+          {{ field().name }}
+        </strong>
+
+        @if (field().primaryKey) {
+          <span class="badge pk">PK</span>
+        }
+
+        @if (field().foreignKey) {
+          <span class="badge fk">FK</span>
+        }
+
+      </div>
+
+      @if (field().description) {
+        <p>
+          {{ field().description }}
+        </p>
+      }
+
+    </div>
+
+  </div>
+
+
+  <div class="field-meta">
+
+    <span>
+      {{ field().type }}
+    </span>
+
+    @if (field().required || field().primaryKey) {
+      <small>Required</small>
+    }
+
+  </div>
+
+</article>

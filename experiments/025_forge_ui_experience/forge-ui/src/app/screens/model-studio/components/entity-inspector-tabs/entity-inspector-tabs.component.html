@@ -1,0 +1,41 @@
+<nav class="inspector-tabs">
+
+  <button
+    type="button"
+    [class.active]="activeTab() === 'fields'"
+    (click)="select('fields')"
+  >
+    Fields
+
+    <span class="tab-count">
+      {{ fieldCount() }}
+    </span>
+  </button>
+
+  <button
+    type="button"
+    [class.active]="activeTab() === 'relationships'"
+    (click)="select('relationships')"
+  >
+    Relationships
+
+    <span class="tab-count">
+      {{ relationshipCount() }}
+    </span>
+  </button>
+
+  <button
+    type="button"
+    [class.active]="activeTab() === 'constraints'"
+    (click)="select('constraints')"
+  >
+    Constraints
+
+    @if (constraintCount() > 0) {
+      <span class="tab-count">
+        {{ constraintCount() }}
+      </span>
+    }
+  </button>
+
+</nav>

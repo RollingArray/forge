@@ -1,0 +1,47 @@
+<div class="studio-shell">
+  <app-forge-sidebar />
+
+  <main class="studio-workspace">
+    <app-studio-header />
+
+    <section class="studio-toolbar">
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep()"
+        (stepSelected)="selectStep($event)"
+      />
+
+      <app-studio-actions
+        (actionSelected)="handleAction($event)"
+      />
+    </section>
+
+    <section class="studio-body">
+      <div class="canvas-area">
+        <app-model-toolbar
+          (actionSelected)="handleCanvasAction($event)"
+        />
+
+        <app-model-canvas
+          [entities]="entities()"
+          [relationships]="relationships()"
+          [selectedEntity]="selectedEntity()"
+          (entitySelected)="handleEntitySelected($event)"
+        />
+      </div>
+
+      @if (selectedEntityData(); as entity) {
+        <app-entity-inspector
+          [entity]="entity"
+          [entities]="entities()"
+          [relationships]="relationships()"
+          [constraints]="constraints()"
+          (entityUpdated)="updateEntity($event)"
+          (fieldAdded)="addField($event)"
+          (relationshipAdded)="addRelationship($event)"
+          (constraintAdded)="addConstraint($event)"
+        />
+      }
+    </section>
+  </main>
+</div>

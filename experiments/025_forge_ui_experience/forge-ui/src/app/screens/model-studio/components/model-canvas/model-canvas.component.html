@@ -1,0 +1,37 @@
+<div class="canvas-shell">
+
+  <div
+    #canvasViewport
+    class="canvas-viewport"
+    (scroll)="handleScroll()"
+  >
+
+    <div class="canvas">
+
+      <div class="canvas-grid"></div>
+
+      <app-relationship-layer
+        [entities]="entities()"
+        [relationships]="relationships()"
+      />
+
+      @for (entity of entities(); track entity.name) {
+        <app-entity-node
+          [entity]="entity"
+          [selected]="selectedEntity() === entity.name"
+          [style.left.px]="entity.x"
+          [style.top.px]="entity.y"
+          (selectedChange)="selectEntity($event)"
+        />
+      }
+
+    </div>
+
+  </div>
+
+  <app-model-minimap
+    [entities]="entities()"
+    [viewport]="viewport()"
+  />
+
+</div>
