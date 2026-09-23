@@ -1,0 +1,87 @@
+:host {
+  display: block;
+}
+
+.panel {
+  padding: 17px;
+  border: 1px solid #e4e7f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  color: #11183f;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.panel-heading p {
+  margin: 5px 0 12px;
+  color: #727b99;
+  font-size: 11px;
+}
+
+.artifact-row {
+  display: flex;
+  min-height: 59px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  border-top: 1px solid #edf0f5;
+}
+
+.artifact-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #f4f3ff;
+  color: #4f49ce;
+}
+
+.artifact-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.artifact-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.artifact-copy strong {
+  color: #242c51;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.artifact-copy small {
+  margin-top: 3px;
+  color: #7a83a0;
+  font-size: 9px;
+}
+
+.download-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4e52d2;
+  cursor: pointer;
+}
+
+.download-button:hover {
+  background: #f1f1ff;
+}
+
+.download-button .material-symbols-outlined {
+  font-size: 18px;
+}

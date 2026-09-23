@@ -1,0 +1,94 @@
+:host {
+  display: block;
+}
+
+.panel {
+  padding: 17px;
+  border: 1px solid #e4e7f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  color: #11183f;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.panel-heading p {
+  margin: 5px 0 12px;
+  color: #727b99;
+  font-size: 11px;
+}
+
+.next-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.next-card {
+  display: flex;
+  min-width: 0;
+  min-height: 66px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid #e4e7f0;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.next-card:hover {
+  background: #fbfbff;
+  border-color: #d6d4fa;
+}
+
+.next-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #f0efff;
+  color: #4f49ce;
+}
+
+.next-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.next-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.next-copy strong {
+  color: #242c51;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.next-copy small {
+  margin-top: 3px;
+  color: #7a83a0;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.next-card > .material-symbols-outlined {
+  color: #858da6;
+  font-size: 17px;
+}
+
+@media (max-width: 1050px) {
+  .next-grid {
+    grid-template-columns: 1fr;
+  }
+}

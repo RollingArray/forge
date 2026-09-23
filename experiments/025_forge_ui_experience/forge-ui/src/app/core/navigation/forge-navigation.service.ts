@@ -13,6 +13,7 @@ export class ForgeNavigationService {
     model: '/model-studio',
     population: '/population-plan',
     generate: '/generate',
+    results: '/results',
   };
 
   navigateToStep(step: StudioStep): void {

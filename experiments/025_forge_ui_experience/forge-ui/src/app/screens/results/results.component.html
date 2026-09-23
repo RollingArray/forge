@@ -1,0 +1,159 @@
+<div class="results-shell">
+
+  <app-forge-sidebar />
+
+  <section class="workspace">
+
+    <app-studio-header />
+
+    <div class="content">
+
+      <div class="breadcrumb-row">
+
+        <div class="breadcrumbs">
+          <span>Home</span>
+          <span class="material-symbols-outlined">
+            chevron_right
+          </span>
+          <span>SAP Order-to-Cash</span>
+          <span class="material-symbols-outlined">
+            chevron_right
+          </span>
+          <strong>Results</strong>
+        </div>
+
+        <div class="header-actions">
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="viewInGenerate()"
+          >
+            View in Generate
+          </button>
+
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="More result actions"
+          >
+            <span class="material-symbols-outlined">
+              more_horiz
+            </span>
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep()"
+        (stepSelected)="selectStep($event)"
+      />
+
+
+      @if (isLoading()) {
+
+        <section class="loading-card">
+          <span class="material-symbols-outlined">
+            progress_activity
+          </span>
+
+          <span>
+            Loading generation results...
+          </span>
+        </section>
+
+      } @else if (loadError()) {
+
+        <section class="error-card">
+
+          <span class="material-symbols-outlined">
+            error
+          </span>
+
+          <div>
+            <strong>
+              Unable to load generation results
+            </strong>
+
+            <p>
+              {{ loadError() }}
+            </p>
+          </div>
+
+        </section>
+
+      } @else if (data()) {
+
+        <section class="completion-card">
+
+          <div class="completion-icon">
+            <span class="material-symbols-outlined">
+              check
+            </span>
+          </div>
+
+          <div class="completion-copy">
+
+            <h1>
+              Generation Complete
+            </h1>
+
+            <strong>
+              Your synthetic dataset is ready to use.
+            </strong>
+
+            <p>
+              Explore the generated data, download the files
+              or export the generation manifest.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <div class="results-grid">
+
+          <main class="main-column">
+
+            <app-generated-dataset
+              [entities]="data()!.entities"
+            />
+
+          </main>
+
+
+          <aside class="side-column">
+
+            <app-dataset-actions
+              (explore)="exploreDataset()"
+              (manifest)="exportManifest()"
+            />
+
+
+            <app-output-artifacts
+              [artifacts]="artifacts()"
+              (downloadRequested)="downloadArtifact($event)"
+            />
+
+
+            <app-results-next-steps
+              (newGeneration)="createNewGeneration()"
+              (modelStudio)="returnToModelStudio()"
+            />
+
+          </aside>
+
+        </div>
+
+      }
+
+    </div>
+
+  </section>
+
+</div>

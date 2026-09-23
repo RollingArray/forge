@@ -1,0 +1,61 @@
+<section class="panel">
+
+  <div class="panel-heading">
+
+    <h2>Output Artifacts</h2>
+
+    <p>
+      Files generated as part of this run.
+    </p>
+
+  </div>
+
+
+  @for (
+    artifact of artifacts();
+    track artifact.type
+  ) {
+
+    <div class="artifact-row">
+
+      <span class="artifact-icon">
+        <span class="material-symbols-outlined">
+          {{ artifact.type === 'entity-files'
+            ? 'description'
+            : 'data_object'
+          }}
+        </span>
+      </span>
+
+      <span class="artifact-copy">
+
+        <strong>
+          {{ artifact.title }}
+        </strong>
+
+        <small>
+          {{ artifact.description }}
+        </small>
+
+      </span>
+
+      @if (artifact.available) {
+
+        <button
+          type="button"
+          class="download-button"
+          [attr.aria-label]="'Download ' + artifact.title"
+          (click)="requestDownload(artifact)"
+        >
+          <span class="material-symbols-outlined">
+            download
+          </span>
+        </button>
+
+      }
+
+    </div>
+
+  }
+
+</section>

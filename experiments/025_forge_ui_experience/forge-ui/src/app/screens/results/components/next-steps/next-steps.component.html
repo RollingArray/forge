@@ -1,0 +1,69 @@
+<section class="panel">
+
+  <div class="panel-heading">
+
+    <h2>Next Steps</h2>
+
+    <p>
+      Continue working with your dataset.
+    </p>
+
+  </div>
+
+
+  <div class="next-grid">
+
+    <button
+      type="button"
+      class="next-card"
+      (click)="newGeneration.emit()"
+    >
+
+      <span class="next-icon">
+        <span class="material-symbols-outlined">
+          add
+        </span>
+      </span>
+
+      <span class="next-copy">
+        <strong>Create New Generation</strong>
+        <small>
+          Use the same model and configuration
+        </small>
+      </span>
+
+      <span class="material-symbols-outlined">
+        chevron_right
+      </span>
+
+    </button>
+
+
+    <button
+      type="button"
+      class="next-card"
+      (click)="modelStudio.emit()"
+    >
+
+      <span class="next-icon">
+        <span class="material-symbols-outlined">
+          account_tree
+        </span>
+      </span>
+
+      <span class="next-copy">
+        <strong>Return to Model Studio</strong>
+        <small>
+          Modify your model or configuration
+        </small>
+      </span>
+
+      <span class="material-symbols-outlined">
+        chevron_right
+      </span>
+
+    </button>
+
+  </div>
+
+</section>

@@ -1,0 +1,185 @@
+<section class="dataset-card">
+
+  <div class="section-header">
+
+    <div>
+      <h2>Generated Dataset</h2>
+
+      <p>
+        Explore the generated entities and download the individual files.
+      </p>
+    </div>
+
+    <div class="table-tools">
+
+      <label class="search-box">
+
+        <span class="material-symbols-outlined">
+          search
+        </span>
+
+        <input
+          type="search"
+          placeholder="Search entities..."
+          [value]="searchTerm()"
+          (input)="updateSearch($any($event.target).value)"
+          aria-label="Search generated entities"
+        />
+
+      </label>
+
+      <button
+        type="button"
+        class="filter-button"
+        aria-label="Filter entities"
+        title="Filter"
+      >
+        <span class="material-symbols-outlined">
+          tune
+        </span>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="table-shell">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th class="number-column">#</th>
+          <th>Entity Name</th>
+          <th>Records Generated</th>
+          <th>Output File</th>
+          <th class="actions-column">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (
+          entity of visibleEntities();
+          track entity.name
+        ) {
+
+          <tr>
+
+            <td class="number-column">
+              {{ entity.index }}
+            </td>
+
+            <td class="entity-name">
+              {{ entity.name }}
+            </td>
+
+            <td>
+              {{ entity.recordsGenerated.toLocaleString() }}
+            </td>
+
+            <td class="output-file">
+              {{ entity.outputFile }}
+            </td>
+
+            <td class="row-actions">
+
+              <button
+                type="button"
+                title="Download entity"
+                aria-label="Download {{ entity.name }}"
+                (click)="download(entity)"
+              >
+                <span class="material-symbols-outlined">
+                  download
+                </span>
+              </button>
+
+              <button
+                type="button"
+                title="More actions"
+                aria-label="More actions for {{ entity.name }}"
+                (click)="menu(entity)"
+              >
+                <span class="material-symbols-outlined">
+                  more_horiz
+                </span>
+              </button>
+
+            </td>
+
+          </tr>
+
+        } @empty {
+
+          <tr>
+            <td
+              colspan="5"
+              class="empty-state"
+            >
+              No generated entities match your search.
+            </td>
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+
+  <div class="table-footer">
+
+    <span>
+      Showing
+      {{ visibleStart() }}–{{ visibleEnd() }}
+      of
+      {{ filteredEntities().length }}
+      entities
+    </span>
+
+    <div class="pagination">
+
+      <button
+        type="button"
+        [disabled]="page() === 0"
+        (click)="previousPage()"
+        aria-label="Previous page"
+      >
+        <span class="material-symbols-outlined">
+          chevron_left
+        </span>
+      </button>
+
+      @for (pageNumber of pageNumbers(); track pageNumber) {
+
+        <button
+          type="button"
+          class="page-number"
+          [class.active]="page() === pageNumber - 1"
+          (click)="selectPage(pageNumber)"
+        >
+          {{ pageNumber }}
+        </button>
+
+      }
+
+      <button
+        type="button"
+        [disabled]="page() >= pageCount() - 1"
+        (click)="nextPage()"
+        aria-label="Next page"
+      >
+        <span class="material-symbols-outlined">
+          chevron_right
+        </span>
+      </button>
+
+    </div>
+
+  </div>
+
+</section>

@@ -1,0 +1,65 @@
+<section class="panel">
+
+  <div class="panel-heading">
+
+    <h2>Dataset Actions</h2>
+
+    <p>
+      Work with your generated dataset.
+    </p>
+
+  </div>
+
+
+  <button
+    type="button"
+    class="action-row"
+    (click)="explore.emit()"
+  >
+
+    <span class="action-icon">
+      <span class="material-symbols-outlined">
+        database
+      </span>
+    </span>
+
+    <span class="action-copy">
+      <strong>Explore Dataset</strong>
+      <small>
+        Browse and preview the generated data
+      </small>
+    </span>
+
+    <span class="material-symbols-outlined arrow">
+      chevron_right
+    </span>
+
+  </button>
+
+
+  <button
+    type="button"
+    class="action-row"
+    (click)="manifest.emit()"
+  >
+
+    <span class="action-icon">
+      <span class="material-symbols-outlined">
+        data_object
+      </span>
+    </span>
+
+    <span class="action-copy">
+      <strong>Export Generation Manifest</strong>
+      <small>
+        Download generation metadata as JSON
+      </small>
+    </span>
+
+    <span class="material-symbols-outlined arrow">
+      chevron_right
+    </span>
+
+  </button>
+
+</section>

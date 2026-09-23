@@ -83,7 +83,6 @@ export class GenerateComponent {
     this.navigation.navigateToStep(step);
   }
 
-
   private async loadData(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set(null);
