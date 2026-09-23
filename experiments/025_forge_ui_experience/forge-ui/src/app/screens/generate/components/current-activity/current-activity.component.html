@@ -1,0 +1,54 @@
+<section class="panel">
+
+  <h2>Current Activity</h2>
+
+  <div class="activity-card">
+
+    <div class="activity-icon">
+      <span class="material-symbols-outlined">
+        {{ completed() ? 'check_circle' : 'autorenew' }}
+      </span>
+    </div>
+
+    <div>
+      <strong>
+        {{ completed()
+          ? 'Generation completed'
+          : 'Generation in progress' }}
+      </strong>
+
+      <p>
+        {{ completed()
+          ? 'All persisted generation chunks are complete.'
+          : 'The persisted checkpoint contains partial execution state.' }}
+      </p>
+    </div>
+
+  </div>
+
+  @if (entity(); as last) {
+
+    <div class="detail">
+      <span>Last entity</span>
+      <strong>
+        {{ last.entity }}
+        ({{ last.generatedRows.toLocaleString() }} rows)
+      </strong>
+    </div>
+
+    <div class="detail">
+      <span>Last entity chunks</span>
+      <strong>
+        {{ last.completedChunks }}
+        / {{ last.totalChunks }}
+      </strong>
+    </div>
+
+  }
+
+  <div class="detail">
+    <span>Checkpoint updated</span>
+    <strong>{{ formatDate(updatedAt()) }}</strong>
+  </div>
+
+</section>

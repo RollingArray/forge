@@ -1,9 +1,10 @@
-import { Router } from '@angular/router';
+import { ForgeNavigationService } from '../../core/navigation/forge-navigation.service';
 
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   signal,
 } from '@angular/core';
 
@@ -73,7 +74,9 @@ export class ModelStudioComponent {
     ) ?? this.entities()[0],
   );
 
-  constructor(private readonly router: Router) {
+  private readonly navigation = inject(ForgeNavigationService);
+
+  constructor() {
     this.loadSpecification();
   }
 
@@ -120,28 +123,7 @@ export class ModelStudioComponent {
 
   selectStep(step: StudioStep): void {
     this.activeStep.set(step);
-
-    switch (step) {
-      case 'model':
-        this.router.navigate(['/model-studio']);
-        break;
-
-      case 'population':
-        this.router.navigate(['/population-plan']);
-        break;
-
-      case 'generate':
-        this.router.navigate(['/generate']);
-        break;
-
-      case 'validate':
-        // Validation route will be added when the screen is implemented.
-        break;
-
-      case 'results':
-        // Results route will be added when the screen is implemented.
-        break;
-    }
+    this.navigation.navigateToStep(step);
   }
 
   handleAction(action: string): void {

@@ -1,0 +1,87 @@
+<section class="summary-grid">
+
+  <article class="summary-card job-card">
+    <div class="icon purple">
+      <span class="material-symbols-outlined">
+        receipt_long
+      </span>
+    </div>
+
+    <div class="content">
+      <span>Job ID</span>
+      <strong>{{ data().jobId }}</strong>
+
+      <small>
+        Seed {{ data().seed }}
+        · Chunk size {{ data().chunkSize.toLocaleString() }}
+      </small>
+    </div>
+  </article>
+
+  <article class="summary-card progress-card">
+    <div class="progress-ring">
+      <span>{{ (data().progress * 100).toFixed(0) }}%</span>
+    </div>
+
+    <div class="content">
+      <span>Overall Progress</span>
+      <strong>
+        {{ formatNumber(data().totalGeneratedRows) }}
+        /
+        {{ formatNumber(data().totalTargetRows) }}
+      </strong>
+      <small>rows generated</small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="icon green">
+      <span class="material-symbols-outlined">
+        account_tree
+      </span>
+    </div>
+
+    <div class="content">
+      <span>Entities</span>
+      <strong>{{ data().entityCount }}</strong>
+      <small>
+        {{ data().completedEntityCount }} completed
+      </small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="icon purple">
+      <span class="material-symbols-outlined">
+        schedule
+      </span>
+    </div>
+
+    <div class="content">
+      <span>Elapsed Time</span>
+      <strong>
+        {{ formatDuration(data().elapsedSeconds) }}
+      </strong>
+      <small>
+        persisted execution time
+      </small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="icon blue">
+      <span class="material-symbols-outlined">
+        speed
+      </span>
+    </div>
+
+    <div class="content">
+      <span>Throughput</span>
+      <strong>
+        {{ formatRate(data().rowsPerSecond) }}
+      </strong>
+      <small>rows / second</small>
+    </div>
+  </article>
+
+</section>

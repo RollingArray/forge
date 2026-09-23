@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   signal,
 } from '@angular/core';
 
@@ -26,6 +27,8 @@ import { WelcomeHeaderComponent } from './components/welcome-header/welcome-head
 import { HomeContentComponent } from './components/home-content/home-content.component';
 import { HomeRightRailComponent } from './components/home-right-rail/home-right-rail.component';
 
+import { ForgeNavigationService } from '../../core/navigation/forge-navigation.service';
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -41,6 +44,8 @@ import { HomeRightRailComponent } from './components/home-right-rail/home-right-
   styleUrl: './home.component.css',
 })
 export class HomeComponent {
+  private readonly navigation = inject(ForgeNavigationService);
+
   readonly metrics: Metric[] = HOME_METRICS;
   readonly sessions: Session[] = HOME_SESSIONS;
   readonly templates: Template[] = HOME_TEMPLATES;
@@ -54,7 +59,7 @@ export class HomeComponent {
   }
 
   handleNewSession(): void {
-    this.handleAction('new-session');
+    this.navigation.navigateToStep('model');
   }
 
   handleSessionSelected(sessionName: string): void {

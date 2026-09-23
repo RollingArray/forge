@@ -1,0 +1,259 @@
+{
+  "chunk_size": 1000,
+  "entities": {
+    "CARRIER": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 500
+    },
+    "CUSTOMER": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 1000
+    },
+    "CUSTOMER_ADDRESS": {
+      "completed_chunks": [
+        1,
+        2
+      ],
+      "target_rows": 1500
+    },
+    "DELIVERY": {
+      "completed_chunks": [
+        1,
+        2,
+        3
+      ],
+      "target_rows": 3000
+    },
+    "DELIVERY_EVENT": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "target_rows": 50000
+    },
+    "DELIVERY_ITEM": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "target_rows": 12000
+    },
+    "INVENTORY": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "target_rows": 10000
+    },
+    "INVOICE": {
+      "completed_chunks": [
+        1,
+        2,
+        3
+      ],
+      "target_rows": 3000
+    },
+    "INVOICE_ITEM": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "target_rows": 12000
+    },
+    "ORDER_PARTNER": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "target_rows": 7500
+    },
+    "ORDER_STATUS": {
+      "completed_chunks": [
+        1,
+        2,
+        3
+      ],
+      "target_rows": 2500
+    },
+    "PAYMENT": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_rows": 4000
+    },
+    "PLANT": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 100
+    },
+    "PRODUCT": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 500
+    },
+    "PRODUCT_PLANT": {
+      "completed_chunks": [
+        1,
+        2
+      ],
+      "target_rows": 2000
+    },
+    "SALES_ITEM": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "target_rows": 10000
+    },
+    "SALES_ORDER": {
+      "completed_chunks": [
+        1,
+        2,
+        3
+      ],
+      "target_rows": 2500
+    },
+    "SALES_ORG": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 20
+    },
+    "SHIPMENT": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_rows": 3500
+    },
+    "SHIPMENT_ITEM": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "target_rows": 12000
+    },
+    "STORAGE_LOCATION": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 500
+    }
+  },
+  "job_id": "FORGE-E73FF8015BC1",
+  "schema_version": 1,
+  "seed": 42,
+  "specification_hash": "f1c9326c0be1c53ef26bffbec8b630e0cb5bc952ceb219acadd6e38e9f7749c4",
+  "updated_at": "2026-09-21T10:24:35.334098+00:00"
+}

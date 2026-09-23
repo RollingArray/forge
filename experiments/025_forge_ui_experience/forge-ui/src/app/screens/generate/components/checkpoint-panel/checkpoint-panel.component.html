@@ -1,0 +1,44 @@
+<section class="panel">
+
+  <header>
+    <h2>Checkpoints &amp; Recovery</h2>
+  </header>
+
+  <div class="checkpoint">
+
+    <div class="checkpoint-icon">
+      <span class="material-symbols-outlined">
+        check_circle
+      </span>
+    </div>
+
+    <div class="checkpoint-content">
+
+      <strong>Last checkpoint saved</strong>
+
+      <span>
+        {{ formatDate(data().updatedAt) }}
+      </span>
+
+      <small>
+        {{ data().completedChunks }}
+        /
+        {{ data().totalChunks }}
+        chunks committed
+      </small>
+
+    </div>
+
+    <div class="checkpoint-meta">
+      <span>Seed</span>
+      <strong>{{ data().seed }}</strong>
+    </div>
+
+  </div>
+
+  <div class="hash">
+    <span>Specification hash</span>
+    <code>{{ data().specificationHash }}</code>
+  </div>
+
+</section>

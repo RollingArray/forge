@@ -1,66 +1,147 @@
 <div class="generate-shell">
+
   <app-forge-sidebar />
 
   <main class="generate-workspace">
+
     <app-studio-header />
 
     <section class="generate-toolbar">
+
       <app-workflow-stepper
         [steps]="steps"
         [activeStep]="activeStep()"
+        (stepSelected)="selectStep($event)"
       />
+
     </section>
 
     <section class="generate-content">
-      <header class="page-header">
-        <div>
-          <span class="eyebrow">EXECUTION</span>
-          <h1>Generate</h1>
-          <p>
-            Execute the approved specification and population plan to generate
-            the synthetic dataset.
-          </p>
+
+      @if (isLoading()) {
+
+        <div class="state-card">
+          <span class="material-symbols-outlined">
+            progress_activity
+          </span>
+          Loading generation artifacts...
         </div>
 
-        <div class="header-status">
-          <span class="status-dot"></span>
-          Ready to generate
+      } @else if (loadError(); as error) {
+
+        <div class="error-card">
+
+          <span class="material-symbols-outlined">
+            error
+          </span>
+
+          <div>
+            <strong>
+              Unable to load generation
+            </strong>
+
+            <p>{{ error }}</p>
+          </div>
+
         </div>
-      </header>
 
-      <section class="readiness-card">
-        <div class="readiness-icon">
-          <span class="material-symbols-outlined">check_circle</span>
+      } @else if (data(); as generation) {
+
+        <header class="page-header">
+
+          <div>
+            <h1>
+              Synthetic Data Generation
+            </h1>
+
+            <p>
+              FORGE generated synthetic data from
+              the validated model and population plan.
+            </p>
+          </div>
+
+          <div class="header-actions">
+
+            <div
+              class="completion-badge"
+              [class.partial]="
+                generation.status !== 'COMPLETED'
+              "
+            >
+              <span class="material-symbols-outlined">
+                {{
+                  generation.status === 'COMPLETED'
+                    ? 'check_circle'
+                    : 'pending'
+                }}
+              </span>
+
+              {{
+                generation.status === 'COMPLETED'
+                  ? 'Generation Completed'
+                  : 'Generation In Progress'
+              }}
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+            >
+              <span class="material-symbols-outlined">
+                data_object
+              </span>
+              View Specification
+            </button>
+
+          </div>
+
+        </header>
+
+        <app-generation-summary
+          [data]="generation"
+        />
+
+        <div class="top-grid">
+
+          <app-generation-pipeline
+            [stages]="generation.pipeline"
+          />
+
+          <app-current-activity
+            [completed]="isCompleted()"
+            [entity]="generation.lastEntity"
+            [updatedAt]="generation.updatedAt"
+          />
+
         </div>
 
-        <div>
-          <strong>Generation plan is ready</strong>
-          <p>
-            FORGE has the specification, population requirements, identities
-            and relationship dependencies required to begin execution.
-          </p>
+        <div class="middle-grid">
+
+          <app-entity-generation-table
+            [rows]="generation.entities"
+          />
+
+          <app-generation-logs />
+
         </div>
-      </section>
 
-      <section class="placeholder-grid">
-        <article class="placeholder-card">
-          <span class="material-symbols-outlined">account_tree</span>
-          <h2>Generation Pipeline</h2>
-          <p>
-            Specification loading, plan initialization, dependency resolution,
-            generation and independent validation will appear here.
-          </p>
-        </article>
+        <app-quality-summary
+          [quality]="generation.qualityMetrics"
+          [validation]="generation.validationMetrics"
+        />
 
-        <article class="placeholder-card">
-          <span class="material-symbols-outlined">database</span>
-          <h2>Generation Plan</h2>
-          <p>
-            Entity targets and dependency-aware generation order will be shown
-            here.
-          </p>
-        </article>
-      </section>
+        <div class="bottom-grid">
+
+          <app-checkpoint-panel
+            [data]="generation"
+          />
+
+        </div>
+
+      }
+
     </section>
+
   </main>
+
 </div>

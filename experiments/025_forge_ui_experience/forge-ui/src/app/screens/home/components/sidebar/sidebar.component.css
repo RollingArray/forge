@@ -124,6 +124,8 @@
 }
 
 .nav-item {
+  text-decoration: none;
+
   position: relative;
 
   display: flex;

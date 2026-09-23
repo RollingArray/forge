@@ -14,76 +14,79 @@
 
 
   <div class="sidebar-nav-scroll">
+
     <nav class="sidebar-nav">
 
-    <button
-      type="button"
-      class="nav-item active"
-      (click)="select('home')"
-    >
-      <span class="material-symbols-outlined">
-        home
-      </span>
+      <a
+        class="nav-item"
+        routerLink="/home"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <span class="material-symbols-outlined">
+          home
+        </span>
 
-      <span>Home</span>
-    </button>
-
-
-    <button
-      type="button"
-      class="nav-item"
-      (click)="select('sessions')"
-    >
-      <span class="material-symbols-outlined">
-        folder_open
-      </span>
-
-      <span>My Sessions</span>
-    </button>
+        <span>Home</span>
+      </a>
 
 
-    <button
-      type="button"
-      class="nav-item"
-      (click)="select('templates')"
-    >
-      <span class="material-symbols-outlined">
-        redeem
-      </span>
+      <button
+        type="button"
+        class="nav-item"
+        (click)="select('sessions')"
+      >
+        <span class="material-symbols-outlined">
+          folder_open
+        </span>
 
-      <span>Templates</span>
-    </button>
-
-
-    <button
-      type="button"
-      class="nav-item"
-      (click)="select('shared')"
-    >
-      <span class="material-symbols-outlined">
-        group
-      </span>
-
-      <span>Shared with Me</span>
-    </button>
+        <span>My Sessions</span>
+      </button>
 
 
-    <div class="nav-divider"></div>
+      <button
+        type="button"
+        class="nav-item"
+        (click)="select('templates')"
+      >
+        <span class="material-symbols-outlined">
+          redeem
+        </span>
+
+        <span>Templates</span>
+      </button>
 
 
-    <button
-      type="button"
-      class="nav-item"
-      (click)="select('settings')"
-    >
-      <span class="material-symbols-outlined">
-        settings
-      </span>
+      <button
+        type="button"
+        class="nav-item"
+        (click)="select('shared')"
+      >
+        <span class="material-symbols-outlined">
+          group
+        </span>
 
-      <span>Settings</span>
-    </button>
+        <span>Shared with Me</span>
+      </button>
+
+
+      <div class="nav-divider"></div>
+
+
+      <button
+        type="button"
+        class="nav-item"
+        (click)="select('settings')"
+      >
+        <span class="material-symbols-outlined">
+          settings
+        </span>
+
+        <span>Settings</span>
+      </button>
 
     </nav>
+
   </div>
 
 
@@ -101,7 +104,6 @@
 
     </div>
 
-
     <div class="organization-copy">
 
       <strong>
@@ -113,7 +115,6 @@
       </span>
 
     </div>
-
 
     <span class="material-symbols-outlined organization-arrow">
       expand_more

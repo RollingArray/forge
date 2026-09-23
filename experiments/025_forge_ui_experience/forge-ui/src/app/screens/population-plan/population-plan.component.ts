@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   signal,
 } from '@angular/core';
+import { ForgeNavigationService } from '../../core/navigation/forge-navigation.service';
 
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
@@ -94,6 +96,8 @@ import {
   styleUrl: './population-plan.component.css',
 })
 export class PopulationPlanComponent {
+  private readonly navigation = inject(ForgeNavigationService);
+
   readonly steps = [
     { id: 'model', number: 1, label: 'Model' },
     { id: 'validate', number: 2, label: 'Validate' },
@@ -541,6 +545,7 @@ export class PopulationPlanComponent {
 
   selectStep(step: StudioStep): void {
     this.activeStep.set(step);
+    this.navigation.navigateToStep(step);
   }
 
   updateRequestedPopulation(

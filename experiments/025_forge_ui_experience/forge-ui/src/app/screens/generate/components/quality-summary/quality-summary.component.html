@@ -1,0 +1,73 @@
+<div class="quality-grid">
+
+  <section class="panel">
+
+    <header>
+      <h2>Data Quality</h2>
+      <span>024 quality artifact</span>
+    </header>
+
+    <div class="metrics">
+
+      @for (metric of quality(); track metric.label) {
+
+        <div class="metric">
+
+          <div>
+            <strong>{{ metric.label }}</strong>
+
+            @if (metric.detail) {
+              <small>{{ metric.detail }}</small>
+            }
+          </div>
+
+          <b
+            [class.pass]="metric.status === 'PASS'"
+          >
+            {{ metric.value }}
+          </b>
+
+        </div>
+
+      }
+
+    </div>
+
+  </section>
+
+  <section class="panel">
+
+    <header>
+      <h2>Validation</h2>
+      <span>024 validation artifact</span>
+    </header>
+
+    <div class="metrics">
+
+      @for (metric of validation(); track metric.label) {
+
+        <div class="metric">
+
+          <div>
+            <strong>{{ metric.label }}</strong>
+
+            @if (metric.detail) {
+              <small>{{ metric.detail }}</small>
+            }
+          </div>
+
+          <b
+            [class.pass]="metric.status === 'PASS'"
+          >
+            {{ metric.value }}
+          </b>
+
+        </div>
+
+      }
+
+    </div>
+
+  </section>
+
+</div>

@@ -1,0 +1,100 @@
+.panel {
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+header h2 {
+  margin: 0 0 14px;
+  color: #12163d;
+  font-size: 15px;
+}
+
+.checkpoint {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f5fbf7;
+}
+
+.checkpoint-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e1f6ea;
+  color: #15945a;
+}
+
+.checkpoint-icon .material-symbols-outlined {
+  font-size: 21px;
+}
+
+.checkpoint-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.checkpoint-content strong,
+.checkpoint-content span,
+.checkpoint-content small {
+  display: block;
+}
+
+.checkpoint-content strong {
+  color: #263044;
+  font-size: 11px;
+}
+
+.checkpoint-content span,
+.checkpoint-content small {
+  margin-top: 3px;
+  color: #71798a;
+  font-size: 9px;
+}
+
+.checkpoint-meta {
+  text-align: right;
+}
+
+.checkpoint-meta span,
+.checkpoint-meta strong {
+  display: block;
+}
+
+.checkpoint-meta span {
+  color: #737b8b;
+  font-size: 9px;
+}
+
+.checkpoint-meta strong {
+  margin-top: 3px;
+  color: #293044;
+  font-size: 11px;
+}
+
+.hash {
+  margin-top: 12px;
+}
+
+.hash span {
+  display: block;
+  color: #737b8b;
+  font-size: 9px;
+}
+
+.hash code {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #555e70;
+  font-family: monospace;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

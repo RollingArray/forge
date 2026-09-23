@@ -1,0 +1,4555 @@
+{
+  "dataset": "/Users/e10936535/forge/experiments/024_specification_execution/output/generated/FORGE-E73FF8015BC1",
+  "job_id": "FORGE-E73FF8015BC1",
+  "quality": {
+    "distribution_fidelity": {
+      "fields": {
+        "CARRIER.CARRIER_TYPE": {
+          "declared_values": [
+            "GLOBAL",
+            "REGIONAL",
+            "SPECIALIZED"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "CARRIER",
+          "field": "CARRIER_TYPE",
+          "rows_observed": 500,
+          "values": {
+            "GLOBAL": {
+              "absolute_probability_difference": 0.002666666666666706,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 168,
+              "observed_probability": 0.336
+            },
+            "REGIONAL": {
+              "absolute_probability_difference": 0.002666666666666706,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 168,
+              "observed_probability": 0.336
+            },
+            "SPECIALIZED": {
+              "absolute_probability_difference": 0.005333333333333301,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 164,
+              "observed_probability": 0.328
+            }
+          }
+        },
+        "CUSTOMER.COUNTRY": {
+          "declared_values": [
+            "US",
+            "DE",
+            "IN",
+            "GB",
+            "FR",
+            "JP",
+            "CA"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "CUSTOMER",
+          "field": "COUNTRY",
+          "rows_observed": 1000,
+          "values": {
+            "CA": {
+              "absolute_probability_difference": 0.008857142857142841,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 134,
+              "observed_probability": 0.134
+            },
+            "DE": {
+              "absolute_probability_difference": 0.009857142857142842,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 133,
+              "observed_probability": 0.133
+            },
+            "FR": {
+              "absolute_probability_difference": 0.0058571428571428386,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 137,
+              "observed_probability": 0.137
+            },
+            "GB": {
+              "absolute_probability_difference": 0.010857142857142843,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 132,
+              "observed_probability": 0.132
+            },
+            "IN": {
+              "absolute_probability_difference": 0.007142857142857145,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 150,
+              "observed_probability": 0.15
+            },
+            "JP": {
+              "absolute_probability_difference": 0.006142857142857144,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 149,
+              "observed_probability": 0.149
+            },
+            "US": {
+              "absolute_probability_difference": 0.02214285714285716,
+              "expected_probability": 0.14285714285714285,
+              "observed_count": 165,
+              "observed_probability": 0.165
+            }
+          }
+        },
+        "CUSTOMER.CUSTOMER_GROUP": {
+          "declared_values": [
+            "DOMESTIC",
+            "EXPORT",
+            "WHOLESALE",
+            "RETAIL"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "CUSTOMER",
+          "field": "CUSTOMER_GROUP",
+          "rows_observed": 1000,
+          "values": {
+            "DOMESTIC": {
+              "absolute_probability_difference": 0.0030000000000000027,
+              "expected_probability": 0.25,
+              "observed_count": 253,
+              "observed_probability": 0.253
+            },
+            "EXPORT": {
+              "absolute_probability_difference": 0.0020000000000000018,
+              "expected_probability": 0.25,
+              "observed_count": 252,
+              "observed_probability": 0.252
+            },
+            "RETAIL": {
+              "absolute_probability_difference": 0.0030000000000000027,
+              "expected_probability": 0.25,
+              "observed_count": 247,
+              "observed_probability": 0.247
+            },
+            "WHOLESALE": {
+              "absolute_probability_difference": 0.0020000000000000018,
+              "expected_probability": 0.25,
+              "observed_count": 248,
+              "observed_probability": 0.248
+            }
+          }
+        },
+        "CUSTOMER_ADDRESS.ADDRESS_TYPE": {
+          "declared_values": [
+            "BILLING",
+            "SHIPPING",
+            "OFFICE"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "CUSTOMER_ADDRESS",
+          "field": "ADDRESS_TYPE",
+          "rows_observed": 1500,
+          "values": {
+            "BILLING": {
+              "absolute_probability_difference": 0.011999999999999955,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 482,
+              "observed_probability": 0.32133333333333336
+            },
+            "OFFICE": {
+              "absolute_probability_difference": 0.0033333333333332993,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 495,
+              "observed_probability": 0.33
+            },
+            "SHIPPING": {
+              "absolute_probability_difference": 0.015333333333333365,
+              "expected_probability": 0.3333333333333333,
+              "observed_count": 523,
+              "observed_probability": 0.3486666666666667
+            }
+          }
+        },
+        "DELIVERY_EVENT.EVENT_TYPE": {
+          "declared_values": [
+            "CREATED",
+            "PICKED",
+            "PACKED",
+            "SHIPPED",
+            "DELIVERED",
+            "RETURNED"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "DELIVERY_EVENT",
+          "field": "EVENT_TYPE",
+          "rows_observed": 50000,
+          "values": {
+            "CREATED": {
+              "absolute_probability_difference": 0.0009866666666666635,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8284,
+              "observed_probability": 0.16568
+            },
+            "DELIVERED": {
+              "absolute_probability_difference": 0.0007466666666666455,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8296,
+              "observed_probability": 0.16592
+            },
+            "PACKED": {
+              "absolute_probability_difference": 0.0008933333333333293,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8378,
+              "observed_probability": 0.16756
+            },
+            "PICKED": {
+              "absolute_probability_difference": 1.3333333333337416e-05,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8334,
+              "observed_probability": 0.16668
+            },
+            "RETURNED": {
+              "absolute_probability_difference": 0.00042666666666665853,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8312,
+              "observed_probability": 0.16624
+            },
+            "SHIPPED": {
+              "absolute_probability_difference": 0.0012533333333333563,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 8396,
+              "observed_probability": 0.16792
+            }
+          }
+        },
+        "ORDER_PARTNER.PARTNER_ROLE": {
+          "declared_values": [
+            "SOLD_TO",
+            "SHIP_TO",
+            "BILL_TO",
+            "PAYER"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "ORDER_PARTNER",
+          "field": "PARTNER_ROLE",
+          "rows_observed": 7500,
+          "values": {
+            "BILL_TO": {
+              "absolute_probability_difference": 0.0012000000000000066,
+              "expected_probability": 0.25,
+              "observed_count": 1866,
+              "observed_probability": 0.2488
+            },
+            "PAYER": {
+              "absolute_probability_difference": 0.0011999999999999789,
+              "expected_probability": 0.25,
+              "observed_count": 1884,
+              "observed_probability": 0.2512
+            },
+            "SHIP_TO": {
+              "absolute_probability_difference": 0.0013333333333333253,
+              "expected_probability": 0.25,
+              "observed_count": 1865,
+              "observed_probability": 0.24866666666666667
+            },
+            "SOLD_TO": {
+              "absolute_probability_difference": 0.001333333333333353,
+              "expected_probability": 0.25,
+              "observed_count": 1885,
+              "observed_probability": 0.25133333333333335
+            }
+          }
+        },
+        "ORDER_STATUS.STATUS": {
+          "declared_values": [
+            "OPEN",
+            "RELEASED",
+            "COMPLETED",
+            "BLOCKED"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "ORDER_STATUS",
+          "field": "STATUS",
+          "rows_observed": 2500,
+          "values": {
+            "BLOCKED": {
+              "absolute_probability_difference": 0.010000000000000009,
+              "expected_probability": 0.25,
+              "observed_count": 650,
+              "observed_probability": 0.26
+            },
+            "COMPLETED": {
+              "absolute_probability_difference": 0.002799999999999997,
+              "expected_probability": 0.25,
+              "observed_count": 618,
+              "observed_probability": 0.2472
+            },
+            "OPEN": {
+              "absolute_probability_difference": 0.0015999999999999903,
+              "expected_probability": 0.25,
+              "observed_count": 629,
+              "observed_probability": 0.2516
+            },
+            "RELEASED": {
+              "absolute_probability_difference": 0.008800000000000002,
+              "expected_probability": 0.25,
+              "observed_count": 603,
+              "observed_probability": 0.2412
+            }
+          }
+        },
+        "PAYMENT.PAYMENT_METHOD": {
+          "declared_values": [
+            "BANK",
+            "CARD",
+            "TRANSFER",
+            "CASH"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "PAYMENT",
+          "field": "PAYMENT_METHOD",
+          "rows_observed": 4000,
+          "values": {
+            "BANK": {
+              "absolute_probability_difference": 0.005750000000000005,
+              "expected_probability": 0.25,
+              "observed_count": 977,
+              "observed_probability": 0.24425
+            },
+            "CARD": {
+              "absolute_probability_difference": 0.0030000000000000027,
+              "expected_probability": 0.25,
+              "observed_count": 988,
+              "observed_probability": 0.247
+            },
+            "CASH": {
+              "absolute_probability_difference": 0.011749999999999983,
+              "expected_probability": 0.25,
+              "observed_count": 1047,
+              "observed_probability": 0.26175
+            },
+            "TRANSFER": {
+              "absolute_probability_difference": 0.0030000000000000027,
+              "expected_probability": 0.25,
+              "observed_count": 988,
+              "observed_probability": 0.247
+            }
+          }
+        },
+        "PLANT.COUNTRY": {
+          "declared_values": [
+            "US",
+            "DE",
+            "IN",
+            "GB",
+            "FR",
+            "JP"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "PLANT",
+          "field": "COUNTRY",
+          "rows_observed": 100,
+          "values": {
+            "DE": {
+              "absolute_probability_difference": 0.013333333333333336,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 18,
+              "observed_probability": 0.18
+            },
+            "FR": {
+              "absolute_probability_difference": 0.026666666666666644,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 14,
+              "observed_probability": 0.14
+            },
+            "GB": {
+              "absolute_probability_difference": 0.05666666666666666,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 11,
+              "observed_probability": 0.11
+            },
+            "IN": {
+              "absolute_probability_difference": 0.003333333333333355,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 17,
+              "observed_probability": 0.17
+            },
+            "JP": {
+              "absolute_probability_difference": 0.033333333333333354,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 20,
+              "observed_probability": 0.2
+            },
+            "US": {
+              "absolute_probability_difference": 0.033333333333333354,
+              "expected_probability": 0.16666666666666666,
+              "observed_count": 20,
+              "observed_probability": 0.2
+            }
+          }
+        },
+        "PRODUCT.PRODUCT_TYPE": {
+          "declared_values": [
+            "FINISHED",
+            "SEMI_FINISHED",
+            "RAW",
+            "SERVICE"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "PRODUCT",
+          "field": "PRODUCT_TYPE",
+          "rows_observed": 500,
+          "values": {
+            "FINISHED": {
+              "absolute_probability_difference": 0.0040000000000000036,
+              "expected_probability": 0.25,
+              "observed_count": 127,
+              "observed_probability": 0.254
+            },
+            "RAW": {
+              "absolute_probability_difference": 0.008000000000000007,
+              "expected_probability": 0.25,
+              "observed_count": 121,
+              "observed_probability": 0.242
+            },
+            "SEMI_FINISHED": {
+              "absolute_probability_difference": 0.01200000000000001,
+              "expected_probability": 0.25,
+              "observed_count": 119,
+              "observed_probability": 0.238
+            },
+            "SERVICE": {
+              "absolute_probability_difference": 0.016000000000000014,
+              "expected_probability": 0.25,
+              "observed_count": 133,
+              "observed_probability": 0.266
+            }
+          }
+        },
+        "SALES_ORDER.ORDER_TYPE": {
+          "declared_values": [
+            "STANDARD",
+            "EXPRESS",
+            "RETURN",
+            "PROJECT"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "SALES_ORDER",
+          "field": "ORDER_TYPE",
+          "rows_observed": 2500,
+          "values": {
+            "EXPRESS": {
+              "absolute_probability_difference": 0.0116,
+              "expected_probability": 0.25,
+              "observed_count": 596,
+              "observed_probability": 0.2384
+            },
+            "PROJECT": {
+              "absolute_probability_difference": 0.0040000000000000036,
+              "expected_probability": 0.25,
+              "observed_count": 635,
+              "observed_probability": 0.254
+            },
+            "RETURN": {
+              "absolute_probability_difference": 0.002799999999999997,
+              "expected_probability": 0.25,
+              "observed_count": 618,
+              "observed_probability": 0.2472
+            },
+            "STANDARD": {
+              "absolute_probability_difference": 0.01040000000000002,
+              "expected_probability": 0.25,
+              "observed_count": 651,
+              "observed_probability": 0.2604
+            }
+          }
+        },
+        "SALES_ORG.REGION": {
+          "declared_values": [
+            "NA",
+            "EU",
+            "APAC",
+            "LATAM"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "SALES_ORG",
+          "field": "REGION",
+          "rows_observed": 20,
+          "values": {
+            "APAC": {
+              "absolute_probability_difference": 0.15,
+              "expected_probability": 0.25,
+              "observed_count": 2,
+              "observed_probability": 0.1
+            },
+            "EU": {
+              "absolute_probability_difference": 0.09999999999999998,
+              "expected_probability": 0.25,
+              "observed_count": 7,
+              "observed_probability": 0.35
+            },
+            "LATAM": {
+              "absolute_probability_difference": 0.1,
+              "expected_probability": 0.25,
+              "observed_count": 3,
+              "observed_probability": 0.15
+            },
+            "NA": {
+              "absolute_probability_difference": 0.15000000000000002,
+              "expected_probability": 0.25,
+              "observed_count": 8,
+              "observed_probability": 0.4
+            }
+          }
+        },
+        "SHIPMENT.SHIPMENT_TYPE": {
+          "declared_values": [
+            "AIR",
+            "ROAD",
+            "SEA",
+            "RAIL"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "SHIPMENT",
+          "field": "SHIPMENT_TYPE",
+          "rows_observed": 3500,
+          "values": {
+            "AIR": {
+              "absolute_probability_difference": 0.005714285714285727,
+              "expected_probability": 0.25,
+              "observed_count": 895,
+              "observed_probability": 0.2557142857142857
+            },
+            "RAIL": {
+              "absolute_probability_difference": 0.0068571428571428394,
+              "expected_probability": 0.25,
+              "observed_count": 899,
+              "observed_probability": 0.25685714285714284
+            },
+            "ROAD": {
+              "absolute_probability_difference": 0.0037142857142857255,
+              "expected_probability": 0.25,
+              "observed_count": 862,
+              "observed_probability": 0.24628571428571427
+            },
+            "SEA": {
+              "absolute_probability_difference": 0.008857142857142869,
+              "expected_probability": 0.25,
+              "observed_count": 844,
+              "observed_probability": 0.24114285714285713
+            }
+          }
+        },
+        "STORAGE_LOCATION.LOCATION_TYPE": {
+          "declared_values": [
+            "RAW",
+            "FINISHED",
+            "TRANSIT",
+            "QUARANTINE"
+          ],
+          "distribution": "CATEGORICAL",
+          "entity": "STORAGE_LOCATION",
+          "field": "LOCATION_TYPE",
+          "rows_observed": 500,
+          "values": {
+            "FINISHED": {
+              "absolute_probability_difference": 0.014000000000000012,
+              "expected_probability": 0.25,
+              "observed_count": 132,
+              "observed_probability": 0.264
+            },
+            "QUARANTINE": {
+              "absolute_probability_difference": 0.0040000000000000036,
+              "expected_probability": 0.25,
+              "observed_count": 127,
+              "observed_probability": 0.254
+            },
+            "RAW": {
+              "absolute_probability_difference": 0.006000000000000005,
+              "expected_probability": 0.25,
+              "observed_count": 122,
+              "observed_probability": 0.244
+            },
+            "TRANSIT": {
+              "absolute_probability_difference": 0.01200000000000001,
+              "expected_probability": 0.25,
+              "observed_count": 119,
+              "observed_probability": 0.238
+            }
+          }
+        }
+      },
+      "fields_analyzed": 14
+    },
+    "identity_space_utilization": {
+      "entities": {
+        "CARRIER": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "CARRIER_ID"
+          ]
+        },
+        "CUSTOMER": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "CUSTOMER_ID"
+          ]
+        },
+        "CUSTOMER_ADDRESS": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "ADDRESS_ID"
+          ]
+        },
+        "DELIVERY": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "DELIVERY_ID"
+          ]
+        },
+        "DELIVERY_EVENT": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            12000,
+            1000
+          ],
+          "dimension_sources": [
+            "parent:DELIVERY_ITEM('DELIVERY_ID', 'ITEM_NO')",
+            "field:EVENT_NO"
+          ],
+          "generated_unique_identities": 50000,
+          "identity_fields": [
+            "DELIVERY_ID",
+            "ITEM_NO",
+            "EVENT_NO"
+          ],
+          "identity_space_capacity": 12000000,
+          "utilization_rate": 0.004166666666666667
+        },
+        "DELIVERY_ITEM": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            3000,
+            9981
+          ],
+          "dimension_sources": [
+            "parent:DELIVERY('DELIVERY_ID',)",
+            "field:ITEM_NO"
+          ],
+          "generated_unique_identities": 12000,
+          "identity_fields": [
+            "DELIVERY_ID",
+            "ITEM_NO"
+          ],
+          "identity_space_capacity": 29943000,
+          "utilization_rate": 0.00040076144674882274
+        },
+        "INVENTORY": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            500,
+            100,
+            500
+          ],
+          "dimension_sources": [
+            "parent:PRODUCT('PRODUCT_ID',)",
+            "parent:PLANT('PLANT_ID',)",
+            "parent:STORAGE_LOCATION('STORAGE_ID',)"
+          ],
+          "generated_unique_identities": 10000,
+          "identity_fields": [
+            "PRODUCT_ID",
+            "PLANT_ID",
+            "STORAGE_ID"
+          ],
+          "identity_space_capacity": 25000000,
+          "utilization_rate": 0.0004
+        },
+        "INVOICE": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "INVOICE_ID"
+          ]
+        },
+        "INVOICE_ITEM": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            3000,
+            9981
+          ],
+          "dimension_sources": [
+            "parent:INVOICE('INVOICE_ID',)",
+            "field:ITEM_NO"
+          ],
+          "generated_unique_identities": 12000,
+          "identity_fields": [
+            "INVOICE_ID",
+            "ITEM_NO"
+          ],
+          "identity_space_capacity": 29943000,
+          "utilization_rate": 0.00040076144674882274
+        },
+        "ORDER_PARTNER": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            2500,
+            4
+          ],
+          "dimension_sources": [
+            "parent:SALES_ORDER('ORDER_ID',)",
+            "field:PARTNER_ROLE"
+          ],
+          "generated_unique_identities": 7500,
+          "identity_fields": [
+            "ORDER_ID",
+            "PARTNER_ROLE"
+          ],
+          "identity_space_capacity": 10000,
+          "utilization_rate": 0.75
+        },
+        "ORDER_STATUS": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            2500
+          ],
+          "dimension_sources": [
+            "parent:SALES_ORDER('ORDER_ID',)"
+          ],
+          "generated_unique_identities": 2500,
+          "identity_fields": [
+            "ORDER_ID"
+          ],
+          "identity_space_capacity": 2500,
+          "utilization_rate": 1.0
+        },
+        "PAYMENT": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "PAYMENT_ID"
+          ]
+        },
+        "PLANT": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "PLANT_ID"
+          ]
+        },
+        "PRODUCT": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "PRODUCT_ID"
+          ]
+        },
+        "PRODUCT_PLANT": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            500,
+            100
+          ],
+          "dimension_sources": [
+            "parent:PRODUCT('PRODUCT_ID',)",
+            "parent:PLANT('PLANT_ID',)"
+          ],
+          "generated_unique_identities": 2000,
+          "identity_fields": [
+            "PRODUCT_ID",
+            "PLANT_ID"
+          ],
+          "identity_space_capacity": 50000,
+          "utilization_rate": 0.04
+        },
+        "SALES_ITEM": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            2500,
+            9981
+          ],
+          "dimension_sources": [
+            "parent:SALES_ORDER('ORDER_ID',)",
+            "field:ITEM_NO"
+          ],
+          "generated_unique_identities": 10000,
+          "identity_fields": [
+            "ORDER_ID",
+            "ITEM_NO"
+          ],
+          "identity_space_capacity": 24952500,
+          "utilization_rate": 0.00040076144674882274
+        },
+        "SALES_ORDER": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "ORDER_ID"
+          ]
+        },
+        "SALES_ORG": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "SALES_ORG_ID"
+          ]
+        },
+        "SHIPMENT": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "SHIPMENT_ID"
+          ]
+        },
+        "SHIPMENT_ITEM": {
+          "capacity_determinable": true,
+          "dimension_sizes": [
+            3500,
+            9981
+          ],
+          "dimension_sources": [
+            "parent:SHIPMENT('SHIPMENT_ID',)",
+            "field:ITEM_NO"
+          ],
+          "generated_unique_identities": 12000,
+          "identity_fields": [
+            "SHIPMENT_ID",
+            "ITEM_NO"
+          ],
+          "identity_space_capacity": 34933500,
+          "utilization_rate": 0.0003435098114989909
+        },
+        "STORAGE_LOCATION": {
+          "capacity_determinable": false,
+          "identity_fields": [
+            "STORAGE_ID"
+          ]
+        }
+      },
+      "entities_analyzed": 21
+    },
+    "performance": {
+      "available": true,
+      "elapsed_seconds": 56.743186,
+      "rows_per_second": 2434.1248656710954,
+      "total_generated_rows": 138120
+    },
+    "population_fidelity": {
+      "difference": 0,
+      "entities": {
+        "CARRIER": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 500,
+          "requested_rows": 500
+        },
+        "CUSTOMER": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 1000,
+          "requested_rows": 1000
+        },
+        "CUSTOMER_ADDRESS": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 1500,
+          "requested_rows": 1500
+        },
+        "DELIVERY": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 3000,
+          "requested_rows": 3000
+        },
+        "DELIVERY_EVENT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 50000,
+          "requested_rows": 50000
+        },
+        "DELIVERY_ITEM": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 12000,
+          "requested_rows": 12000
+        },
+        "INVENTORY": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 10000,
+          "requested_rows": 10000
+        },
+        "INVOICE": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 3000,
+          "requested_rows": 3000
+        },
+        "INVOICE_ITEM": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 12000,
+          "requested_rows": 12000
+        },
+        "ORDER_PARTNER": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 7500,
+          "requested_rows": 7500
+        },
+        "ORDER_STATUS": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 2500,
+          "requested_rows": 2500
+        },
+        "PAYMENT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 4000,
+          "requested_rows": 4000
+        },
+        "PLANT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 100,
+          "requested_rows": 100
+        },
+        "PRODUCT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 500,
+          "requested_rows": 500
+        },
+        "PRODUCT_PLANT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 2000,
+          "requested_rows": 2000
+        },
+        "SALES_ITEM": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 10000,
+          "requested_rows": 10000
+        },
+        "SALES_ORDER": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 2500,
+          "requested_rows": 2500
+        },
+        "SALES_ORG": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 20,
+          "requested_rows": 20
+        },
+        "SHIPMENT": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 3500,
+          "requested_rows": 3500
+        },
+        "SHIPMENT_ITEM": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 12000,
+          "requested_rows": 12000
+        },
+        "STORAGE_LOCATION": {
+          "difference": 0,
+          "fidelity_rate": 1.0,
+          "generated_rows": 500,
+          "requested_rows": 500
+        }
+      },
+      "fidelity_rate": 1.0,
+      "total_generated_rows": 138120,
+      "total_requested_rows": 138120
+    },
+    "relationship_fidelity": {
+      "relationships": {
+        "relationship_group_1": {
+          "average_children_per_participating_parent": 1.9206145966709347,
+          "child_entity": "CUSTOMER_ADDRESS",
+          "child_fields": [
+            "CUSTOMER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 1500,
+          "composite": false,
+          "maximum_children_per_parent": 6,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "CUSTOMER",
+          "parent_fields": [
+            "CUSTOMER_ID"
+          ],
+          "parent_keys": 1000,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.781,
+          "participating_parent_keys": 781,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_10": {
+          "average_children_per_participating_parent": 1.7157563625965113,
+          "child_entity": "DELIVERY_ITEM",
+          "child_fields": [
+            "ORDER_ID",
+            "SALES_ITEM_NO"
+          ],
+          "child_participation": "OPTIONAL",
+          "child_rows": 12000,
+          "composite": true,
+          "maximum_children_per_parent": 8,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ITEM",
+          "parent_fields": [
+            "ORDER_ID",
+            "ITEM_NO"
+          ],
+          "parent_keys": 10000,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.6994,
+          "participating_parent_keys": 6994,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_11": {
+          "average_children_per_participating_parent": 4.231908590774439,
+          "child_entity": "DELIVERY_EVENT",
+          "child_fields": [
+            "DELIVERY_ID",
+            "ITEM_NO"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 50000,
+          "composite": true,
+          "maximum_children_per_parent": 14,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "DELIVERY_ITEM",
+          "parent_fields": [
+            "DELIVERY_ID",
+            "ITEM_NO"
+          ],
+          "parent_keys": 12000,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.9845833333333334,
+          "participating_parent_keys": 11815,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_12": {
+          "average_children_per_participating_parent": 1.7015070491006319,
+          "child_entity": "SHIPMENT",
+          "child_fields": [
+            "DELIVERY_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 3500,
+          "composite": false,
+          "maximum_children_per_parent": 7,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "DELIVERY",
+          "parent_fields": [
+            "DELIVERY_ID"
+          ],
+          "parent_keys": 3000,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.6856666666666666,
+          "participating_parent_keys": 2057,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_13": {
+          "average_children_per_participating_parent": 7.028112449799197,
+          "child_entity": "SHIPMENT",
+          "child_fields": [
+            "CARRIER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 3500,
+          "composite": false,
+          "maximum_children_per_parent": 16,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "CARRIER",
+          "parent_fields": [
+            "CARRIER_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.996,
+          "participating_parent_keys": 498,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_14": {
+          "average_children_per_participating_parent": 3.551346552234389,
+          "child_entity": "SHIPMENT_ITEM",
+          "child_fields": [
+            "SHIPMENT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 12000,
+          "composite": false,
+          "maximum_children_per_parent": 11,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SHIPMENT",
+          "parent_fields": [
+            "SHIPMENT_ID"
+          ],
+          "parent_keys": 3500,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.9654285714285714,
+          "participating_parent_keys": 3379,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_15": {
+          "average_children_per_participating_parent": 1.7462165308498254,
+          "child_entity": "INVOICE",
+          "child_fields": [
+            "ORDER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 3000,
+          "composite": false,
+          "maximum_children_per_parent": 7,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ORDER",
+          "parent_fields": [
+            "ORDER_ID"
+          ],
+          "parent_keys": 2500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.6872,
+          "participating_parent_keys": 1718,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_16": {
+          "average_children_per_participating_parent": 4.077471967380224,
+          "child_entity": "INVOICE_ITEM",
+          "child_fields": [
+            "INVOICE_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 12000,
+          "composite": false,
+          "maximum_children_per_parent": 13,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "INVOICE",
+          "parent_fields": [
+            "INVOICE_ID"
+          ],
+          "parent_keys": 3000,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.981,
+          "participating_parent_keys": 2943,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_17": {
+          "average_children_per_participating_parent": 24.0,
+          "child_entity": "INVOICE_ITEM",
+          "child_fields": [
+            "PRODUCT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 12000,
+          "composite": false,
+          "maximum_children_per_parent": 42,
+          "minimum_children_per_parent": 8,
+          "orphan_child_rows": 0,
+          "parent_entity": "PRODUCT",
+          "parent_fields": [
+            "PRODUCT_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 500,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_18": {
+          "average_children_per_participating_parent": 1.8223234624145785,
+          "child_entity": "PAYMENT",
+          "child_fields": [
+            "INVOICE_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 4000,
+          "composite": false,
+          "maximum_children_per_parent": 6,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "INVOICE",
+          "parent_fields": [
+            "INVOICE_ID"
+          ],
+          "parent_keys": 3000,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.7316666666666667,
+          "participating_parent_keys": 2195,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_19": {
+          "average_children_per_participating_parent": 4.032258064516129,
+          "child_entity": "PRODUCT_PLANT",
+          "child_fields": [
+            "PRODUCT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 2000,
+          "composite": false,
+          "maximum_children_per_parent": 10,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "PRODUCT",
+          "parent_fields": [
+            "PRODUCT_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.992,
+          "participating_parent_keys": 496,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_2": {
+          "average_children_per_participating_parent": 2.6881720430107525,
+          "child_entity": "SALES_ORDER",
+          "child_fields": [
+            "CUSTOMER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 2500,
+          "composite": false,
+          "maximum_children_per_parent": 9,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "CUSTOMER",
+          "parent_fields": [
+            "CUSTOMER_ID"
+          ],
+          "parent_keys": 1000,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.93,
+          "participating_parent_keys": 930,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_20": {
+          "average_children_per_participating_parent": 20.0,
+          "child_entity": "PRODUCT_PLANT",
+          "child_fields": [
+            "PLANT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 2000,
+          "composite": false,
+          "maximum_children_per_parent": 33,
+          "minimum_children_per_parent": 12,
+          "orphan_child_rows": 0,
+          "parent_entity": "PLANT",
+          "parent_fields": [
+            "PLANT_ID"
+          ],
+          "parent_keys": 100,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 100,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_21": {
+          "average_children_per_participating_parent": 5.0,
+          "child_entity": "STORAGE_LOCATION",
+          "child_fields": [
+            "PLANT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 500,
+          "composite": false,
+          "maximum_children_per_parent": 10,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "PLANT",
+          "parent_fields": [
+            "PLANT_ID"
+          ],
+          "parent_keys": 100,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 100,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_22": {
+          "average_children_per_participating_parent": 20.0,
+          "child_entity": "INVENTORY",
+          "child_fields": [
+            "PRODUCT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 10000,
+          "composite": false,
+          "maximum_children_per_parent": 37,
+          "minimum_children_per_parent": 6,
+          "orphan_child_rows": 0,
+          "parent_entity": "PRODUCT",
+          "parent_fields": [
+            "PRODUCT_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 500,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_23": {
+          "average_children_per_participating_parent": 100.0,
+          "child_entity": "INVENTORY",
+          "child_fields": [
+            "PLANT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 10000,
+          "composite": false,
+          "maximum_children_per_parent": 122,
+          "minimum_children_per_parent": 76,
+          "orphan_child_rows": 0,
+          "parent_entity": "PLANT",
+          "parent_fields": [
+            "PLANT_ID"
+          ],
+          "parent_keys": 100,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 100,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_24": {
+          "average_children_per_participating_parent": 20.0,
+          "child_entity": "INVENTORY",
+          "child_fields": [
+            "STORAGE_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 10000,
+          "composite": false,
+          "maximum_children_per_parent": 32,
+          "minimum_children_per_parent": 9,
+          "orphan_child_rows": 0,
+          "parent_entity": "STORAGE_LOCATION",
+          "parent_fields": [
+            "STORAGE_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 500,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_3": {
+          "average_children_per_participating_parent": 4.065040650406504,
+          "child_entity": "SALES_ITEM",
+          "child_fields": [
+            "ORDER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 10000,
+          "composite": false,
+          "maximum_children_per_parent": 13,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ORDER",
+          "parent_fields": [
+            "ORDER_ID"
+          ],
+          "parent_keys": 2500,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.984,
+          "participating_parent_keys": 2460,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_4": {
+          "average_children_per_participating_parent": 20.0,
+          "child_entity": "SALES_ITEM",
+          "child_fields": [
+            "PRODUCT_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 10000,
+          "composite": false,
+          "maximum_children_per_parent": 33,
+          "minimum_children_per_parent": 9,
+          "orphan_child_rows": 0,
+          "parent_entity": "PRODUCT",
+          "parent_fields": [
+            "PRODUCT_ID"
+          ],
+          "parent_keys": 500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 500,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_5": {
+          "average_children_per_participating_parent": 3.0132583366813983,
+          "child_entity": "ORDER_PARTNER",
+          "child_fields": [
+            "ORDER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 7500,
+          "composite": false,
+          "maximum_children_per_parent": 4,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ORDER",
+          "parent_fields": [
+            "ORDER_ID"
+          ],
+          "parent_keys": 2500,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.9956,
+          "participating_parent_keys": 2489,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_6": {
+          "average_children_per_participating_parent": 7.5075075075075075,
+          "child_entity": "ORDER_PARTNER",
+          "child_fields": [
+            "CUSTOMER_ID"
+          ],
+          "child_participation": "OPTIONAL",
+          "child_rows": 7500,
+          "composite": false,
+          "maximum_children_per_parent": 18,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "CUSTOMER",
+          "parent_fields": [
+            "CUSTOMER_ID"
+          ],
+          "parent_keys": 1000,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.999,
+          "participating_parent_keys": 999,
+          "relationship_type": "MANY_TO_MANY"
+        },
+        "relationship_group_7": {
+          "average_children_per_participating_parent": 1.0,
+          "child_entity": "ORDER_STATUS",
+          "child_fields": [
+            "ORDER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 2500,
+          "composite": false,
+          "maximum_children_per_parent": 1,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ORDER",
+          "parent_fields": [
+            "ORDER_ID"
+          ],
+          "parent_keys": 2500,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 1.0,
+          "participating_parent_keys": 2500,
+          "relationship_type": "ONE_TO_ONE"
+        },
+        "relationship_group_8": {
+          "average_children_per_participating_parent": 1.7371163867979154,
+          "child_entity": "DELIVERY",
+          "child_fields": [
+            "ORDER_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 3000,
+          "composite": false,
+          "maximum_children_per_parent": 8,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "SALES_ORDER",
+          "parent_fields": [
+            "ORDER_ID"
+          ],
+          "parent_keys": 2500,
+          "parent_participation": "OPTIONAL",
+          "parent_participation_rate": 0.6908,
+          "participating_parent_keys": 1727,
+          "relationship_type": "ONE_TO_MANY"
+        },
+        "relationship_group_9": {
+          "average_children_per_participating_parent": 4.077471967380224,
+          "child_entity": "DELIVERY_ITEM",
+          "child_fields": [
+            "DELIVERY_ID"
+          ],
+          "child_participation": "MANDATORY",
+          "child_rows": 12000,
+          "composite": false,
+          "maximum_children_per_parent": 13,
+          "minimum_children_per_parent": 1,
+          "orphan_child_rows": 0,
+          "parent_entity": "DELIVERY",
+          "parent_fields": [
+            "DELIVERY_ID"
+          ],
+          "parent_keys": 3000,
+          "parent_participation": "MANDATORY",
+          "parent_participation_rate": 0.981,
+          "participating_parent_keys": 2943,
+          "relationship_type": "ONE_TO_MANY"
+        }
+      },
+      "relationships_analyzed": 24
+    },
+    "statistical_fidelity": {
+      "fields": {
+        "CARRIER.CARRIER_ID": {
+          "entity": "CARRIER",
+          "field": "CARRIER_ID",
+          "statistics": {
+            "count": 500,
+            "maximum": 500.0,
+            "mean": 250.5,
+            "minimum": 1.0,
+            "p50": 250.5,
+            "p95": 475.04999999999995,
+            "standard_deviation": 144.33727862198316
+          }
+        },
+        "CARRIER.RATING": {
+          "entity": "CARRIER",
+          "field": "RATING",
+          "statistics": {
+            "count": 500,
+            "maximum": 4.998289667509805,
+            "mean": 3.009720411518406,
+            "minimum": 1.0129812644069172,
+            "p50": 2.9853640166462343,
+            "p95": 4.792412692746982,
+            "standard_deviation": 1.146703235498072
+          }
+        },
+        "CUSTOMER.CREDIT_LIMIT": {
+          "entity": "CUSTOMER",
+          "field": "CREDIT_LIMIT",
+          "statistics": {
+            "count": 1000,
+            "maximum": 249900.7857639248,
+            "mean": 127774.18223647181,
+            "minimum": 5165.603220465532,
+            "p50": 125314.88176856402,
+            "p95": 236616.70172488358,
+            "standard_deviation": 69935.90675175004
+          }
+        },
+        "CUSTOMER.CUSTOMER_ID": {
+          "entity": "CUSTOMER",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 1000,
+            "maximum": 1000.0,
+            "mean": 500.5,
+            "minimum": 1.0,
+            "p50": 500.5,
+            "p95": 950.05,
+            "standard_deviation": 288.6749902572095
+          }
+        },
+        "CUSTOMER_ADDRESS.ADDRESS_ID": {
+          "entity": "CUSTOMER_ADDRESS",
+          "field": "ADDRESS_ID",
+          "statistics": {
+            "count": 1500,
+            "maximum": 1500.0,
+            "mean": 750.5,
+            "minimum": 1.0,
+            "p50": 750.5,
+            "p95": 1425.05,
+            "standard_deviation": 433.01260566716377
+          }
+        },
+        "CUSTOMER_ADDRESS.CUSTOMER_ID": {
+          "entity": "CUSTOMER_ADDRESS",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 1500,
+            "maximum": 1000.0,
+            "mean": 490.36333333333334,
+            "minimum": 1.0,
+            "p50": 484.0,
+            "p95": 952.05,
+            "standard_deviation": 288.5560453745896
+          }
+        },
+        "CUSTOMER_ADDRESS.POSTAL_CODE": {
+          "entity": "CUSTOMER_ADDRESS",
+          "field": "POSTAL_CODE",
+          "statistics": {
+            "count": 1500,
+            "maximum": 99996.0,
+            "mean": 49261.168,
+            "minimum": 25.0,
+            "p50": 48501.5,
+            "p95": 95549.0,
+            "standard_deviation": 28649.839725295336
+          }
+        },
+        "DELIVERY.CUSTOMER_ID": {
+          "entity": "DELIVERY",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 1000.0,
+            "mean": 499.436,
+            "minimum": 2.0,
+            "p50": 493.5,
+            "p95": 944.0,
+            "standard_deviation": 284.71310689417345
+          }
+        },
+        "DELIVERY.DELIVERY_ID": {
+          "entity": "DELIVERY",
+          "field": "DELIVERY_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 3000.0,
+            "mean": 1500.5,
+            "minimum": 1.0,
+            "p50": 1500.5,
+            "p95": 2850.0499999999997,
+            "standard_deviation": 866.0253556719149
+          }
+        },
+        "DELIVERY.ORDER_ID": {
+          "entity": "DELIVERY",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 2498.0,
+            "mean": 1231.113,
+            "minimum": 2.0,
+            "p50": 1217.0,
+            "p95": 2358.0499999999997,
+            "standard_deviation": 713.3320976686332
+          }
+        },
+        "DELIVERY.PLANT_ID": {
+          "entity": "DELIVERY",
+          "field": "PLANT_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 100.0,
+            "mean": 50.898,
+            "minimum": 1.0,
+            "p50": 51.0,
+            "p95": 95.0,
+            "standard_deviation": 28.691083330307798
+          }
+        },
+        "DELIVERY_EVENT.DELIVERY_ID": {
+          "entity": "DELIVERY_EVENT",
+          "field": "DELIVERY_ID",
+          "statistics": {
+            "count": 50000,
+            "maximum": 3000.0,
+            "mean": 1500.05532,
+            "minimum": 1.0,
+            "p50": 1501.0,
+            "p95": 2849.0,
+            "standard_deviation": 863.9338168515611
+          }
+        },
+        "DELIVERY_EVENT.EVENT_NO": {
+          "entity": "DELIVERY_EVENT",
+          "field": "EVENT_NO",
+          "statistics": {
+            "count": 50000,
+            "maximum": 1000.0,
+            "mean": 499.85836,
+            "minimum": 1.0,
+            "p50": 500.0,
+            "p95": 949.0,
+            "standard_deviation": 288.5627018485078
+          }
+        },
+        "DELIVERY_EVENT.ITEM_NO": {
+          "entity": "DELIVERY_EVENT",
+          "field": "ITEM_NO",
+          "statistics": {
+            "count": 50000,
+            "maximum": 9988.0,
+            "mean": 5001.46798,
+            "minimum": 10.0,
+            "p50": 4985.0,
+            "p95": 9485.049999999996,
+            "standard_deviation": 2886.2500639575082
+          }
+        },
+        "DELIVERY_ITEM.DELIVERY_ID": {
+          "entity": "DELIVERY_ITEM",
+          "field": "DELIVERY_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 3000.0,
+            "mean": 1498.0964166666668,
+            "minimum": 1.0,
+            "p50": 1498.0,
+            "p95": 2852.0,
+            "standard_deviation": 864.5072444002387
+          }
+        },
+        "DELIVERY_ITEM.ITEM_NO": {
+          "entity": "DELIVERY_ITEM",
+          "field": "ITEM_NO",
+          "statistics": {
+            "count": 12000,
+            "maximum": 9988.0,
+            "mean": 5000.465833333334,
+            "minimum": 10.0,
+            "p50": 4985.5,
+            "p95": 9474.05,
+            "standard_deviation": 2886.4220966736702
+          }
+        },
+        "DELIVERY_ITEM.ORDER_ID": {
+          "entity": "DELIVERY_ITEM",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 2500.0,
+            "mean": 1244.5875833333334,
+            "minimum": 1.0,
+            "p50": 1250.0,
+            "p95": 2380.0,
+            "standard_deviation": 725.52677666816
+          }
+        },
+        "DELIVERY_ITEM.PRODUCT_ID": {
+          "entity": "DELIVERY_ITEM",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 12000.0,
+            "mean": 6000.5,
+            "minimum": 1.0,
+            "p50": 6000.5,
+            "p95": 11400.05,
+            "standard_deviation": 3464.1016031096237
+          }
+        },
+        "DELIVERY_ITEM.QUANTITY": {
+          "entity": "DELIVERY_ITEM",
+          "field": "QUANTITY",
+          "statistics": {
+            "count": 12000,
+            "maximum": 100.0,
+            "mean": 50.922666666666665,
+            "minimum": 1.0,
+            "p50": 51.0,
+            "p95": 96.0,
+            "standard_deviation": 28.67698879279734
+          }
+        },
+        "DELIVERY_ITEM.SALES_ITEM_NO": {
+          "entity": "DELIVERY_ITEM",
+          "field": "SALES_ITEM_NO",
+          "statistics": {
+            "count": 12000,
+            "maximum": 9990.0,
+            "mean": 5023.609416666666,
+            "minimum": 11.0,
+            "p50": 5050.0,
+            "p95": 9459.0,
+            "standard_deviation": 2837.3764284742506
+          }
+        },
+        "INVENTORY.PLANT_ID": {
+          "entity": "INVENTORY",
+          "field": "PLANT_ID",
+          "statistics": {
+            "count": 10000,
+            "maximum": 100.0,
+            "mean": 50.7893,
+            "minimum": 1.0,
+            "p50": 51.0,
+            "p95": 96.0,
+            "standard_deviation": 28.62792178119121
+          }
+        },
+        "INVENTORY.PRODUCT_ID": {
+          "entity": "INVENTORY",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 10000,
+            "maximum": 500.0,
+            "mean": 249.062,
+            "minimum": 1.0,
+            "p50": 250.0,
+            "p95": 475.0,
+            "standard_deviation": 144.4384234059624
+          }
+        },
+        "INVENTORY.STOCK_QTY": {
+          "entity": "INVENTORY",
+          "field": "STOCK_QTY",
+          "statistics": {
+            "count": 10000,
+            "maximum": 99994.0,
+            "mean": 49892.295,
+            "minimum": 10.0,
+            "p50": 50094.0,
+            "p95": 95175.35,
+            "standard_deviation": 28938.763873389238
+          }
+        },
+        "INVENTORY.STORAGE_ID": {
+          "entity": "INVENTORY",
+          "field": "STORAGE_ID",
+          "statistics": {
+            "count": 10000,
+            "maximum": 500.0,
+            "mean": 251.621,
+            "minimum": 1.0,
+            "p50": 255.0,
+            "p95": 476.0,
+            "standard_deviation": 145.22278457253205
+          }
+        },
+        "INVOICE.CUSTOMER_ID": {
+          "entity": "INVOICE",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 1000.0,
+            "mean": 498.8503333333333,
+            "minimum": 2.0,
+            "p50": 500.0,
+            "p95": 949.0,
+            "standard_deviation": 285.5724098482827
+          }
+        },
+        "INVOICE.INVOICE_ID": {
+          "entity": "INVOICE",
+          "field": "INVOICE_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 3000.0,
+            "mean": 1500.5,
+            "minimum": 1.0,
+            "p50": 1500.5,
+            "p95": 2850.0499999999997,
+            "standard_deviation": 866.0253556719149
+          }
+        },
+        "INVOICE.ORDER_ID": {
+          "entity": "INVOICE",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 3000,
+            "maximum": 2500.0,
+            "mean": 1257.677,
+            "minimum": 4.0,
+            "p50": 1268.0,
+            "p95": 2378.0,
+            "standard_deviation": 717.4839371054475
+          }
+        },
+        "INVOICE.TOTAL_VALUE": {
+          "entity": "INVOICE",
+          "field": "TOTAL_VALUE",
+          "statistics": {
+            "count": 3000,
+            "maximum": 499786.04630820407,
+            "mean": 249650.05057514616,
+            "minimum": 315.83968085298045,
+            "p50": 246156.37495186384,
+            "p95": 475399.46323830995,
+            "standard_deviation": 145207.2716184361
+          }
+        },
+        "INVOICE_ITEM.INVOICE_ID": {
+          "entity": "INVOICE_ITEM",
+          "field": "INVOICE_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 3000.0,
+            "mean": 1491.6770833333333,
+            "minimum": 1.0,
+            "p50": 1494.0,
+            "p95": 2852.0,
+            "standard_deviation": 870.1589589311269
+          }
+        },
+        "INVOICE_ITEM.ITEM_NO": {
+          "entity": "INVOICE_ITEM",
+          "field": "ITEM_NO",
+          "statistics": {
+            "count": 12000,
+            "maximum": 9988.0,
+            "mean": 5018.842166666666,
+            "minimum": 10.0,
+            "p50": 5022.0,
+            "p95": 9493.0,
+            "standard_deviation": 2887.1454570080027
+          }
+        },
+        "INVOICE_ITEM.PRODUCT_ID": {
+          "entity": "INVOICE_ITEM",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 500.0,
+            "mean": 250.24833333333333,
+            "minimum": 1.0,
+            "p50": 249.0,
+            "p95": 476.0,
+            "standard_deviation": 145.36140305191873
+          }
+        },
+        "INVOICE_ITEM.QUANTITY": {
+          "entity": "INVOICE_ITEM",
+          "field": "QUANTITY",
+          "statistics": {
+            "count": 12000,
+            "maximum": 100.0,
+            "mean": 50.778,
+            "minimum": 1.0,
+            "p50": 51.0,
+            "p95": 96.0,
+            "standard_deviation": 28.680656361620045
+          }
+        },
+        "ORDER_PARTNER.CUSTOMER_ID": {
+          "entity": "ORDER_PARTNER",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 7500,
+            "maximum": 1000.0,
+            "mean": 502.41386666666665,
+            "minimum": 1.0,
+            "p50": 498.5,
+            "p95": 949.0,
+            "standard_deviation": 288.3514798199977
+          }
+        },
+        "ORDER_PARTNER.ORDER_ID": {
+          "entity": "ORDER_PARTNER",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 7500,
+            "maximum": 2500.0,
+            "mean": 1243.5726666666667,
+            "minimum": 1.0,
+            "p50": 1236.0,
+            "p95": 2374.0,
+            "standard_deviation": 721.3247619389074
+          }
+        },
+        "ORDER_STATUS.ORDER_ID": {
+          "entity": "ORDER_STATUS",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 2500,
+            "maximum": 2500.0,
+            "mean": 1250.5,
+            "minimum": 1.0,
+            "p50": 1250.5,
+            "p95": 2375.0499999999997,
+            "standard_deviation": 721.6877787520029
+          }
+        },
+        "PAYMENT.AMOUNT": {
+          "entity": "PAYMENT",
+          "field": "AMOUNT",
+          "statistics": {
+            "count": 4000,
+            "maximum": 499962.5770113074,
+            "mean": 248181.2864401195,
+            "minimum": 378.007612462488,
+            "p50": 247745.64767288323,
+            "p95": 473079.1109516015,
+            "standard_deviation": 144058.66560338266
+          }
+        },
+        "PAYMENT.INVOICE_ID": {
+          "entity": "PAYMENT",
+          "field": "INVOICE_ID",
+          "statistics": {
+            "count": 4000,
+            "maximum": 3000.0,
+            "mean": 1511.94575,
+            "minimum": 1.0,
+            "p50": 1492.5,
+            "p95": 2854.0,
+            "standard_deviation": 861.8397779210095
+          }
+        },
+        "PAYMENT.PAYMENT_ID": {
+          "entity": "PAYMENT",
+          "field": "PAYMENT_ID",
+          "statistics": {
+            "count": 4000,
+            "maximum": 4000.0,
+            "mean": 2000.5,
+            "minimum": 1.0,
+            "p50": 2000.5,
+            "p95": 3800.0499999999997,
+            "standard_deviation": 1154.7005022948592
+          }
+        },
+        "PLANT.PLANT_ID": {
+          "entity": "PLANT",
+          "field": "PLANT_ID",
+          "statistics": {
+            "count": 100,
+            "maximum": 100.0,
+            "mean": 50.5,
+            "minimum": 1.0,
+            "p50": 50.5,
+            "p95": 95.05,
+            "standard_deviation": 28.86607004772212
+          }
+        },
+        "PRODUCT.PRODUCT_ID": {
+          "entity": "PRODUCT",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 500,
+            "maximum": 500.0,
+            "mean": 250.5,
+            "minimum": 1.0,
+            "p50": 250.5,
+            "p95": 475.04999999999995,
+            "standard_deviation": 144.33727862198316
+          }
+        },
+        "PRODUCT.UNIT_PRICE": {
+          "entity": "PRODUCT",
+          "field": "UNIT_PRICE",
+          "statistics": {
+            "count": 500,
+            "maximum": 49929.35188691545,
+            "mean": 24703.414735969825,
+            "minimum": 187.24899749823717,
+            "p50": 24426.320094220704,
+            "p95": 47723.494287891626,
+            "standard_deviation": 14529.189210915665
+          }
+        },
+        "PRODUCT.WEIGHT": {
+          "entity": "PRODUCT",
+          "field": "WEIGHT",
+          "statistics": {
+            "count": 500,
+            "maximum": 52.5419236220156,
+            "mean": 25.168639276688545,
+            "minimum": 1.5985215341344237,
+            "p50": 25.24095257124258,
+            "p95": 38.27817615132795,
+            "standard_deviation": 7.883803898183849
+          }
+        },
+        "PRODUCT_PLANT.PLANT_ID": {
+          "entity": "PRODUCT_PLANT",
+          "field": "PLANT_ID",
+          "statistics": {
+            "count": 2000,
+            "maximum": 100.0,
+            "mean": 50.023,
+            "minimum": 1.0,
+            "p50": 49.0,
+            "p95": 95.0,
+            "standard_deviation": 28.726093904323328
+          }
+        },
+        "PRODUCT_PLANT.PRODUCT_ID": {
+          "entity": "PRODUCT_PLANT",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 2000,
+            "maximum": 500.0,
+            "mean": 252.0925,
+            "minimum": 1.0,
+            "p50": 258.0,
+            "p95": 472.0,
+            "standard_deviation": 143.18460093093117
+          }
+        },
+        "PRODUCT_PLANT.REORDER_POINT": {
+          "entity": "PRODUCT_PLANT",
+          "field": "REORDER_POINT",
+          "statistics": {
+            "count": 2000,
+            "maximum": 1000.0,
+            "mean": 504.0175,
+            "minimum": 10.0,
+            "p50": 511.0,
+            "p95": 943.05,
+            "standard_deviation": 285.45203659065027
+          }
+        },
+        "SALES_ITEM.ITEM_NO": {
+          "entity": "SALES_ITEM",
+          "field": "ITEM_NO",
+          "statistics": {
+            "count": 10000,
+            "maximum": 9990.0,
+            "mean": 5017.2202,
+            "minimum": 11.0,
+            "p50": 5032.0,
+            "p95": 9460.05,
+            "standard_deviation": 2849.638957221066
+          }
+        },
+        "SALES_ITEM.NET_VALUE": {
+          "entity": "SALES_ITEM",
+          "field": "NET_VALUE",
+          "statistics": {
+            "count": 10000,
+            "maximum": 99997.66234409182,
+            "mean": 50424.67700947239,
+            "minimum": 11.063161794014606,
+            "p50": 50630.42915527639,
+            "p95": 95237.66308164144,
+            "standard_deviation": 28833.217519317706
+          }
+        },
+        "SALES_ITEM.ORDER_ID": {
+          "entity": "SALES_ITEM",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 10000,
+            "maximum": 2500.0,
+            "mean": 1245.6449,
+            "minimum": 1.0,
+            "p50": 1256.5,
+            "p95": 2370.0499999999993,
+            "standard_deviation": 723.7332469936603
+          }
+        },
+        "SALES_ITEM.PRODUCT_ID": {
+          "entity": "SALES_ITEM",
+          "field": "PRODUCT_ID",
+          "statistics": {
+            "count": 10000,
+            "maximum": 500.0,
+            "mean": 250.633,
+            "minimum": 1.0,
+            "p50": 252.0,
+            "p95": 477.0,
+            "standard_deviation": 144.7911934856535
+          }
+        },
+        "SALES_ITEM.QUANTITY": {
+          "entity": "SALES_ITEM",
+          "field": "QUANTITY",
+          "statistics": {
+            "count": 10000,
+            "maximum": 100.0,
+            "mean": 50.7355,
+            "minimum": 1.0,
+            "p50": 51.0,
+            "p95": 95.0,
+            "standard_deviation": 28.9557375963729
+          }
+        },
+        "SALES_ORDER.CUSTOMER_ID": {
+          "entity": "SALES_ORDER",
+          "field": "CUSTOMER_ID",
+          "statistics": {
+            "count": 2500,
+            "maximum": 999.0,
+            "mean": 506.8584,
+            "minimum": 1.0,
+            "p50": 509.5,
+            "p95": 942.0,
+            "standard_deviation": 281.98345190709375
+          }
+        },
+        "SALES_ORDER.NET_VALUE": {
+          "entity": "SALES_ORDER",
+          "field": "NET_VALUE",
+          "statistics": {
+            "count": 2500,
+            "maximum": 249982.70943156406,
+            "mean": 126066.74953911724,
+            "minimum": 263.95460016876837,
+            "p50": 125662.83537629775,
+            "p95": 239273.36078809778,
+            "standard_deviation": 71981.34608776041
+          }
+        },
+        "SALES_ORDER.ORDER_ID": {
+          "entity": "SALES_ORDER",
+          "field": "ORDER_ID",
+          "statistics": {
+            "count": 2500,
+            "maximum": 2500.0,
+            "mean": 1250.5,
+            "minimum": 1.0,
+            "p50": 1250.5,
+            "p95": 2375.0499999999997,
+            "standard_deviation": 721.6877787520029
+          }
+        },
+        "SALES_ORDER.SALES_ORG_ID": {
+          "entity": "SALES_ORDER",
+          "field": "SALES_ORG_ID",
+          "statistics": {
+            "count": 2500,
+            "maximum": 20.0,
+            "mean": 10.34,
+            "minimum": 1.0,
+            "p50": 10.0,
+            "p95": 19.0,
+            "standard_deviation": 5.779307917043308
+          }
+        },
+        "SALES_ORG.SALES_ORG_ID": {
+          "entity": "SALES_ORG",
+          "field": "SALES_ORG_ID",
+          "statistics": {
+            "count": 20,
+            "maximum": 20.0,
+            "mean": 10.5,
+            "minimum": 1.0,
+            "p50": 10.5,
+            "p95": 19.05,
+            "standard_deviation": 5.766281297335398
+          }
+        },
+        "SHIPMENT.CARRIER_ID": {
+          "entity": "SHIPMENT",
+          "field": "CARRIER_ID",
+          "statistics": {
+            "count": 3500,
+            "maximum": 500.0,
+            "mean": 250.12514285714286,
+            "minimum": 1.0,
+            "p50": 249.0,
+            "p95": 475.0499999999997,
+            "standard_deviation": 142.5595606729528
+          }
+        },
+        "SHIPMENT.DELIVERY_ID": {
+          "entity": "SHIPMENT",
+          "field": "DELIVERY_ID",
+          "statistics": {
+            "count": 3500,
+            "maximum": 3000.0,
+            "mean": 1503.118,
+            "minimum": 4.0,
+            "p50": 1501.0,
+            "p95": 2834.0499999999997,
+            "standard_deviation": 865.1333007554371
+          }
+        },
+        "SHIPMENT.SHIPMENT_ID": {
+          "entity": "SHIPMENT",
+          "field": "SHIPMENT_ID",
+          "statistics": {
+            "count": 3500,
+            "maximum": 3500.0,
+            "mean": 1750.5,
+            "minimum": 1.0,
+            "p50": 1750.5,
+            "p95": 3325.0499999999997,
+            "standard_deviation": 1010.3629298425393
+          }
+        },
+        "SHIPMENT_ITEM.DELIVERY_ID": {
+          "entity": "SHIPMENT_ITEM",
+          "field": "DELIVERY_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 3000.0,
+            "mean": 1508.65475,
+            "minimum": 1.0,
+            "p50": 1507.0,
+            "p95": 2855.0,
+            "standard_deviation": 865.9099311624592
+          }
+        },
+        "SHIPMENT_ITEM.DELIVERY_ITEM_NO": {
+          "entity": "SHIPMENT_ITEM",
+          "field": "DELIVERY_ITEM_NO",
+          "statistics": {
+            "count": 12000,
+            "maximum": 9987.0,
+            "mean": 4994.1883333333335,
+            "minimum": 12.0,
+            "p50": 4957.0,
+            "p95": 9466.199999999997,
+            "standard_deviation": 2889.029054866682
+          }
+        },
+        "SHIPMENT_ITEM.ITEM_NO": {
+          "entity": "SHIPMENT_ITEM",
+          "field": "ITEM_NO",
+          "statistics": {
+            "count": 12000,
+            "maximum": 9988.0,
+            "mean": 4969.91775,
+            "minimum": 12.0,
+            "p50": 4954.5,
+            "p95": 9505.0,
+            "standard_deviation": 2862.5575770311225
+          }
+        },
+        "SHIPMENT_ITEM.SHIPMENT_ID": {
+          "entity": "SHIPMENT_ITEM",
+          "field": "SHIPMENT_ID",
+          "statistics": {
+            "count": 12000,
+            "maximum": 3500.0,
+            "mean": 1742.8645,
+            "minimum": 1.0,
+            "p50": 1747.0,
+            "p95": 3319.0,
+            "standard_deviation": 1013.1776176004012
+          }
+        },
+        "STORAGE_LOCATION.PLANT_ID": {
+          "entity": "STORAGE_LOCATION",
+          "field": "PLANT_ID",
+          "statistics": {
+            "count": 500,
+            "maximum": 100.0,
+            "mean": 53.06,
+            "minimum": 1.0,
+            "p50": 53.5,
+            "p95": 97.0,
+            "standard_deviation": 29.275388981190304
+          }
+        },
+        "STORAGE_LOCATION.STORAGE_ID": {
+          "entity": "STORAGE_LOCATION",
+          "field": "STORAGE_ID",
+          "statistics": {
+            "count": 500,
+            "maximum": 500.0,
+            "mean": 250.5,
+            "minimum": 1.0,
+            "p50": 250.5,
+            "p95": 475.04999999999995,
+            "standard_deviation": 144.33727862198316
+          }
+        }
+      },
+      "numeric_fields_analyzed": 64
+    },
+    "validation": {
+      "completeness": {
+        "complete": true,
+        "difference": 0,
+        "entities": {
+          "CARRIER": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 500,
+            "requested_rows": 500
+          },
+          "CUSTOMER": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 1000,
+            "requested_rows": 1000
+          },
+          "CUSTOMER_ADDRESS": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 1500,
+            "requested_rows": 1500
+          },
+          "DELIVERY": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 3000,
+            "requested_rows": 3000
+          },
+          "DELIVERY_EVENT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 50000,
+            "requested_rows": 50000
+          },
+          "DELIVERY_ITEM": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 12000,
+            "requested_rows": 12000
+          },
+          "INVENTORY": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 10000,
+            "requested_rows": 10000
+          },
+          "INVOICE": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 3000,
+            "requested_rows": 3000
+          },
+          "INVOICE_ITEM": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 12000,
+            "requested_rows": 12000
+          },
+          "ORDER_PARTNER": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 7500,
+            "requested_rows": 7500
+          },
+          "ORDER_STATUS": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 2500,
+            "requested_rows": 2500
+          },
+          "PAYMENT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 4000,
+            "requested_rows": 4000
+          },
+          "PLANT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 100,
+            "requested_rows": 100
+          },
+          "PRODUCT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 500,
+            "requested_rows": 500
+          },
+          "PRODUCT_PLANT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 2000,
+            "requested_rows": 2000
+          },
+          "SALES_ITEM": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 10000,
+            "requested_rows": 10000
+          },
+          "SALES_ORDER": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 2500,
+            "requested_rows": 2500
+          },
+          "SALES_ORG": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 20,
+            "requested_rows": 20
+          },
+          "SHIPMENT": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 3500,
+            "requested_rows": 3500
+          },
+          "SHIPMENT_ITEM": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 12000,
+            "requested_rows": 12000
+          },
+          "STORAGE_LOCATION": {
+            "complete": true,
+            "difference": 0,
+            "generated_rows": 500,
+            "requested_rows": 500
+          }
+        },
+        "entities_checked": 21,
+        "entities_complete": 21,
+        "total_generated_rows": 138120,
+        "total_requested_rows": 138120
+      },
+      "constraints": {
+        "constraints": {
+          "constraint_1": {
+            "entity": "CUSTOMER",
+            "evaluation_error_count": 0,
+            "expected": 5000.0,
+            "field": "CREDIT_LIMIT",
+            "missing_field_count": 0,
+            "operator": ">=",
+            "rows_checked": 1000,
+            "violation_count": 0
+          },
+          "constraint_2": {
+            "entity": "PRODUCT",
+            "evaluation_error_count": 0,
+            "expected": 10.0,
+            "field": "UNIT_PRICE",
+            "missing_field_count": 0,
+            "operator": ">",
+            "rows_checked": 500,
+            "violation_count": 0
+          },
+          "constraint_3": {
+            "entity": "SALES_ORDER",
+            "evaluation_error_count": 0,
+            "expected": 100.0,
+            "field": "NET_VALUE",
+            "missing_field_count": 0,
+            "operator": ">=",
+            "rows_checked": 2500,
+            "violation_count": 0
+          },
+          "constraint_4": {
+            "entity": "SALES_ITEM",
+            "evaluation_error_count": 0,
+            "expected": 100,
+            "field": "QUANTITY",
+            "missing_field_count": 0,
+            "operator": "<=",
+            "rows_checked": 10000,
+            "violation_count": 0
+          },
+          "constraint_5": {
+            "entity": "INVENTORY",
+            "evaluation_error_count": 0,
+            "expected": 0,
+            "field": "STOCK_QTY",
+            "missing_field_count": 0,
+            "operator": ">=",
+            "rows_checked": 10000,
+            "violation_count": 0
+          },
+          "constraint_6": {
+            "entity": "PAYMENT",
+            "evaluation_error_count": 0,
+            "expected": 0.0,
+            "field": "AMOUNT",
+            "missing_field_count": 0,
+            "operator": ">",
+            "rows_checked": 4000,
+            "violation_count": 0
+          }
+        },
+        "constraints_checked": 6,
+        "evaluation_error_count": 0,
+        "missing_field_count": 0,
+        "rows_checked": 28000,
+        "violation_count": 0
+      },
+      "coverage": {
+        "constraints_checked": 6,
+        "constraints_declared": 6,
+        "domain_fields_checked": 34,
+        "entities_declared": 21,
+        "entities_identity_checked": 21,
+        "entities_population_checked": 21,
+        "entities_schema_checked": 21,
+        "null_fields_checked": 83,
+        "relationships_checked": 29,
+        "relationships_declared": 29
+      },
+      "domain_validity": {
+        "fields": {
+          "CARRIER.CARRIER_TYPE": {
+            "allowed_values": [
+              "GLOBAL",
+              "REGIONAL",
+              "SPECIALIZED"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "CARRIER",
+            "field": "CARRIER_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 500,
+            "valid": true
+          },
+          "CARRIER.RATING": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "CARRIER",
+            "field": "RATING",
+            "invalid_count": 0,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 500,
+            "valid": true
+          },
+          "CUSTOMER.COUNTRY": {
+            "allowed_values": [
+              "US",
+              "DE",
+              "IN",
+              "GB",
+              "FR",
+              "JP",
+              "CA"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "CUSTOMER",
+            "field": "COUNTRY",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 1000,
+            "valid": true
+          },
+          "CUSTOMER.CREDIT_LIMIT": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "CUSTOMER",
+            "field": "CREDIT_LIMIT",
+            "invalid_count": 0,
+            "maximum": 250000.0,
+            "minimum": 5000.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 1000,
+            "valid": true
+          },
+          "CUSTOMER.CUSTOMER_GROUP": {
+            "allowed_values": [
+              "DOMESTIC",
+              "EXPORT",
+              "WHOLESALE",
+              "RETAIL"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "CUSTOMER",
+            "field": "CUSTOMER_GROUP",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 1000,
+            "valid": true
+          },
+          "CUSTOMER_ADDRESS.ADDRESS_TYPE": {
+            "allowed_values": [
+              "BILLING",
+              "SHIPPING",
+              "OFFICE"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "ADDRESS_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 1500,
+            "valid": true
+          },
+          "DELIVERY_EVENT.EVENT_NO": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "DELIVERY_EVENT",
+            "field": "EVENT_NO",
+            "invalid_count": 0,
+            "maximum": 1000,
+            "minimum": 1,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 50000,
+            "valid": true
+          },
+          "DELIVERY_EVENT.EVENT_TYPE": {
+            "allowed_values": [
+              "CREATED",
+              "PICKED",
+              "PACKED",
+              "SHIPPED",
+              "DELIVERED",
+              "RETURNED"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "DELIVERY_EVENT",
+            "field": "EVENT_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 50000,
+            "valid": true
+          },
+          "DELIVERY_EVENT.ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "DELIVERY_EVENT",
+            "field": "ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 50000,
+            "valid": true
+          },
+          "DELIVERY_ITEM.ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "DELIVERY_ITEM",
+            "field": "ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "DELIVERY_ITEM.QUANTITY": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "DELIVERY_ITEM",
+            "field": "QUANTITY",
+            "invalid_count": 0,
+            "maximum": 100,
+            "minimum": 1,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "DELIVERY_ITEM.SALES_ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "DELIVERY_ITEM",
+            "field": "SALES_ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "INVENTORY.STOCK_QTY": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "INVENTORY",
+            "field": "STOCK_QTY",
+            "invalid_count": 0,
+            "maximum": 100000,
+            "minimum": 0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 10000,
+            "valid": true
+          },
+          "INVOICE.TOTAL_VALUE": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "INVOICE",
+            "field": "TOTAL_VALUE",
+            "invalid_count": 0,
+            "maximum": 500000.0,
+            "minimum": 100.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 3000,
+            "valid": true
+          },
+          "INVOICE_ITEM.ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "INVOICE_ITEM",
+            "field": "ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "INVOICE_ITEM.QUANTITY": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "INVOICE_ITEM",
+            "field": "QUANTITY",
+            "invalid_count": 0,
+            "maximum": 100,
+            "minimum": 1,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "ORDER_PARTNER.PARTNER_ROLE": {
+            "allowed_values": [
+              "SOLD_TO",
+              "SHIP_TO",
+              "BILL_TO",
+              "PAYER"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "ORDER_PARTNER",
+            "field": "PARTNER_ROLE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 7500,
+            "valid": true
+          },
+          "ORDER_STATUS.STATUS": {
+            "allowed_values": [
+              "OPEN",
+              "RELEASED",
+              "COMPLETED",
+              "BLOCKED"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "ORDER_STATUS",
+            "field": "STATUS",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 2500,
+            "valid": true
+          },
+          "PAYMENT.AMOUNT": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "PAYMENT",
+            "field": "AMOUNT",
+            "invalid_count": 0,
+            "maximum": 500000.0,
+            "minimum": 50.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 4000,
+            "valid": true
+          },
+          "PAYMENT.PAYMENT_METHOD": {
+            "allowed_values": [
+              "BANK",
+              "CARD",
+              "TRANSFER",
+              "CASH"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "PAYMENT",
+            "field": "PAYMENT_METHOD",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 4000,
+            "valid": true
+          },
+          "PLANT.COUNTRY": {
+            "allowed_values": [
+              "US",
+              "DE",
+              "IN",
+              "GB",
+              "FR",
+              "JP"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "PLANT",
+            "field": "COUNTRY",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 100,
+            "valid": true
+          },
+          "PRODUCT.PRODUCT_TYPE": {
+            "allowed_values": [
+              "FINISHED",
+              "SEMI_FINISHED",
+              "RAW",
+              "SERVICE"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "PRODUCT",
+            "field": "PRODUCT_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 500,
+            "valid": true
+          },
+          "PRODUCT.UNIT_PRICE": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "PRODUCT",
+            "field": "UNIT_PRICE",
+            "invalid_count": 0,
+            "maximum": 50000.0,
+            "minimum": 10.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 500,
+            "valid": true
+          },
+          "PRODUCT_PLANT.REORDER_POINT": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "PRODUCT_PLANT",
+            "field": "REORDER_POINT",
+            "invalid_count": 0,
+            "maximum": 1000,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 2000,
+            "valid": true
+          },
+          "SALES_ITEM.ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "SALES_ITEM",
+            "field": "ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 10000,
+            "valid": true
+          },
+          "SALES_ITEM.NET_VALUE": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "SALES_ITEM",
+            "field": "NET_VALUE",
+            "invalid_count": 0,
+            "maximum": 100000.0,
+            "minimum": 10.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 10000,
+            "valid": true
+          },
+          "SALES_ITEM.QUANTITY": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "SALES_ITEM",
+            "field": "QUANTITY",
+            "invalid_count": 0,
+            "maximum": 100,
+            "minimum": 1,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 10000,
+            "valid": true
+          },
+          "SALES_ORDER.NET_VALUE": {
+            "allowed_values": null,
+            "distribution": "UNIFORM",
+            "entity": "SALES_ORDER",
+            "field": "NET_VALUE",
+            "invalid_count": 0,
+            "maximum": 250000.0,
+            "minimum": 100.0,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 2500,
+            "valid": true
+          },
+          "SALES_ORDER.ORDER_TYPE": {
+            "allowed_values": [
+              "STANDARD",
+              "EXPRESS",
+              "RETURN",
+              "PROJECT"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "SALES_ORDER",
+            "field": "ORDER_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 2500,
+            "valid": true
+          },
+          "SALES_ORG.REGION": {
+            "allowed_values": [
+              "NA",
+              "EU",
+              "APAC",
+              "LATAM"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "SALES_ORG",
+            "field": "REGION",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 20,
+            "valid": true
+          },
+          "SHIPMENT.SHIPMENT_TYPE": {
+            "allowed_values": [
+              "AIR",
+              "ROAD",
+              "SEA",
+              "RAIL"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "SHIPMENT",
+            "field": "SHIPMENT_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 3500,
+            "valid": true
+          },
+          "SHIPMENT_ITEM.DELIVERY_ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "SHIPMENT_ITEM",
+            "field": "DELIVERY_ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "SHIPMENT_ITEM.ITEM_NO": {
+            "allowed_values": null,
+            "distribution": "DISCRETE_UNIFORM",
+            "entity": "SHIPMENT_ITEM",
+            "field": "ITEM_NO",
+            "invalid_count": 0,
+            "maximum": 9990,
+            "minimum": 10,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 12000,
+            "valid": true
+          },
+          "STORAGE_LOCATION.LOCATION_TYPE": {
+            "allowed_values": [
+              "RAW",
+              "FINISHED",
+              "TRANSIT",
+              "QUARANTINE"
+            ],
+            "distribution": "CATEGORICAL",
+            "entity": "STORAGE_LOCATION",
+            "field": "LOCATION_TYPE",
+            "invalid_count": 0,
+            "maximum": null,
+            "minimum": null,
+            "missing_count": 0,
+            "numeric_conversion_errors": 0,
+            "rows_checked": 500,
+            "valid": true
+          }
+        },
+        "fields_checked": 34,
+        "fields_valid": 34,
+        "invalid_count": 0,
+        "missing_count": 0,
+        "numeric_conversion_errors": 0,
+        "rows_checked": 312620
+      },
+      "foreign_keys": {
+        "invalid_reference_count": 0,
+        "missing_field_count": 0,
+        "relationships": {
+          "FK_CUSTOMER_ADDRESS_CUSTOMER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "CUSTOMER_ADDRESS",
+            "source_fields": [
+              "CUSTOMER_ID"
+            ],
+            "source_rows_checked": 1500,
+            "target_entity": "CUSTOMER",
+            "target_fields": [
+              "CUSTOMER_ID"
+            ],
+            "target_keys_available": 1000
+          },
+          "FK_DELIVERY_CUSTOMER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY",
+            "source_fields": [
+              "CUSTOMER_ID"
+            ],
+            "source_rows_checked": 3000,
+            "target_entity": "CUSTOMER",
+            "target_fields": [
+              "CUSTOMER_ID"
+            ],
+            "target_keys_available": 1000
+          },
+          "FK_DELIVERY_EVENT_DELIVERY_ITEM": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY_EVENT",
+            "source_fields": [
+              "DELIVERY_ID",
+              "ITEM_NO"
+            ],
+            "source_rows_checked": 50000,
+            "target_entity": "DELIVERY_ITEM",
+            "target_fields": [
+              "DELIVERY_ID",
+              "ITEM_NO"
+            ],
+            "target_keys_available": 12000
+          },
+          "FK_DELIVERY_ITEM_DELIVERY": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY_ITEM",
+            "source_fields": [
+              "DELIVERY_ID"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "DELIVERY",
+            "target_fields": [
+              "DELIVERY_ID"
+            ],
+            "target_keys_available": 3000
+          },
+          "FK_DELIVERY_ITEM_SALES_ITEM": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY_ITEM",
+            "source_fields": [
+              "ORDER_ID",
+              "SALES_ITEM_NO"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "SALES_ITEM",
+            "target_fields": [
+              "ORDER_ID",
+              "ITEM_NO"
+            ],
+            "target_keys_available": 10000
+          },
+          "FK_DELIVERY_PLANT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY",
+            "source_fields": [
+              "PLANT_ID"
+            ],
+            "source_rows_checked": 3000,
+            "target_entity": "PLANT",
+            "target_fields": [
+              "PLANT_ID"
+            ],
+            "target_keys_available": 100
+          },
+          "FK_DELIVERY_SALES_ORDER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "DELIVERY",
+            "source_fields": [
+              "ORDER_ID"
+            ],
+            "source_rows_checked": 3000,
+            "target_entity": "SALES_ORDER",
+            "target_fields": [
+              "ORDER_ID"
+            ],
+            "target_keys_available": 2500
+          },
+          "FK_INVENTORY_PLANT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVENTORY",
+            "source_fields": [
+              "PLANT_ID"
+            ],
+            "source_rows_checked": 10000,
+            "target_entity": "PLANT",
+            "target_fields": [
+              "PLANT_ID"
+            ],
+            "target_keys_available": 100
+          },
+          "FK_INVENTORY_PRODUCT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVENTORY",
+            "source_fields": [
+              "PRODUCT_ID"
+            ],
+            "source_rows_checked": 10000,
+            "target_entity": "PRODUCT",
+            "target_fields": [
+              "PRODUCT_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_INVENTORY_STORAGE_LOCATION": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVENTORY",
+            "source_fields": [
+              "STORAGE_ID"
+            ],
+            "source_rows_checked": 10000,
+            "target_entity": "STORAGE_LOCATION",
+            "target_fields": [
+              "STORAGE_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_INVOICE_CUSTOMER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVOICE",
+            "source_fields": [
+              "CUSTOMER_ID"
+            ],
+            "source_rows_checked": 3000,
+            "target_entity": "CUSTOMER",
+            "target_fields": [
+              "CUSTOMER_ID"
+            ],
+            "target_keys_available": 1000
+          },
+          "FK_INVOICE_ITEM_INVOICE": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVOICE_ITEM",
+            "source_fields": [
+              "INVOICE_ID"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "INVOICE",
+            "target_fields": [
+              "INVOICE_ID"
+            ],
+            "target_keys_available": 3000
+          },
+          "FK_INVOICE_ITEM_PRODUCT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVOICE_ITEM",
+            "source_fields": [
+              "PRODUCT_ID"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "PRODUCT",
+            "target_fields": [
+              "PRODUCT_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_INVOICE_SALES_ORDER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "INVOICE",
+            "source_fields": [
+              "ORDER_ID"
+            ],
+            "source_rows_checked": 3000,
+            "target_entity": "SALES_ORDER",
+            "target_fields": [
+              "ORDER_ID"
+            ],
+            "target_keys_available": 2500
+          },
+          "FK_ORDER_PARTNER_CUSTOMER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "ORDER_PARTNER",
+            "source_fields": [
+              "CUSTOMER_ID"
+            ],
+            "source_rows_checked": 7500,
+            "target_entity": "CUSTOMER",
+            "target_fields": [
+              "CUSTOMER_ID"
+            ],
+            "target_keys_available": 1000
+          },
+          "FK_ORDER_PARTNER_SALES_ORDER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "ORDER_PARTNER",
+            "source_fields": [
+              "ORDER_ID"
+            ],
+            "source_rows_checked": 7500,
+            "target_entity": "SALES_ORDER",
+            "target_fields": [
+              "ORDER_ID"
+            ],
+            "target_keys_available": 2500
+          },
+          "FK_ORDER_STATUS_SALES_ORDER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "ORDER_STATUS",
+            "source_fields": [
+              "ORDER_ID"
+            ],
+            "source_rows_checked": 2500,
+            "target_entity": "SALES_ORDER",
+            "target_fields": [
+              "ORDER_ID"
+            ],
+            "target_keys_available": 2500
+          },
+          "FK_PAYMENT_INVOICE": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "PAYMENT",
+            "source_fields": [
+              "INVOICE_ID"
+            ],
+            "source_rows_checked": 4000,
+            "target_entity": "INVOICE",
+            "target_fields": [
+              "INVOICE_ID"
+            ],
+            "target_keys_available": 3000
+          },
+          "FK_PRODUCT_PLANT_PLANT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "PRODUCT_PLANT",
+            "source_fields": [
+              "PLANT_ID"
+            ],
+            "source_rows_checked": 2000,
+            "target_entity": "PLANT",
+            "target_fields": [
+              "PLANT_ID"
+            ],
+            "target_keys_available": 100
+          },
+          "FK_PRODUCT_PLANT_PRODUCT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "PRODUCT_PLANT",
+            "source_fields": [
+              "PRODUCT_ID"
+            ],
+            "source_rows_checked": 2000,
+            "target_entity": "PRODUCT",
+            "target_fields": [
+              "PRODUCT_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_SALES_ITEM_PRODUCT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SALES_ITEM",
+            "source_fields": [
+              "PRODUCT_ID"
+            ],
+            "source_rows_checked": 10000,
+            "target_entity": "PRODUCT",
+            "target_fields": [
+              "PRODUCT_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_SALES_ITEM_SALES_ORDER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SALES_ITEM",
+            "source_fields": [
+              "ORDER_ID"
+            ],
+            "source_rows_checked": 10000,
+            "target_entity": "SALES_ORDER",
+            "target_fields": [
+              "ORDER_ID"
+            ],
+            "target_keys_available": 2500
+          },
+          "FK_SALES_ORDER_CUSTOMER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SALES_ORDER",
+            "source_fields": [
+              "CUSTOMER_ID"
+            ],
+            "source_rows_checked": 2500,
+            "target_entity": "CUSTOMER",
+            "target_fields": [
+              "CUSTOMER_ID"
+            ],
+            "target_keys_available": 1000
+          },
+          "FK_SALES_ORDER_SALES_ORG": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SALES_ORDER",
+            "source_fields": [
+              "SALES_ORG_ID"
+            ],
+            "source_rows_checked": 2500,
+            "target_entity": "SALES_ORG",
+            "target_fields": [
+              "SALES_ORG_ID"
+            ],
+            "target_keys_available": 20
+          },
+          "FK_SHIPMENT_CARRIER": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SHIPMENT",
+            "source_fields": [
+              "CARRIER_ID"
+            ],
+            "source_rows_checked": 3500,
+            "target_entity": "CARRIER",
+            "target_fields": [
+              "CARRIER_ID"
+            ],
+            "target_keys_available": 500
+          },
+          "FK_SHIPMENT_DELIVERY": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SHIPMENT",
+            "source_fields": [
+              "DELIVERY_ID"
+            ],
+            "source_rows_checked": 3500,
+            "target_entity": "DELIVERY",
+            "target_fields": [
+              "DELIVERY_ID"
+            ],
+            "target_keys_available": 3000
+          },
+          "FK_SHIPMENT_ITEM_DELIVERY_ITEM": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SHIPMENT_ITEM",
+            "source_fields": [
+              "DELIVERY_ID",
+              "DELIVERY_ITEM_NO"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "DELIVERY_ITEM",
+            "target_fields": [
+              "DELIVERY_ID",
+              "ITEM_NO"
+            ],
+            "target_keys_available": 12000
+          },
+          "FK_SHIPMENT_ITEM_SHIPMENT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "SHIPMENT_ITEM",
+            "source_fields": [
+              "SHIPMENT_ID"
+            ],
+            "source_rows_checked": 12000,
+            "target_entity": "SHIPMENT",
+            "target_fields": [
+              "SHIPMENT_ID"
+            ],
+            "target_keys_available": 3500
+          },
+          "FK_STORAGE_LOCATION_PLANT": {
+            "invalid_reference_count": 0,
+            "missing_field_count": 0,
+            "source_entity": "STORAGE_LOCATION",
+            "source_fields": [
+              "PLANT_ID"
+            ],
+            "source_rows_checked": 500,
+            "target_entity": "PLANT",
+            "target_fields": [
+              "PLANT_ID"
+            ],
+            "target_keys_available": 100
+          }
+        },
+        "relationships_checked": 29,
+        "source_rows_checked": 226500
+      },
+      "null_completeness": {
+        "fields": {
+          "CARRIER.CARRIER_ID": {
+            "complete": true,
+            "entity": "CARRIER",
+            "field": "CARRIER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "CARRIER.CARRIER_TYPE": {
+            "complete": true,
+            "entity": "CARRIER",
+            "field": "CARRIER_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "CARRIER.RATING": {
+            "complete": true,
+            "entity": "CARRIER",
+            "field": "RATING",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "CUSTOMER.ACTIVE": {
+            "complete": true,
+            "entity": "CUSTOMER",
+            "field": "ACTIVE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1000
+          },
+          "CUSTOMER.COUNTRY": {
+            "complete": true,
+            "entity": "CUSTOMER",
+            "field": "COUNTRY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1000
+          },
+          "CUSTOMER.CREDIT_LIMIT": {
+            "complete": true,
+            "entity": "CUSTOMER",
+            "field": "CREDIT_LIMIT",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1000
+          },
+          "CUSTOMER.CUSTOMER_GROUP": {
+            "complete": true,
+            "entity": "CUSTOMER",
+            "field": "CUSTOMER_GROUP",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1000
+          },
+          "CUSTOMER.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "CUSTOMER",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1000
+          },
+          "CUSTOMER_ADDRESS.ADDRESS_ID": {
+            "complete": true,
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "ADDRESS_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1500
+          },
+          "CUSTOMER_ADDRESS.ADDRESS_TYPE": {
+            "complete": true,
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "ADDRESS_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1500
+          },
+          "CUSTOMER_ADDRESS.CITY": {
+            "complete": true,
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "CITY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1500
+          },
+          "CUSTOMER_ADDRESS.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1500
+          },
+          "CUSTOMER_ADDRESS.POSTAL_CODE": {
+            "complete": true,
+            "entity": "CUSTOMER_ADDRESS",
+            "field": "POSTAL_CODE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 1500
+          },
+          "DELIVERY.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "DELIVERY",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "DELIVERY.DELIVERY_ID": {
+            "complete": true,
+            "entity": "DELIVERY",
+            "field": "DELIVERY_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "DELIVERY.ORDER_ID": {
+            "complete": true,
+            "entity": "DELIVERY",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "DELIVERY.PLANT_ID": {
+            "complete": true,
+            "entity": "DELIVERY",
+            "field": "PLANT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "DELIVERY_EVENT.DELIVERY_ID": {
+            "complete": true,
+            "entity": "DELIVERY_EVENT",
+            "field": "DELIVERY_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 50000
+          },
+          "DELIVERY_EVENT.EVENT_NO": {
+            "complete": true,
+            "entity": "DELIVERY_EVENT",
+            "field": "EVENT_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 50000
+          },
+          "DELIVERY_EVENT.EVENT_TYPE": {
+            "complete": true,
+            "entity": "DELIVERY_EVENT",
+            "field": "EVENT_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 50000
+          },
+          "DELIVERY_EVENT.ITEM_NO": {
+            "complete": true,
+            "entity": "DELIVERY_EVENT",
+            "field": "ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 50000
+          },
+          "DELIVERY_ITEM.DELIVERY_ID": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "DELIVERY_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "DELIVERY_ITEM.ITEM_NO": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "DELIVERY_ITEM.ORDER_ID": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "DELIVERY_ITEM.PRODUCT_ID": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "DELIVERY_ITEM.QUANTITY": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "QUANTITY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "DELIVERY_ITEM.SALES_ITEM_NO": {
+            "complete": true,
+            "entity": "DELIVERY_ITEM",
+            "field": "SALES_ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "INVENTORY.PLANT_ID": {
+            "complete": true,
+            "entity": "INVENTORY",
+            "field": "PLANT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "INVENTORY.PRODUCT_ID": {
+            "complete": true,
+            "entity": "INVENTORY",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "INVENTORY.STOCK_QTY": {
+            "complete": true,
+            "entity": "INVENTORY",
+            "field": "STOCK_QTY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "INVENTORY.STORAGE_ID": {
+            "complete": true,
+            "entity": "INVENTORY",
+            "field": "STORAGE_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "INVOICE.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "INVOICE",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "INVOICE.INVOICE_ID": {
+            "complete": true,
+            "entity": "INVOICE",
+            "field": "INVOICE_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "INVOICE.ORDER_ID": {
+            "complete": true,
+            "entity": "INVOICE",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "INVOICE.TOTAL_VALUE": {
+            "complete": true,
+            "entity": "INVOICE",
+            "field": "TOTAL_VALUE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3000
+          },
+          "INVOICE_ITEM.INVOICE_ID": {
+            "complete": true,
+            "entity": "INVOICE_ITEM",
+            "field": "INVOICE_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "INVOICE_ITEM.ITEM_NO": {
+            "complete": true,
+            "entity": "INVOICE_ITEM",
+            "field": "ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "INVOICE_ITEM.PRODUCT_ID": {
+            "complete": true,
+            "entity": "INVOICE_ITEM",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "INVOICE_ITEM.QUANTITY": {
+            "complete": true,
+            "entity": "INVOICE_ITEM",
+            "field": "QUANTITY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "ORDER_PARTNER.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "ORDER_PARTNER",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 7500
+          },
+          "ORDER_PARTNER.ORDER_ID": {
+            "complete": true,
+            "entity": "ORDER_PARTNER",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 7500
+          },
+          "ORDER_PARTNER.PARTNER_ROLE": {
+            "complete": true,
+            "entity": "ORDER_PARTNER",
+            "field": "PARTNER_ROLE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 7500
+          },
+          "ORDER_STATUS.ORDER_ID": {
+            "complete": true,
+            "entity": "ORDER_STATUS",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "ORDER_STATUS.STATUS": {
+            "complete": true,
+            "entity": "ORDER_STATUS",
+            "field": "STATUS",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "PAYMENT.AMOUNT": {
+            "complete": true,
+            "entity": "PAYMENT",
+            "field": "AMOUNT",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 4000
+          },
+          "PAYMENT.INVOICE_ID": {
+            "complete": true,
+            "entity": "PAYMENT",
+            "field": "INVOICE_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 4000
+          },
+          "PAYMENT.PAYMENT_ID": {
+            "complete": true,
+            "entity": "PAYMENT",
+            "field": "PAYMENT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 4000
+          },
+          "PAYMENT.PAYMENT_METHOD": {
+            "complete": true,
+            "entity": "PAYMENT",
+            "field": "PAYMENT_METHOD",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 4000
+          },
+          "PLANT.COUNTRY": {
+            "complete": true,
+            "entity": "PLANT",
+            "field": "COUNTRY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 100
+          },
+          "PLANT.PLANT_ID": {
+            "complete": true,
+            "entity": "PLANT",
+            "field": "PLANT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 100
+          },
+          "PRODUCT.PRODUCT_GROUP": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "PRODUCT_GROUP",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT.PRODUCT_ID": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT.PRODUCT_NAME": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "PRODUCT_NAME",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT.PRODUCT_TYPE": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "PRODUCT_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT.UNIT_PRICE": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "UNIT_PRICE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT.WEIGHT": {
+            "complete": true,
+            "entity": "PRODUCT",
+            "field": "WEIGHT",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "PRODUCT_PLANT.ACTIVE": {
+            "complete": true,
+            "entity": "PRODUCT_PLANT",
+            "field": "ACTIVE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2000
+          },
+          "PRODUCT_PLANT.PLANT_ID": {
+            "complete": true,
+            "entity": "PRODUCT_PLANT",
+            "field": "PLANT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2000
+          },
+          "PRODUCT_PLANT.PRODUCT_ID": {
+            "complete": true,
+            "entity": "PRODUCT_PLANT",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2000
+          },
+          "PRODUCT_PLANT.REORDER_POINT": {
+            "complete": true,
+            "entity": "PRODUCT_PLANT",
+            "field": "REORDER_POINT",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2000
+          },
+          "SALES_ITEM.ITEM_NO": {
+            "complete": true,
+            "entity": "SALES_ITEM",
+            "field": "ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "SALES_ITEM.NET_VALUE": {
+            "complete": true,
+            "entity": "SALES_ITEM",
+            "field": "NET_VALUE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "SALES_ITEM.ORDER_ID": {
+            "complete": true,
+            "entity": "SALES_ITEM",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "SALES_ITEM.PRODUCT_ID": {
+            "complete": true,
+            "entity": "SALES_ITEM",
+            "field": "PRODUCT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "SALES_ITEM.QUANTITY": {
+            "complete": true,
+            "entity": "SALES_ITEM",
+            "field": "QUANTITY",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 10000
+          },
+          "SALES_ORDER.CUSTOMER_ID": {
+            "complete": true,
+            "entity": "SALES_ORDER",
+            "field": "CUSTOMER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "SALES_ORDER.NET_VALUE": {
+            "complete": true,
+            "entity": "SALES_ORDER",
+            "field": "NET_VALUE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "SALES_ORDER.ORDER_ID": {
+            "complete": true,
+            "entity": "SALES_ORDER",
+            "field": "ORDER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "SALES_ORDER.ORDER_TYPE": {
+            "complete": true,
+            "entity": "SALES_ORDER",
+            "field": "ORDER_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "SALES_ORDER.SALES_ORG_ID": {
+            "complete": true,
+            "entity": "SALES_ORDER",
+            "field": "SALES_ORG_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 2500
+          },
+          "SALES_ORG.REGION": {
+            "complete": true,
+            "entity": "SALES_ORG",
+            "field": "REGION",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 20
+          },
+          "SALES_ORG.SALES_ORG_ID": {
+            "complete": true,
+            "entity": "SALES_ORG",
+            "field": "SALES_ORG_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 20
+          },
+          "SHIPMENT.CARRIER_ID": {
+            "complete": true,
+            "entity": "SHIPMENT",
+            "field": "CARRIER_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3500
+          },
+          "SHIPMENT.DELIVERY_ID": {
+            "complete": true,
+            "entity": "SHIPMENT",
+            "field": "DELIVERY_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3500
+          },
+          "SHIPMENT.SHIPMENT_ID": {
+            "complete": true,
+            "entity": "SHIPMENT",
+            "field": "SHIPMENT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3500
+          },
+          "SHIPMENT.SHIPMENT_TYPE": {
+            "complete": true,
+            "entity": "SHIPMENT",
+            "field": "SHIPMENT_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 3500
+          },
+          "SHIPMENT_ITEM.DELIVERY_ID": {
+            "complete": true,
+            "entity": "SHIPMENT_ITEM",
+            "field": "DELIVERY_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "SHIPMENT_ITEM.DELIVERY_ITEM_NO": {
+            "complete": true,
+            "entity": "SHIPMENT_ITEM",
+            "field": "DELIVERY_ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "SHIPMENT_ITEM.ITEM_NO": {
+            "complete": true,
+            "entity": "SHIPMENT_ITEM",
+            "field": "ITEM_NO",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "SHIPMENT_ITEM.SHIPMENT_ID": {
+            "complete": true,
+            "entity": "SHIPMENT_ITEM",
+            "field": "SHIPMENT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 12000
+          },
+          "STORAGE_LOCATION.LOCATION_TYPE": {
+            "complete": true,
+            "entity": "STORAGE_LOCATION",
+            "field": "LOCATION_TYPE",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "STORAGE_LOCATION.PLANT_ID": {
+            "complete": true,
+            "entity": "STORAGE_LOCATION",
+            "field": "PLANT_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          },
+          "STORAGE_LOCATION.STORAGE_ID": {
+            "complete": true,
+            "entity": "STORAGE_LOCATION",
+            "field": "STORAGE_ID",
+            "missing_count": 0,
+            "missing_rate": 0.0,
+            "rows_checked": 500
+          }
+        },
+        "fields_checked": 83,
+        "fields_without_missing_values": 83,
+        "missing_value_count": 0,
+        "rows_checked": 578740
+      },
+      "primary_keys": {
+        "duplicate_count": 0,
+        "entities": {
+          "CARRIER": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "CARRIER_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 500,
+            "unique_identities": 500
+          },
+          "CUSTOMER": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "CUSTOMER_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 1000,
+            "unique_identities": 1000
+          },
+          "CUSTOMER_ADDRESS": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "ADDRESS_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 1500,
+            "unique_identities": 1500
+          },
+          "DELIVERY": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "DELIVERY_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 3000,
+            "unique_identities": 3000
+          },
+          "DELIVERY_EVENT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "DELIVERY_ID",
+              "ITEM_NO",
+              "EVENT_NO"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 50000,
+            "unique_identities": 50000
+          },
+          "DELIVERY_ITEM": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "DELIVERY_ID",
+              "ITEM_NO"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 12000,
+            "unique_identities": 12000
+          },
+          "INVENTORY": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "PRODUCT_ID",
+              "PLANT_ID",
+              "STORAGE_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 10000,
+            "unique_identities": 10000
+          },
+          "INVOICE": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "INVOICE_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 3000,
+            "unique_identities": 3000
+          },
+          "INVOICE_ITEM": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "INVOICE_ID",
+              "ITEM_NO"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 12000,
+            "unique_identities": 12000
+          },
+          "ORDER_PARTNER": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "ORDER_ID",
+              "PARTNER_ROLE"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 7500,
+            "unique_identities": 7500
+          },
+          "ORDER_STATUS": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "ORDER_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 2500,
+            "unique_identities": 2500
+          },
+          "PAYMENT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "PAYMENT_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 4000,
+            "unique_identities": 4000
+          },
+          "PLANT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "PLANT_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 100,
+            "unique_identities": 100
+          },
+          "PRODUCT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "PRODUCT_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 500,
+            "unique_identities": 500
+          },
+          "PRODUCT_PLANT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "PRODUCT_ID",
+              "PLANT_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 2000,
+            "unique_identities": 2000
+          },
+          "SALES_ITEM": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "ORDER_ID",
+              "ITEM_NO"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 10000,
+            "unique_identities": 10000
+          },
+          "SALES_ORDER": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "ORDER_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 2500,
+            "unique_identities": 2500
+          },
+          "SALES_ORG": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "SALES_ORG_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 20,
+            "unique_identities": 20
+          },
+          "SHIPMENT": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "SHIPMENT_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 3500,
+            "unique_identities": 3500
+          },
+          "SHIPMENT_ITEM": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "SHIPMENT_ID",
+              "ITEM_NO"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 12000,
+            "unique_identities": 12000
+          },
+          "STORAGE_LOCATION": {
+            "duplicate_count": 0,
+            "identity_fields": [
+              "STORAGE_ID"
+            ],
+            "missing_field_count": 0,
+            "rows_checked": 500,
+            "unique_identities": 500
+          }
+        },
+        "entities_checked": 21,
+        "missing_field_count": 0,
+        "rows_checked": 138120
+      },
+      "schema": {
+        "entities": {
+          "CARRIER": {
+            "actual_field_count": 3,
+            "expected_field_count": 3,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "CUSTOMER": {
+            "actual_field_count": 5,
+            "expected_field_count": 5,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "CUSTOMER_ADDRESS": {
+            "actual_field_count": 5,
+            "expected_field_count": 5,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "DELIVERY": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "DELIVERY_EVENT": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "DELIVERY_ITEM": {
+            "actual_field_count": 6,
+            "expected_field_count": 6,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "INVENTORY": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "INVOICE": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "INVOICE_ITEM": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "ORDER_PARTNER": {
+            "actual_field_count": 3,
+            "expected_field_count": 3,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "ORDER_STATUS": {
+            "actual_field_count": 2,
+            "expected_field_count": 2,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "PAYMENT": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "PLANT": {
+            "actual_field_count": 2,
+            "expected_field_count": 2,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "PRODUCT": {
+            "actual_field_count": 6,
+            "expected_field_count": 6,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "PRODUCT_PLANT": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "SALES_ITEM": {
+            "actual_field_count": 5,
+            "expected_field_count": 5,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "SALES_ORDER": {
+            "actual_field_count": 5,
+            "expected_field_count": 5,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "SALES_ORG": {
+            "actual_field_count": 2,
+            "expected_field_count": 2,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "SHIPMENT": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "SHIPMENT_ITEM": {
+            "actual_field_count": 4,
+            "expected_field_count": 4,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          },
+          "STORAGE_LOCATION": {
+            "actual_field_count": 3,
+            "expected_field_count": 3,
+            "missing_fields": [],
+            "rows_with_missing_fields": 0,
+            "schema_valid": true,
+            "unexpected_fields": []
+          }
+        },
+        "entities_checked": 21,
+        "entities_schema_valid": 21,
+        "missing_field_count": 0,
+        "rows_with_missing_fields": 0,
+        "unexpected_field_count": 0
+      }
+    }
+  },
+  "specification": "/Users/e10936535/forge/experiments/022_llm_assisted_specification_authoring/output/specification.json"
+}

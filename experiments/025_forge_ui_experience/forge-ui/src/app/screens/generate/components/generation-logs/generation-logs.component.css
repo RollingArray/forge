@@ -1,0 +1,56 @@
+.panel {
+  min-height: 190px;
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+h2 {
+  margin: 0;
+  color: #12163d;
+  font-size: 16px;
+}
+
+.source {
+  padding: 5px 8px;
+  border: 1px solid #e1e4eb;
+  border-radius: 5px;
+  color: #747c8c;
+  font-size: 9px;
+}
+
+.empty-state {
+  display: flex;
+  min-height: 125px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.empty-state .material-symbols-outlined {
+  color: #7771e9;
+  font-size: 25px;
+}
+
+.empty-state strong {
+  margin-top: 8px;
+  color: #343a4a;
+  font-size: 11px;
+}
+
+.empty-state p {
+  max-width: 390px;
+  margin: 5px 0 0;
+  color: #7a8291;
+  font-size: 10px;
+  line-height: 1.45;
+}

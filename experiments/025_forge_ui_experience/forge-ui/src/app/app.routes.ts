@@ -4,6 +4,7 @@ import { LoginComponent } from './screens/login/login.component';
 import { HomeComponent } from './screens/home/home.component';
 import { ModelStudioComponent } from './screens/model-studio/model-studio.component';
 import { PopulationPlanComponent } from './screens/population-plan/population-plan.component';
+import { GenerateComponent } from './screens/generate/generate.component';
 
 export const routes: Routes = [
   {
@@ -26,6 +27,10 @@ export const routes: Routes = [
   {
     path: 'population-plan',
     component: PopulationPlanComponent,
+  },
+  {
+    path: 'generate',
+    component: GenerateComponent,
   },
   {
     path: '**',

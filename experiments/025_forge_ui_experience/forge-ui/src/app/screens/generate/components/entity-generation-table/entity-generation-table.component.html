@@ -1,0 +1,135 @@
+<section class="panel">
+
+  <header class="table-header">
+    <div>
+      <h2>Entity Generation Progress</h2>
+      <p>
+        {{ rows().filter(row => row.status === 'COMPLETED').length }}
+        of {{ rows().length }} entities completed
+      </p>
+    </div>
+
+    <span class="completion">
+      <span class="material-symbols-outlined">check_circle</span>
+      {{ rows().filter(row => row.status === 'COMPLETED').length }}
+      / {{ rows().length }}
+    </span>
+  </header>
+
+  <div class="table-scroll">
+    <table>
+
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Entity</th>
+          <th>Planned Rows</th>
+          <th>Generated Rows</th>
+          <th>Progress</th>
+          <th>Chunks</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (
+          row of visibleRows();
+          track row.entity;
+          let index = $index
+        ) {
+
+          <tr>
+
+            <td>
+              {{ page() * pageSize + index + 1 }}
+            </td>
+
+            <td class="entity">
+              <span class="status-dot"></span>
+              {{ row.entity }}
+            </td>
+
+            <td>
+              {{ format(row.plannedRows) }}
+            </td>
+
+            <td>
+              {{ format(row.generatedRows) }}
+            </td>
+
+            <td class="progress-cell">
+              <div class="progress-bar">
+                <span
+                  [style.width.%]="row.progress * 100"
+                ></span>
+              </div>
+
+              <span>
+                {{ (row.progress * 100).toFixed(0) }}%
+              </span>
+            </td>
+
+            <td>
+              {{ row.completedChunks }}
+              /
+              {{ row.totalChunks }}
+            </td>
+
+            <td>
+              <span
+                class="status"
+                [class.partial]="
+                  row.status !== 'COMPLETED'
+                "
+              >
+                {{ row.status === 'COMPLETED'
+                  ? 'Completed'
+                  : 'In progress' }}
+              </span>
+            </td>
+
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+  </div>
+
+  <footer class="pagination">
+
+    <span>
+      Showing
+      {{ page() * pageSize + 1 }}
+      -
+      {{ visibleEnd() }}
+      of {{ rows().length }} entities
+    </span>
+
+    <div>
+      <button
+        type="button"
+        [disabled]="page() === 0"
+        (click)="previousPage()"
+      >
+        ‹
+      </button>
+
+      <strong>
+        {{ page() + 1 }}
+      </strong>
+
+      <button
+        type="button"
+        [disabled]="page() === pageCount() - 1"
+        (click)="nextPage()"
+      >
+        ›
+      </button>
+    </div>
+
+  </footer>
+
+</section>

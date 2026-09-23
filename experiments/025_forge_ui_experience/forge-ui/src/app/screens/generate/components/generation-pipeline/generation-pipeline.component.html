@@ -1,0 +1,47 @@
+<section class="panel">
+
+  <header class="panel-header">
+    <h2>Generation Pipeline</h2>
+  </header>
+
+  <div class="pipeline">
+
+    @for (stage of stages(); track stage.id; let last = $last) {
+
+      <div class="stage">
+
+        <div
+          class="stage-icon"
+          [class.pending]="stage.status === 'PENDING'"
+        >
+          <span class="material-symbols-outlined">
+            {{ stage.status === 'COMPLETED'
+              ? 'check'
+              : 'chevron_right' }}
+          </span>
+        </div>
+
+        <strong>{{ stage.label }}</strong>
+
+        <span>
+          {{ stage.status === 'COMPLETED'
+            ? 'Completed'
+            : 'Pending' }}
+        </span>
+
+      </div>
+
+      @if (!last) {
+        <div
+          class="connector"
+          [class.completed]="
+            stage.status === 'COMPLETED'
+          "
+        ></div>
+      }
+
+    }
+
+  </div>
+
+</section>
