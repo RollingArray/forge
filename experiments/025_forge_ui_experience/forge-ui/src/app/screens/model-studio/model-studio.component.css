@@ -131,3 +131,73 @@ app-entity-inspector {
     grid-template-columns: minmax(0, 1fr) 340px;
   }
 }
+
+
+/* ------------------------------------------------------------
+   Workflow progression action
+   ------------------------------------------------------------ */
+
+.workflow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  min-height: 68px;
+  padding: 12px 22px;
+
+  border-top: 1px solid #e5e7ef;
+  background: #ffffff;
+}
+
+.workflow-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #14945d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.workflow-status .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.workflow-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 40px;
+  padding: 0 16px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: #202641;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.workflow-primary-action:hover {
+  background: #151a31;
+}
+
+.workflow-primary-action:active {
+  transform: translateY(1px);
+}
+
+.workflow-primary-action .material-symbols-outlined {
+  font-size: 18px;
+}

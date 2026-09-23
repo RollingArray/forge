@@ -1,0 +1,188 @@
+<section class="capacity-panel">
+
+  <header class="panel-header">
+
+    <div>
+      <h2>
+        Relationship Capacity
+      </h2>
+
+      <p>
+        Capacity requirements and limits derived from the population plan.
+      </p>
+    </div>
+
+    <div class="capacity-summary">
+
+      <span class="summary-item">
+        <strong>
+          {{ relationshipCount() }}
+        </strong>
+        relationship requirements
+      </span>
+
+      <span
+        class="summary-item"
+        [class.has-issues]="issueCount() > 0"
+      >
+        <strong>
+          {{ issueCount() }}
+        </strong>
+        capacity checks
+      </span>
+
+    </div>
+
+  </header>
+
+
+  @if (capacityRequirements().length > 0) {
+
+    <div class="capacity-section">
+
+      <div class="section-title">
+        <span class="material-symbols-outlined">
+          arrow_upward
+        </span>
+
+        Minimum Capacity Requirements
+      </div>
+
+      <div class="requirement-list">
+
+        @for (
+          requirement of capacityRequirements();
+          track requirement.entity + requirement.relationship
+        ) {
+
+          <article class="requirement-card">
+
+            <div class="requirement-icon">
+              <span class="material-symbols-outlined">
+                account_tree
+              </span>
+            </div>
+
+            <div class="requirement-content">
+
+              <div class="requirement-heading">
+
+                <strong>
+                  {{ requirement.entity }}
+                </strong>
+
+                <span class="minimum-value">
+                  Minimum {{ requirement.minimum | number }}
+                </span>
+
+              </div>
+
+              <div class="relationship">
+                {{ requirement.relationship }}
+              </div>
+
+              <p>
+                {{ requirement.reason }}
+              </p>
+
+            </div>
+
+          </article>
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+
+  @if (capacityLimits().length > 0) {
+
+    <div class="capacity-section">
+
+      <div class="section-title limit-title">
+        <span class="material-symbols-outlined">
+          arrow_downward
+        </span>
+
+        Capacity Limits
+      </div>
+
+      <div class="requirement-list">
+
+        @for (
+          limit of capacityLimits();
+          track limit.entity + limit.relationship
+        ) {
+
+          <article class="requirement-card limit-card">
+
+            <div class="requirement-icon">
+              <span class="material-symbols-outlined">
+                speed
+              </span>
+            </div>
+
+            <div class="requirement-content">
+
+              <div class="requirement-heading">
+
+                <strong>
+                  {{ limit.entity }}
+                </strong>
+
+                <span class="maximum-value">
+                  Maximum {{ limit.maximum | number }}
+                </span>
+
+              </div>
+
+              <div class="relationship">
+                {{ limit.relationship }}
+              </div>
+
+              <p>
+                {{ limit.reason }}
+              </p>
+
+            </div>
+
+          </article>
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+
+  @if (
+    capacityRequirements().length === 0 &&
+    capacityLimits().length === 0
+  ) {
+
+    <div class="no-capacity-issues">
+
+      <span class="material-symbols-outlined">
+        check_circle
+      </span>
+
+      <div>
+        <strong>
+          No capacity constraints detected
+        </strong>
+
+        <p>
+          The population plan has no derived capacity requirements or limits.
+        </p>
+      </div>
+
+    </div>
+
+  }
+
+</section>

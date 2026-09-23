@@ -1,0 +1,66 @@
+<div class="generate-shell">
+  <app-forge-sidebar />
+
+  <main class="generate-workspace">
+    <app-studio-header />
+
+    <section class="generate-toolbar">
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep()"
+      />
+    </section>
+
+    <section class="generate-content">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">EXECUTION</span>
+          <h1>Generate</h1>
+          <p>
+            Execute the approved specification and population plan to generate
+            the synthetic dataset.
+          </p>
+        </div>
+
+        <div class="header-status">
+          <span class="status-dot"></span>
+          Ready to generate
+        </div>
+      </header>
+
+      <section class="readiness-card">
+        <div class="readiness-icon">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+
+        <div>
+          <strong>Generation plan is ready</strong>
+          <p>
+            FORGE has the specification, population requirements, identities
+            and relationship dependencies required to begin execution.
+          </p>
+        </div>
+      </section>
+
+      <section class="placeholder-grid">
+        <article class="placeholder-card">
+          <span class="material-symbols-outlined">account_tree</span>
+          <h2>Generation Pipeline</h2>
+          <p>
+            Specification loading, plan initialization, dependency resolution,
+            generation and independent validation will appear here.
+          </p>
+        </article>
+
+        <article class="placeholder-card">
+          <span class="material-symbols-outlined">database</span>
+          <h2>Generation Plan</h2>
+          <p>
+            Entity targets and dependency-aware generation order will be shown
+            here.
+          </p>
+        </article>
+      </section>
+    </section>
+  </main>
+</div>

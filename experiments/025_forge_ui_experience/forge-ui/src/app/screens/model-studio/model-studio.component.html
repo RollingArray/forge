@@ -43,5 +43,27 @@
         />
       }
     </section>
+
+    <footer class="workflow-actions">
+      <div class="workflow-status">
+        <span class="material-symbols-outlined">
+          check_circle
+        </span>
+
+        <span>Model is ready</span>
+      </div>
+
+      <button
+        type="button"
+        class="workflow-primary-action"
+        (click)="handleAction('continue-population')"
+      >
+        <span>Continue to Population Plan</span>
+
+        <span class="material-symbols-outlined">
+          arrow_forward
+        </span>
+      </button>
+    </footer>
   </main>
 </div>

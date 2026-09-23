@@ -1,0 +1,69 @@
+<section class="insights-panel">
+
+  <header class="panel-header">
+
+    <div>
+      <h2>
+        Population Insights
+      </h2>
+
+      <p>
+        Key observations derived from the population planning results.
+      </p>
+    </div>
+
+  </header>
+
+  <div class="insight-list">
+
+    @for (insight of insights(); track insight.title + insight.entity) {
+
+      <article
+        class="insight-card"
+        [class.info]="insight.type === 'info'"
+        [class.constraint]="insight.type === 'constraint'"
+        [class.capacity]="insight.type === 'capacity'"
+        [class.population]="insight.type === 'population'"
+      >
+
+        <span class="insight-icon">
+
+          <span class="material-symbols-outlined">
+            {{
+              insight.type === 'constraint'
+                ? 'rule'
+                : insight.type === 'capacity'
+                  ? 'speed'
+                  : insight.type === 'population'
+                    ? 'database'
+                    : 'info'
+            }}
+          </span>
+
+        </span>
+
+        <div class="insight-content">
+
+          <strong>
+            {{ insight.title }}
+          </strong>
+
+          <p>
+            {{ insight.message }}
+          </p>
+
+        </div>
+
+      </article>
+
+    } @empty {
+
+      <div class="empty-state">
+        No population insights available.
+      </div>
+
+    }
+
+  </div>
+
+</section>

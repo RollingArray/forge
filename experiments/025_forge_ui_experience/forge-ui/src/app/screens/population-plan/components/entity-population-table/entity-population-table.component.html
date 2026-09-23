@@ -1,0 +1,166 @@
+<section class="population-table-panel">
+
+  <div class="panel-header">
+
+    <div>
+      <h2>
+        Entity Population Plan
+      </h2>
+
+      <p>
+        Review and adjust the requested population for each entity.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="table-wrapper">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Entity</th>
+          <th>Mode</th>
+          <th>Minimum</th>
+          <th>Requested</th>
+          <th>Resolved</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (row of rows(); track row.entity; let index = $index) {
+
+          <tr>
+
+            <td class="index-cell">
+              {{ index + 1 }}
+            </td>
+
+            <td>
+              <div class="entity-cell">
+                <span class="entity-icon">
+                  <span class="material-symbols-outlined">
+                    database
+                  </span>
+                </span>
+
+                <strong>
+                  {{ row.entity }}
+                </strong>
+              </div>
+            </td>
+
+            <td>
+              <span class="mode-badge">
+                {{ row.mode }}
+              </span>
+            </td>
+
+            <td class="number-cell bounds-cell">
+              @if (row.minimumFeasible !== null) {
+                <div class="bound-value">
+                  {{ row.minimumFeasible | number }}
+                </div>
+
+                @if (row.maximumFeasible !== null) {
+                  <div class="bound-limit">
+                    <span>Max</span>
+                    {{ row.maximumFeasible | number }}
+                  </div>
+                }
+              } @else {
+                <span class="muted">
+                  —
+                </span>
+              }
+            </td>
+
+            <td class="requested-cell">
+
+              <input
+                type="number"
+                min="0"
+                step="1"
+                [value]="row.requested ?? 0"
+                [attr.aria-label]="'Requested population for ' + row.entity"
+                (change)="
+                  updateRequested(
+                    row.entity,
+                    $any($event.target).value
+                  )
+                "
+              />
+
+            </td>
+
+            <td class="number-cell">
+              @if (row.resolved !== null) {
+                {{ row.resolved | number }}
+              } @else {
+                <span class="muted">
+                  —
+                </span>
+              }
+            </td>
+
+            <td>
+
+              <span
+                class="status-badge"
+                [class.feasible]="row.status === 'FEASIBLE'"
+                [class.warning]="row.status === 'WARNING'"
+                [class.infeasible]="row.status === 'INFEASIBLE'"
+              >
+
+                <span class="material-symbols-outlined">
+                  {{
+                    row.status === 'FEASIBLE'
+                      ? 'check_circle'
+                      : row.status === 'WARNING'
+                        ? 'warning'
+                        : 'error'
+                  }}
+                </span>
+
+                {{ row.status }}
+
+              </span>
+
+            </td>
+
+          </tr>
+
+          <tr class="reason-row">
+            <td></td>
+            <td colspan="6">
+              <span class="reason-label">Planner reasoning</span>
+              <span class="reason-text">
+                {{ row.reason }}
+              </span>
+            </td>
+          </tr>
+
+        } @empty {
+
+          <tr>
+            <td
+              colspan="7"
+              class="empty-state"
+            >
+              No population plan entries available.
+            </td>
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>

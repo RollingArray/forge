@@ -1,0 +1,26 @@
+<section
+  class="feasibility"
+  [class.feasible]="status() === 'FEASIBLE'"
+  [class.warning]="status() === 'WARNING'"
+  [class.infeasible]="status() === 'INFEASIBLE'"
+>
+
+  <div class="status-icon">
+    <span class="material-symbols-outlined">
+      {{ icon() }}
+    </span>
+  </div>
+
+  <div class="status-content">
+
+    <strong>
+      {{ title() }}
+    </strong>
+
+    <p>
+      {{ message() }}
+    </p>
+
+  </div>
+
+</section>

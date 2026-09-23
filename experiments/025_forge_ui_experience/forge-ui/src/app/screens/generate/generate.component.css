@@ -1,0 +1,158 @@
+.generate-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 186px minmax(0, 1fr);
+  background: #f7f8fa;
+}
+
+.generate-workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.generate-toolbar {
+  padding: 0 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.generate-content {
+  padding: 28px 32px 40px;
+  overflow: auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+h1 {
+  margin: 0;
+  color: #20242c;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.page-header p {
+  margin: 8px 0 0;
+  max-width: 720px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid #dbe7df;
+  border-radius: 8px;
+  background: #f5faf7;
+  color: #3f6b50;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4d8b63;
+}
+
+.readiness-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  border: 1px solid #dce8df;
+  border-radius: 10px;
+  background: #f8fcf9;
+}
+
+.readiness-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  color: #4d8b63;
+  background: #e7f3ea;
+}
+
+.readiness-icon .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.readiness-card strong {
+  display: block;
+  color: #26332b;
+  font-size: 14px;
+}
+
+.readiness-card p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.placeholder-card {
+  min-height: 180px;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.placeholder-card > .material-symbols-outlined {
+  color: #64748b;
+  font-size: 22px;
+}
+
+.placeholder-card h2 {
+  margin: 14px 0 6px;
+  color: #20242c;
+  font-size: 15px;
+}
+
+.placeholder-card p {
+  margin: 0;
+  max-width: 520px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .generate-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+}

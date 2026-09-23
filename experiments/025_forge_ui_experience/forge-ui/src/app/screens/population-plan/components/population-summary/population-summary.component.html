@@ -1,0 +1,29 @@
+<section class="summary-grid">
+
+  @for (item of items(); track item.label) {
+
+    <article class="summary-card">
+
+      <div class="summary-icon">
+        <span class="material-symbols-outlined">
+          {{ item.icon }}
+        </span>
+      </div>
+
+      <div class="summary-content">
+
+        <span class="summary-label">
+          {{ item.label }}
+        </span>
+
+        <strong class="summary-value">
+          {{ item.value | number }}
+        </strong>
+
+      </div>
+
+    </article>
+
+  }
+
+</section>

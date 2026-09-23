@@ -143,7 +143,7 @@ function cardinalityForParticipation(
   }
 }
 
-function buildRelationships(
+export function buildRelationships(
   specification: ForgeSpecification,
 ): ModelRelationship[] {
   const foreignKeys =

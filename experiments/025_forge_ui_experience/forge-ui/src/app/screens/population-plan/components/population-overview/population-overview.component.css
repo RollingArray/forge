@@ -1,0 +1,153 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.overview-panel {
+  overflow: hidden;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e7e9ef;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #20242c;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.panel-header p {
+  margin: 5px 0 0;
+  color: #737a87;
+  font-size: 12px;
+}
+
+.largest-entity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: #737a87;
+  font-size: 10px;
+  text-align: right;
+}
+
+.largest-entity strong {
+  color: #20242c;
+  font-size: 12px;
+}
+
+.overview-content {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px;
+}
+
+.total-block {
+  display: flex;
+  min-height: 100px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 7px;
+  background: #fafbfc;
+}
+
+.total-block span {
+  color: #737a87;
+  font-size: 11px;
+}
+
+.total-block strong {
+  margin-top: 6px;
+  color: #20242c;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.population-bars {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.population-row {
+  min-width: 0;
+}
+
+.row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.row-header strong {
+  overflow: hidden;
+  color: #343943;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.row-header span {
+  flex: 0 0 auto;
+  color: #737a87;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-track {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #eef0f3;
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 4px;
+  background: #64748b;
+}
+
+.empty-state {
+  padding: 20px;
+  color: #7b828e;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .overview-content {
+    grid-template-columns: 1fr;
+  }
+
+  .largest-entity {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+.population-row.largest .row-header strong {
+  color: #20242c;
+}
+
+.population-row.largest .bar-fill {
+  background: #334155;
+}

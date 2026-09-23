@@ -1,0 +1,122 @@
+<div class="population-shell">
+
+  <app-forge-sidebar />
+
+  <main class="population-workspace">
+
+    <app-studio-header />
+
+    <section class="population-toolbar">
+
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep()"
+        (stepSelected)="selectStep($event)"
+      />
+
+    </section>
+
+    <section class="population-content">
+
+      @if (isLoading()) {
+
+        <div class="loading-state">
+          <span class="material-symbols-outlined">
+            progress_activity
+          </span>
+
+          <span>
+            Loading population plan...
+          </span>
+        </div>
+
+      } @else if (loadError(); as error) {
+
+        <div class="error-state">
+
+          <span class="material-symbols-outlined">
+            error
+          </span>
+
+          <div>
+            <strong>
+              Unable to load population plan
+            </strong>
+
+            <p>
+              {{ error }}
+            </p>
+          </div>
+
+        </div>
+
+      } @else if (populationPlan(); as plan) {
+
+        <header class="page-header">
+
+          <div>
+            <h1>
+              Population Plan
+            </h1>
+
+            <p>
+              Review and configure the population
+              plan derived from the model.
+            </p>
+          </div>
+
+        </header>
+
+        <app-population-summary
+          [items]="summaryItems()"
+        />
+
+        <app-population-feasibility
+          [status]="feasibilityStatus()"
+          [title]="feasibilityTitle()"
+          [message]="feasibilityMessage()"
+        />
+
+        <app-entity-population-table
+          [rows]="populationRows()"
+          (requestedChange)="
+            updateRequestedPopulation($event)
+          "
+        />
+
+        <app-relationship-capacity
+          [relationshipRequirements]="
+            plan.relationshipRequirements
+          "
+          [capacityRequirements]="
+            plan.capacityRequirements
+          "
+          [capacityLimits]="
+            plan.capacityLimits
+          "
+        />
+
+        <app-population-overview
+          [rows]="populationRows()"
+        />
+
+        <app-hierarchy-cardinality
+          [nodes]="hierarchyNodes()"
+          [relationships]="cardinalityItems()"
+        />
+
+        <app-population-insights
+          [insights]="populationInsights()"
+        />
+
+        <app-population-actions
+          (actionSelected)="handlePopulationAction($event)"
+        />
+
+      }
+
+    </section>
+
+  </main>
+
+</div>

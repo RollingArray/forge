@@ -1,0 +1,103 @@
+<section class="overview-panel">
+
+  <header class="panel-header">
+
+    <div>
+      <h2>
+        Population Overview
+      </h2>
+
+      <p>
+        Distribution of planned records across entities.
+      </p>
+    </div>
+
+    @if (largestEntity(); as largest) {
+
+      <div class="largest-entity">
+
+        <span>
+          Largest population
+        </span>
+
+        <strong>
+          {{ largest.entity }}
+        </strong>
+
+        <span>
+          {{ largest.resolved | number }}
+          records
+        </span>
+
+      </div>
+
+    }
+
+  </header>
+
+
+  <div class="overview-content">
+
+    <div class="total-block">
+
+      <span>
+        Total planned records
+      </span>
+
+      <strong>
+        {{ totalResolved() | number }}
+      </strong>
+
+    </div>
+
+
+    <div class="population-bars">
+
+      @for (
+        item of overview();
+        track item.entity
+      ) {
+
+        <div
+          class="population-row"
+          [class.largest]="item.entity === largestEntity()?.entity"
+        >
+
+          <div class="row-header">
+
+            <strong>
+              {{ item.entity }}
+            </strong>
+
+            <span>
+              {{ item.resolved | number }}
+              ·
+              {{ item.percentage | number:'1.1-1' }}%
+            </span>
+
+          </div>
+
+          <div class="bar-track">
+
+            <div
+              class="bar-fill"
+              [style.width.%]="item.percentage"
+            ></div>
+
+          </div>
+
+        </div>
+
+      } @empty {
+
+        <div class="empty-state">
+          No resolved populations available.
+        </div>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>

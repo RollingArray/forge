@@ -1,3 +1,5 @@
+import { Router } from '@angular/router';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -71,7 +73,7 @@ export class ModelStudioComponent {
     ) ?? this.entities()[0],
   );
 
-  constructor() {
+  constructor(private readonly router: Router) {
     this.loadSpecification();
   }
 
@@ -118,9 +120,36 @@ export class ModelStudioComponent {
 
   selectStep(step: StudioStep): void {
     this.activeStep.set(step);
+
+    switch (step) {
+      case 'model':
+        this.router.navigate(['/model-studio']);
+        break;
+
+      case 'population':
+        this.router.navigate(['/population-plan']);
+        break;
+
+      case 'generate':
+        this.router.navigate(['/generate']);
+        break;
+
+      case 'validate':
+        // Validation route will be added when the screen is implemented.
+        break;
+
+      case 'results':
+        // Results route will be added when the screen is implemented.
+        break;
+    }
   }
 
   handleAction(action: string): void {
+    if (action === 'continue-population') {
+      this.selectStep('population');
+      return;
+    }
+
     console.info(
       '[FORGE Model Studio] action:',
       action,

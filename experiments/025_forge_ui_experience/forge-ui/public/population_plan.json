@@ -1,0 +1,443 @@
+{
+  "populations": {
+    "CUSTOMER": {
+      "mode": "EXPLICIT",
+      "requested": 10000,
+      "minimum_feasible": 1,
+      "resolved": 10000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "CUSTOMER_ADDRESS": {
+      "mode": "EXPLICIT",
+      "requested": 15000,
+      "minimum_feasible": null,
+      "resolved": 15000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PRODUCT": {
+      "mode": "EXPLICIT",
+      "requested": 5000,
+      "minimum_feasible": 1,
+      "resolved": 5000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "SALES_ORG": {
+      "mode": "EXPLICIT",
+      "requested": 20,
+      "minimum_feasible": null,
+      "resolved": 20,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PLANT": {
+      "mode": "EXPLICIT",
+      "requested": 100,
+      "minimum_feasible": 1,
+      "resolved": 100,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "STORAGE_LOCATION": {
+      "mode": "EXPLICIT",
+      "requested": 500,
+      "minimum_feasible": 100,
+      "resolved": 500,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PRODUCT_PLANT": {
+      "mode": "EXPLICIT",
+      "requested": 20000,
+      "minimum_feasible": null,
+      "resolved": 20000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "INVENTORY": {
+      "mode": "EXPLICIT",
+      "requested": 100000,
+      "minimum_feasible": null,
+      "resolved": 100000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "SALES_ORDER": {
+      "mode": "EXPLICIT",
+      "requested": 25000,
+      "minimum_feasible": 25000,
+      "resolved": 25000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "SALES_ITEM": {
+      "mode": "EXPLICIT",
+      "requested": 100000,
+      "minimum_feasible": 25000,
+      "resolved": 100000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "ORDER_PARTNER": {
+      "mode": "EXPLICIT",
+      "requested": 75000,
+      "minimum_feasible": 25000,
+      "resolved": 75000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "ORDER_STATUS": {
+      "mode": "EXPLICIT",
+      "requested": 25000,
+      "minimum_feasible": 25000,
+      "resolved": 25000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "DELIVERY": {
+      "mode": "EXPLICIT",
+      "requested": 30000,
+      "minimum_feasible": 1,
+      "resolved": 30000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "DELIVERY_ITEM": {
+      "mode": "EXPLICIT",
+      "requested": 120000,
+      "minimum_feasible": 30000,
+      "resolved": 120000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "DELIVERY_EVENT": {
+      "mode": "EXPLICIT",
+      "requested": 500000,
+      "minimum_feasible": 120000,
+      "resolved": 500000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "SHIPMENT": {
+      "mode": "EXPLICIT",
+      "requested": 35000,
+      "minimum_feasible": 1,
+      "resolved": 35000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "SHIPMENT_ITEM": {
+      "mode": "EXPLICIT",
+      "requested": 120000,
+      "minimum_feasible": 120000,
+      "resolved": 120000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "CARRIER": {
+      "mode": "EXPLICIT",
+      "requested": 500,
+      "minimum_feasible": 1,
+      "resolved": 500,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "INVOICE": {
+      "mode": "EXPLICIT",
+      "requested": 30000,
+      "minimum_feasible": 1,
+      "resolved": 30000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "INVOICE_ITEM": {
+      "mode": "EXPLICIT",
+      "requested": 120000,
+      "minimum_feasible": 30000,
+      "resolved": 120000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    },
+    "PAYMENT": {
+      "mode": "EXPLICIT",
+      "requested": 40000,
+      "minimum_feasible": 30000,
+      "resolved": 40000,
+      "status": "FEASIBLE",
+      "reason": "Requested population is within the derived feasible bounds.",
+      "recommendation": null
+    }
+  },
+  "minimums": {
+    "CUSTOMER": 1,
+    "SALES_ORDER": 25000,
+    "SALES_ITEM": 25000,
+    "PRODUCT": 1,
+    "ORDER_PARTNER": 25000,
+    "ORDER_STATUS": 25000,
+    "DELIVERY": 1,
+    "DELIVERY_ITEM": 30000,
+    "DELIVERY_EVENT": 120000,
+    "CARRIER": 1,
+    "SHIPMENT": 1,
+    "SHIPMENT_ITEM": 120000,
+    "INVOICE": 1,
+    "INVOICE_ITEM": 30000,
+    "PAYMENT": 30000,
+    "PLANT": 1,
+    "STORAGE_LOCATION": 100
+  },
+  "maximums": {
+    "ORDER_STATUS": 25000
+  },
+  "relationship_requirements": [
+    {
+      "entity": "CUSTOMER",
+      "minimum": 1,
+      "relationship": "CUSTOMER.CUSTOMER_ID -> CUSTOMER_ADDRESS.CUSTOMER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one CUSTOMER record because CUSTOMER_ADDRESS participation is mandatory."
+    },
+    {
+      "entity": "CUSTOMER",
+      "minimum": 1,
+      "relationship": "CUSTOMER.CUSTOMER_ID -> SALES_ORDER.CUSTOMER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one CUSTOMER record because SALES_ORDER participation is mandatory."
+    },
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 1,
+      "relationship": "SALES_ORDER.ORDER_ID -> SALES_ITEM.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because SALES_ITEM participation is mandatory."
+    },
+    {
+      "entity": "SALES_ITEM",
+      "minimum": 25000,
+      "relationship": "SALES_ORDER.ORDER_ID -> SALES_ITEM.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 25000 SALES_ITEM records because every SALES_ORDER must participate."
+    },
+    {
+      "entity": "PRODUCT",
+      "minimum": 1,
+      "relationship": "PRODUCT.PRODUCT_ID -> SALES_ITEM.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because SALES_ITEM participation is mandatory."
+    },
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 1,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_PARTNER.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because ORDER_PARTNER participation is mandatory."
+    },
+    {
+      "entity": "ORDER_PARTNER",
+      "minimum": 25000,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_PARTNER.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 25000 ORDER_PARTNER records because every SALES_ORDER must participate."
+    },
+    {
+      "entity": "ORDER_STATUS",
+      "minimum": 25000,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_STATUS.ORDER_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 25000 ORDER_STATUS records to support the mandatory participation of SALES_ORDER."
+    },
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 25000,
+      "relationship": "SALES_ORDER.ORDER_ID -> ORDER_STATUS.ORDER_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 25000 SALES_ORDER records to support the mandatory participation of ORDER_STATUS."
+    },
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 1,
+      "relationship": "SALES_ORDER.ORDER_ID -> DELIVERY.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because DELIVERY participation is mandatory."
+    },
+    {
+      "entity": "DELIVERY",
+      "minimum": 1,
+      "relationship": "DELIVERY.DELIVERY_ID -> DELIVERY_ITEM.DELIVERY_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one DELIVERY record because DELIVERY_ITEM participation is mandatory."
+    },
+    {
+      "entity": "DELIVERY_ITEM",
+      "minimum": 30000,
+      "relationship": "DELIVERY.DELIVERY_ID -> DELIVERY_ITEM.DELIVERY_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 30000 DELIVERY_ITEM records because every DELIVERY must participate."
+    },
+    {
+      "entity": "DELIVERY_ITEM",
+      "minimum": 1,
+      "relationship": "DELIVERY_ITEM.DELIVERY_ID -> DELIVERY_EVENT.DELIVERY_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one DELIVERY_ITEM record because DELIVERY_EVENT participation is mandatory."
+    },
+    {
+      "entity": "DELIVERY_EVENT",
+      "minimum": 120000,
+      "relationship": "DELIVERY_ITEM.DELIVERY_ID -> DELIVERY_EVENT.DELIVERY_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 120000 DELIVERY_EVENT records because every DELIVERY_ITEM must participate."
+    },
+    {
+      "entity": "DELIVERY_ITEM",
+      "minimum": 1,
+      "relationship": "DELIVERY_ITEM.ITEM_NO -> DELIVERY_EVENT.ITEM_NO",
+      "reason": "ONE_TO_MANY relationship requires at least one DELIVERY_ITEM record because DELIVERY_EVENT participation is mandatory."
+    },
+    {
+      "entity": "DELIVERY_EVENT",
+      "minimum": 120000,
+      "relationship": "DELIVERY_ITEM.ITEM_NO -> DELIVERY_EVENT.ITEM_NO",
+      "reason": "ONE_TO_MANY relationship requires at least 120000 DELIVERY_EVENT records because every DELIVERY_ITEM must participate."
+    },
+    {
+      "entity": "DELIVERY",
+      "minimum": 1,
+      "relationship": "DELIVERY.DELIVERY_ID -> SHIPMENT.DELIVERY_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one DELIVERY record because SHIPMENT participation is mandatory."
+    },
+    {
+      "entity": "CARRIER",
+      "minimum": 1,
+      "relationship": "CARRIER.CARRIER_ID -> SHIPMENT.CARRIER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one CARRIER record because SHIPMENT participation is mandatory."
+    },
+    {
+      "entity": "SHIPMENT",
+      "minimum": 1,
+      "relationship": "SHIPMENT.SHIPMENT_ID -> SHIPMENT_ITEM.SHIPMENT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SHIPMENT record because SHIPMENT_ITEM participation is mandatory."
+    },
+    {
+      "entity": "SHIPMENT_ITEM",
+      "minimum": 35000,
+      "relationship": "SHIPMENT.SHIPMENT_ID -> SHIPMENT_ITEM.SHIPMENT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 35000 SHIPMENT_ITEM records because every SHIPMENT must participate."
+    },
+    {
+      "entity": "SHIPMENT_ITEM",
+      "minimum": 120000,
+      "relationship": "SHIPMENT_ITEM.DELIVERY_ID -> SHIPMENT_ITEM.DELIVERY_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 120000 SHIPMENT_ITEM records to support the mandatory participation of SHIPMENT_ITEM."
+    },
+    {
+      "entity": "SHIPMENT_ITEM",
+      "minimum": 120000,
+      "relationship": "SHIPMENT_ITEM.DELIVERY_ID -> SHIPMENT_ITEM.DELIVERY_ID",
+      "reason": "ONE_TO_ONE relationship requires at least 120000 SHIPMENT_ITEM records to support the mandatory participation of SHIPMENT_ITEM."
+    },
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 1,
+      "relationship": "SALES_ORDER.ORDER_ID -> INVOICE.ORDER_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one SALES_ORDER record because INVOICE participation is mandatory."
+    },
+    {
+      "entity": "INVOICE",
+      "minimum": 1,
+      "relationship": "INVOICE.INVOICE_ID -> INVOICE_ITEM.INVOICE_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one INVOICE record because INVOICE_ITEM participation is mandatory."
+    },
+    {
+      "entity": "INVOICE_ITEM",
+      "minimum": 30000,
+      "relationship": "INVOICE.INVOICE_ID -> INVOICE_ITEM.INVOICE_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 30000 INVOICE_ITEM records because every INVOICE must participate."
+    },
+    {
+      "entity": "PRODUCT",
+      "minimum": 1,
+      "relationship": "PRODUCT.PRODUCT_ID -> INVOICE_ITEM.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because INVOICE_ITEM participation is mandatory."
+    },
+    {
+      "entity": "INVOICE",
+      "minimum": 1,
+      "relationship": "INVOICE.INVOICE_ID -> PAYMENT.INVOICE_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one INVOICE record because PAYMENT participation is mandatory."
+    },
+    {
+      "entity": "PAYMENT",
+      "minimum": 30000,
+      "relationship": "INVOICE.INVOICE_ID -> PAYMENT.INVOICE_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 30000 PAYMENT records because every INVOICE must participate."
+    },
+    {
+      "entity": "PRODUCT",
+      "minimum": 1,
+      "relationship": "PRODUCT.PRODUCT_ID -> PRODUCT_PLANT.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because PRODUCT_PLANT participation is mandatory."
+    },
+    {
+      "entity": "PLANT",
+      "minimum": 1,
+      "relationship": "PLANT.PLANT_ID -> PRODUCT_PLANT.PLANT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PLANT record because PRODUCT_PLANT participation is mandatory."
+    },
+    {
+      "entity": "PLANT",
+      "minimum": 1,
+      "relationship": "PLANT.PLANT_ID -> STORAGE_LOCATION.PLANT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PLANT record because STORAGE_LOCATION participation is mandatory."
+    },
+    {
+      "entity": "STORAGE_LOCATION",
+      "minimum": 100,
+      "relationship": "PLANT.PLANT_ID -> STORAGE_LOCATION.PLANT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least 100 STORAGE_LOCATION records because every PLANT must participate."
+    },
+    {
+      "entity": "PRODUCT",
+      "minimum": 1,
+      "relationship": "PRODUCT.PRODUCT_ID -> INVENTORY.PRODUCT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PRODUCT record because INVENTORY participation is mandatory."
+    },
+    {
+      "entity": "PLANT",
+      "minimum": 1,
+      "relationship": "PLANT.PLANT_ID -> INVENTORY.PLANT_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one PLANT record because INVENTORY participation is mandatory."
+    },
+    {
+      "entity": "STORAGE_LOCATION",
+      "minimum": 1,
+      "relationship": "STORAGE_LOCATION.STORAGE_ID -> INVENTORY.STORAGE_ID",
+      "reason": "ONE_TO_MANY relationship requires at least one STORAGE_LOCATION record because INVENTORY participation is mandatory."
+    }
+  ],
+  "capacity_requirements": [
+    {
+      "entity": "SALES_ORDER",
+      "minimum": 25000,
+      "relationship": "ORDER_STATUS.(ORDER_ID) -> SALES_ORDER.(ORDER_ID)",
+      "reason": "Every ORDER_STATUS record requires a distinct compatible SALES_ORDER identity key because the foreign key covers the complete child identity."
+    }
+  ],
+  "capacity_limits": [
+    {
+      "entity": "ORDER_STATUS",
+      "maximum": 25000,
+      "relationship": "ORDER_STATUS.(ORDER_ID) -> SALES_ORDER.(ORDER_ID)",
+      "reason": "The available SALES_ORDER identity keys can support at most 25000 ORDER_STATUS records because each child requires a distinct compatible parent key."
+    }
+  ]
+}

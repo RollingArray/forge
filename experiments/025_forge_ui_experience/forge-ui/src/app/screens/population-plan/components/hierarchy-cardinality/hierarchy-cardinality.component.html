@@ -1,0 +1,241 @@
+<section class="hierarchy-panel">
+
+  <header class="panel-header">
+
+    <div>
+      <h2>
+        Hierarchy &amp; Cardinality
+      </h2>
+
+      <p>
+        Population distribution across the model hierarchy and relationship cardinality.
+      </p>
+    </div>
+
+    <div class="hierarchy-summary">
+      <strong>
+        {{ levelCount() }}
+      </strong>
+      <span>
+        levels
+      </span>
+    </div>
+
+  </header>
+
+
+  <div class="analytics-row">
+
+    <div class="analytics-card">
+
+      <div class="analytics-header">
+        <div>
+          <strong>Population by Hierarchy Level</strong>
+          <span>Resolved records across the model hierarchy</span>
+        </div>
+
+        <span class="material-symbols-outlined">
+          bar_chart
+        </span>
+      </div>
+
+      <div class="chart-container hierarchy-chart">
+        <canvas #hierarchyChart></canvas>
+      </div>
+
+    </div>
+
+
+    <div class="analytics-card">
+
+      <div class="analytics-header">
+        <div>
+          <strong>Relationship Cardinality</strong>
+          <span>Distribution across model relationships</span>
+        </div>
+
+        <span class="material-symbols-outlined">
+          donut_large
+        </span>
+      </div>
+
+      <div class="chart-container cardinality-chart">
+        <canvas #cardinalityChart></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="hierarchy-content">
+
+    <div class="hierarchy-section">
+
+      <div class="section-title">
+        <span class="material-symbols-outlined">
+          account_tree
+        </span>
+
+        Population Hierarchy
+      </div>
+
+      <div class="hierarchy-list">
+
+        @for (
+          node of nodes();
+          track node.entity
+        ) {
+
+          <div
+            class="hierarchy-row"
+            [style.--level]="node.level"
+          >
+
+            <div class="level-indicator">
+              L{{ node.level }}
+            </div>
+
+            <div class="hierarchy-entity">
+
+              <span class="material-symbols-outlined">
+                database
+              </span>
+
+              <strong>
+                {{ node.entity }}
+              </strong>
+
+            </div>
+
+            <span class="relationship-count">
+              {{ node.relationshipCount }}
+              relationships
+            </span>
+
+            <span class="resolved-count">
+              {{ node.resolved | number }}
+            </span>
+
+          </div>
+
+        } @empty {
+
+          <div class="empty-state">
+            No hierarchy information available.
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+
+    <div class="cardinality-section">
+
+      <div class="section-title">
+        <span class="material-symbols-outlined">
+          account_tree
+        </span>
+
+        Relationship Cardinality
+      </div>
+
+      <div class="cardinality-list">
+
+        @for (
+          relationship of relationships();
+          track relationship.source + relationship.target + relationship.type
+        ) {
+
+          <div class="cardinality-row">
+
+            <div class="relationship-main">
+
+              <div class="relationship-entities">
+
+                <strong>
+                  {{ relationship.source }}
+                </strong>
+
+                <span class="cardinality">
+                  {{ relationship.sourceCardinality }}
+                </span>
+
+                <span class="relationship-line">
+                  ─────────
+                </span>
+
+                <span class="cardinality">
+                  {{ relationship.targetCardinality }}
+                </span>
+
+                <strong>
+                  {{ relationship.target }}
+                </strong>
+
+              </div>
+
+              <div class="participation">
+
+                <span>
+                  {{ relationship.sourceParticipation }}
+                </span>
+
+                <span class="participation-arrow">
+                  →
+                </span>
+
+                <span>
+                  {{ relationship.targetParticipation }}
+                </span>
+
+              </div>
+
+              @if (
+                relationship.sourceFields.length > 0 &&
+                relationship.targetFields.length > 0
+              ) {
+
+                <div class="field-mapping">
+
+                  <span>
+                    {{ relationship.sourceFields.join(', ') }}
+                  </span>
+
+                  <span class="mapping-arrow">
+                    →
+                  </span>
+
+                  <span>
+                    {{ relationship.targetFields.join(', ') }}
+                  </span>
+
+                </div>
+
+              }
+
+            </div>
+
+            <span class="relationship-type">
+              {{ relationship.type }}
+            </span>
+
+          </div>
+
+        } @empty {
+
+          <div class="empty-state">
+            No relationship cardinality information available.
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
