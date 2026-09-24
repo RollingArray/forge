@@ -9,6 +9,7 @@ import { ForgeNavigationService } from '../../core/navigation/forge-navigation.s
 
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
+import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 import { StudioHeaderComponent } from '../model-studio/components/studio-header/studio-header.component';
 import { WorkflowStepperComponent } from '../model-studio/components/workflow-stepper/workflow-stepper.component';
 
@@ -88,7 +89,7 @@ import {
     RelationshipCapacityComponent,
     PopulationOverviewComponent,
     PopulationInsightsComponent,
-    PopulationActionsComponent,
+    WorkflowActionBarComponent,
     HierarchyCardinalityComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -470,6 +471,14 @@ export class PopulationPlanComponent {
         return 'All populations can be generated within the derived feasibility bounds.';
     }
   });
+
+  goBackToValidation(): void {
+    this.navigation.navigateToStep('validate');
+  }
+
+  reviewAndAcceptPlan(): void {
+    this.navigation.navigateToStep('generate');
+  }
 
   handlePopulationAction(action: string): void {
     switch (action) {

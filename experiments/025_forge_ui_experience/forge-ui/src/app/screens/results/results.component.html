@@ -154,6 +154,18 @@
 
     </div>
 
+    <app-workflow-action-bar
+      icon="check_circle"
+      title="Generation results ready"
+      description="Review the generated dataset, quality reports, and output artifacts."
+      secondaryLabel="Back to Generate"
+      secondaryIcon="arrow_back"
+      primaryLabel="Create New Generation"
+      primaryIcon="add"
+      (secondaryAction)="goBackToGenerate()"
+      (primaryAction)="startNewGeneration()"
+    />
+
   </section>
 
 </div>

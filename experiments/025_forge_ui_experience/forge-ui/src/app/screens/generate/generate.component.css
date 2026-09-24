@@ -48,6 +48,11 @@ app-forge-sidebar {
   padding: 20px 24px 32px;
 }
 
+app-workflow-action-bar {
+  display: block;
+  flex: 0 0 auto;
+}
+
 .page-header {
   display: flex;
   align-items: flex-start;

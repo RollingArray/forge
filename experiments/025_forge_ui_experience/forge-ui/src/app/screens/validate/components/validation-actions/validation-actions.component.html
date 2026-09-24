@@ -1,0 +1,29 @@
+<div class="actions">
+  <button
+    type="button"
+    class="secondary"
+    (click)="back.emit()"
+  >
+    <span class="material-symbols-outlined">
+      arrow_back
+    </span>
+    Back
+  </button>
+
+  <button
+    type="button"
+    class="primary"
+    [disabled]="!canContinue()"
+    (click)="continue.emit()"
+  >
+    {{
+      canContinue()
+        ? 'Continue to Population'
+        : 'Resolve Errors to Continue'
+    }}
+
+    <span class="material-symbols-outlined">
+      arrow_forward
+    </span>
+  </button>
+</div>

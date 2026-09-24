@@ -1,0 +1,127 @@
+<section class="results-panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Validation Results</h2>
+      <p>
+        Checks performed against the current specification.
+      </p>
+    </div>
+
+    <label class="search">
+      <span class="material-symbols-outlined">
+        search
+      </span>
+
+      <input
+        type="search"
+        placeholder="Search validation results..."
+        [value]="search()"
+        (input)="updateSearch($event)"
+      />
+    </label>
+  </div>
+
+  <div class="filters">
+    <button
+      type="button"
+      [class.active]="filter() === 'all'"
+      (click)="selectFilter('all')"
+    >
+      All ({{ findings().length }})
+    </button>
+
+    <button
+      type="button"
+      [class.active]="filter() === 'error'"
+      (click)="selectFilter('error')"
+    >
+      Errors ({{ count('error') }})
+    </button>
+
+    <button
+      type="button"
+      [class.active]="filter() === 'warning'"
+      (click)="selectFilter('warning')"
+    >
+      Warnings ({{ count('warning') }})
+    </button>
+
+    <button
+      type="button"
+      [class.active]="filter() === 'passed'"
+      (click)="selectFilter('passed')"
+    >
+      Passed ({{ count('passed') }})
+    </button>
+  </div>
+
+  <div class="table">
+    <div class="table-header">
+      <span>Status</span>
+      <span>Category</span>
+      <span>Check</span>
+      <span>Details</span>
+      <span>Entity</span>
+    </div>
+
+    @for (
+      finding of filteredFindings();
+      track finding.id
+    ) {
+      <div class="table-row">
+        <span>
+          <span
+            class="status"
+            [class.error]="finding.severity === 'error'"
+            [class.warning]="finding.severity === 'warning'"
+            [class.passed]="finding.severity === 'passed'"
+          >
+            <span class="material-symbols-outlined">
+              {{
+                finding.severity === 'error'
+                  ? 'error'
+                  : finding.severity === 'warning'
+                    ? 'warning'
+                    : 'check_circle'
+              }}
+            </span>
+
+            {{
+              finding.severity === 'error'
+                ? 'Error'
+                : finding.severity === 'warning'
+                  ? 'Warning'
+                  : 'Passed'
+            }}
+          </span>
+        </span>
+
+        <span class="category">
+          {{ finding.category }}
+        </span>
+
+        <strong>
+          {{ finding.title }}
+        </strong>
+
+        <span class="details">
+          {{ finding.details }}
+        </span>
+
+        <span class="entity">
+          {{ finding.entity ?? 'All' }}
+        </span>
+      </div>
+    } @empty {
+      <div class="empty">
+        <span class="material-symbols-outlined">
+          search_off
+        </span>
+        <strong>No validation results found</strong>
+        <span>
+          Try changing the filter or search term.
+        </span>
+      </div>
+    }
+  </div>
+</section>

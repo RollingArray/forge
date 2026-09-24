@@ -1,0 +1,54 @@
+<section class="summary-panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Validation Summary</h2>
+      <p>
+        Specification checks derived from the current FORGE model.
+      </p>
+    </div>
+  </div>
+
+  <div class="summary-content">
+    <div
+      class="progress-ring"
+      [style.background]="
+        'conic-gradient(#19a56b ' +
+        passRate() +
+        '%, #e8ebf2 ' +
+        passRate() +
+        '%)'
+      "
+    >
+      <div class="progress-ring-inner">
+        <strong>{{ passRate() }}%</strong>
+        <span>Passed</span>
+      </div>
+    </div>
+
+    <div class="summary-legend">
+      <div>
+        <span class="dot passed"></span>
+        <span>Passed</span>
+        <strong>{{ data().passed }}</strong>
+      </div>
+
+      <div>
+        <span class="dot warning"></span>
+        <span>Warnings</span>
+        <strong>{{ data().warnings }}</strong>
+      </div>
+
+      <div>
+        <span class="dot error"></span>
+        <span>Errors</span>
+        <strong>{{ data().errors }}</strong>
+      </div>
+
+      <div>
+        <span class="dot total"></span>
+        <span>Total Checks</span>
+        <strong>{{ data().totalChecks }}</strong>
+      </div>
+    </div>
+  </div>
+</section>

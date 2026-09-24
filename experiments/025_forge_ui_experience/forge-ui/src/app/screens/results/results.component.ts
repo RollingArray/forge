@@ -28,6 +28,7 @@ import { GeneratedDatasetComponent } from './components/generated-dataset/genera
 import { DatasetActionsComponent } from './components/dataset-actions/dataset-actions.component';
 import { OutputArtifactsComponent } from './components/output-artifacts/output-artifacts.component';
 import { NextStepsComponent } from './components/next-steps/next-steps.component';
+import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 
 @Component({
   selector: 'app-results',
@@ -40,6 +41,7 @@ import { NextStepsComponent } from './components/next-steps/next-steps.component
     DatasetActionsComponent,
     OutputArtifactsComponent,
     NextStepsComponent,
+    WorkflowActionBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './results.component.html',
@@ -124,6 +126,14 @@ export class ResultsComponent {
 
   returnToModelStudio(): void {
     this.navigation.navigateToStep('model');
+  }
+
+  goBackToGenerate(): void {
+    this.navigation.navigateToStep('generate');
+  }
+
+  startNewGeneration(): void {
+    this.navigation.navigateToStep('population');
   }
 
   exploreDataset(): void {

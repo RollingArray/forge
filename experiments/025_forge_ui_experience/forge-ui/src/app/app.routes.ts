@@ -6,6 +6,7 @@ import { ModelStudioComponent } from './screens/model-studio/model-studio.compon
 import { PopulationPlanComponent } from './screens/population-plan/population-plan.component';
 import { GenerateComponent } from './screens/generate/generate.component';
 import { ResultsComponent } from './screens/results/results.component';
+import { ValidateComponent } from './screens/validate/validate.component';
 
 export const routes: Routes = [
   {
@@ -24,6 +25,10 @@ export const routes: Routes = [
   {
     path: 'model-studio',
     component: ModelStudioComponent,
+  },
+  {
+    path: 'validate',
+    component: ValidateComponent,
   },
   {
     path: 'population-plan',

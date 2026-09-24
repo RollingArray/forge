@@ -1,0 +1,420 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #17203d;
+}
+
+.validate-shell {
+  display: flex;
+
+  width: 100%;
+  height: 100vh;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #f7f8fc;
+}
+
+.workspace {
+  display: flex;
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.topbar {
+  height: 54px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e6e9f0;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #65708a;
+  font-size: 12px;
+}
+
+.breadcrumbs button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #65708a;
+  cursor: pointer;
+  font: inherit;
+}
+
+.breadcrumbs button:hover {
+  color: #5148d9;
+}
+
+.breadcrumbs strong {
+  color: #17203d;
+}
+
+.breadcrumbs .material-symbols-outlined {
+  font-size: 16px;
+  color: #a3a9b7;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.header-button,
+.icon-button {
+  height: 36px;
+  border: 1px solid #dce1eb;
+  background: #fff;
+  border-radius: 8px;
+  color: #17203d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.header-button {
+  padding: 0 13px;
+}
+
+.icon-button {
+  width: 40px;
+}
+
+.header-button:hover,
+.icon-button:hover {
+  background: #f7f8fb;
+}
+
+.header-button .material-symbols-outlined,
+.icon-button .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.stepper-container {
+  padding: 10px 18px 0;
+  background: #fff;
+  border-bottom: 1px solid #e6e9f0;
+}
+
+.page-content {
+  padding: 22px 18px 24px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin-bottom: 5px;
+  color: #675fe0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #111936;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.page-header p {
+  max-width: 720px;
+  margin: 7px 0 0;
+  color: #69728b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.page-header p strong {
+  color: #333c59;
+}
+
+.overall-status {
+  min-width: 330px;
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid #ccecdf;
+  border-radius: 10px;
+  background: #eefaf5;
+  color: #198d61;
+}
+
+.overall-status.blocked {
+  border-color: #f1cccc;
+  background: #fff4f4;
+  color: #d45151;
+}
+
+.overall-status > .material-symbols-outlined {
+  font-size: 27px;
+}
+
+.overall-status div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.overall-status strong {
+  color: #173b2c;
+  font-size: 12px;
+}
+
+.overall-status.blocked strong {
+  color: #5c2525;
+}
+
+.overall-status span {
+  color: #65708a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.metric-card {
+  min-height: 98px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e5e8f0;
+  border-radius: 11px;
+}
+
+.metric-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: #f0efff;
+  color: #5b52df;
+}
+
+.metric-icon.passed {
+  background: #eaf8f2;
+  color: #1aa06a;
+}
+
+.metric-icon.entities {
+  background: #eef4ff;
+  color: #4d83dc;
+}
+
+.metric-icon .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.metric-card.error-card .metric-icon {
+  background: #fff0f0;
+  color: #df5555;
+}
+
+.metric-card.warning-card .metric-icon {
+  background: #fff7e8;
+  color: #d49414;
+}
+
+.metric-card > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card strong {
+  color: #111936;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.metric-card span:not(.metric-icon) {
+  margin-top: 3px;
+  color: #303951;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.metric-card small {
+  margin-top: 4px;
+  color: #8a92a5;
+  font-size: 10px;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.8fr)
+    minmax(280px, 0.8fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.right-rail {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.state-card {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e5e8f0;
+  border-radius: 12px;
+  color: #69728b;
+}
+
+.state-card strong {
+  color: #27304a;
+  font-size: 14px;
+}
+
+.state-card span:last-child {
+  font-size: 11px;
+}
+
+.loading-icon {
+  color: #5a50e6;
+  font-size: 34px;
+  animation: spin 1.2s linear infinite;
+}
+
+.error-state {
+  color: #d95252;
+}
+
+.error-state .material-symbols-outlined {
+  font-size: 34px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .metric-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .right-rail {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .header-button {
+    display: none;
+  }
+
+  .page-content {
+    padding: 16px 12px;
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+
+  .overall-status {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .right-rail {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------
+   Persistent workflow layout
+   ------------------------------------------------------------ */
+
+.workspace {
+  display: flex;
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.page-content {
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-bottom: 32px;
+}
+
+app-workflow-action-bar {
+  display: block;
+  flex: 0 0 auto;
+}
+

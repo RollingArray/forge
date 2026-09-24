@@ -11,6 +11,7 @@ export class ForgeNavigationService {
 
   private readonly routes: Partial<Record<StudioStep, string>> = {
     model: '/model-studio',
+    validate: '/validate',
     population: '/population-plan',
     generate: '/generate',
     results: '/results',

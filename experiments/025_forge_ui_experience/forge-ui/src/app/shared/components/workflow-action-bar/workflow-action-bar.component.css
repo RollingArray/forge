@@ -5,16 +5,23 @@
   z-index: 10;
 }
 
-.population-actions {
+.workflow-action-bar {
   display: flex;
   min-height: 74px;
+
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
+
   padding: 14px 24px;
+
   border-top: 1px solid #d9d7e8;
+
   background: #f5f4fb;
-  box-shadow: 0 -4px 14px rgba(31, 36, 54, 0.06);
+
+  box-shadow:
+    0 -4px 14px rgba(31, 36, 54, 0.06);
 }
 
 .action-context {
@@ -25,24 +32,25 @@
 }
 
 .action-context > .material-symbols-outlined {
+  flex: 0 0 auto;
   color: #14945d;
   font-size: 22px;
 }
 
-.action-context div {
+.action-copy {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 3px;
 }
 
-.action-context strong {
+.action-copy strong {
   color: #20242c;
   font-size: 12px;
   font-weight: 650;
 }
 
-.action-context span {
+.action-copy span {
   color: #737a87;
   font-size: 11px;
 }
@@ -57,20 +65,29 @@
 .secondary-button,
 .primary-button {
   display: inline-flex;
+
   height: 38px;
+
   align-items: center;
   justify-content: center;
+
   gap: 7px;
+
   padding: 0 14px;
+
   border-radius: 8px;
+
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
+
   cursor: pointer;
+
   transition:
     border-color 150ms ease,
     background 150ms ease,
-    box-shadow 150ms ease;
+    box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
 .secondary-button {
@@ -92,7 +109,13 @@
 
 .primary-button:hover {
   background: #30364b;
-  box-shadow: 0 2px 6px rgba(32, 38, 65, 0.18);
+  box-shadow:
+    0 2px 6px rgba(32, 38, 65, 0.18);
+}
+
+.secondary-button:active,
+.primary-button:active {
+  transform: translateY(1px);
 }
 
 .secondary-button .material-symbols-outlined,
@@ -101,7 +124,7 @@
 }
 
 @media (max-width: 760px) {
-  .population-actions {
+  .workflow-action-bar {
     align-items: flex-start;
     flex-direction: column;
     padding: 12px 16px;

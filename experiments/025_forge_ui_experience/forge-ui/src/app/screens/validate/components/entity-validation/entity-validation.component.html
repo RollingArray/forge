@@ -1,0 +1,39 @@
+<section class="entity-panel">
+  <div class="panel-heading">
+    <h2>Entities</h2>
+    <span>{{ entities().length }} validated</span>
+  </div>
+
+  <div class="entity-list">
+    @for (
+      entity of entities();
+      track entity.name
+    ) {
+      <div class="entity-row">
+        <span
+          class="entity-status"
+          [class.error]="entity.status === 'error'"
+          [class.warning]="entity.status === 'warning'"
+        >
+          <span class="material-symbols-outlined">
+            {{
+              entity.status === 'error'
+                ? 'error'
+                : entity.status === 'warning'
+                  ? 'warning'
+                  : 'check_circle'
+            }}
+          </span>
+        </span>
+
+        <span class="entity-name">
+          {{ entity.name }}
+        </span>
+
+        <span class="entity-checks">
+          {{ entity.checks }} checks
+        </span>
+      </div>
+    }
+  </div>
+</section>

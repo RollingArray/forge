@@ -12,10 +12,10 @@ import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
 
 import { StudioHeaderComponent } from './components/studio-header/studio-header.component';
 import { WorkflowStepperComponent } from './components/workflow-stepper/workflow-stepper.component';
-import { StudioActionsComponent } from './components/studio-actions/studio-actions.component';
 import { ModelToolbarComponent } from './components/model-toolbar/model-toolbar.component';
 import { ModelCanvasComponent } from './components/model-canvas/model-canvas.component';
 import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
+import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 
 import {
   CanvasEntity,
@@ -36,10 +36,10 @@ import { adaptSpecification } from './data/specification-adapter';
     SidebarComponent,
     StudioHeaderComponent,
     WorkflowStepperComponent,
-    StudioActionsComponent,
     ModelToolbarComponent,
     ModelCanvasComponent,
     EntityInspectorComponent,
+    WorkflowActionBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-studio.component.html',
@@ -127,8 +127,8 @@ export class ModelStudioComponent {
   }
 
   handleAction(action: string): void {
-    if (action === 'continue-population') {
-      this.selectStep('population');
+    if (action === 'continue-validation') {
+      this.selectStep('validate');
       return;
     }
 
@@ -136,6 +136,10 @@ export class ModelStudioComponent {
       '[FORGE Model Studio] action:',
       action,
     );
+  }
+
+  continueToValidation(): void {
+    this.selectStep('validate');
   }
 
   handleCanvasAction(action: string): void {

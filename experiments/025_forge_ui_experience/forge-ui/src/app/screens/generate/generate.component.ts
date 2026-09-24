@@ -23,6 +23,7 @@ import { CurrentActivityComponent } from './components/current-activity/current-
 import { GenerationLogsComponent } from './components/generation-logs/generation-logs.component';
 import { QualitySummaryComponent } from './components/quality-summary/quality-summary.component';
 import { CheckpointPanelComponent } from './components/checkpoint-panel/checkpoint-panel.component';
+import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 
 @Component({
   selector: 'app-generate',
@@ -38,6 +39,7 @@ import { CheckpointPanelComponent } from './components/checkpoint-panel/checkpoi
     GenerationLogsComponent,
     QualitySummaryComponent,
     CheckpointPanelComponent,
+    WorkflowActionBarComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
@@ -81,6 +83,14 @@ export class GenerateComponent {
 
   selectStep(step: StudioStep): void {
     this.navigation.navigateToStep(step);
+  }
+
+  goBackToPopulation(): void {
+    this.navigation.navigateToStep('population');
+  }
+
+  continueToResults(): void {
+    this.navigation.navigateToStep('results');
   }
 
   private async loadData(): Promise<void> {

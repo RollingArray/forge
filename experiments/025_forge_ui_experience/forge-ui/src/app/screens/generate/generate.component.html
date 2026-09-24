@@ -142,6 +142,18 @@
 
     </section>
 
+    <app-workflow-action-bar
+      icon="play_circle"
+      title="Generation completed"
+      description="Review the generated data and quality results before continuing to the results view."
+      secondaryLabel="Back"
+      secondaryIcon="arrow_back"
+      primaryLabel="Continue to Results"
+      primaryIcon="arrow_forward"
+      (secondaryAction)="goBackToPopulation()"
+      (primaryAction)="continueToResults()"
+    />
+
   </main>
 
 </div>

@@ -109,13 +109,23 @@
           [insights]="populationInsights()"
         />
 
-        <app-population-actions
-          (actionSelected)="handlePopulationAction($event)"
-        />
-
       }
 
     </section>
+
+    @if (populationPlan()) {
+      <app-workflow-action-bar
+        icon="fact_check"
+        title="Population plan ready for review"
+        description="Review the resolved populations before continuing to generation."
+        secondaryLabel="Back"
+        secondaryIcon="arrow_back"
+        primaryLabel="Review & Accept Plan"
+        primaryIcon="arrow_forward"
+        (secondaryAction)="goBackToValidation()"
+        (primaryAction)="reviewAndAcceptPlan()"
+      />
+    }
 
   </main>
 

@@ -1,0 +1,259 @@
+<div class="validate-shell">
+  <app-forge-sidebar />
+
+  <main class="workspace">
+    <header class="topbar">
+      <div class="breadcrumbs">
+        <button
+          type="button"
+          (click)="navigation.navigateToHome()"
+        >
+          Home
+        </button>
+
+        <span class="material-symbols-outlined">
+          chevron_right
+        </span>
+
+        <span>SAP Order-to-Cash</span>
+
+        <span class="material-symbols-outlined">
+          chevron_right
+        </span>
+
+        <strong>Validate</strong>
+      </div>
+
+      <div class="header-actions">
+        <button
+          type="button"
+          class="header-button"
+          (click)="viewSpecification()"
+        >
+          <span class="material-symbols-outlined">
+            data_object
+          </span>
+          View Specification
+        </button>
+
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="More options"
+        >
+          <span class="material-symbols-outlined">
+            more_horiz
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="stepper-container">
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep()"
+        (stepSelected)="selectStep($event)"
+      />
+    </div>
+
+    <section class="page-content">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">
+            STEP 2 OF 5
+          </div>
+
+          <h1>Validate Specification</h1>
+
+          @if (data(); as validation) {
+            <p>
+              Validate
+              <strong>{{ validation.modelName }}</strong>
+              against the FORGE specification rules before
+              creating the population plan.
+            </p>
+          } @else {
+            <p>
+              Check the current FORGE specification before
+              proceeding to population planning.
+            </p>
+          }
+        </div>
+
+        @if (data(); as validation) {
+          <div
+            class="overall-status"
+            [class.blocked]="!validation.canContinue"
+          >
+            <span class="material-symbols-outlined">
+              {{
+                validation.canContinue
+                  ? 'check_circle'
+                  : 'error'
+              }}
+            </span>
+
+            <div>
+              <strong>
+                {{
+                  validation.canContinue
+                    ? 'Specification is valid'
+                    : 'Specification needs attention'
+                }}
+              </strong>
+
+              <span>
+                {{
+                  validation.canContinue
+                    ? 'No blocking validation errors were found.'
+                    : 'Resolve blocking errors before continuing.'
+                }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <div class="state-card">
+          <span
+            class="material-symbols-outlined loading-icon"
+          >
+            progress_activity
+          </span>
+
+          <strong>
+            Validating specification...
+          </strong>
+
+          <span>
+            FORGE is checking the model definition and
+            relationships.
+          </span>
+        </div>
+      }
+
+      @else if (loadError(); as error) {
+        <div class="state-card error-state">
+          <span class="material-symbols-outlined">
+            error
+          </span>
+
+          <strong>
+            Unable to validate specification
+          </strong>
+
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      @else if (data(); as validation) {
+        <section class="metric-grid">
+          <article class="metric-card error-card">
+            <span class="metric-icon">
+              <span class="material-symbols-outlined">
+                error
+              </span>
+            </span>
+
+            <div>
+              <strong>{{ validation.errors }}</strong>
+              <span>Errors</span>
+              <small>
+                {{
+                  validation.errors === 0
+                    ? 'No blocking issues'
+                    : 'Must be resolved'
+                }}
+              </small>
+            </div>
+          </article>
+
+          <article class="metric-card warning-card">
+            <span class="metric-icon">
+              <span class="material-symbols-outlined">
+                warning
+              </span>
+            </span>
+
+            <div>
+              <strong>{{ validation.warnings }}</strong>
+              <span>Warnings</span>
+              <small>
+                {{
+                  validation.warnings === 0
+                    ? 'No warnings'
+                    : 'Recommended to review'
+                }}
+              </small>
+            </div>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-icon passed">
+              <span class="material-symbols-outlined">
+                check_circle
+              </span>
+            </span>
+
+            <div>
+              <strong>{{ validation.passed }}</strong>
+              <span>Checks Passed</span>
+              <small>
+                {{ validation.totalChecks }} total checks
+              </small>
+            </div>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-icon entities">
+              <span class="material-symbols-outlined">
+                database
+              </span>
+            </span>
+
+            <div>
+              <strong>
+                {{ validation.entitiesValidated }}
+              </strong>
+              <span>Entities Validated</span>
+              <small>
+                From specification.json
+              </small>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <app-validation-results
+            [findings]="validation.findings"
+          />
+
+          <aside class="right-rail">
+            <app-validation-summary
+              [data]="validation"
+            />
+
+            <app-entity-validation
+              [entities]="validation.entities"
+            />
+          </aside>
+        </section>
+
+
+      }
+    </section>
+
+        <app-workflow-action-bar
+          icon="fact_check"
+          title="Specification ready for population"
+          description="Review the validation findings before continuing to population planning."
+          secondaryLabel="Back"
+          secondaryIcon="arrow_back"
+          primaryLabel="Continue to Population"
+          primaryIcon="arrow_forward"
+          (secondaryAction)="goBack()"
+          (primaryAction)="continueToPopulation()"
+        />
+  </main>
+</div>

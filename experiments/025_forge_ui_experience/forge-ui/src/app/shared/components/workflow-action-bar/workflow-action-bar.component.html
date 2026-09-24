@@ -1,0 +1,55 @@
+<footer class="workflow-action-bar">
+
+  <div class="action-context">
+
+    <span class="material-symbols-outlined">
+      {{ icon() }}
+    </span>
+
+    <div class="action-copy">
+      <strong>
+        {{ title() }}
+      </strong>
+
+      <span>
+        {{ description() }}
+      </span>
+    </div>
+
+  </div>
+
+  <div class="action-buttons">
+
+    @if (secondaryLabel()) {
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="handleSecondaryAction()"
+      >
+        <span class="material-symbols-outlined">
+          {{ secondaryIcon() }}
+        </span>
+
+        <span>
+          {{ secondaryLabel() }}
+        </span>
+      </button>
+    }
+
+    <button
+      type="button"
+      class="primary-button"
+      (click)="handlePrimaryAction()"
+    >
+      <span>
+        {{ primaryLabel() }}
+      </span>
+
+      <span class="material-symbols-outlined">
+        {{ primaryIcon() }}
+      </span>
+    </button>
+
+  </div>
+
+</footer>
