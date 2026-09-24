@@ -8,7 +8,7 @@ import {
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
 import { StudioHeaderComponent } from '../model-studio/components/studio-header/studio-header.component';
-import { WorkflowStepperComponent } from '../model-studio/components/workflow-stepper/workflow-stepper.component';
+import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 
 import { ForgeNavigationService } from '../../core/navigation/forge-navigation.service';
 
@@ -36,7 +36,7 @@ import { WorkflowActionBarComponent } from '../../shared/components/workflow-act
   imports: [
     SidebarComponent,
     StudioHeaderComponent,
-    WorkflowStepperComponent,
+    WorkflowPageHeaderComponent,
     GeneratedDatasetComponent,
     DatasetActionsComponent,
     OutputArtifactsComponent,

@@ -2,29 +2,53 @@
   <app-forge-sidebar />
 
   <main class="workspace">
-    <header class="topbar">
-      <div class="breadcrumbs">
-        <button
-          type="button"
-          (click)="navigation.navigateToHome()"
+    <app-studio-header />
+
+    <app-workflow-page-header
+      currentStep="validate"
+      breadcrumbLabel="Validate"
+      title="Specification Validation"
+      description="Validate the current FORGE specification before creating the population plan."
+      icon="fact_check"
+      [steps]="steps"
+      (stepSelected)="selectStep($event)"
+    />
+
+    <section class="page-content">
+      @if (data(); as validation) {
+        <div
+          class="overall-status"
+          [class.blocked]="!validation.canContinue"
         >
-          Home
-        </button>
+          <span class="material-symbols-outlined">
+            {{
+              validation.canContinue
+                ? 'check_circle'
+                : 'error'
+            }}
+          </span>
 
-        <span class="material-symbols-outlined">
-          chevron_right
-        </span>
+          <div>
+            <strong>
+              {{
+                validation.canContinue
+                  ? 'Specification is valid'
+                  : 'Specification needs attention'
+              }}
+            </strong>
 
-        <span>SAP Order-to-Cash</span>
+            <span>
+              {{
+                validation.canContinue
+                  ? 'No blocking validation errors were found.'
+                  : 'Resolve blocking errors before continuing.'
+              }}
+            </span>
+          </div>
+        </div>
+      }
 
-        <span class="material-symbols-outlined">
-          chevron_right
-        </span>
-
-        <strong>Validate</strong>
-      </div>
-
-      <div class="header-actions">
+      <div class="validation-toolbar">
         <button
           type="button"
           class="header-button"
@@ -35,83 +59,6 @@
           </span>
           View Specification
         </button>
-
-        <button
-          type="button"
-          class="icon-button"
-          aria-label="More options"
-        >
-          <span class="material-symbols-outlined">
-            more_horiz
-          </span>
-        </button>
-      </div>
-    </header>
-
-    <div class="stepper-container">
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep()"
-        (stepSelected)="selectStep($event)"
-      />
-    </div>
-
-    <section class="page-content">
-      <div class="page-header">
-        <div>
-          <div class="eyebrow">
-            STEP 2 OF 5
-          </div>
-
-          <h1>Validate Specification</h1>
-
-          @if (data(); as validation) {
-            <p>
-              Validate
-              <strong>{{ validation.modelName }}</strong>
-              against the FORGE specification rules before
-              creating the population plan.
-            </p>
-          } @else {
-            <p>
-              Check the current FORGE specification before
-              proceeding to population planning.
-            </p>
-          }
-        </div>
-
-        @if (data(); as validation) {
-          <div
-            class="overall-status"
-            [class.blocked]="!validation.canContinue"
-          >
-            <span class="material-symbols-outlined">
-              {{
-                validation.canContinue
-                  ? 'check_circle'
-                  : 'error'
-              }}
-            </span>
-
-            <div>
-              <strong>
-                {{
-                  validation.canContinue
-                    ? 'Specification is valid'
-                    : 'Specification needs attention'
-                }}
-              </strong>
-
-              <span>
-                {{
-                  validation.canContinue
-                    ? 'No blocking validation errors were found.'
-                    : 'Resolve blocking errors before continuing.'
-                }}
-              </span>
-            </div>
-          </div>
-        }
       </div>
 
       @if (isLoading()) {

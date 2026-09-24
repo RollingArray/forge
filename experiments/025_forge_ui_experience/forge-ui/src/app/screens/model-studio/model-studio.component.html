@@ -4,13 +4,15 @@
   <main class="studio-workspace">
     <app-studio-header />
 
-    <section class="studio-toolbar">
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep()"
-        (stepSelected)="selectStep($event)"
-      />
-    </section>
+    <app-workflow-page-header
+      currentStep="model"
+      breadcrumbLabel="Model Studio"
+      title="Model Studio"
+      description="Define and review the entities, relationships, and constraints that drive synthetic data generation."
+      icon="account_tree"
+      [steps]="steps"
+      (stepSelected)="selectStep($event)"
+    />
 
     <section class="studio-body">
       <div class="canvas-area">

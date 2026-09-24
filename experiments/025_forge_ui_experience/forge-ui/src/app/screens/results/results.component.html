@@ -6,52 +6,17 @@
 
     <app-studio-header />
 
+    <app-workflow-page-header
+      currentStep="results"
+      breadcrumbLabel="Results"
+      title="Generation Results"
+      description="Review the generated dataset, quality reports, and output artifacts."
+      icon="analytics"
+      [steps]="steps"
+      (stepSelected)="selectStep($event)"
+    />
+
     <div class="content">
-
-      <div class="breadcrumb-row">
-
-        <div class="breadcrumbs">
-          <span>Home</span>
-          <span class="material-symbols-outlined">
-            chevron_right
-          </span>
-          <span>SAP Order-to-Cash</span>
-          <span class="material-symbols-outlined">
-            chevron_right
-          </span>
-          <strong>Results</strong>
-        </div>
-
-        <div class="header-actions">
-
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="viewInGenerate()"
-          >
-            View in Generate
-          </button>
-
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="More result actions"
-          >
-            <span class="material-symbols-outlined">
-              more_horiz
-            </span>
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep()"
-        (stepSelected)="selectStep($event)"
-      />
 
 
       @if (isLoading()) {

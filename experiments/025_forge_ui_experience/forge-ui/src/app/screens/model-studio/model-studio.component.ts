@@ -11,7 +11,7 @@ import {
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
 
 import { StudioHeaderComponent } from './components/studio-header/studio-header.component';
-import { WorkflowStepperComponent } from './components/workflow-stepper/workflow-stepper.component';
+import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 import { ModelToolbarComponent } from './components/model-toolbar/model-toolbar.component';
 import { ModelCanvasComponent } from './components/model-canvas/model-canvas.component';
 import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
@@ -35,7 +35,7 @@ import { adaptSpecification } from './data/specification-adapter';
   imports: [
     SidebarComponent,
     StudioHeaderComponent,
-    WorkflowStepperComponent,
+    WorkflowPageHeaderComponent,
     ModelToolbarComponent,
     ModelCanvasComponent,
     EntityInspectorComponent,

@@ -10,8 +10,8 @@ import { ForgeNavigationService } from '../../core/navigation/forge-navigation.s
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
+import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 import { StudioHeaderComponent } from '../model-studio/components/studio-header/studio-header.component';
-import { WorkflowStepperComponent } from '../model-studio/components/workflow-stepper/workflow-stepper.component';
 
 import {
   PopulationSummaryComponent,
@@ -82,7 +82,7 @@ import {
   imports: [
     SidebarComponent,
     StudioHeaderComponent,
-    WorkflowStepperComponent,
+    WorkflowPageHeaderComponent,
     PopulationSummaryComponent,
     PopulationFeasibilityComponent,
     EntityPopulationTableComponent,

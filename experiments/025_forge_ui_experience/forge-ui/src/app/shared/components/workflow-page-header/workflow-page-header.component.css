@@ -1,0 +1,202 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.workflow-page-header {
+  display: flex;
+  flex-direction: column;
+
+  border-bottom: 1px solid #e7e9f0;
+
+  background: #ffffff;
+}
+
+.workflow-stepper-row {
+  display: flex;
+
+  min-height: 62px;
+
+  align-items: center;
+
+  padding: 0 16px;
+
+  border-bottom: 1px solid #eef0f5;
+}
+
+.workflow-stepper {
+  display: inline-flex;
+
+  height: 38px;
+
+  align-items: center;
+
+  padding: 0 7px;
+
+  border: 1px solid #e1e4ec;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.step {
+  display: inline-flex;
+
+  height: 30px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 7px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #8a92aa;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.step:hover {
+  color: #4d46c5;
+  background: #faf9ff;
+}
+
+.step-number {
+  display: grid;
+
+  width: 21px;
+  height: 21px;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #e7e9ef;
+
+  color: #66708e;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.step.active {
+  color: #453dcc;
+  background: #f3f1ff;
+}
+
+.step.active .step-number {
+  background: #5b53dc;
+  color: #ffffff;
+}
+
+.step.completed {
+  color: #566078;
+}
+
+.step.completed .step-number {
+  background: #e7f6ef;
+  color: #14945d;
+}
+
+.step-chevron {
+  color: #b0b5c4;
+  font-size: 15px;
+}
+
+.page-identity {
+  display: flex;
+
+  min-height: 88px;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  padding: 16px 24px;
+}
+
+.identity-main {
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+.page-icon {
+  flex: 0 0 auto;
+
+  color: #554dd4;
+
+  font-size: 25px;
+}
+
+h1 {
+  margin: 0;
+
+  color: #171c38;
+
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+p {
+  max-width: 850px;
+
+  margin: 5px 0 0;
+
+  color: #737a8e;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.step-progress {
+  flex: 0 0 auto;
+
+  padding: 6px 10px;
+
+  border: 1px solid #dedcf4;
+  border-radius: 7px;
+
+  background: #f7f6ff;
+
+  color: #554dd4;
+
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .workflow-stepper-row {
+    overflow-x: auto;
+  }
+
+  .workflow-stepper {
+    flex: 0 0 auto;
+  }
+
+  .page-identity {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px 16px;
+  }
+
+  .step-progress {
+    align-self: flex-start;
+  }
+}

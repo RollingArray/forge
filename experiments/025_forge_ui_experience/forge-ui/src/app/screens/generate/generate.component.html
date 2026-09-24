@@ -6,15 +6,15 @@
 
     <app-studio-header />
 
-    <section class="generate-toolbar">
-
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep()"
-        (stepSelected)="selectStep($event)"
-      />
-
-    </section>
+    <app-workflow-page-header
+      currentStep="generate"
+      breadcrumbLabel="Generate"
+      title="Synthetic Data Generation"
+      description="FORGE generated synthetic data from the validated model and population plan."
+      icon="database"
+      [steps]="steps"
+      (stepSelected)="selectStep($event)"
+    />
 
     <section class="generate-content">
 
@@ -48,17 +48,6 @@
       } @else if (data(); as generation) {
 
         <header class="page-header">
-
-          <div>
-            <h1>
-              Synthetic Data Generation
-            </h1>
-
-            <p>
-              FORGE generated synthetic data from
-              the validated model and population plan.
-            </p>
-          </div>
 
           <div class="header-actions">
 

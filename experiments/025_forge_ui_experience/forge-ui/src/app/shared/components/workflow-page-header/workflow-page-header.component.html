@@ -1,0 +1,81 @@
+<section class="workflow-page-header">
+
+  <div class="workflow-stepper-row">
+    <nav
+      class="workflow-stepper"
+      aria-label="FORGE workflow"
+    >
+      @for (
+        step of steps();
+        track step.id;
+        let last = $last
+      ) {
+        <button
+          type="button"
+          class="step"
+          [class.active]="currentStep() === step.id"
+          [class.completed]="isCompleted(step.number)"
+          (click)="selectStep(step.id)"
+        >
+          <span class="step-number">
+            @if (isCompleted(step.number)) {
+              <span class="material-symbols-outlined">
+                check
+              </span>
+            } @else {
+              {{ step.number }}
+            }
+          </span>
+
+          <span class="step-label">
+            {{ step.label }}
+          </span>
+        </button>
+
+        @if (!last) {
+          <span
+            class="step-chevron material-symbols-outlined"
+            aria-hidden="true"
+          >
+            chevron_right
+          </span>
+        }
+      }
+    </nav>
+  </div>
+
+  <div class="page-identity">
+
+    <div class="identity-main">
+
+      <div class="title-row">
+
+        <span
+          class="page-icon material-symbols-outlined"
+          aria-hidden="true"
+        >
+          {{ icon() }}
+        </span>
+
+        <h1>
+          {{ title() }}
+        </h1>
+
+      </div>
+
+      <p>
+        {{ description() }}
+      </p>
+
+    </div>
+
+    <div
+      class="step-progress"
+      aria-label="Workflow progress"
+    >
+      {{ stepProgressLabel() }}
+    </div>
+
+  </div>
+
+</section>

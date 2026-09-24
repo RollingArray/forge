@@ -9,7 +9,6 @@ import { ForgeNavigationService } from '../../core/navigation/forge-navigation.s
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
 import { StudioHeaderComponent } from '../model-studio/components/studio-header/studio-header.component';
-import { WorkflowStepperComponent } from '../model-studio/components/workflow-stepper/workflow-stepper.component';
 import { StudioStep } from '../model-studio/models/model-studio.models';
 
 import { GenerationDataService } from './services/generation-data.service';
@@ -24,6 +23,7 @@ import { GenerationLogsComponent } from './components/generation-logs/generation
 import { QualitySummaryComponent } from './components/quality-summary/quality-summary.component';
 import { CheckpointPanelComponent } from './components/checkpoint-panel/checkpoint-panel.component';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
+import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 
 @Component({
   selector: 'app-generate',
@@ -31,7 +31,6 @@ import { WorkflowActionBarComponent } from '../../shared/components/workflow-act
   imports: [
     SidebarComponent,
     StudioHeaderComponent,
-    WorkflowStepperComponent,
     GenerationSummaryComponent,
     GenerationPipelineComponent,
     EntityGenerationTableComponent,
@@ -40,6 +39,7 @@ import { WorkflowActionBarComponent } from '../../shared/components/workflow-act
     QualitySummaryComponent,
     CheckpointPanelComponent,
     WorkflowActionBarComponent,
+    WorkflowPageHeaderComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',

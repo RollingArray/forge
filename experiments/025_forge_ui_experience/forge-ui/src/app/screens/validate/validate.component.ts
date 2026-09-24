@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { SidebarComponent } from '../home/components/sidebar/sidebar.component';
+import { StudioHeaderComponent } from '../model-studio/components/studio-header/studio-header.component';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
-import { WorkflowStepperComponent } from '../model-studio/components/workflow-stepper/workflow-stepper.component';
+import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 
 import { ForgeNavigationService } from '../../core/navigation/forge-navigation.service';
 
@@ -22,8 +23,9 @@ import { EntityValidationComponent } from './components/entity-validation/entity
   standalone: true,
   imports: [
     SidebarComponent,
+    StudioHeaderComponent,
     WorkflowActionBarComponent,
-    WorkflowStepperComponent,
+    WorkflowPageHeaderComponent,
     ValidationSummaryComponent,
     ValidationResultsComponent,
     EntityValidationComponent,

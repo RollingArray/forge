@@ -6,15 +6,15 @@
 
     <app-studio-header />
 
-    <section class="population-toolbar">
-
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep()"
-        (stepSelected)="selectStep($event)"
-      />
-
-    </section>
+    <app-workflow-page-header
+      currentStep="population"
+      breadcrumbLabel="Population Plan"
+      title="Population Planning"
+      description="Review and configure the population plan derived from the validated model."
+      icon="groups"
+      [steps]="steps"
+      (stepSelected)="selectStep($event)"
+    />
 
     <section class="population-content">
 
@@ -51,21 +51,6 @@
         </div>
 
       } @else if (populationPlan(); as plan) {
-
-        <header class="page-header">
-
-          <div>
-            <h1>
-              Population Plan
-            </h1>
-
-            <p>
-              Review and configure the population
-              plan derived from the model.
-            </p>
-          </div>
-
-        </header>
 
         <app-population-summary
           [items]="summaryItems()"
