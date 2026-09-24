@@ -18,6 +18,13 @@
   background: #f7f8fc;
 }
 
+app-forge-sidebar {
+  display: block;
+  width: 250px;
+  height: 100vh;
+  flex: 0 0 250px;
+}
+
 .workspace {
   display: flex;
   flex: 1 1 auto;

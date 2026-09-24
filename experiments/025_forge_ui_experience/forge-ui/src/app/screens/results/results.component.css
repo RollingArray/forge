@@ -13,6 +13,14 @@
   background: #fafbfe;
 }
 
+app-forge-sidebar {
+  display: block;
+  width: 250px;
+  height: 100vh;
+  border-right: 1px solid #e7e9f0;
+  box-sizing: border-box;
+}
+
 .workspace {
   display: flex;
   min-width: 0;
