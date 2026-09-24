@@ -1,0 +1,72 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: authenticated-layout.component.css
+ * Purpose: Shared authenticated application shell styling.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+:host {
+  display: block;
+
+  width: 100%;
+  min-height: 100vh;
+}
+
+.authenticated-shell {
+  display: grid;
+
+  grid-template-columns: 250px minmax(0, 1fr);
+
+  width: 100%;
+  height: 100vh;
+
+  overflow: hidden;
+
+  background: #fafafa;
+}
+
+.application-area {
+  display: flex;
+
+  min-width: 0;
+  min-height: 0;
+
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.application-content {
+  min-width: 0;
+  min-height: 0;
+
+  flex: 1;
+
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .authenticated-shell {
+    display: block;
+
+    height: auto;
+    min-height: 100vh;
+
+    overflow: visible;
+  }
+
+  .application-area {
+    overflow: visible;
+  }
+
+  .application-content {
+    overflow: visible;
+  }
+}

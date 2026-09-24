@@ -1,0 +1,10 @@
+{
+  "allowed_domains": [
+    "collins.com"
+  ],
+  "development_token": {
+    "secret": "forge-development-secret-change-me",
+    "algorithm": "HS256",
+    "expiration_minutes": 60
+  }
+}

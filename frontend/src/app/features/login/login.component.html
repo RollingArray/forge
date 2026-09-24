@@ -1,0 +1,397 @@
+<!--
+============================================================================
+FORGE — Framework for Observed Rules, Generation & Engineered Data
+============================================================================
+
+File: login.component.html
+Purpose: FORGE Login user interface.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+
+============================================================================
+-->
+
+<div class="min-h-screen bg-[#edf2ff] p-4 sm:p-6 lg:p-8">
+
+  <div
+    class="relative mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1500px] overflow-hidden rounded-[20px] border border-white/80 bg-white shadow-[0_30px_80px_rgba(45,55,100,0.12)] sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-4rem)]"
+  >
+
+    <!-- ======================================================= -->
+    <!-- LEFT PANEL                                              -->
+    <!-- ======================================================= -->
+
+    <section
+      class="relative hidden w-[58%] overflow-hidden bg-[#fbfaf8] lg:flex"
+    >
+
+      <!-- Ambient background -->
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_35%_35%,rgba(128,120,236,0.13),transparent_34%),radial-gradient(circle_at_85%_72%,rgba(108,142,255,0.10),transparent_32%)]"
+      ></div>
+
+      <!-- Abstract FORGE artwork -->
+      <div class="forge-artwork">
+
+        <div class="forge-wave forge-wave-one"></div>
+        <div class="forge-wave forge-wave-two"></div>
+        <div class="forge-wave forge-wave-three"></div>
+
+        <div class="forge-glow forge-glow-one"></div>
+        <div class="forge-glow forge-glow-two"></div>
+
+        <div class="forge-cube forge-cube-one"></div>
+        <div class="forge-cube forge-cube-two"></div>
+        <div class="forge-cube forge-cube-three"></div>
+
+      </div>
+
+      <div class="relative z-10 flex w-full flex-col px-10 py-8 xl:px-12">
+
+        <!-- Brand -->
+        <div class="flex items-center gap-3">
+
+          <div class="forge-logo">
+            <div class="forge-logo-top"></div>
+            <div class="forge-logo-middle"></div>
+            <div class="forge-logo-bottom"></div>
+          </div>
+
+          <span class="text-[25px] font-bold tracking-[0.11em] text-[#11152f]">
+            FORGE
+          </span>
+
+        </div>
+
+
+        <!-- Hero -->
+        <div class="mt-[150px] max-w-[620px]">
+
+          <h1
+            class="text-[58px] font-bold leading-none tracking-[-0.05em] text-[#0d1230] xl:text-[64px]"
+          >
+            FORGE
+          </h1>
+
+          <div
+            class="mt-4 text-[30px] leading-[1.38] tracking-[-0.025em] text-[#525a87] xl:text-[33px]"
+          >
+            Synthetic Data Generation<br />
+            from Observed Rules
+          </div>
+
+          <p
+            class="mt-6 max-w-[565px] text-[18px] leading-[1.6] text-[#626b91]"
+          >
+            A specification-driven framework to engineer
+            realistic, coherent and reproducible synthetic
+            data for enterprise systems.
+          </p>
+
+
+          <!-- Capabilities -->
+          <div class="mt-11 grid max-w-[650px] grid-cols-2 gap-x-10 gap-y-9">
+
+            <div class="flex gap-4">
+              <div class="capability-icon">
+                <span class="material-symbols-outlined">
+                  account_tree
+                </span>
+              </div>
+
+              <div>
+                <h3 class="capability-title">
+                  Model Your System
+                </h3>
+
+                <p class="capability-copy">
+                  Define entities, relationships<br />
+                  and business rules
+                </p>
+              </div>
+            </div>
+
+
+            <div class="flex gap-4">
+              <div class="capability-icon">
+                <span class="material-symbols-outlined">
+                  auto_awesome
+                </span>
+              </div>
+
+              <div>
+                <h3 class="capability-title">
+                  Generate with Confidence
+                </h3>
+
+                <p class="capability-copy">
+                  Create high-quality synthetic<br />
+                  datasets
+                </p>
+              </div>
+            </div>
+
+
+            <div class="flex gap-4">
+              <div class="capability-icon">
+                <span class="material-symbols-outlined">
+                  verified
+                </span>
+              </div>
+
+              <div>
+                <h3 class="capability-title">
+                  Validate and Explore
+                </h3>
+
+                <p class="capability-copy">
+                  Ensure integrity and realism<br />
+                  with built-in validation
+                </p>
+              </div>
+            </div>
+
+
+            <div class="flex gap-4">
+              <div class="capability-icon">
+                <span class="material-symbols-outlined">
+                  layers
+                </span>
+              </div>
+
+              <div>
+                <h3 class="capability-title">
+                  Enterprise Ready
+                </h3>
+
+                <p class="capability-copy">
+                  Domain agnostic, configurable<br />
+                  and transparent
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Closing statement -->
+        <div class="mt-auto">
+
+          <div class="mb-5 h-px w-[82px] bg-[#d8dbe5]"></div>
+
+          <p class="text-[14px] tracking-[0.01em] text-[#7c84a5]">
+            Don't learn the data. Understand the system. Engineer the data.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================================= -->
+    <!-- RIGHT PANEL                                             -->
+    <!-- ======================================================= -->
+
+    <section
+      class="relative flex w-full flex-col bg-white lg:w-[42%]"
+    >
+
+      <!-- Top controls -->
+      <div class="flex items-center justify-end gap-4 px-7 py-6 md:px-9">
+
+        <span class="text-[13px] text-[#747990]">
+          v0.1.0
+        </span>
+
+        <div class="h-6 w-px bg-[#e3e5eb]"></div>
+
+        <button
+          type="button"
+          class="theme-button"
+          aria-label="Toggle theme"
+          (click)="toggleTheme()"
+        >
+          <span class="material-symbols-outlined">
+            light_mode
+          </span>
+        </button>
+</div>
+
+
+      <!-- Authentication -->
+      <div
+        class="flex flex-1 items-center justify-center px-6 md:px-10"
+      >
+
+        <div
+          class="w-full max-w-[510px] rounded-[15px] border border-[#e2e4eb] bg-white px-7 py-10 shadow-[0_12px_35px_rgba(35,43,75,0.025)] md:px-9 md:py-12"
+        >
+
+          <h2
+            class="text-[31px] font-semibold tracking-[-0.04em] text-[#0d1230]"
+          >
+            Welcome to FORGE
+          </h2>
+
+          <p
+            class="mt-3 text-[16px] leading-[1.55] text-[#626a87]"
+          >
+            Sign in with your organization email to continue
+          </p>
+
+
+          <!-- Email -->
+          <div class="mt-10">
+
+            <div class="relative">
+
+              <span
+                class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-[23px] text-[#555c74]"
+              >
+                mail
+              </span>
+
+              <input
+                id="email"
+                type="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                (keyup.enter)="continue()"
+                placeholder="you@yourcompany.com"
+                autocomplete="email"
+                class="forge-input"
+              /></div>
+
+@if (errorMessage()) {
+  <div class="login-error" role="alert">
+    <svg
+      class="login-error-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        stroke-width="2"
+      />
+      <path
+        d="M12 8v5"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <circle
+        cx="12"
+        cy="16.5"
+        r="1"
+        fill="currentColor"
+      />
+    </svg>
+
+    <span>{{ errorMessage() }}</span>
+  </div>
+}
+
+
+          </div>
+
+
+          <!-- Continue -->
+          <button
+            type="button"
+            class="continue-button"
+            [disabled]="!email().trim() || isLoading()"
+            (click)="continue()"
+          >
+
+            @if (isLoading()) {
+              <span class="login-spinner" aria-hidden="true"></span>
+              <span>Signing in...</span>
+            } @else {
+              <span>Continue</span>
+
+              <span class="material-symbols-outlined">
+                arrow_forward
+              </span>
+            }
+
+          </button>
+
+
+          <!-- Divider -->
+          <div class="my-7 flex items-center gap-4">
+
+            <div class="h-px flex-1 bg-[#dfe1e8]"></div>
+
+            <span class="text-[13px] text-[#7a7f94]">
+              OR
+            </span>
+
+            <div class="h-px flex-1 bg-[#dfe1e8]"></div>
+
+          </div>
+
+
+          <!-- Microsoft -->
+          <!-- Enterprise -->
+          <div class="enterprise-card">
+
+            <div class="enterprise-icon">
+
+              <span class="material-symbols-outlined">
+                lock
+              </span>
+
+            </div>
+
+            <div>
+
+              <h3>
+                Enterprise Authentication
+              </h3>
+
+              <p>
+                FORGE uses your organization's identity
+                provider for secure access.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- Footer -->
+      <footer
+        class="flex justify-center gap-4 px-7 pb-7 pt-5 text-[12px] text-[#777b89]"
+      >
+
+        
+<button type="button">Privacy</button>
+
+        <span class="text-[#c5c7ce]">|</span>
+
+        <button type="button">Terms</button>
+
+        <span class="text-[#c5c7ce]">|</span>
+
+        <button type="button">Support</button>
+
+      </footer>
+
+    </section>
+
+  </div>
+
+</div>

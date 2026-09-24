@@ -1,0 +1,45 @@
+/**
+ * File: app.css
+ * Purpose: Root application styling.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ */
+
+.api-loading-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+
+  width: 100%;
+  height: 3px;
+
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.api-loading-bar {
+  width: 40%;
+  height: 100%;
+
+  border-radius: 0 999px 999px 0;
+
+  background: #5b54d6;
+
+  animation: forge-api-loading 900ms ease-in-out infinite;
+}
+
+@keyframes forge-api-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(150%);
+  }
+
+  100% {
+    transform: translateX(300%);
+  }
+}

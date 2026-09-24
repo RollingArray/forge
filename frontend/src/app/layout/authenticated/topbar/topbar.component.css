@@ -1,0 +1,202 @@
+:host {
+  display: block;
+}
+
+.topbar {
+  display: flex;
+
+  min-height: 68px;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  padding: 0 24px;
+
+  border-bottom: 1px solid #eeeeF3;
+
+  background: #ffffff;
+}
+
+.search {
+  display: flex;
+
+  width: min(430px, 48%);
+
+  height: 38px;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 0 11px;
+
+  border: 1px solid #e2e3ea;
+  border-radius: 8px;
+
+  background: #fafafd;
+}
+
+.search .material-symbols-outlined {
+  color: #8b8fa1;
+
+  font-size: 19px;
+}
+
+.search input {
+  min-width: 0;
+
+  flex: 1;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: #252942;
+
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.search input::placeholder {
+  color: #9da1b1;
+}
+
+.shortcut {
+  padding: 3px 6px;
+
+  border: 1px solid #e1e2e9;
+  border-radius: 5px;
+
+  color: #989cad;
+
+  font-size: 10px;
+}
+
+.topbar-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+.topbar-button,
+.icon-button,
+.profile-button {
+  border: 0;
+
+  background: transparent;
+
+  color: #656a7d;
+
+  font-family: inherit;
+
+  cursor: pointer;
+}
+
+.topbar-button {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 8px 10px;
+
+  font-size: 12px;
+
+  border-radius: 7px;
+}
+
+.topbar-button:hover,
+.icon-button:hover,
+.profile-button:hover {
+  background: #f6f6fa;
+}
+
+.topbar-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.icon-button {
+  position: relative;
+
+  display: grid;
+
+  width: 36px;
+  height: 36px;
+
+  place-items: center;
+
+  border-radius: 50%;
+}
+
+.icon-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.notification-dot {
+  position: absolute;
+
+  top: 7px;
+  right: 7px;
+
+  width: 6px;
+  height: 6px;
+
+  border: 2px solid white;
+  border-radius: 50%;
+
+  background: #5b54d6;
+}
+
+.profile-button {
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 4px;
+
+  border-radius: 20px;
+}
+
+.profile-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.avatar {
+  display: grid;
+
+  width: 31px;
+  height: 31px;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #e9e8fc;
+
+  color: #5048c5;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    padding: 0 14px;
+  }
+
+  .search {
+    width: 100%;
+  }
+
+  .topbar-button {
+    display: none;
+  }
+}

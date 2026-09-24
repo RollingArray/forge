@@ -1,0 +1,182 @@
+:host {
+  display: block;
+
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  flex-direction: column;
+
+  border-right: 1px solid #e9e9ef;
+
+  background: #ffffff;
+}
+
+.brand {
+  display: flex;
+
+  height: 76px;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 24px;
+
+  border-bottom: 1px solid #eeeeF3;
+}
+
+.brand-mark {
+  position: relative;
+
+  width: 29px;
+  height: 29px;
+}
+
+.brand-mark span {
+  position: absolute;
+
+  left: 50%;
+
+  width: 19px;
+  height: 19px;
+
+  border-radius: 4px;
+
+  background: linear-gradient(145deg, #766ce7, #4d43c6);
+
+  transform:
+    translateX(-50%)
+    rotate(30deg)
+    skew(-7deg, -7deg);
+}
+
+.brand-mark span:nth-child(1) {
+  top: 0;
+}
+
+.brand-mark span:nth-child(2) {
+  top: 5px;
+
+  opacity: .82;
+}
+
+.brand-mark span:nth-child(3) {
+  top: 10px;
+
+  opacity: .64;
+}
+
+.brand-name {
+  color: #11152f;
+
+  font-size: 19px;
+  font-weight: 700;
+
+  letter-spacing: .10em;
+}
+
+.navigation {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding: 20px 12px;
+}
+
+.navigation-section {
+  margin: 18px 12px 7px;
+
+  color: #999daf;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  letter-spacing: .11em;
+}
+
+.navigation-item {
+  display: flex;
+
+  width: 100%;
+  min-height: 42px;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 12px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #60667d;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.navigation-item .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.navigation-item:hover {
+  background: #f5f5fb;
+
+  color: #38357b;
+}
+
+.navigation-item.active {
+  background: #efeffd;
+
+  color: #5149c8;
+
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    height: auto;
+
+    border-right: 0;
+    border-bottom: 1px solid #e9e9ef;
+  }
+
+  .navigation {
+    flex-direction: row;
+
+    overflow-x: auto;
+
+    padding: 10px 12px;
+  }
+
+  .navigation-section {
+    display: none;
+  }
+
+  .navigation-item {
+    width: auto;
+
+    flex: 0 0 auto;
+  }
+}

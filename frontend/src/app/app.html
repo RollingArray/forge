@@ -1,0 +1,19 @@
+<!--
+File: app.html
+Purpose: Root application template containing the router outlet.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+-->
+
+@if (isApiLoading()) {
+  <div
+    class="api-loading-indicator"
+    role="progressbar"
+    aria-label="Loading"
+  >
+    <div class="api-loading-bar"></div>
+  </div>
+}
+
+<router-outlet />

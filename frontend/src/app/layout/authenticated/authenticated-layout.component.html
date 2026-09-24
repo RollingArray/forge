@@ -1,0 +1,27 @@
+<!--
+File: authenticated-layout.component.html
+Purpose: Shared authenticated application shell for FORGE.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+-->
+
+<div class="authenticated-shell">
+
+  <app-forge-sidebar
+    (action)="handleSidebarAction($event)"
+  />
+
+  <section class="application-area">
+
+    <app-forge-topbar
+      (action)="handleTopbarAction($event)"
+    />
+
+    <main class="application-content">
+      <router-outlet />
+    </main>
+
+  </section>
+
+</div>

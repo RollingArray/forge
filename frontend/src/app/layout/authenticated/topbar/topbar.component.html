@@ -1,0 +1,73 @@
+<header class="topbar">
+
+  <div class="search">
+
+    <span class="material-symbols-outlined">
+      search
+    </span>
+
+    <input
+      type="search"
+      placeholder="Search sessions, models, entities..."
+      aria-label="Search FORGE"
+    />
+
+    <span class="shortcut">
+      ⌘K
+    </span>
+
+  </div>
+
+
+  <div class="topbar-actions">
+
+    <button
+      type="button"
+      class="topbar-button"
+      (click)="select('documentation')"
+    >
+      <span class="material-symbols-outlined">
+        help_outline
+      </span>
+
+      <span>Help</span>
+    </button>
+
+
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Notifications"
+      (click)="select('notifications')"
+    >
+      <span class="material-symbols-outlined">
+        notifications
+      </span>
+
+      <span
+        class="notification-dot"
+        aria-hidden="true"
+      ></span>
+    </button>
+
+
+    <button
+      type="button"
+      class="profile-button"
+      aria-label="Profile"
+      (click)="select('profile')"
+    >
+
+      <span class="avatar">
+        RS
+      </span>
+
+      <span class="material-symbols-outlined">
+        expand_more
+      </span>
+
+    </button>
+
+  </div>
+
+</header>
