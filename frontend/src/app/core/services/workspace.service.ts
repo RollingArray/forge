@@ -93,7 +93,10 @@ export class WorkspaceService {
         })),
         activities: response.activities.map((activity) => ({
           action: activity.action,
+          description: activity.description,
           dataModel: activity.data_model,
+          actor: activity.actor,
+          target: activity.target,
           time: activity.time,
           icon: activity.icon,
           accent: activity.accent,
@@ -132,6 +135,8 @@ export class WorkspaceService {
       },
     );
   }
+
+
 
   deleteDataModel(dataModelId: string): Observable<void> {
     return this.http.delete<void>(

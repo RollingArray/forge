@@ -63,3 +63,15 @@ class ActivityService:
             owner_user_id=owner_user_id,
             limit=limit,
         )
+
+    def get_by_data_model_id(
+        self,
+        data_model_id: str,
+        limit: int = 50,
+    ) -> list[Activity]:
+        """Return recent activity events for a data model."""
+
+        return self._activity_repository.get_by_data_model_id(
+            data_model_id=data_model_id,
+            limit=limit,
+        )

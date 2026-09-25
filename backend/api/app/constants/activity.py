@@ -19,6 +19,9 @@ class ActivityType(StrEnum):
     DATA_MODEL_UPDATED = "DATA_MODEL_UPDATED"
     DATA_MODEL_DELETED = "DATA_MODEL_DELETED"
     DATA_MODEL_DUPLICATED = "DATA_MODEL_DUPLICATED"
+    DATA_MODEL_ACCESS_GRANTED = "DATA_MODEL_ACCESS_GRANTED"
+    DATA_MODEL_ACCESS_ROLE_CHANGED = "DATA_MODEL_ACCESS_ROLE_CHANGED"
+    DATA_MODEL_ACCESS_REVOKED = "DATA_MODEL_ACCESS_REVOKED"
 
     ENTITY_ADDED = "ENTITY_ADDED"
     ENTITY_UPDATED = "ENTITY_UPDATED"
@@ -80,6 +83,18 @@ ACTIVITY_PRESENTATION: dict[ActivityType, ActivityPresentation] = {
     ActivityType.DATA_MODEL_DUPLICATED: ActivityPresentation(
         icon="content_copy",
         accent="purple",
+    ),
+    ActivityType.DATA_MODEL_ACCESS_GRANTED: ActivityPresentation(
+        icon="person_add",
+        accent="green",
+    ),
+    ActivityType.DATA_MODEL_ACCESS_ROLE_CHANGED: ActivityPresentation(
+        icon="manage_accounts",
+        accent="blue",
+    ),
+    ActivityType.DATA_MODEL_ACCESS_REVOKED: ActivityPresentation(
+        icon="person_remove",
+        accent="red",
     ),
     ActivityType.ENTITY_ADDED: ActivityPresentation(
         icon="account_tree",

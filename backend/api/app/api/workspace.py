@@ -70,7 +70,10 @@ async def get_workspace_activity(
     return [
         WorkspaceActivityModel(
             action=activity.action,
+            description=activity.description,
             data_model=activity.data_model,
+            actor=activity.actor,
+            target=activity.target,
             time=activity.time,
             icon=activity.icon,
             accent=activity.accent,

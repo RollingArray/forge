@@ -6,6 +6,7 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
+from app.constants.activity import ActivityType
 from app.constants.data_model_access import DataModelAccessRole
 from app.interfaces.data_model_access import DataModelAccess
 from app.constants.data_model_permissions import (
@@ -22,6 +23,7 @@ from app.repositories.json_data_model_access_repository import (
 from app.repositories.json_data_model_repository import (
     JsonDataModelRepository,
 )
+from app.services.activity_service import ActivityService
 
 
 class DataModelAccessService:
@@ -31,6 +33,7 @@ class DataModelAccessService:
         self,
         data_model_repository: DataModelRepository | None = None,
         access_repository: DataModelAccessRepository | None = None,
+        activity_service: ActivityService | None = None,
     ) -> None:
         self._data_model_repository = (
             data_model_repository
@@ -41,6 +44,11 @@ class DataModelAccessService:
             access_repository
             if access_repository is not None
             else JsonDataModelAccessRepository()
+        )
+        self._activity_service = (
+            activity_service
+            if activity_service is not None
+            else ActivityService()
         )
 
     def is_owner(
@@ -213,11 +221,56 @@ class DataModelAccessService:
         ):
             return None
 
-        return self._access_repository.grant_access(
+        existing_access = self._access_repository.get_access(
+            data_model_id=data_model_id,
+            user_id=target_user_id,
+        )
+
+        access = self._access_repository.grant_access(
             data_model_id=data_model_id,
             user_id=target_user_id,
             role=role,
         )
+
+        if access is None:
+            return None
+
+        if existing_access is None:
+            self._activity_service.record(
+                owner_user_id=owner_user_id,
+                actor_user_id=owner_user_id,
+                activity_type=ActivityType.DATA_MODEL_ACCESS_GRANTED,
+                title="Data Model access granted",
+                description=(
+                    f"Granted {role.value.title()} access to user "
+                    f"'{target_user_id}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "target_user_id": target_user_id,
+                    "role": role.value,
+                },
+            )
+        elif existing_access.role != role:
+            self._activity_service.record(
+                owner_user_id=owner_user_id,
+                actor_user_id=owner_user_id,
+                activity_type=ActivityType.DATA_MODEL_ACCESS_ROLE_CHANGED,
+                title="Data Model access role changed",
+                description=(
+                    f"Changed user '{target_user_id}' access from "
+                    f"{existing_access.role.value.title()} to "
+                    f"{role.value.title()}"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "target_user_id": target_user_id,
+                    "from_role": existing_access.role.value,
+                    "to_role": role.value,
+                },
+            )
+
+        return access
 
     def update_role(
         self,
@@ -237,11 +290,42 @@ class DataModelAccessService:
         if target_user_id == owner_user_id:
             return None
 
-        return self._access_repository.update_role(
+        existing_access = self._access_repository.get_access(
+            data_model_id=data_model_id,
+            user_id=target_user_id,
+        )
+
+        if existing_access is None or existing_access.role == role:
+            return None
+
+        access = self._access_repository.update_role(
             data_model_id=data_model_id,
             user_id=target_user_id,
             role=role,
         )
+
+        if access is None:
+            return None
+
+        self._activity_service.record(
+            owner_user_id=owner_user_id,
+            actor_user_id=owner_user_id,
+            activity_type=ActivityType.DATA_MODEL_ACCESS_ROLE_CHANGED,
+            title="Data Model access role changed",
+            description=(
+                f"Changed user '{target_user_id}' access from "
+                f"{existing_access.role.value.title()} to "
+                f"{role.value.title()}"
+            ),
+            data_model_id=data_model_id,
+            metadata={
+                "target_user_id": target_user_id,
+                "from_role": existing_access.role.value,
+                "to_role": role.value,
+            },
+        )
+
+        return access
 
     def get_access(
         self,
@@ -277,10 +361,36 @@ class DataModelAccessService:
         if target_user_id == owner_user_id:
             return False
 
-        return self._access_repository.revoke_access(
+        existing_access = self._access_repository.get_access(
             data_model_id=data_model_id,
             user_id=target_user_id,
         )
+
+        if existing_access is None:
+            return False
+
+        revoked = self._access_repository.revoke_access(
+            data_model_id=data_model_id,
+            user_id=target_user_id,
+        )
+
+        if revoked:
+            self._activity_service.record(
+                owner_user_id=owner_user_id,
+                actor_user_id=owner_user_id,
+                activity_type=ActivityType.DATA_MODEL_ACCESS_REVOKED,
+                title="Data Model access revoked",
+                description=(
+                    f"Revoked user '{target_user_id}' access"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "target_user_id": target_user_id,
+                    "role": existing_access.role.value,
+                },
+            )
+
+        return revoked
 
     def get_role(
         self,

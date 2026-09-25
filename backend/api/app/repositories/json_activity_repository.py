@@ -104,6 +104,32 @@ class JsonActivityRepository(ActivityRepository):
 
         return activities[:limit]
 
+    def get_by_data_model_id(
+        self,
+        data_model_id: str,
+        limit: int = 50,
+    ) -> list[Activity]:
+        """Return recent activity events for the specified data model."""
+
+        if limit <= 0:
+            return []
+
+        with self._lock:
+            data = self._read_data()
+
+        activities = [
+            self._to_activity(record)
+            for record in data["activities"]
+            if record.get("data_model_id") == data_model_id
+        ]
+
+        activities.sort(
+            key=lambda activity: activity.timestamp,
+            reverse=True,
+        )
+
+        return activities[:limit]
+
     def _ensure_store(self) -> None:
         """Ensure the activity repository storage exists."""
 

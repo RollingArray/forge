@@ -15,6 +15,7 @@ from app.repositories.json_data_model_repository import (
 )
 from app.repositories.json_data_model_access_repository import JsonDataModelAccessRepository
 from app.services.activity_service import ActivityService
+from app.services.data_model_access_service import DataModelAccessService
 
 
 class DataModelService:
@@ -25,6 +26,7 @@ class DataModelService:
         data_model_repository: DataModelRepository | None = None,
         data_model_access_repository: DataModelAccessRepository | None = None,
         activity_service: ActivityService | None = None,
+        data_model_access_service: DataModelAccessService | None = None,
     ) -> None:
         self._data_model_repository = (
             data_model_repository
@@ -40,6 +42,15 @@ class DataModelService:
             activity_service
             if activity_service is not None
             else ActivityService()
+        )
+        self._data_model_access_service = (
+            data_model_access_service
+            if data_model_access_service is not None
+            else DataModelAccessService(
+                data_model_repository=self._data_model_repository,
+                access_repository=self._data_model_access_repository,
+                activity_service=self._activity_service,
+            )
         )
 
     def create_data_model(
@@ -84,13 +95,28 @@ class DataModelService:
     def update_data_model(
         self,
         data_model_id: str,
-        owner_user_id: str,
+        actor_user_id: str,
         name: str,
         description: str,
         color: str,
         tags: list[str],
     ) -> DataModel | None:
-        """Update a FORGE data model owned by the specified user."""
+        """Update a FORGE data model when the actor has edit permission."""
+
+        if not self._data_model_access_service.can_edit(
+            data_model_id=data_model_id,
+            user_id=actor_user_id,
+        ):
+            return None
+
+        existing_data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if existing_data_model is None:
+            return None
+
+        owner_user_id = existing_data_model.owner_user_id
 
         normalized_name = name.strip()
         normalized_description = description.strip()
@@ -98,11 +124,6 @@ class DataModelService:
 
         if not normalized_name:
             normalized_name = "Untitled Data Model"
-
-        existing_data_model = self._data_model_repository.get_by_id(
-            data_model_id=data_model_id,
-            owner_user_id=owner_user_id,
-        )
 
         data_model = self._data_model_repository.update(
             data_model_id=data_model_id,
@@ -176,11 +197,70 @@ class DataModelService:
                     f"Renamed Data Model "
                     f"'{changes[0]['from']}' to '{changes[0]['to']}'"
                 )
+            elif len(changes) == 1 and changes[0]["field"] == "description":
+                title = "Updated Data Model description"
+                description = (
+                    f"Updated the description of Data Model "
+                    f"'{data_model.name}'"
+                )
+            elif len(changes) == 1 and changes[0]["field"] == "tags":
+                previous_tags = {
+                    str(tag).lower(): str(tag)
+                    for tag in changes[0]["from"]
+                }
+                current_tags = {
+                    str(tag).lower(): str(tag)
+                    for tag in changes[0]["to"]
+                }
+
+                added_tags = [
+                    current_tags[key]
+                    for key in current_tags
+                    if key not in previous_tags
+                ]
+                removed_tags = [
+                    previous_tags[key]
+                    for key in previous_tags
+                    if key not in current_tags
+                ]
+
+                if added_tags and removed_tags:
+                    title = "Updated Data Model tags"
+                    description = (
+                        f"Updated tags for Data Model "
+                        f"'{data_model.name}': "
+                        f"added {', '.join(repr(tag) for tag in added_tags)} "
+                        f"and removed {', '.join(repr(tag) for tag in removed_tags)}"
+                    )
+                elif added_tags:
+                    title = "Updated Data Model tags"
+                    description = (
+                        f"Added {', '.join(repr(tag) for tag in added_tags)} "
+                        f"to Data Model '{data_model.name}'"
+                    )
+                elif removed_tags:
+                    title = "Updated Data Model tags"
+                    description = (
+                        f"Removed {', '.join(repr(tag) for tag in removed_tags)} "
+                        f"from Data Model '{data_model.name}'"
+                    )
+                else:
+                    title = "Updated Data Model tags"
+                    description = (
+                        f"Updated tags for Data Model "
+                        f"'{data_model.name}'"
+                    )
+            elif len(changes) == 1 and changes[0]["field"] == "color":
+                title = "Changed Data Model appearance"
+                description = (
+                    f"Changed the appearance of Data Model "
+                    f"'{data_model.name}'"
+                )
             elif changes:
                 field_labels = {
                     "name": "name",
                     "description": "description",
-                    "color": "color",
+                    "color": "appearance",
                     "tags": "tags",
                 }
 
@@ -189,9 +269,7 @@ class DataModelService:
                     for change in changes
                 ]
 
-                if len(changed_fields) == 1:
-                    changed_summary = changed_fields[0]
-                elif len(changed_fields) == 2:
+                if len(changed_fields) == 2:
                     changed_summary = (
                         f"{changed_fields[0]} and {changed_fields[1]}"
                     )
@@ -203,8 +281,8 @@ class DataModelService:
 
                 title = "Updated Data Model"
                 description = (
-                    f"Updated Data Model '{data_model.name}': "
-                    f"{changed_summary} changed"
+                    f"Updated {changed_summary} for Data Model "
+                    f"'{data_model.name}'"
                 )
             else:
                 title = "Updated Data Model"
@@ -214,7 +292,7 @@ class DataModelService:
 
             self._activity_service.record(
                 owner_user_id=owner_user_id,
-                actor_user_id=owner_user_id,
+                actor_user_id=actor_user_id,
                 activity_type=ActivityType.DATA_MODEL_UPDATED,
                 title=title,
                 description=description,

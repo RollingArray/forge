@@ -14,7 +14,10 @@
 
 export interface Activity {
   action: string;
+  description: string;
   dataModel: string;
+  actor: string;
+  target: string | null;
   time: string;
   icon: string;
   accent: string;

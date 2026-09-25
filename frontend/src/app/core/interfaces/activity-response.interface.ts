@@ -14,7 +14,10 @@
 
 export interface ActivityResponse {
   action: string;
+  description: string;
   data_model: string;
+  actor: string;
+  target: string | null;
   time: string;
   icon: string;
   accent: string;

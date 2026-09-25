@@ -16,6 +16,7 @@ from app.models.data_model_model import (
     UpdateDataModelRequestModel,
 )
 from app.models.data_model_list_item_model import DataModelListItemModel
+from app.models.data_model_activity_model import DataModelActivityModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.data_model_service import DataModelService
 
@@ -75,7 +76,7 @@ async def update_data_model(
 
     data_model = data_model_service.update_data_model(
         data_model_id=data_model_id,
-        owner_user_id=user.user_id,
+        actor_user_id=user.user_id,
         name=request.name,
         description=request.description,
         color=request.color,
@@ -99,6 +100,46 @@ async def update_data_model(
         created_at=data_model.created_at,
         updated_at=data_model.updated_at,
     )
+
+
+@router.get(
+    "/{data_model_id}/activity",
+    response_model=list[DataModelActivityModel],
+    status_code=status.HTTP_200_OK,
+)
+async def get_data_model_activity(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> list[DataModelActivityModel]:
+    """Return activity for a Data Model visible to the authenticated user."""
+
+    if not data_model_access_service.can_view(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    activities = workspace_service.get_data_model_activity(
+        data_model_id=data_model_id,
+        viewer_user_id=user.user_id,
+    )
+
+    return [
+        DataModelActivityModel(
+            action=activity.action,
+            description=activity.description,
+            data_model=activity.data_model,
+            actor=activity.actor,
+            target=activity.target,
+            time=activity.time,
+            icon=activity.icon,
+            accent=activity.accent,
+        )
+        for activity in activities
+    ]
 
 
 @router.delete(

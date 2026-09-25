@@ -37,3 +37,12 @@ class ActivityRepository(ABC):
     ) -> list[Activity]:
         """Return recent activity events for a workspace owner."""
         raise NotImplementedError
+
+    @abstractmethod
+    def get_by_data_model_id(
+        self,
+        data_model_id: str,
+        limit: int = 50,
+    ) -> list[Activity]:
+        """Return recent activity events for a data model."""
+        raise NotImplementedError
