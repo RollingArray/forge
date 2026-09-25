@@ -13,6 +13,7 @@ from app.api.auth import router as authentication_router
 from app.api.ai import router as ai_router
 from app.api.data_models import router as data_models_router
 from app.api.workspace import router as workspace_router
+from app.api.users import router as users_router
 
 
 app = FastAPI(
@@ -49,6 +50,11 @@ async def health() -> dict[str, str]:
 
 app.include_router(
     workspace_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    users_router,
     prefix="/api/v1",
 )
 

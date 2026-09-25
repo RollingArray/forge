@@ -23,3 +23,12 @@ class UserRepository(ABC):
     def create(self, email: str, display_name: str) -> AuthUser:
         """Create and persist a new FORGE user."""
         raise NotImplementedError
+
+    @abstractmethod
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+    ) -> list[AuthUser]:
+        """Search existing FORGE users by email or display name."""
+        raise NotImplementedError

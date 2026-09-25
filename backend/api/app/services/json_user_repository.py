@@ -42,6 +42,32 @@ class JsonUserRepository(UserRepository):
 
         return None
 
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+    ) -> list[AuthUser]:
+        """Search existing FORGE users by email or display name."""
+        normalized_query = query.strip().lower()
+        normalized_limit = max(1, min(limit, 50))
+
+        if not normalized_query:
+            return []
+
+        with self._lock:
+            data = self._read_data()
+
+        matches = [
+            self._to_auth_user(record)
+            for record in data["users"]
+            if (
+                normalized_query in record["email"].lower()
+                or normalized_query in record["display_name"].lower()
+            )
+        ]
+
+        return matches[:normalized_limit]
+
     def create(self, email: str, display_name: str) -> AuthUser:
         """Create and persist a new FORGE user."""
         normalized_email = self._normalize_email(email)
