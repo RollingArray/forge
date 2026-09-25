@@ -1,21 +1,42 @@
+"""
+File: workspace_service.py
+Purpose: FORGE workspace business service.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+"""
+
+from app.interfaces.activity import Activity
 from app.interfaces.data_model_repository import DataModelRepository
+from app.interfaces.workspace_activity import WorkspaceActivity
 from app.interfaces.workspace_metrics import WorkspaceMetrics
 from app.interfaces.workspace_template import WorkspaceTemplate
-from app.interfaces.workspace_activity import WorkspaceActivity
+from app.repositories.json_activity_repository import (
+    JsonActivityRepository,
+)
 from app.repositories.json_data_model_repository import (
     JsonDataModelRepository,
 )
+from app.services.activity_service import ActivityService
 
 
 class WorkspaceService:
     def __init__(
         self,
         data_model_repository: DataModelRepository | None = None,
+        activity_service: ActivityService | None = None,
     ) -> None:
         self._data_model_repository = (
             data_model_repository
             if data_model_repository is not None
             else JsonDataModelRepository()
+        )
+        self._activity_service = (
+            activity_service
+            if activity_service is not None
+            else ActivityService(
+                activity_repository=JsonActivityRepository(),
+            )
         )
 
     def get_metrics(
@@ -61,9 +82,28 @@ class WorkspaceService:
             ),
         ]
 
-
     def get_activity(
         self,
         owner_user_id: str,
     ) -> list[WorkspaceActivity]:
-        return []
+        activities = self._activity_service.get_recent(
+            owner_user_id=owner_user_id,
+            limit=10,
+        )
+
+        return [
+            self._to_workspace_activity(activity)
+            for activity in activities
+        ]
+
+    @staticmethod
+    def _to_workspace_activity(
+        activity: Activity,
+    ) -> WorkspaceActivity:
+        return WorkspaceActivity(
+            action=activity.title,
+            data_model="FORGE",
+            time=activity.timestamp.isoformat(),
+            icon="login",
+            accent="purple",
+        )
