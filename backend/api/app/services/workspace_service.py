@@ -6,6 +6,10 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
+from app.constants.activity import (
+    ACTIVITY_PRESENTATION,
+    ActivityType,
+)
 from app.interfaces.activity import Activity
 from app.interfaces.data_model_repository import DataModelRepository
 from app.interfaces.workspace_activity import WorkspaceActivity
@@ -92,18 +96,45 @@ class WorkspaceService:
         )
 
         return [
-            self._to_workspace_activity(activity)
+            self._to_workspace_activity(
+                activity=activity,
+                owner_user_id=owner_user_id,
+            )
             for activity in activities
         ]
 
-    @staticmethod
     def _to_workspace_activity(
+        self,
         activity: Activity,
+        owner_user_id: str,
     ) -> WorkspaceActivity:
+        try:
+            activity_type = ActivityType(activity.type)
+        except ValueError:
+            activity_type = ActivityType.USER_SIGNED_IN
+
+        presentation = ACTIVITY_PRESENTATION[activity_type]
+
+        data_model = "FORGE"
+
+        if activity.data_model_id:
+            data_model_entity = self._data_model_repository.get_by_id(
+                data_model_id=activity.data_model_id,
+                owner_user_id=owner_user_id,
+            )
+
+            if data_model_entity is not None:
+                data_model = data_model_entity.name
+            elif activity.metadata:
+                historical_name = activity.metadata.get("data_model_name")
+
+                if isinstance(historical_name, str) and historical_name.strip():
+                    data_model = historical_name
+
         return WorkspaceActivity(
             action=activity.title,
-            data_model="FORGE",
+            data_model=data_model,
             time=activity.timestamp.isoformat(),
-            icon="login",
-            accent="purple",
+            icon=presentation.icon,
+            accent=presentation.accent,
         )

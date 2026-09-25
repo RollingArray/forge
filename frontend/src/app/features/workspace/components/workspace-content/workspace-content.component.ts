@@ -48,5 +48,6 @@ export class WorkspaceContentComponent {
 
   readonly newDataModel = output<void>();
   readonly dataModelSelected = output<DataModel>();
+  readonly shareRequested = output<DataModel>();
   readonly templateSelected = output<string>();
 }

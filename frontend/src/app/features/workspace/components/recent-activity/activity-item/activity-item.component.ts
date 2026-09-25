@@ -29,4 +29,43 @@ import { Activity } from '../../../../../core/interfaces/activity.interface';
 })
 export class ActivityItemComponent {
   readonly activity = input.required<Activity>();
+
+  formatTime(value: string): string {
+    const timestamp = new Date(value);
+
+    if (Number.isNaN(timestamp.getTime())) {
+      return value;
+    }
+
+    const elapsedMilliseconds = Date.now() - timestamp.getTime();
+    const elapsedMinutes = Math.floor(
+      elapsedMilliseconds / (1000 * 60),
+    );
+
+    if (elapsedMinutes < 1) {
+      return 'Just now';
+    }
+
+    if (elapsedMinutes < 60) {
+      return `${elapsedMinutes} min ago`;
+    }
+
+    const elapsedHours = Math.floor(elapsedMinutes / 60);
+
+    if (elapsedHours < 24) {
+      return `${elapsedHours} hr ago`;
+    }
+
+    const elapsedDays = Math.floor(elapsedHours / 24);
+
+    if (elapsedDays === 1) {
+      return 'Yesterday';
+    }
+
+    return new Intl.DateTimeFormat('en', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(timestamp);
+  }
 }

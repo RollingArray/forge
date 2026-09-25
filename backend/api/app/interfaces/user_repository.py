@@ -20,6 +20,11 @@ class UserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_by_id(self, user_id: str) -> AuthUser | None:
+        """Return an existing FORGE user by stable user ID."""
+        raise NotImplementedError
+
+    @abstractmethod
     def create(self, email: str, display_name: str) -> AuthUser:
         """Create and persist a new FORGE user."""
         raise NotImplementedError

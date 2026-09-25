@@ -42,6 +42,22 @@ class JsonUserRepository(UserRepository):
 
         return None
 
+    def get_by_id(self, user_id: str) -> AuthUser | None:
+        """Return an existing FORGE user by stable user ID."""
+        normalized_user_id = user_id.strip()
+
+        if not normalized_user_id:
+            return None
+
+        with self._lock:
+            data = self._read_data()
+
+        for record in data["users"]:
+            if record["user_id"] == normalized_user_id:
+                return self._to_auth_user(record)
+
+        return None
+
     def search(
         self,
         query: str,

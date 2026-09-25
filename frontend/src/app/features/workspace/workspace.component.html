@@ -26,6 +26,7 @@
         [selectedDataModel]="selectedDataModel()"
         (newDataModel)="handleNewDataModel()"
         (dataModelSelected)="handleDataModelSelected($event)"
+        (shareRequested)="handleDataModelShareRequested($event)"
         (templateSelected)="handleTemplateSelected($event)"
       />
     </main>
@@ -45,5 +46,12 @@
     (saved)="handleDataModelSaved($event)"
     (deleted)="handleDataModelDeleted()"
     (closed)="closeDataModelDialog()"
+  />
+}
+
+@if (dataModelShareDialogOpen() && sharingDataModel(); as dataModel) {
+  <app-data-model-share-dialog
+    [dataModel]="dataModel"
+    (closed)="closeDataModelShareDialog()"
   />
 }

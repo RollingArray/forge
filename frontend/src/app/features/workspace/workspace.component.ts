@@ -38,6 +38,9 @@ import {
 import {
   WorkspaceRightRailComponent,
 } from './components/workspace-right-rail/workspace-right-rail.component';
+import {
+  DataModelShareDialogComponent,
+} from './components/data-model-share-dialog/data-model-share-dialog.component';
 
 @Component({
   selector: 'app-workspace',
@@ -47,6 +50,7 @@ import {
     WorkspaceWelcomeHeaderComponent,
     WorkspaceContentComponent,
     WorkspaceRightRailComponent,
+    DataModelShareDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workspace.component.html',
@@ -63,6 +67,8 @@ export class WorkspaceComponent {
   readonly selectedDataModel = signal<DataModel | null>(null);
   readonly dataModelDialogOpen = signal(false);
   readonly editingDataModel = signal<DataModel | null>(null);
+  readonly sharingDataModel = signal<DataModel | null>(null);
+  readonly dataModelShareDialogOpen = signal(false);
   readonly savingDataModel = signal(false);
 
   constructor() {
@@ -95,6 +101,16 @@ export class WorkspaceComponent {
     this.selectedDataModel.set(dataModel);
     this.editingDataModel.set(dataModel);
     this.dataModelDialogOpen.set(true);
+  }
+
+  handleDataModelShareRequested(dataModel: DataModel): void {
+    this.sharingDataModel.set(dataModel);
+    this.dataModelShareDialogOpen.set(true);
+  }
+
+  closeDataModelShareDialog(): void {
+    this.dataModelShareDialogOpen.set(false);
+    this.sharingDataModel.set(null);
   }
 
   handleDataModelSaved(data: {

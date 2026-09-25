@@ -98,6 +98,40 @@ class JsonDataModelRepository(DataModelRepository):
             reverse=True,
         )
 
+    def get_by_id_any(
+        self,
+        data_model_id: str,
+    ):
+        """Return a data model by ID without applying an owner filter."""
+
+        with self._lock:
+            data = self._read_data()
+
+        for record in data["data_models"]:
+            if record["data_model_id"] == data_model_id:
+                return self._to_data_model(record)
+
+        return None
+
+    def get_by_id(
+        self,
+        data_model_id: str,
+        owner_user_id: str,
+    ) -> DataModel | None:
+        """Return a data model owned by the specified user."""
+
+        with self._lock:
+            data = self._read_data()
+
+        for record in data["data_models"]:
+            if (
+                record["data_model_id"] == data_model_id
+                and record["owner_user_id"] == owner_user_id
+            ):
+                return self._to_data_model(record)
+
+        return None
+
     def update(
         self,
         data_model_id: str,
