@@ -1,0 +1,29 @@
+<div class="tag-editor">
+  <div class="tag-list">
+    @for (tag of tags(); track tag; let index = $index) {
+      <span class="tag-chip">
+        {{ tag }}
+
+        <button
+          type="button"
+          class="tag-remove"
+          (click)="removeTag(index)"
+          [attr.aria-label]="'Remove ' + tag"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </span>
+    }
+
+    <input
+      type="text"
+      [value]="inputValue()"
+      (input)="handleInput($any($event.target).value)"
+      (keydown)="handleKeydown($event)"
+      (blur)="handleBlur()"
+      [placeholder]="placeholder()"
+      autocomplete="off"
+      aria-label="Add tag"
+    />
+  </div>
+</div>

@@ -1,0 +1,75 @@
+/**
+ * File: tag-input.component.css
+ * Purpose: Styling for the reusable FORGE tag input/editor.
+ */
+
+.tag-editor {
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid #d4d4d8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tag-editor:focus-within {
+  border-color: #7c5cfc;
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, .1);
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px 4px 9px;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tag-remove {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #7c5cfc;
+  cursor: pointer;
+}
+
+.tag-remove:hover {
+  background: #ede9fe;
+}
+
+.tag-remove .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.tag-list input {
+  flex: 1 1 120px;
+  min-width: 120px;
+  height: 28px;
+  padding: 0 4px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #27272a;
+  font: inherit;
+  font-size: 11px;
+}
+
+.tag-list input::placeholder {
+  color: #a1a1aa;
+}

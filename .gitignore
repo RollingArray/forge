@@ -58,3 +58,7 @@ experiments/024_specification_execution/output/validation/
 
 # FORGE runtime-generated artifacts
 experiments/024_specification_execution/output/quality/
+
+# FORGE local runtime state
+backend/api/data/data_models.json
+backend/api/data/sessions.json
