@@ -1,0 +1,515 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: ai-assist-panel.component.css
+ * Purpose: Styles the reusable FORGE AI Assist panel.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.ai-assist-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+
+  height: 100%;
+  padding: 4px;
+}
+
+.ai-recommended-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 5px;
+
+  min-height: 24px;
+  padding: 0 9px;
+
+  border: 1px solid #d5c9f8;
+  border-radius: 999px;
+
+  background: #eee9ff;
+  color: #6048bd;
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ai-recommended-badge .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.ai-assist-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ai-assist-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+
+  border-radius: 13px;
+
+  background: linear-gradient(
+    135deg,
+    #6b4fd1 0%,
+    #7657d9 100%
+  );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 16px rgb(91 70 184 / 22%),
+    0 0 0 4px rgb(118 87 217 / 8%);
+}
+
+.ai-assist-icon .material-symbols-outlined {
+  font-size: 25px;
+}
+
+.ai-assist-header-content {
+  min-width: 0;
+}
+
+.ai-assist-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.ai-assist-header h3 {
+  margin: 1px 0 0;
+
+  color: #292343;
+
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.llm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  min-height: 21px;
+  padding: 0 8px;
+
+  border: 1px solid #b9dec9;
+  border-radius: 999px;
+
+  background: #eef9f2;
+  color: #287348;
+
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.llm-status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #3a9b61;
+
+  box-shadow: 0 0 0 2px rgb(58 155 97 / 12%);
+}
+
+.llm-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 5px;
+
+  color: #81768f;
+
+  font-size: 9px;
+  font-weight: 550;
+}
+
+.llm-details-separator {
+  color: #b2a9bb;
+}
+
+.ai-assist-header p {
+  max-width: 440px;
+  margin: 5px 0 0;
+
+  color: #6f6878;
+
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.ai-assist-input {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid #cfc3ef;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 5px 16px rgb(91 70 184 / 8%),
+    0 0 0 3px rgb(118 87 217 / 5%);
+}
+
+.ai-assist-input textarea {
+  width: 100%;
+  min-height: 170px;
+  box-sizing: border-box;
+
+  resize: vertical;
+
+  border: 0;
+  outline: 0;
+
+  padding: 16px;
+
+  background: transparent;
+
+  color: #282733;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.6;
+}
+
+.ai-assist-input textarea::placeholder {
+  color: #aaa3b1;
+  font-weight: 400;
+}
+
+.ai-assist-input textarea:focus {
+  background: #fefcff;
+}
+
+.ai-assist-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px 12px;
+
+  border-top: 1px solid #e4def1;
+
+  background: #f5f1fc;
+}
+
+.ai-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  min-width: 0;
+
+  color: #82798d;
+
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.ai-hint .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: #8066d4;
+  font-size: 15px;
+}
+
+.generate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding: 0 15px;
+
+  border: 1px solid #7657d9;
+  border-radius: 9px;
+
+  background: #7657d9;
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  box-shadow: 0 5px 12px rgb(118 87 217 / 20%);
+
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.generate-button:hover:not(:disabled) {
+  border-color: #684bc9;
+  background: #684bc9;
+  box-shadow: 0 7px 16px rgb(118 87 217 / 24%);
+  transform: translateY(-1px);
+}
+
+.generate-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.generate-button .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.ai-example {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #ded6ef;
+  border-radius: 11px;
+
+  background: #faf8fd;
+}
+
+.ai-example > .material-symbols-outlined {
+  flex: 0 0 auto;
+
+  color: #8066d4;
+  font-size: 19px;
+}
+
+.ai-example strong {
+  display: block;
+
+  color: #655b73;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ai-example p {
+  margin: 3px 0 0;
+
+  color: #7d7487;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.ai-assist-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  padding: 13px 14px;
+
+  border: 1px dashed #cfc3ef;
+  border-radius: 11px;
+
+  background: rgb(246 243 253 / 70%);
+}
+
+.ai-assist-empty > .material-symbols-outlined {
+  flex: 0 0 auto;
+
+  color: #8066d4;
+  font-size: 20px;
+}
+
+.ai-assist-empty strong {
+  display: block;
+
+  color: #5c5270;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ai-assist-empty p {
+  margin: 3px 0 0;
+
+  color: #81798b;
+
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.spin {
+  animation: ai-assist-spin 900ms linear infinite;
+}
+
+@keyframes ai-assist-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .ai-assist-input-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .generate-button {
+    width: 100%;
+  }
+}
+
+.ai-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  padding: 20px;
+}
+
+.ai-proposal-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ai-proposal-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #ede9fe;
+  color: #7c5cfc;
+}
+
+.ai-proposal-title h3 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 650;
+  color: #27272a;
+}
+
+.ai-proposal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-proposal-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.ai-proposal-section p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #52525b;
+}
+
+.ai-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-tag {
+  padding: 4px 8px;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ai-proposal-reasoning {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 9px;
+  background: #f4f4f5;
+}
+
+.ai-proposal-reasoning > .material-symbols-outlined {
+  color: #7c5cfc;
+  font-size: 18px;
+}
+
+.ai-proposal-reasoning strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  color: #3f3f46;
+}
+
+.ai-proposal-reasoning p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #71717a;
+}
+
+.ai-proposal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.regenerate-button,
+.use-proposal-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.regenerate-button {
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  color: #52525b;
+}
+
+.use-proposal-button {
+  border: 1px solid #7c5cfc;
+  background: #7c5cfc;
+  color: #fff;
+}
+

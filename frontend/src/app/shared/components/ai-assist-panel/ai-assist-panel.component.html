@@ -1,0 +1,152 @@
+<section class="ai-assist-panel">
+  @if (proposal(); as aiProposal) {
+    <div class="ai-proposal">
+      <header class="ai-proposal-header">
+        <div class="ai-proposal-title">
+          <span class="material-symbols-outlined ai-proposal-icon">
+            auto_awesome
+          </span>
+
+          <div>
+            <span class="ai-state-badge">FORGE AI Proposal</span>
+            <h3>{{ aiProposal.name }}</h3>
+          </div>
+        </div>
+      </header>
+
+      <div class="ai-proposal-section">
+        <span class="ai-proposal-label">Description</span>
+        <p>{{ aiProposal.description }}</p>
+      </div>
+
+      <div class="ai-proposal-section">
+        <span class="ai-proposal-label">Suggested Tags</span>
+
+        <div class="ai-tags">
+          @for (tag of aiProposal.suggestedTags; track tag) {
+            <span class="ai-tag">{{ tag }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="ai-proposal-reasoning">
+        <span class="material-symbols-outlined">lightbulb</span>
+
+        <div>
+          <strong>AI proposes. You decide.</strong>
+          <p>{{ aiProposal.reasoning }}</p>
+        </div>
+      </div>
+
+      <div class="ai-proposal-actions">
+        <button
+          type="button"
+          class="regenerate-button"
+          (click)="regenerateProposal()"
+        >
+          <span class="material-symbols-outlined">refresh</span>
+          Regenerate
+        </button>
+
+        <button
+          type="button"
+          class="use-proposal-button"
+          (click)="applyProposal()"
+        >
+          <span class="material-symbols-outlined">check_circle</span>
+          Use This Proposal
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="ai-recommended-badge">
+      <span class="material-symbols-outlined"> auto_awesome </span>
+      Recommended
+    </div>
+
+    <header class="ai-assist-header">
+      <div class="ai-assist-icon">
+        <span class="material-symbols-outlined"> auto_awesome </span>
+      </div>
+
+      <div class="ai-assist-header-content">
+        <div class="ai-assist-title-row">
+          <h3>Start with FORGE AI</h3>
+
+          @if (llmOnline()) {
+            <span class="llm-status online">
+              <span class="llm-status-dot"></span>
+              Online
+            </span>
+          }
+        </div>
+
+        <p>
+          Describe what you want to model in natural language. FORGE AI will
+          propose a starting point for you to review.
+        </p>
+
+        @if (llmOnline() && llmModel()) {
+          <span class="llm-details">
+            {{ llmModel() }}
+
+            @if (llmMode()) {
+              <span class="llm-details-separator">·</span>
+              {{ llmMode() }}
+            }
+          </span>
+        }
+      </div>
+    </header>
+
+    <div class="ai-assist-input">
+      <textarea
+        rows="7"
+        [value]="prompt()"
+        (input)="prompt.set($any($event.target).value)"
+        [placeholder]="placeholder()"
+        aria-label="Describe what you want FORGE AI to create"
+      ></textarea>
+
+      <div class="ai-assist-input-footer">
+        <span class="ai-hint">
+          <span class="material-symbols-outlined"> tips_and_updates </span>
+          Describe the business process, system, or domain.
+        </span>
+
+        <button
+          type="button"
+          class="generate-button"
+          [disabled]="!prompt().trim() || generating()"
+          (click)="generateSuggestion()"
+        >
+          <span class="material-symbols-outlined"> auto_awesome </span>
+          {{ generateLabel() }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-example">
+      <span class="material-symbols-outlined"> tips_and_updates </span>
+
+      <div>
+        <strong>Example prompt</strong>
+        <p>
+          Create a Data Model for SAP Order-to-Cash covering sales orders,
+          deliveries, billing, customers, and materials.
+        </p>
+      </div>
+    </div>
+
+    <div class="ai-assist-empty">
+      <span class="material-symbols-outlined"> lightbulb </span>
+
+      <div>
+        <strong>AI proposes. You decide.</strong>
+        <p>
+          Review the suggestion and apply it to the form when you're ready.
+        </p>
+      </div>
+    </div>
+  }
+</section>
