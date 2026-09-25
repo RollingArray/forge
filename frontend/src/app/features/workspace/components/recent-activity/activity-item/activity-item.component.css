@@ -1,0 +1,65 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: activity-item.component.css
+ * Purpose: Styles the activity item Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.activity-item {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.activity-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 8px;
+  background: #f5f3ff;
+  color: #7357d8;
+}
+
+.activity-icon .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.activity-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-action {
+  margin: 0;
+  color: #3f3f46;
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+.activity-dataModel {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: #71717a;
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-time {
+  display: block;
+  margin-top: 3px;
+  color: #a1a1aa;
+  font-size: 9.5px;
+}

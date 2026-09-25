@@ -1,0 +1,29 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace-content.component.html
+ * Purpose: Defines the workspace content Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<div class="workspace-content">
+  <app-workspace-metrics [metrics]="metrics()" />
+
+  <app-workspace-recent-data-models
+    [dataModels]="dataModels()"
+    [selectedDataModel]="selectedDataModel()"
+    (dataModelSelected)="dataModelSelected.emit($event)"
+    (newDataModel)="newDataModel.emit()"
+  />
+
+  <app-workspace-templates
+    [templates]="templates()"
+    (templateSelected)="templateSelected.emit($event)"
+  />
+</div>

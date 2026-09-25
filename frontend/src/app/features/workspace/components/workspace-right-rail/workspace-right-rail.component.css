@@ -1,0 +1,29 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace-right-rail.component.css
+ * Purpose: Styles the workspace right rail Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.right-rail {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 20px 28px;
+}
+
+.rail-divider {
+  width: 100%;
+  height: 1px;
+  flex: 0 0 auto;
+  background: #eeeef3;
+}

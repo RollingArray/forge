@@ -1,0 +1,30 @@
+<!--
+File: color-picker.component.html
+Purpose: Reusable FORGE color selection control.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+-->
+
+<div
+  class="color-picker"
+  role="radiogroup"
+  aria-label="Choose color"
+>
+  @for (color of colors; track color) {
+    <button
+      type="button"
+      class="color-option"
+      [class.selected]="activeColor() === color"
+      [style.background-color]="color"
+      [attr.aria-label]="'Select color ' + color"
+      [attr.aria-checked]="activeColor() === color"
+      role="radio"
+      (click)="selectColor(color)"
+    >
+      @if (activeColor() === color) {
+        <span class="material-symbols-outlined">check</span>
+      }
+    </button>
+  }
+</div>

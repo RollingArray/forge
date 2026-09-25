@@ -1,0 +1,205 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: form-dialog.component.css
+ * Purpose: Styles the reusable FORGE form dialog shell.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.form-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+
+  background: rgb(48 42 82 / 48%);
+}
+
+.form-dialog {
+  width: min(var(--form-dialog-width, 520px), 100%);
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+
+  border: 1px solid #e5ddd7;
+  border-radius: 22px;
+
+  background:
+    radial-gradient(
+      circle at 15% 0%,
+      #f8e9dc 0%,
+      transparent 45%
+    ),
+    #f4efeb;
+
+  box-shadow:
+    0 24px 60px rgb(15 23 42 / 20%);
+
+  display: flex;
+  flex-direction: column;
+}
+
+.form-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+  padding: 28px 36px 24px;
+
+  border-bottom: 1px solid rgb(229 221 215 / 70%);
+}
+
+.form-dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 26px;
+}
+
+.form-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+
+  border-radius: 16px;
+
+  background: #5b46b8;
+  color: #f2eeff;
+
+  font-size: 34px;
+
+  box-shadow:
+    0 5px 14px rgb(91 70 184 / 22%);
+}
+
+.form-dialog-title {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.form-dialog-title h2 {
+  margin: 0;
+
+  color: #20202a;
+
+  font-size: 30px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.form-dialog-title p {
+  margin: 8px 0 0;
+
+  color: #777782;
+
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.form-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #777782;
+
+  cursor: pointer;
+
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.form-dialog-close:hover {
+  background: rgb(255 255 255 / 60%);
+  color: #383743;
+}
+
+.form-dialog-close .material-symbols-outlined {
+  font-size: 30px;
+}
+
+.form-dialog-body {
+  min-width: 0;
+  min-height: 0;
+
+  overflow-y: auto;
+
+  padding: 28px 36px 32px;
+}
+
+.form-dialog-footer {
+  flex: 0 0 auto;
+
+  border-top: 1px solid #e7ded8;
+
+  background: linear-gradient(
+    to bottom,
+    #ddd4cc 0%,
+    #e5ddd6 100%
+  );
+}
+
+@media (max-width: 760px) {
+  .form-dialog-backdrop {
+    padding: 12px;
+  }
+
+  .form-dialog {
+    max-height: calc(100vh - 24px);
+    border-radius: 18px;
+  }
+
+  .form-dialog-header {
+    padding: 22px 20px 20px;
+  }
+
+  .form-dialog-heading {
+    gap: 16px;
+  }
+
+  .form-dialog-icon {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+    border-radius: 14px;
+    font-size: 28px;
+  }
+
+  .form-dialog-title h2 {
+    font-size: 24px;
+  }
+
+  .form-dialog-title p {
+    font-size: 14px;
+  }
+
+  .form-dialog-body {
+    padding: 24px 20px 28px;
+  }
+}

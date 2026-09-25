@@ -1,0 +1,245 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: data-model-dialog.component.html
+ * Purpose: Data Model creation and editing dialog.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<app-form-dialog
+  [title]="title"
+  [subtitle]="
+    isEditMode
+      ? 'Update the details of this Data Model.'
+      : 'Create a new Data Model for your workspace.'
+  "
+  icon="deployed_code"
+  width="980px"
+  (closed)="close()"
+>
+  <div dialog-body class="data-model-dialog-body">
+    <div class="dialog-column ai-column">
+      @if (aiCapabilityChecking()) {
+        <div class="ai-unavailable-state">
+          <div class="ai-state-icon checking">
+            <span class="ai-check-spinner"></span>
+          </div>
+
+          <div class="ai-state-content">
+            <span class="ai-state-badge checking">Checking</span>
+
+            <h3>Checking FORGE AI assistance</h3>
+
+            <p>
+              Checking whether FORGE AI assistance is available in this
+              environment.
+            </p>
+          </div>
+        </div>
+      } @else if (aiAvailable()) {
+        <app-ai-assist-panel
+          [llmOnline]="aiAvailable()"
+          [llmModel]="aiModel()"
+          [llmMode]="aiMode()"
+          [generating]="aiGenerating()"
+          [proposal]="aiProposal()"
+          (generate)="handleAiGenerate($event)"
+          (useProposal)="useAiProposal($event)"
+          (regenerate)="regenerateAiProposal()"
+        />
+
+        @if (aiGenerationError(); as errorMessage) {
+          <div class="ai-generation-error">
+            <span class="material-symbols-outlined">error</span>
+            {{ errorMessage }}
+          </div>
+        }
+      } @else {
+        <div class="ai-unavailable-state">
+          <div class="ai-state-icon unavailable">
+            <span class="material-symbols-outlined">cloud_off</span>
+          </div>
+
+          <div class="ai-state-content">
+            <span class="ai-state-badge unavailable">Unavailable</span>
+
+            <h3>FORGE AI unavailable</h3>
+
+            <p>
+              {{ aiCapabilityMessage() }}
+            </p>
+
+            <span class="ai-state-hint">
+              You can continue by defining the Data Model manually.
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="choice-divider" aria-hidden="true">
+      <span>OR</span>
+    </div>
+
+    <div class="dialog-column manual-column">
+      <div class="manual-column-header">
+        <span class="manual-column-title">
+          Enter manually
+        </span>
+
+        <span class="manual-column-description">
+          Prefer to define the Data Model yourself? Enter the details below.
+        </span>
+      </div>
+
+      <label for="data-model-name">
+        <span>Name</span>
+
+        <small class="field-help">
+          Give the Data Model a clear name that identifies the business
+          process, system, or domain it represents.
+        </small>
+
+        <input
+          id="data-model-name"
+          type="text"
+          maxlength="120"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          placeholder="e.g. SAP Order-to-Cash"
+          autocomplete="off"
+        />
+
+        <small class="field-example">
+          Example: <strong>SAP Order-to-Cash</strong>
+        </small>
+      </label>
+
+      <label for="data-model-description">
+        <span>Description</span>
+
+        <small class="field-help">
+          Explain what the Data Model represents, including the business
+          process, source system, or type of data it contains.
+        </small>
+
+        <textarea
+          id="data-model-description"
+          rows="4"
+          maxlength="500"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+          placeholder="Describe what this Data Model represents."
+        ></textarea>
+
+        <small class="field-example">
+          Example:
+          <strong>
+            SAP sales, delivery, billing, and customer relationship data
+            used to model the Order-to-Cash process.
+          </strong>
+        </small>
+      </label>
+
+      <div class="tags-field">
+        <span>Tags</span>
+
+        <small class="field-help">
+          Add metadata that helps identify, search, and discover this Data Model.
+        </small>
+
+        <app-tag-input
+          [tags]="tags()"
+          placeholder="Type a tag..."
+          [maxTags]="20"
+          (tagsChange)="tags.set($event)"
+        />
+      </div>
+
+      <div class="color-field">
+        <span>Color</span>
+
+        <small class="field-help">
+          Choose a color to identify this Data Model throughout FORGE.
+        </small>
+
+        <app-color-picker
+          [selectedColor]="selectedColor()"
+          (colorSelected)="handleColorSelected($event)"
+        />
+      </div>
+    </div>
+  </div>
+
+  @if (deleteConfirming()) {
+    <div
+      dialog-footer
+      class="dialog-footer delete-confirmation"
+    >
+      <div class="delete-message">
+        <strong>Delete this Data Model?</strong>
+        <span>
+          This action cannot be undone.
+        </span>
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          (click)="cancelDelete()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="delete-button"
+          (click)="confirmDelete()"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div
+      dialog-footer
+      class="dialog-footer"
+    >
+      @if (isEditMode) {
+        <button
+          type="button"
+          class="delete-button"
+          (click)="delete()"
+        >
+          Delete
+        </button>
+      }
+
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          (click)="close()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="save-button"
+          [disabled]="!name().trim()"
+          (click)="submit()"
+        >
+          {{ submitLabel }}
+        </button>
+      </div>
+    </div>
+  }
+</app-form-dialog>

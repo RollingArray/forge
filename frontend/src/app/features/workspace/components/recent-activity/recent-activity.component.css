@@ -1,0 +1,64 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: recent-activity.component.css
+ * Purpose: Styles the recent activity Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.recent-activity {
+  width: 100%;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #18181b;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.section-header p {
+  margin: 3px 0 0;
+  color: #a1a1aa;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.view-all {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #7357d8;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.view-all:hover {
+  color: #5b3fb3;
+}
+
+.view-all:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,84 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace.component.css
+ * Purpose: Styles the FORGE Workspace screen.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.workspace-page {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.workspace-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.center-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 30px 24px 44px;
+}
+
+app-workspace-right-rail {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid #eeeef3;
+  background: #fafafa;
+}
+
+@media (max-width: 1180px) {
+  .workspace-body {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+}
+
+@media (max-width: 980px) {
+  .workspace-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  app-workspace-right-rail {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .workspace-body {
+    display: block;
+    overflow: visible;
+  }
+
+  .center-panel {
+    overflow: visible;
+    padding: 24px 18px 36px;
+  }
+}

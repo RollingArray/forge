@@ -1,0 +1,63 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: recent-data-models.component.html
+ * Purpose: Defines the recent data models Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<section class="recent-dataModels">
+
+  <div class="section-heading">
+
+    <h2>
+      Data Models
+    </h2>
+
+  </div>
+
+
+  <div class="dataModel-grid">
+
+    @for (dataModel of dataModels(); track dataModel.dataModelId) {
+
+      <app-data-model-card
+        [dataModel]="dataModel"
+        [selected]="selectedDataModel()?.dataModelId === dataModel.dataModelId"
+        (selectedChange)="selectDataModel($event)"
+      />
+
+    }
+
+
+    <button
+      type="button"
+      class="create-dataModel-card"
+      (click)="createDataModel()"
+    >
+
+      <div class="create-icon">
+        <span class="material-symbols-outlined">
+          add
+        </span>
+      </div>
+
+      <h3>
+        Create New DataModel
+      </h3>
+
+      <p>
+        Start from scratch or use a template
+      </p>
+
+    </button>
+
+  </div>
+
+</section>

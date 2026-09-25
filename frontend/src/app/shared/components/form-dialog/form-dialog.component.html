@@ -1,0 +1,64 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: form-dialog.component.html
+ * Purpose: Defines the reusable FORGE form dialog shell.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<div
+  class="form-dialog-backdrop"
+  (click)="close()"
+>
+  <section
+    class="form-dialog"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="title()"
+    [style.--form-dialog-width]="width()"
+    (click)="stopPropagation($event)"
+  >
+    <header class="form-dialog-header">
+      <div class="form-dialog-heading">
+        <div class="form-dialog-icon">
+          <span class="material-symbols-outlined">
+            {{ icon() }}
+          </span>
+        </div>
+
+        <div class="form-dialog-title">
+          <h2>{{ title() }}</h2>
+
+          @if (subtitle()) {
+            <p>{{ subtitle() }}</p>
+          }
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="form-dialog-close"
+        [attr.aria-label]="closeLabel()"
+        (click)="close()"
+      >
+        <span class="material-symbols-outlined">
+          close
+        </span>
+      </button>
+    </header>
+
+    <div class="form-dialog-body">
+      <ng-content select="[dialog-body]" />
+    </div>
+
+    <footer class="form-dialog-footer">
+      <ng-content select="[dialog-footer]" />
+    </footer>
+  </section>
+</div>

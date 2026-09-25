@@ -1,0 +1,36 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: recent-activity.component.html
+ * Purpose: Defines the recent activity Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<section class="recent-activity">
+  <div class="section-header">
+    <div>
+      <h2>Recent Activity</h2>
+      <p>What's happening in FORGE</p>
+    </div>
+
+    <button
+      type="button"
+      class="view-all"
+      (click)="viewAll.emit()"
+    >
+      View all
+    </button>
+  </div>
+
+  <div class="activity-list">
+    @for (activity of activities(); track activity.dataModel + activity.time) {
+      <app-activity-item [activity]="activity" />
+    }
+  </div>
+</section>

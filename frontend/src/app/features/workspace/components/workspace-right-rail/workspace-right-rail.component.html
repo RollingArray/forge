@@ -1,0 +1,32 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace-right-rail.component.html
+ * Purpose: Defines the workspace right rail Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<aside class="right-rail">
+  <app-quick-actions
+    (actionSelected)="quickActionSelected.emit($event)"
+  />
+
+  <div class="rail-divider"></div>
+
+  <app-recent-activity
+    [activities]="activities()"
+    (viewAll)="viewAllActivity.emit()"
+  />
+
+  <div class="rail-divider"></div>
+
+  <app-help-card
+    (actionSelected)="documentationRequested.emit()"
+  />
+</aside>

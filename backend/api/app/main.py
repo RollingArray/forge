@@ -10,6 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as authentication_router
+from app.api.ai import router as ai_router
+from app.api.data_models import router as data_models_router
+from app.api.workspace import router as workspace_router
 
 
 app = FastAPI(
@@ -31,9 +34,25 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(
+    data_models_router,
+    prefix="/api/v1",
+)
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Return the current API health status."""
 
     return {"status": "ok"}
+
+
+app.include_router(
+    workspace_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    ai_router,
+    prefix="/api/v1",
+)

@@ -1,0 +1,89 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: data-model-card.component.html
+ * Purpose: Defines the data model card Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<button
+  type="button"
+  class="dataModel-card"
+  [class.selected]="selected()"
+  [style.--data-model-color]="dataModel().color"
+  (click)="select()"
+>
+  <div class="dataModel-card-header">
+    <div class="dataModel-icon">
+      <span class="material-symbols-outlined">
+        deployed_code
+      </span>
+    </div>
+
+    <div class="dataModel-title">
+      <h3>{{ dataModel().name }}</h3>
+
+      <p>{{ dataModel().description }}</p>
+    </div>
+
+    <span class="material-symbols-outlined more-icon">
+      more_vert
+    </span>
+  </div>
+
+  @if (dataModel().tags.length > 0) {
+    <div class="dataModel-tags">
+      @for (tag of dataModel().tags.slice(0, 4); track tag) {
+        <span class="dataModel-tag">
+          {{ tag }}
+        </span>
+      }
+
+      @if (dataModel().tags.length > 4) {
+        <span class="dataModel-tag-more">
+          +{{ dataModel().tags.length - 4 }}
+        </span>
+      }
+    </div>
+  }
+
+  <div class="dataModel-stats">
+    <span>
+      <span class="material-symbols-outlined">database</span>
+      {{ dataModel().entities }} entities
+    </span>
+
+    <span>
+      <span class="material-symbols-outlined">link</span>
+      {{ dataModel().relationships }} relationships
+    </span>
+  </div>
+
+  <div class="dataModel-footer">
+    <span class="updated">
+      {{ dataModel().updated }}
+    </span>
+
+    <span
+      class="status-pill"
+      [class.modeling]="dataModel().status === 'Modeling'"
+      [class.validated]="dataModel().status === 'Validated'"
+      [class.draft]="dataModel().status === 'Draft'"
+      [class.generated]="dataModel().status === 'Generated'"
+    >
+      @if (dataModel().status === 'Generated') {
+        <span class="material-symbols-outlined">
+          check_circle
+        </span>
+      }
+
+      {{ dataModel().status }}
+    </span>
+  </div>
+</button>

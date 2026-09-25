@@ -1,0 +1,49 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace.component.html
+ * Purpose: Defines the FORGE Workspace screen.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<section class="workspace-page">
+  <div class="workspace-body">
+    <main class="center-panel">
+      <app-workspace-welcome-header
+        (newDataModel)="handleNewDataModel()"
+      />
+
+      <app-workspace-content
+        [metrics]="metrics()"
+        [dataModels]="dataModels()"
+        [templates]="templates()"
+        [selectedDataModel]="selectedDataModel()"
+        (newDataModel)="handleNewDataModel()"
+        (dataModelSelected)="handleDataModelSelected($event)"
+        (templateSelected)="handleTemplateSelected($event)"
+      />
+    </main>
+
+    <app-workspace-right-rail
+      [activities]="activities()"
+      (quickActionSelected)="handleQuickAction($event)"
+      (viewAllActivity)="handleViewAllActivity()"
+      (documentationRequested)="handleDocumentation()"
+    />
+  </div>
+</section>
+
+@if (dataModelDialogOpen()) {
+  <app-data-model-dialog
+    [dataModel]="editingDataModel()"
+    (saved)="handleDataModelSaved($event)"
+    (deleted)="handleDataModelDeleted()"
+    (closed)="closeDataModelDialog()"
+  />
+}

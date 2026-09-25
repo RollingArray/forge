@@ -1,0 +1,21 @@
+<!--
+File: api-loading-spinner.component.html
+Purpose: Global API loading overlay for the authenticated FORGE shell.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+-->
+
+@if (apiLoadingService.isLoading()) {
+  <div
+    class="loading-spinner"
+    role="status"
+    aria-label="Loading"
+    aria-live="polite"
+  >
+    <div class="spinner-content">
+      <span class="spinner-ring"></span>
+      <span class="spinner-label">{{ apiLoadingService.message() }}</span>
+    </div>
+  </div>
+}

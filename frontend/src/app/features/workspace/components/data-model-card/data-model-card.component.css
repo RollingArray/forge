@@ -1,0 +1,247 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: data-model-card.component.css
+ * Purpose: Styles the data model card Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.dataModel-card {
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  min-height: 162px;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid var(--data-model-color, #7c5cfc);
+  border-radius: 11px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.dataModel-card:hover {
+  border-right-color: #d8d0ff;
+  border-top-color: #d8d0ff;
+  border-bottom-color: #d8d0ff;
+  box-shadow: 0 6px 18px rgba(39, 39, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.dataModel-card.selected {
+  box-shadow:
+    0 0 0 1px var(--data-model-color, #7c5cfc),
+    0 6px 18px rgba(39, 39, 42, 0.08);
+}
+
+.dataModel-card:focus-visible {
+  outline: 2px solid #8b7cf6;
+  outline-offset: 2px;
+}
+
+/* Header */
+
+.dataModel-card-header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 22px;
+  align-items: start;
+  gap: 9px;
+}
+
+.dataModel-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: color-mix(
+    in srgb,
+    var(--data-model-color, #7c5cfc) 12%,
+    #ffffff
+  );
+  color: var(--data-model-color, #7c5cfc);
+}
+
+.dataModel-icon .material-symbols-outlined {
+  font-size: 21px;
+}
+
+.dataModel-title {
+  min-width: 0;
+}
+
+.dataModel-title h3 {
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: #171a36;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dataModel-title p {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #72789a;
+  font-size: 11px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.more-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  margin-top: -2px;
+  border-radius: 6px;
+  color: #8d92aa;
+  font-size: 18px;
+}
+
+.more-icon:hover {
+  background: #f4f4f6;
+  color: #555a73;
+}
+
+/* Statistics */
+
+.dataModel-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.dataModel-stats > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #454b68;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.dataModel-stats .material-symbols-outlined {
+  color: #747991;
+  font-size: 14px;
+}
+
+/* Footer */
+
+.dataModel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0eff4;
+}
+
+.dataModel-footer > span:first-child {
+  overflow: hidden;
+  color: #9297ae;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-pill .material-symbols-outlined {
+  font-size: 12px;
+}
+
+.status-pill.modeling {
+  background: #e9f8ed;
+  color: #169447;
+}
+
+.status-pill.validated {
+  background: #e7f3ff;
+  color: #1680df;
+}
+
+.status-pill.draft {
+  background: #f0f1f3;
+  color: #666b79;
+}
+
+.status-pill.generated {
+  background: #f0eaff;
+  color: #6545df;
+}
+
+/* Tags */
+
+.dataModel-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+  min-width: 0;
+}
+
+.dataModel-tag,
+.dataModel-tag-more {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 20px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--data-model-color, #7c5cfc) 20%,
+    #ffffff
+  );
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--data-model-color, #7c5cfc) 7%,
+    #ffffff
+  );
+  color: #555a73;
+  font-size: 9.5px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dataModel-tag-more {
+  max-width: none;
+  border-color: #e4e4e7;
+  background: #f7f7f8;
+  color: #71717a;
+}

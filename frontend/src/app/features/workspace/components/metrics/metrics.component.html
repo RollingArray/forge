@@ -1,0 +1,25 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: metrics.component.html
+ * Purpose: Defines the metrics Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<section class="metrics-grid">
+
+  @for (metric of metrics(); track metric.label) {
+
+    <app-metric-card
+      [metric]="metric"
+    />
+
+  }
+
+</section>

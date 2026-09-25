@@ -1,0 +1,71 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: api-loading-spinner.component.css
+ * Purpose: Styles for the global FORGE API loading overlay.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.loading-spinner {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.55);
+
+  cursor: wait;
+}
+
+.spinner-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  min-width: 150px;
+  min-height: 110px;
+  padding: 20px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.spinner-ring {
+  width: 28px;
+  height: 28px;
+
+  border: 3px solid #e6e6ed;
+  border-top-color: #6d5dfc;
+  border-radius: 50%;
+
+  animation: forge-api-spinner 0.8s linear infinite;
+}
+
+.spinner-label {
+  color: #3a3a45;
+
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+@keyframes forge-api-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}

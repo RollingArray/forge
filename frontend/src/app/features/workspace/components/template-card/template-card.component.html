@@ -1,0 +1,51 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: template-card.component.html
+ * Purpose: Defines the template card Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<article class="template-card">
+
+  <div class="template-top">
+
+    <div
+      class="template-icon"
+      [class]="template().accent"
+    >
+      <span class="material-symbols-outlined">
+        {{ template().icon }}
+      </span>
+    </div>
+
+    <div class="template-copy">
+
+      <h3>
+        {{ template().name }}
+      </h3>
+
+      <p>
+        {{ template().description }}
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <button
+    type="button"
+    class="use-template-button"
+    (click)="useTemplate()"
+  >
+    Use Template
+  </button>
+
+</article>

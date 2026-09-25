@@ -1,0 +1,92 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: help-card.component.css
+ * Purpose: Styles the help card Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.help-card {
+  display: flex;
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid #e8e1ff;
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      135deg,
+      #faf9ff 0%,
+      #f5f1ff 100%
+    );
+}
+
+.help-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e9e2ff;
+  color: #6949c6;
+}
+
+.help-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.help-content {
+  min-width: 0;
+}
+
+.help-content h2 {
+  margin: 0;
+  color: #27272a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.help-content p {
+  margin: 4px 0 9px;
+  color: #71717a;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.documentation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6949c6;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.documentation-link:hover {
+  color: #5135a4;
+}
+
+.documentation-link .material-symbols-outlined {
+  font-size: 15px;
+  transition: transform 160ms ease;
+}
+
+.documentation-link:hover .material-symbols-outlined {
+  transform: translateX(2px);
+}
+
+.documentation-link:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 3px;
+  border-radius: 3px;
+}

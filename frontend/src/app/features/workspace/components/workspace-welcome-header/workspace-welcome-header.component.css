@@ -1,0 +1,101 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: workspace-welcome-header.component.css
+ * Purpose: Styles the workspace welcome header Workspace component.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.welcome-section {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+}
+
+.welcome-copy h1 {
+  margin: 0;
+
+  color: #11152f;
+
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.welcome-copy p {
+  margin: 7px 0 0;
+
+  color: #77809d;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.new-dataModel-button {
+  display: flex;
+
+  height: 39px;
+
+  align-items: center;
+
+  padding:
+    0
+    17px;
+
+  gap: 8px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: #5149d1;
+
+  color: white;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 5px 12px rgba(81, 73, 209, 0.14);
+
+  transition:
+    background 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.new-dataModel-button:hover {
+  background: #463fc0;
+
+  box-shadow:
+    0 7px 17px rgba(81, 73, 209, 0.20);
+
+  transform: translateY(-1px);
+}
+
+.new-dataModel-button:active {
+  transform: translateY(0);
+}
+
+.new-dataModel-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
+@media (max-width: 640px) {
+  .welcome-section {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

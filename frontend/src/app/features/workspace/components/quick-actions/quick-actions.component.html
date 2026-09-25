@@ -1,0 +1,42 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: quick-actions.component.html
+ * Purpose: Defines the quick actions Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<section class="quick-actions">
+  <div class="section-header">
+    <div>
+      <h2>Quick Actions</h2>
+      <p>Start something new</p>
+    </div>
+  </div>
+
+  <div class="action-list">
+    @for (action of actions; track action.action) {
+      <button
+        type="button"
+        class="action-item"
+        (click)="selectAction(action)"
+      >
+        <span class="action-icon">
+          <span class="material-symbols-outlined">{{ action.icon }}</span>
+        </span>
+
+        <span class="action-label">{{ action.label }}</span>
+
+        <span class="material-symbols-outlined action-arrow">
+          arrow_forward
+        </span>
+      </button>
+    }
+  </div>
+</section>

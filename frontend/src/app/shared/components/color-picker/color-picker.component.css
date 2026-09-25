@@ -1,0 +1,53 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: color-picker.component.css
+ * Purpose: Styles the reusable FORGE color picker.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.color-picker {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(10, 30px);
+  justify-content: space-between;
+  row-gap: 10px;
+}
+
+.color-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.color-option.selected {
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 2px #30303a,
+    0 2px 8px rgba(30, 30, 45, 0.18);
+}
+
+.color-option .material-symbols-outlined {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+}

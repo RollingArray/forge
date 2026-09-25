@@ -1,0 +1,35 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: activity-item.component.html
+ * Purpose: Defines the activity item Workspace component template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<div class="activity-item">
+  <div class="activity-icon">
+    <span class="material-symbols-outlined">
+      {{ activity().icon }}
+    </span>
+  </div>
+
+  <div class="activity-content">
+    <p class="activity-action">
+      {{ activity().action }}
+    </p>
+
+    <p class="activity-dataModel">
+      {{ activity().dataModel }}
+    </p>
+
+    <span class="activity-time">
+      {{ activity().time }}
+    </span>
+  </div>
+</div>
