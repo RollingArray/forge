@@ -1,3 +1,27 @@
+/* ============================================================================
+ * FORGE — Global Typography
+ * ============================================================================ */
+
+:root {
+  --forge-font-family:
+    Calibri,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+html,
+body {
+  font-family: var(--forge-font-family);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
 @font-face {
   font-family: 'Material Symbols Outlined';
   font-style: normal;

@@ -21,19 +21,15 @@ import {
 
 import { Metric } from '../../../../core/interfaces/metric.interface';
 import { DataModel } from '../../../../core/interfaces/data-model.interface';
-import { Template } from '../../../../core/interfaces/template.interface';
 
 import { MetricsComponent } from '../metrics/metrics.component';
 import { RecentDataModelsComponent } from '../recent-data-models/recent-data-models.component';
-import { TemplatesComponent } from '../templates/templates.component';
-
 @Component({
   selector: 'app-workspace-content',
   standalone: true,
   imports: [
     MetricsComponent,
     RecentDataModelsComponent,
-    TemplatesComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workspace-content.component.html',
@@ -42,12 +38,10 @@ import { TemplatesComponent } from '../templates/templates.component';
 export class WorkspaceContentComponent {
   readonly metrics = input.required<Metric[]>();
   readonly dataModels = input.required<DataModel[]>();
-  readonly templates = input.required<Template[]>();
 
   readonly selectedDataModel = input<DataModel | null>(null);
 
   readonly newDataModel = output<void>();
   readonly dataModelSelected = output<DataModel>();
   readonly shareRequested = output<DataModel>();
-  readonly templateSelected = output<string>();
 }

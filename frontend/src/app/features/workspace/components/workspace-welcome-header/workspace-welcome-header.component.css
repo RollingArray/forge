@@ -14,62 +14,45 @@
 
 .welcome-section {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   gap: 24px;
+  padding: 22px 4px 28px;
 }
 
-.welcome-copy h1 {
+.welcome-copy h3 {
   margin: 0;
-
-  color: #11152f;
-
-  font-size: 25px;
-  line-height: 1.2;
+  color: #171a2f;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.12;
   font-weight: 650;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.04em;
 }
 
 .welcome-copy p {
-  margin: 7px 0 0;
-
-  color: #77809d;
-
-  font-size: 13px;
-  line-height: 1.5;
+  max-width: 560px;
+  margin: 10px 0 0;
+  color: #747b91;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .new-dataModel-button {
   display: flex;
-
-  height: 39px;
-
+  height: 42px;
   align-items: center;
-
-  padding:
-    0
-    17px;
-
+  padding: 0 17px;
   gap: 8px;
-
+  flex: 0 0 auto;
   border: 0;
-  border-radius: 7px;
-
+  border-radius: 8px;
   background: #5149d1;
-
   color: white;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
-
-  box-shadow:
-    0 5px 12px rgba(81, 73, 209, 0.14);
-
+  box-shadow: 0 6px 16px rgba(81, 73, 209, 0.16);
   transition:
     background 150ms ease,
     transform 150ms ease,
@@ -78,10 +61,7 @@
 
 .new-dataModel-button:hover {
   background: #463fc0;
-
-  box-shadow:
-    0 7px 17px rgba(81, 73, 209, 0.20);
-
+  box-shadow: 0 8px 20px rgba(81, 73, 209, 0.22);
   transform: translateY(-1px);
 }
 
@@ -97,5 +77,30 @@
   .welcome-section {
     align-items: flex-start;
     flex-direction: column;
+    padding-top: 12px;
+  }
+
+  .welcome-copy h1 {
+    font-size: 30px;
   }
 }
+
+
+/* FORGE: Highlight the authenticated user's name. */
+
+.user-name {
+  background: linear-gradient(
+    90deg,
+    #5b3df5 0%,
+    #7448f5 50%,
+    #9560f7 100%
+  );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  color: #6d45f5;
+  font-weight: 700;
+}
+

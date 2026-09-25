@@ -39,6 +39,9 @@ import {
   WorkspaceRightRailComponent,
 } from './components/workspace-right-rail/workspace-right-rail.component';
 import {
+  TemplatesComponent as WorkspaceTemplatesComponent,
+} from './components/templates/templates.component';
+import {
   DataModelShareDialogComponent,
 } from './components/data-model-share-dialog/data-model-share-dialog.component';
 
@@ -50,6 +53,7 @@ import {
     WorkspaceWelcomeHeaderComponent,
     WorkspaceContentComponent,
     WorkspaceRightRailComponent,
+    WorkspaceTemplatesComponent,
     DataModelShareDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

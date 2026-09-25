@@ -18,29 +18,35 @@
   min-height: 143px;
 
   flex-direction: column;
-
   justify-content: space-between;
 
   padding: 14px;
 
-  border: 1px solid #e5e7ef;
-  border-radius: 10px;
+  border: 1px solid rgba(220, 220, 226, 0.96);
+  border-radius: 12px;
 
   background: #ffffff;
 
+  box-shadow:
+    0 2px 5px rgba(35, 35, 42, 0.045),
+    0 8px 18px rgba(35, 35, 42, 0.055);
+
   transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease,
-    transform 150ms ease;
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
 .template-card:hover {
-  border-color: #d2d0f2;
+  border-color: rgba(202, 202, 210, 0.98);
+
+  background: #ffffff;
 
   box-shadow:
-    0 7px 18px rgba(54, 61, 105, 0.05);
+    0 4px 9px rgba(35, 35, 42, 0.065),
+    0 14px 28px rgba(35, 35, 42, 0.10);
 
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .template-top {
@@ -113,7 +119,7 @@
   border: 1px solid #dfe2ea;
   border-radius: 6px;
 
-  background: white;
+  background: #ffffff;
 
   color: #505976;
 
@@ -131,6 +137,8 @@
 
 .use-template-button:hover {
   border-color: #bcb8f0;
+
   background: #f9f8ff;
+
   color: #5149d1;
 }

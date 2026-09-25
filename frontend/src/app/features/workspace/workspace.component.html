@@ -15,20 +15,27 @@
 <section class="workspace-page">
   <div class="workspace-body">
     <main class="center-panel">
-      <app-workspace-welcome-header
-        (newDataModel)="handleNewDataModel()"
-      />
+      <div class="center-scroll-content">
+        <app-workspace-welcome-header
+          (newDataModel)="handleNewDataModel()"
+        />
 
-      <app-workspace-content
-        [metrics]="metrics()"
-        [dataModels]="dataModels()"
-        [templates]="templates()"
-        [selectedDataModel]="selectedDataModel()"
-        (newDataModel)="handleNewDataModel()"
-        (dataModelSelected)="handleDataModelSelected($event)"
-        (shareRequested)="handleDataModelShareRequested($event)"
-        (templateSelected)="handleTemplateSelected($event)"
-      />
+        <app-workspace-content
+          [metrics]="metrics()"
+          [dataModels]="dataModels()"
+          [selectedDataModel]="selectedDataModel()"
+          (newDataModel)="handleNewDataModel()"
+          (dataModelSelected)="handleDataModelSelected($event)"
+          (shareRequested)="handleDataModelShareRequested($event)"
+        />
+      </div>
+
+      <div class="templates-dock">
+        <app-workspace-templates
+          [templates]="templates()"
+          (templateSelected)="handleTemplateSelected($event)"
+        />
+      </div>
     </main>
 
     <app-workspace-right-rail

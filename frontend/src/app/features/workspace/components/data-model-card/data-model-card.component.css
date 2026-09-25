@@ -22,9 +22,18 @@
   min-height: 162px;
   flex-direction: column;
   padding: 14px;
-  border: 1px solid var(--data-model-color, #7c5cfc);
-  border-radius: 11px;
-  background: #ffffff;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--data-model-color, #7c5cfc) 38%,
+    #ffffff
+  );
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(252, 249, 255, 0.94)
+    );
   cursor: pointer;
   text-align: left;
   transition:
@@ -34,17 +43,30 @@
 }
 
 .dataModel-card:hover {
-  border-right-color: #d8d0ff;
-  border-top-color: #d8d0ff;
-  border-bottom-color: #d8d0ff;
-  box-shadow: 0 6px 18px rgba(39, 39, 42, 0.05);
-  transform: translateY(-1px);
+  border-color: color-mix(
+    in srgb,
+    var(--data-model-color, #7c5cfc) 58%,
+    #ffffff
+  );
+  box-shadow:
+    0 4px 10px rgba(55, 43, 90, 0.06),
+    0 16px 34px rgba(116, 92, 180, 0.10);
+  transform: translateY(-2px);
 }
 
 .dataModel-card.selected {
+  border-color: #8b6df6;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(249, 246, 255, 0.96) 62%,
+      rgba(244, 239, 255, 0.92) 100%
+    );
   box-shadow:
-    0 0 0 1px var(--data-model-color, #7c5cfc),
-    0 6px 18px rgba(39, 39, 42, 0.08);
+    0 0 0 1px rgba(139, 109, 246, 0.38),
+    0 8px 18px rgba(84, 62, 151, 0.08),
+    0 20px 42px rgba(130, 105, 205, 0.12);
 }
 
 .dataModel-card:focus-visible {
@@ -317,4 +339,73 @@
   border-color: #e4e4e7;
   background: #f7f7f8;
   color: #71717a;
+}
+
+/* FORGE workspace visual treatment */
+
+.dataModel-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(226, 215, 208, 0.92);
+  box-shadow:
+    0 1px 2px rgba(74, 58, 48, 0.04),
+    0 8px 22px rgba(105, 77, 60, 0.07),
+    0 22px 44px rgba(225, 174, 139, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.dataModel-card:hover {
+  box-shadow:
+    0 2px 4px rgba(74, 58, 48, 0.05),
+    0 12px 28px rgba(105, 77, 60, 0.09),
+    0 26px 50px rgba(225, 174, 139, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+
+
+/* ============================================================================
+ * FORGE — Data Model color depth
+ * ============================================================================ */
+
+.dataModel-card {
+  box-shadow:
+    0 2px 5px rgba(55, 45, 75, 0.035),
+    0 10px 24px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 12%,
+      transparent
+    );
+}
+
+.dataModel-card:hover {
+  box-shadow:
+    0 5px 10px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 10%,
+      transparent
+    ),
+    0 18px 34px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 18%,
+      transparent
+    );
+}
+
+.dataModel-card.selected {
+  box-shadow:
+    0 0 0 1px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 45%,
+      transparent
+    ),
+    0 7px 14px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 10%,
+      transparent
+    ),
+    0 20px 42px color-mix(
+      in srgb,
+      var(--data-model-color, #7c5cfc) 18%,
+      transparent
+    );
 }

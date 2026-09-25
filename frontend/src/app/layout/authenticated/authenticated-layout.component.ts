@@ -24,6 +24,10 @@ import { ApiLoadingService } from '../../core/services/api-loading.service';
 import {
   ApiLoadingSpinnerComponent,
 } from './components/api-loading-spinner/api-loading-spinner.component';
+import {
+  TechnicalDataBannerComponent,
+} from './components/technical-data-banner/technical-data-banner.component';
+
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { TopbarComponent } from './topbar/topbar.component';
 
@@ -31,6 +35,7 @@ import { TopbarComponent } from './topbar/topbar.component';
   selector: 'app-authenticated-layout',
   standalone: true,
   imports: [
+    TechnicalDataBannerComponent,
     RouterOutlet,
     ApiLoadingSpinnerComponent,
     SidebarComponent,
