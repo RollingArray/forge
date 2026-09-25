@@ -24,6 +24,7 @@ import { ActivityResponse } from '../interfaces/activity-response.interface';
 import { Activity } from '../interfaces/activity.interface';
 import { CreateDataModelRequest } from '../interfaces/create-data-model-request.interface';
 import { DataModelResponse } from '../interfaces/data-model-response.interface';
+import { DataModelListItemResponse } from '../interfaces/data-model-list-item-response.interface';
 import { DataModel } from '../interfaces/data-model.interface';
 import { Metric } from '../interfaces/metric.interface';
 import { TemplateResponse } from '../interfaces/template-response.interface';
@@ -51,7 +52,7 @@ export class WorkspaceService {
           ),
         },
       ),
-      dataModels: this.http.get<DataModelResponse[]>(
+      dataModels: this.http.get<DataModelListItemResponse[]>(
         `${this.apiBaseUrl}/data-models`,
         {
           context: new HttpContext().set(
@@ -181,9 +182,11 @@ export class WorkspaceService {
     ];
   }
 
-  private mapDataModel(response: DataModelResponse): DataModel {
+  private mapDataModel(response: DataModelListItemResponse): DataModel {
     return {
       dataModelId: response.data_model_id,
+      ownerUserId: response.owner_user_id,
+      accessRole: response.access_role,
       name: response.name,
       description: response.description,
       color: response.color,

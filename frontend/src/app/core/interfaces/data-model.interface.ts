@@ -5,6 +5,8 @@
 
 export interface DataModel {
   dataModelId: string;
+  ownerUserId: string;
+  accessRole: 'OWNER' | 'CONTRIBUTOR' | 'VIEWER';
   name: string;
   description: string;
   color: string;

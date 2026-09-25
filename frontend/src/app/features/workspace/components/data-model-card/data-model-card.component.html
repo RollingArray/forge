@@ -12,12 +12,15 @@
  * ============================================================================
  -->
 
-<button
-  type="button"
+<div
   class="dataModel-card"
   [class.selected]="selected()"
   [style.--data-model-color]="dataModel().color"
+  role="button"
+  tabindex="0"
   (click)="select()"
+  (keydown.enter)="select()"
+  (keydown.space)="select(); $event.preventDefault()"
 >
   <div class="dataModel-card-header">
     <div class="dataModel-icon">
@@ -70,20 +73,54 @@
       {{ dataModel().updated }}
     </span>
 
-    <span
-      class="status-pill"
-      [class.modeling]="dataModel().status === 'Modeling'"
-      [class.validated]="dataModel().status === 'Validated'"
-      [class.draft]="dataModel().status === 'Draft'"
-      [class.generated]="dataModel().status === 'Generated'"
-    >
-      @if (dataModel().status === 'Generated') {
+    <span class="dataModel-footer-actions">
+      <button
+        type="button"
+        class="share-button"
+        title="Share Data Model"
+        aria-label="Share Data Model"
+        (click)="share($event)"
+      >
         <span class="material-symbols-outlined">
-          check_circle
+          group
         </span>
-      }
 
-      {{ dataModel().status }}
+        Share
+      </button>
+
+      <span
+        class="access-role-pill"
+        [class.owner]="dataModel().accessRole === 'OWNER'"
+        [class.contributor]="dataModel().accessRole === 'CONTRIBUTOR'"
+        [class.viewer]="dataModel().accessRole === 'VIEWER'"
+      >
+        @if (dataModel().accessRole === 'OWNER') {
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Owner</span>
+        } @else if (dataModel().accessRole === 'CONTRIBUTOR') {
+          <span class="material-symbols-outlined">edit</span>
+          <span>Contributor</span>
+        } @else {
+          <span class="material-symbols-outlined">visibility</span>
+          <span>Viewer</span>
+        }
+      </span>
+
+      <span
+        class="status-pill"
+        [class.modeling]="dataModel().status === 'Modeling'"
+        [class.validated]="dataModel().status === 'Validated'"
+        [class.draft]="dataModel().status === 'Draft'"
+        [class.generated]="dataModel().status === 'Generated'"
+      >
+        @if (dataModel().status === 'Generated') {
+          <span class="material-symbols-outlined">
+            check_circle
+          </span>
+        }
+
+        {{ dataModel().status }}
+      </span>
     </span>
   </div>
-</button>
+</div>

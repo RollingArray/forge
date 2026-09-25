@@ -96,6 +96,7 @@
 
 .dataModel-title p {
   display: -webkit-box;
+  min-height: 33px;
   margin: 4px 0 0;
   overflow: hidden;
   color: #72789a;
@@ -164,6 +165,78 @@
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dataModel-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid #e2e0ea;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #656a83;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.share-button:hover {
+  border-color: #cfc8f5;
+  background: #f8f7ff;
+  color: #6545df;
+}
+
+.share-button:focus-visible {
+  outline: 2px solid #8b7cf6;
+  outline-offset: 2px;
+}
+
+.share-button .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.access-role-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  min-height: 20px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.access-role-pill .material-symbols-outlined {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.access-role-pill.owner {
+  border-color: #ddd5fb;
+  background: #f3efff;
+  color: #6545df;
+}
+
+.access-role-pill.contributor {
+  border-color: #cfe3f8;
+  background: #eef7ff;
+  color: #2474ad;
+}
+
+.access-role-pill.viewer {
+  border-color: #dedfe4;
+  background: #f4f5f7;
+  color: #686d7a;
 }
 
 .status-pill {

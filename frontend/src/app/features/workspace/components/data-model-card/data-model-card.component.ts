@@ -33,8 +33,14 @@ export class DataModelCardComponent {
   readonly selected = input(false);
 
   readonly selectedChange = output<DataModel>();
+  readonly shareRequested = output<DataModel>();
 
   select(): void {
     this.selectedChange.emit(this.dataModel());
+  }
+
+  share(event: MouseEvent): void {
+    event.stopPropagation();
+    this.shareRequested.emit(this.dataModel());
   }
 }
