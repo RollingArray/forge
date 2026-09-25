@@ -3,8 +3,8 @@
  * FORGE — Framework for Observed Rules, Generation & Engineered Data
  * ============================================================================
  *
- * File: auth-user.interface.ts
- * Purpose: Defines the authenticated FORGE user contract.
+ * File: environment.ts
+ * Purpose: Production environment configuration for the FORGE frontend.
  *
  * Author: Ranjoy Sen
  * Email: ranjoy.sen@collins.com
@@ -12,16 +12,7 @@
  * ============================================================================
  */
 
-/**
- * File: auth-user.interface.ts
- * Purpose: Authenticated FORGE user contract.
- *
- * Author: Ranjoy Sen
- * Email: ranjoy.sen@collins.com
- */
-
-export interface AuthUser {
-  userId: string;
-  email: string;
-  displayName: string;
-}
+export const environment = {
+  production: true,
+  apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
+} as const;

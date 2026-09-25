@@ -1,9 +1,15 @@
 /**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
  * File: auth.service.ts
- * Purpose: Central authentication service for the FORGE frontend.
+ * Purpose: Manages the authenticated frontend session.
  *
  * Author: Ranjoy Sen
  * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
  */
 
 import { Inject, Injectable, signal } from '@angular/core';
@@ -41,12 +47,14 @@ export class AuthService {
   async logout(): Promise<void> {
     const currentSession = this.session();
 
-    if (currentSession) {
-      await this.authenticationProvider.logout();
+    try {
+      if (currentSession) {
+        await this.authenticationProvider.logout();
+      }
+    } finally {
+      this.session.set(null);
+      sessionStorage.removeItem(this.sessionStorageKey);
     }
-
-    this.session.set(null);
-    sessionStorage.removeItem(this.sessionStorageKey);
   }
 
   getSession(): AuthSession | null {

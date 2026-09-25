@@ -45,7 +45,7 @@ export class LoginComponent {
         email: value,
       });
 
-      await this.router.navigate(['/home']);
+      await this.router.navigate(['/workspace']);
     } catch (error) {
       console.error('FORGE login failed:', error);
 

@@ -15,9 +15,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { ApiLoadingService } from '../../core/services/api-loading.service';
+
+import {
+  ApiLoadingSpinnerComponent,
+} from './components/api-loading-spinner/api-loading-spinner.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { TopbarComponent } from './topbar/topbar.component';
 
@@ -26,6 +32,7 @@ import { TopbarComponent } from './topbar/topbar.component';
   standalone: true,
   imports: [
     RouterOutlet,
+    ApiLoadingSpinnerComponent,
     SidebarComponent,
     TopbarComponent,
   ],
@@ -34,6 +41,7 @@ import { TopbarComponent } from './topbar/topbar.component';
   styleUrl: './authenticated-layout.component.css',
 })
 export class AuthenticatedLayoutComponent {
+  readonly apiLoadingService = inject(ApiLoadingService);
   handleSidebarAction(action: string): void {
     console.info('[FORGE Navigation] sidebar action:', action);
   }

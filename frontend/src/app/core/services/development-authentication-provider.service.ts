@@ -1,15 +1,22 @@
 /**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
  * File: development-authentication-provider.service.ts
- * Purpose: Development authentication provider for FORGE.
+ * Purpose: Provides development authentication against the FORGE API.
  *
  * Author: Ranjoy Sen
  * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { AuthSession } from '../interfaces/auth-session.interface';
 import { AuthenticationProvider } from '../interfaces/authentication-provider.interface';
 import { LoginRequest } from '../interfaces/login-request.interface';
@@ -21,7 +28,7 @@ export class DevelopmentAuthenticationProviderService
   implements AuthenticationProvider
 {
   private readonly authenticationEndpoint =
-    'http://127.0.0.1:8000/api/v1/auth/login';
+    `${environment.apiBaseUrl}/auth/login`;
 
   constructor(
     private readonly http: HttpClient,

@@ -14,9 +14,12 @@ Email: ranjoy.sen@collins.com
 
   <section class="application-area">
 
+
     <app-forge-topbar
       (action)="handleTopbarAction($event)"
     />
+
+    <app-api-loading-spinner />
 
     <main class="application-content">
       <router-outlet />
