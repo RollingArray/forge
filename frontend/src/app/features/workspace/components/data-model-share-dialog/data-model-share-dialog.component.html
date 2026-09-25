@@ -1,0 +1,434 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: data-model-share-dialog.component.html
+ * Purpose: Data Model sharing dialog template.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<app-form-dialog
+  title="Share Data Model"
+  subtitle="Manage who can access this Data Model."
+  icon="group"
+  width="720px"
+  (closed)="close()"
+>
+  <div dialog-body class="share-dialog-body">
+
+    <section class="data-model-summary">
+      <div
+        class="data-model-icon"
+        [style.--data-model-color]="dataModel().color"
+      >
+        <span class="material-symbols-outlined">
+          deployed_code
+        </span>
+      </div>
+
+      <div class="data-model-summary-content">
+        <span class="section-label">Data Model</span>
+        <h3>{{ dataModel().name }}</h3>
+
+        @if (dataModel().description) {
+          <p>{{ dataModel().description }}</p>
+        }
+      </div>
+    </section>
+
+    <section class="share-section">
+      <div class="section-heading">
+        <div>
+          <h3>People with access</h3>
+          <p>
+            People who can access this Data Model will appear here.
+          </p>
+        </div>
+      </div>
+
+      @if (loadingAccess()) {
+        <div class="empty-access-state">
+          <span class="material-symbols-outlined">
+            progress_activity
+          </span>
+
+          <strong>Loading access</strong>
+
+          <span>
+            FORGE is loading people who can access this Data Model.
+          </span>
+        </div>
+      } @else if (accessLoadError()) {
+        <div class="empty-access-state">
+          <span class="material-symbols-outlined">
+            error
+          </span>
+
+          <strong>Unable to load access</strong>
+
+          <span>
+            FORGE could not load the current access list.
+          </span>
+        </div>
+      } @else if (accessRecords().length === 0) {
+        <div class="empty-access-state">
+          <span class="material-symbols-outlined">
+            group
+          </span>
+
+          <strong>No additional people have access</strong>
+
+          <span>
+            Add a Contributor or Viewer below to share this Data Model.
+          </span>
+        </div>
+      } @else {
+        <div class="access-list">
+          <div class="access-guidance">
+            <span class="material-symbols-outlined">info</span>
+
+            <div class="access-guidance-content">
+              @if (isOwner()) {
+                <strong>How access works</strong>
+                <span>
+                  Select <b>Contributor</b> or <b>Viewer</b> to change a person's
+                  access level. Select <b>Remove</b> to revoke access to this
+                  Data Model.
+                </span>
+              } @else {
+                <strong>Sharing is managed by the owner</strong>
+                <span>
+                  You can view who has access to this Data Model, but only the
+                  owner can change access or remove people.
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="access-list-header">
+            <span class="access-header-cell">
+              <span class="material-symbols-outlined">person</span>
+              <span>Person</span>
+            </span>
+
+            <span class="access-header-cell">
+              <span class="material-symbols-outlined">admin_panel_settings</span>
+              <span>Access</span>
+            </span>
+
+            <span class="access-header-cell access-header-actions">
+              <span class="material-symbols-outlined">more_horiz</span>
+              <span>Actions</span>
+            </span>
+          </div>
+
+          @for (access of accessRecords(); track access.userId) {
+            <div class="access-person">
+              <div class="access-person-identity">
+                <div class="access-person-avatar">
+                  {{ access.displayName.charAt(0).toUpperCase() }}
+                </div>
+
+                <div class="access-person-details">
+                  <strong>{{ access.displayName }}</strong>
+                  <span>{{ access.email }}</span>
+                </div>
+              </div>
+
+              <div class="access-person-role">
+                @if (access.role === 'OWNER') {
+                  <span class="access-role owner-role">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                    <span>Owner</span>
+                  </span>
+                } @else {
+                  @if (isOwner()) {
+                    <div class="access-role-switch">
+                      <button
+                        type="button"
+                        class="access-role-option"
+                        [class.selected]="access.role === 'CONTRIBUTOR'"
+                        [disabled]="updatingAccessUserId() === access.userId"
+                        (click)="requestRoleChange(access, 'CONTRIBUTOR')"
+                      >
+                        <span class="material-symbols-outlined">
+                          edit
+                        </span>
+
+                        <span>Contributor</span>
+
+                        @if (access.role === 'CONTRIBUTOR') {
+                          <span class="material-symbols-outlined role-check">
+                            check
+                          </span>
+                        }
+                      </button>
+
+                      <button
+                        type="button"
+                        class="access-role-option"
+                        [class.selected]="access.role === 'VIEWER'"
+                        [disabled]="updatingAccessUserId() === access.userId"
+                        (click)="requestRoleChange(access, 'VIEWER')"
+                      >
+                        <span class="material-symbols-outlined">
+                          visibility
+                        </span>
+
+                        <span>Viewer</span>
+
+                        @if (access.role === 'VIEWER') {
+                          <span class="material-symbols-outlined role-check">
+                            check
+                          </span>
+                        }
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="access-role read-only-role">
+                      <span class="material-symbols-outlined">
+                        {{ access.role === 'CONTRIBUTOR' ? 'edit' : 'visibility' }}
+                      </span>
+                      <span>
+                        {{ access.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer' }}
+                      </span>
+                    </span>
+                  }
+                }
+              </div>
+
+              <div class="access-person-actions">
+                @if (access.role === 'OWNER') {
+                  <span class="access-owner-note">Data Model owner</span>
+                } @else {
+                  @if (isOwner()) {
+                    <button
+                      type="button"
+                      class="remove-access-button"
+                      [disabled]="updatingAccessUserId() === access.userId"
+                      title="Remove access"
+                      (click)="requestRemoveAccess(access)"
+                    >
+                      <span class="material-symbols-outlined">person_remove</span>
+                      <span>Remove</span>
+                    </button>
+                  } @else {
+                    <span class="access-owner-note">Access managed by owner</span>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    @if (isOwner()) {
+    <section class="share-section add-people-section">
+      <div class="section-heading">
+        <div>
+          <h3>Add people</h3>
+          <p>
+            Search existing FORGE users and choose their access level.
+          </p>
+        </div>
+      </div>
+
+      <div class="search-field">
+        <span class="material-symbols-outlined">
+          search
+        </span>
+
+        <input
+          type="text"
+          placeholder="Search by name or email"
+          autocomplete="off"
+          [value]="searchQuery()"
+          (input)="onSearchInput($any($event.target).value)"
+        />
+      </div>
+
+      @if (searching()) {
+        <div class="search-state">
+          <span class="material-symbols-outlined">
+            progress_activity
+          </span>
+
+          <span>
+            Searching FORGE users...
+          </span>
+        </div>
+      }
+
+      @if (!searching() && searchCompleted() && searchResults().length === 0) {
+        <div class="search-state">
+          <span class="material-symbols-outlined">
+            person_search
+          </span>
+
+          <span>
+            No matching FORGE users found.
+          </span>
+        </div>
+      }
+
+      @if (!searching() && searchResults().length > 0) {
+        <div class="user-search-results">
+          @for (user of searchResults(); track user.userId) {
+            <button
+              type="button"
+              class="user-search-result"
+              [class.selected]="selectedUser()?.userId === user.userId"
+              (click)="selectUser(user)"
+            >
+              <span class="user-avatar">
+                {{ user.displayName.charAt(0).toUpperCase() }}
+              </span>
+
+              <span class="user-details">
+                <strong>{{ user.displayName }}</strong>
+                <span>{{ user.email }}</span>
+              </span>
+
+              <span class="material-symbols-outlined user-result-arrow">
+                {{ selectedUser()?.userId === user.userId ? 'check' : 'chevron_right' }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (selectedUser(); as user) {
+        <div class="selected-user-panel">
+          <div class="selected-user-header">
+            <div>
+              <span class="section-label">Selected user</span>
+              <strong>{{ user.displayName }}</strong>
+              <span>{{ user.email }}</span>
+            </div>
+          </div>
+
+          <div class="role-selection">
+            <span class="role-label">Access level</span>
+
+            <div class="role-options">
+              <button
+                type="button"
+                class="role-option"
+                [class.active]="selectedRole() === 'CONTRIBUTOR'"
+                (click)="selectRole('CONTRIBUTOR')"
+              >
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+
+                <span>
+                  <strong>Contributor</strong>
+                  <small>Can edit and generate</small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                class="role-option"
+                [class.active]="selectedRole() === 'VIEWER'"
+                (click)="selectRole('VIEWER')"
+              >
+                <span class="material-symbols-outlined">
+                  visibility
+                </span>
+
+                <span>
+                  <strong>Viewer</strong>
+                  <small>Can view and export</small>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="add-user-button"
+            [disabled]="!selectedUser() || addingAccess()"
+            (click)="addAccess()"
+          >
+            @if (addingAccess()) {
+              Adding...
+            } @else {
+              Add {{ selectedRole() === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer' }}
+            }
+          </button>
+        </div>
+      }
+    </section>
+    }
+
+
+  </div>
+
+  @if (confirmation(); as pending) {
+    <div
+      dialog-footer
+      class="dialog-footer access-confirmation"
+    >
+      <div class="access-confirmation-message">
+        @if (pending.action === 'ROLE_CHANGE') {
+          <strong>Change access level?</strong>
+          <span>
+            {{ pending.access.displayName }}
+            will change from
+            {{ pending.access.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer' }}
+            to
+            {{ pending.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer' }}.
+          </span>
+        } @else {
+          <strong>Remove access?</strong>
+          <span>
+            {{ pending.access.displayName }}
+            will no longer have access to this Data Model.
+          </span>
+        }
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          (click)="cancelAccessAction()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="access-confirm-button"
+          [class.danger-button]="pending.action === 'REMOVE_ACCESS'"
+          (click)="confirmAccessAction()"
+        >
+          {{ pending.action === 'REMOVE_ACCESS' ? 'Remove Access' : 'Change Access' }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div
+      dialog-footer
+      class="dialog-footer"
+    >
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          (click)="close()"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  }
+
+</app-form-dialog>

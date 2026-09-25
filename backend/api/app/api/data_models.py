@@ -15,6 +15,8 @@ from app.models.data_model_model import (
     DataModelModel,
     UpdateDataModelRequestModel,
 )
+from app.models.data_model_list_item_model import DataModelListItemModel
+from app.services.data_model_access_service import DataModelAccessService
 from app.services.data_model_service import DataModelService
 
 
@@ -24,6 +26,7 @@ router = APIRouter(
 )
 
 data_model_service = DataModelService()
+data_model_access_service = DataModelAccessService()
 
 
 @router.post(
@@ -122,20 +125,20 @@ async def delete_data_model(
 
 @router.get(
     "",
-    response_model=list[DataModelModel],
+    response_model=list[DataModelListItemModel],
     status_code=status.HTTP_200_OK,
 )
 async def get_data_models(
     user: AuthUser = Depends(get_authenticated_user),
-) -> list[DataModelModel]:
-    """Return the authenticated user's FORGE data models."""
+) -> list[DataModelListItemModel]:
+    """Return FORGE data models visible to the authenticated user."""
 
     data_models = data_model_service.get_data_models(
         owner_user_id=user.user_id,
     )
 
     return [
-        DataModelModel(
+        DataModelListItemModel(
             data_model_id=data_model.data_model_id,
             owner_user_id=data_model.owner_user_id,
             name=data_model.name,
@@ -145,6 +148,11 @@ async def get_data_models(
             status=data_model.status,
             created_at=data_model.created_at,
             updated_at=data_model.updated_at,
+            access_role=data_model_access_service.get_role(
+                data_model_id=data_model.data_model_id,
+                user_id=user.user_id,
+            )
+            or "VIEWER",
         )
         for data_model in data_models
     ]

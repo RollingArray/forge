@@ -63,3 +63,4 @@ experiments/024_specification_execution/output/quality/
 backend/api/data/data_models.json
 backend/api/data/sessions.json
 backend/api/data/activities.json
+backend/api/data/data_model_access.json

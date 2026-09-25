@@ -35,6 +35,23 @@ class DataModelRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_by_id_any(
+        self,
+        data_model_id: str,
+    ):
+        """Return a data model by ID without applying an owner filter."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_by_id(
+        self,
+        data_model_id: str,
+        owner_user_id: str,
+    ) -> DataModel | None:
+        """Return a data model owned by the specified user."""
+        raise NotImplementedError
+
+    @abstractmethod
     def update(
         self,
         data_model_id: str,
