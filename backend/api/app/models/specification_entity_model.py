@@ -74,3 +74,42 @@ class UpdateEntityPopulationRequest(BaseModel):
             raise ValueError("count must be an integer.")
 
         return value
+
+class UpdateEntityIdentityRequest(BaseModel):
+    """Request to define the identity fields for a FORGE entity."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fields: list[str] = Field(
+        min_length=1,
+    )
+
+    @field_validator("fields")
+    @classmethod
+    def validate_fields(cls, value: list[str]) -> list[str]:
+        """Require non-empty, unique field names."""
+
+        normalized = []
+
+        for field_name in value:
+            if not isinstance(field_name, str):
+                raise ValueError(
+                    "identity.fields must contain strings."
+                )
+
+            field_name = field_name.strip()
+
+            if not field_name:
+                raise ValueError(
+                    "identity.fields must not contain empty names."
+                )
+
+            normalized.append(field_name)
+
+        if len(normalized) != len(set(normalized)):
+            raise ValueError(
+                "identity.fields must not contain duplicates."
+            )
+
+        return normalized
+

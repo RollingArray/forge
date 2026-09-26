@@ -236,6 +236,7 @@ interface StudioStepItem {
                 [entity]="entity"
                 (addField)="openFieldDialog()"
                 (editField)="openFieldEditDialog($event)"
+                (identitySaved)="handleIdentitySaved($event)"
                 (closed)="selectedEntity.set('')"
               />
             }
@@ -757,6 +758,38 @@ export class ModelStudioComponent {
 
   closeEntityDialog(): void {
     this.entityDialogOpen.set(false);
+  }
+
+  handleIdentitySaved(fields: string[]): void {
+    const dataModelId =
+      this.route.snapshot.paramMap.get('dataModelId');
+
+    const entityName = this.selectedEntity();
+
+    if (!dataModelId || !entityName) {
+      this.errorMessage.set(
+        'Data Model ID or selected entity is missing.',
+      );
+      return;
+    }
+
+    this.specificationService
+      .updateEntityIdentity(
+        dataModelId,
+        entityName,
+        fields,
+      )
+      .subscribe({
+        next: () => {
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ??
+            'Unable to update entity identity.',
+          );
+        },
+      });
   }
 
   openFieldDialog(): void {

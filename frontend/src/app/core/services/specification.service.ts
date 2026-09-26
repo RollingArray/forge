@@ -122,6 +122,23 @@ export class SpecificationService {
     );
   }
 
+  updateEntityIdentity(
+    dataModelId: string,
+    entityName: string,
+    fields: string[],
+  ): Observable<ForgeSpecificationEntity> {
+    return this.http.put<ForgeSpecificationEntity>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}/identity`,
+      { fields },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.UpdatingEntityIdentity,
+        ),
+      },
+    );
+  }
+
   createField(
     dataModelId: string,
     entityName: string,

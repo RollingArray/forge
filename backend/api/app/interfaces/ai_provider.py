@@ -47,6 +47,13 @@ class AISemanticPreview:
 
 
 @dataclass(frozen=True)
+class AIIdentityProposal:
+    status: str
+    message: str
+    proposal: dict[str, object] | None
+
+
+@dataclass(frozen=True)
 class AIFieldProposal:
     """Represents an AI-generated FORGE field proposal."""
 
@@ -77,6 +84,18 @@ class AIProvider(ABC):
         description: str,
     ) -> AISemanticPreview:
         """Generate representative semantic field values for preview."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def propose_identity(
+        self,
+        mode: str,
+        entity_name: str,
+        fields: list[dict[str, object]],
+        request: str,
+        existing_identity: dict[str, object] | None = None,
+    ) -> AIIdentityProposal:
+        """Generate a structured FORGE entity identity proposal."""
         raise NotImplementedError
 
     @abstractmethod

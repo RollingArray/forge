@@ -265,3 +265,164 @@ h2 {
 .field-action .material-symbols-outlined {
   font-size: 16px;
 }
+
+.identity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e4e1f5;
+  border-radius: 8px;
+  background: #faf9ff;
+}
+
+.identity-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.identity-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 7px;
+  background: #eeeaff;
+  color: #554dd4;
+}
+
+.identity-icon .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.identity-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.identity-copy strong {
+  color: #30364d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.identity-copy span {
+  color: #858ca1;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.identity-fields {
+  display: flex;
+  max-height: 190px;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+}
+
+.identity-field {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px;
+  box-sizing: border-box;
+  border: 1px solid #e7e7ef;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.identity-field:hover {
+  border-color: #d4cef4;
+  background: #fcfbff;
+}
+
+.identity-field input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #554dd4;
+  cursor: pointer;
+}
+
+.identity-field-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.identity-field-copy strong {
+  overflow: hidden;
+  color: #30364d;
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity-field-copy small {
+  color: #858ca1;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.identity-selected {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 5px;
+  background: #eeeaff;
+  color: #554dd4;
+}
+
+.identity-selected .material-symbols-outlined {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.save-identity-button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #554dd4;
+  border-radius: 6px;
+  background: #554dd4;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-identity-button:hover:not(:disabled) {
+  background: #4942bf;
+}
+
+.save-identity-button:disabled {
+  border-color: #d8d7df;
+  background: #e9e9ee;
+  color: #9b9dac;
+  cursor: not-allowed;
+}
+
+.save-identity-button .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.fields-section {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}

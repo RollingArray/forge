@@ -21,10 +21,12 @@ from urllib.request import Request, urlopen
 from app.core.ai_settings import AIConfiguration
 from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.field_proposal_prompt import FIELD_PROPOSAL_SYSTEM_PROMPT
+from app.prompts.identity_proposal_prompt import IDENTITY_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIFieldProposal,
+    AIIdentityProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -218,6 +220,233 @@ class OllamaAIProvider(AIProvider):
                 for tag in suggested_tags
             ],
             reasoning=reasoning.strip(),
+        )
+
+    def propose_identity(
+        self,
+        mode: str,
+        entity_name: str,
+        fields: list[dict[str, object]],
+        request: str,
+        existing_identity: dict[str, object] | None = None,
+    ) -> AIIdentityProposal:
+        """Generate a structured FORGE entity identity proposal."""
+
+        normalized_mode = mode.strip().upper()
+
+        if normalized_mode not in {"CREATE", "EDIT"}:
+            raise ValueError(
+                "Identity proposal mode must be CREATE or EDIT.",
+            )
+
+        normalized_entity_name = entity_name.strip()
+
+        if not normalized_entity_name:
+            raise ValueError(
+                "Entity name must not be empty.",
+            )
+
+        if not fields:
+            raise ValueError(
+                "At least one entity field is required.",
+            )
+
+        normalized_request = request.strip()
+
+        if not normalized_request:
+            raise ValueError(
+                "Identity proposal request must not be empty.",
+            )
+
+        if normalized_mode == "EDIT" and existing_identity is None:
+            raise ValueError(
+                "Existing identity is required in EDIT mode.",
+            )
+
+        payload = {
+            "mode": normalized_mode,
+            "entity_name": normalized_entity_name,
+            "fields": fields,
+            "request": normalized_request,
+            "existing_identity": existing_identity,
+        }
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": IDENTITY_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(payload),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "proposal": {
+                        "type": [
+                            "object",
+                            "null",
+                        ],
+                        "properties": {
+                            "fields": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                },
+                            },
+                        },
+                        "required": [
+                            "fields",
+                        ],
+                        "additionalProperties": False,
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "proposal",
+                ],
+                "additionalProperties": False,
+            },
+        }
+
+        provider_request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                provider_request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                provider_response = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = provider_response.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty identity proposal.",
+            )
+
+        try:
+            proposal_response = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid structured identity proposal.",
+            ) from exc
+
+        if not isinstance(proposal_response, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid identity proposal structure.",
+            )
+
+        status = proposal_response.get("status")
+        response_message = proposal_response.get("message")
+        proposal = proposal_response.get("proposal")
+
+        if status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI identity proposal returned an invalid status.",
+            )
+
+        if (
+            not isinstance(response_message, str)
+            or not response_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI identity proposal returned an invalid message.",
+            )
+
+        if status == "PROPOSE":
+            if not isinstance(proposal, dict):
+                raise RuntimeError(
+                    "FORGE AI identity proposal is missing proposal data.",
+                )
+
+            proposed_fields = proposal.get("fields")
+
+            if not isinstance(proposed_fields, list):
+                raise RuntimeError(
+                    "FORGE AI identity proposal fields must be a list.",
+                )
+
+            available_fields = {
+                field.get("name")
+                for field in fields
+                if isinstance(field, dict)
+            }
+
+            if not proposed_fields:
+                raise RuntimeError(
+                    "FORGE AI identity proposal must contain at least "
+                    "one field.",
+                )
+
+            if any(
+                not isinstance(field, str)
+                or field not in available_fields
+                for field in proposed_fields
+            ):
+                raise RuntimeError(
+                    "FORGE AI identity proposal contains a field "
+                    "that does not exist on the entity.",
+                )
+
+            if len(proposed_fields) != len(set(proposed_fields)):
+                raise RuntimeError(
+                    "FORGE AI identity proposal contains duplicate fields.",
+                )
+
+            proposal = {
+                "fields": proposed_fields,
+            }
+
+        else:
+            proposal = None
+
+        return AIIdentityProposal(
+            status=status,
+            message=response_message.strip(),
+            proposal=proposal,
         )
 
     def propose_field(

@@ -24,5 +24,6 @@ export enum ApiLoadingMessage {
   LoadingSpecification = 'Loading Data Model specification...',
   CreatingEntity = 'Adding entity to Data Model...',
   CreatingField = 'Adding field to Data Model...',
+  UpdatingEntityIdentity = 'Updating entity identity...',
   UpdatingField = 'Updating field definition...',
 }

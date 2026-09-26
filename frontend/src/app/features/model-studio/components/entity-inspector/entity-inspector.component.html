@@ -42,6 +42,102 @@
     <div class="section-header">
       <div>
         <span class="section-title">
+          Primary Identity
+        </span>
+
+        @if (identityFieldCount() > 0) {
+          <span class="section-count">
+            {{ identityFieldCount() }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="identity-card">
+
+      <div class="identity-header">
+        <div class="identity-icon">
+          <span class="material-symbols-outlined">
+            key
+          </span>
+        </div>
+
+        <div class="identity-copy">
+          <strong>
+            @if (identityFieldCount() > 1) {
+              Composite identity
+            } @else {
+              Primary identity
+            }
+          </strong>
+
+          <span>
+            @if (identityFieldCount() === 0) {
+              Select one or more fields.
+            } @else if (identityFieldCount() === 1) {
+              One field identifies this entity.
+            } @else {
+              {{ identityFieldCount() }} fields identify this entity together.
+            }
+          </span>
+        </div>
+      </div>
+
+      <div class="identity-fields">
+        @for (
+          field of entity().fields;
+          track field.name
+        ) {
+          <label class="identity-field">
+            <input
+              type="checkbox"
+              [checked]="isIdentityField(field.name)"
+              (change)="toggleIdentityField(field.name)"
+            />
+
+            <span class="identity-field-copy">
+              <strong>
+                {{ field.name }}
+              </strong>
+
+              <small>
+                {{ field.type }}
+              </small>
+            </span>
+
+            @if (isIdentityField(field.name)) {
+              <span class="identity-selected">
+                <span class="material-symbols-outlined">
+                  check
+                </span>
+              </span>
+            }
+          </label>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="save-identity-button"
+        [disabled]="identityFieldCount() === 0"
+        (click)="saveIdentity()"
+      >
+        <span class="material-symbols-outlined">
+          save
+        </span>
+
+        Save Identity
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="inspector-section fields-section">
+
+    <div class="section-header">
+      <div>
+        <span class="section-title">
           Fields
         </span>
 
@@ -100,7 +196,7 @@
               </span>
             </div>
 
-            @if (field.identity?.strategy) {
+            @if (isIdentityField(field.name)) {
               <span class="field-badge">
                 PK
               </span>

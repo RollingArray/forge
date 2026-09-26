@@ -15,6 +15,7 @@ Email: ranjoy.sen@collins.com
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIFieldProposal,
+    AIIdentityProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -48,6 +49,22 @@ class AIService:
         """Generate representative semantic field values for preview."""
 
         return self._provider.preview_semantic_values(description)
+
+    def propose_identity(
+        self,
+        mode: str,
+        entity_name: str,
+        fields: list[dict[str, object]],
+        request: str,
+        existing_identity: dict[str, object] | None = None,
+    ) -> AIIdentityProposal:
+        return self._provider.propose_identity(
+            mode=mode,
+            entity_name=entity_name,
+            fields=fields,
+            request=request,
+            existing_identity=existing_identity,
+        )
 
     def propose_field(
         self,

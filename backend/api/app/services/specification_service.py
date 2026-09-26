@@ -145,6 +145,95 @@ class SpecificationService:
         return entity
 
 
+
+    def update_entity_identity(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        entity_name: str,
+        fields: list[str],
+    ) -> dict[str, Any] | None:
+        """Define the identity fields for an existing entity."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        entity = next(
+            (
+                item
+                for item in specification.get("entities", [])
+                if item.get("name") == entity_name
+            ),
+            None,
+        )
+
+        if entity is None:
+            raise ValueError(
+                f"Unknown entity: {entity_name}"
+            )
+
+        entity_fields = {
+            field.get("name")
+            for field in entity.get("fields", [])
+        }
+
+        unknown_fields = [
+            field
+            for field in fields
+            if field not in entity_fields
+        ]
+
+        if unknown_fields:
+            raise ValueError(
+                "Unknown identity field(s): "
+                + ", ".join(unknown_fields)
+            )
+
+        candidate = deepcopy(specification)
+
+        candidate_entity = next(
+            item
+            for item in candidate["entities"]
+            if item.get("name") == entity_name
+        )
+
+        candidate_entity["identity"] = {
+            "fields": list(fields),
+        }
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.ENTITY_UPDATED,
+                title="Entity identity updated",
+                description=(
+                    f"Updated identity for entity "
+                    f"'{entity_name}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "entity_name": entity_name,
+                    "identity_fields": list(fields),
+                    "composite": len(fields) > 1,
+                },
+            )
+
+        return candidate_entity
+
     def create_field(
         self,
         data_model_id: str,
