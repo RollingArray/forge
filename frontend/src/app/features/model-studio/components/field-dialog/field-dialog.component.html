@@ -22,33 +22,28 @@
 
             <h3>Checking FORGE AI assistance</h3>
 
-            <p>Checking whether FORGE AI assistance is available in this environment.</p>
+            <p>
+              Checking whether FORGE AI assistance is available in this environment.
+            </p>
           </div>
         </div>
       } @else if (aiAvailable()) {
-        <app-ai-assist-panel
-          [llmOnline]="aiAvailable()"
-          [llmModel]="aiModel()"
-          [llmMode]="aiMode()"
-          [generating]="false"
-          [proposal]="null"
-          (generate)="handleAiGenerate()"
+        <app-field-ai-assist-panel
+          [generating]="aiGenerating()"
+          [proposal]="aiProposal()"
+          [status]="aiProposalStatus()"
+          [message]="aiProposalMessage()"
+          [error]="aiProposalError()"
+          [prompt]="aiPrompt()"
+          (promptChange)="aiPrompt.set($event)"
+          (generate)="handleAiGenerate($event)"
           (regenerate)="regenerateAiProposal()"
           (useProposal)="useAiProposal()"
         />
-
-        <div class="ai-contract-notice">
-          <span class="material-symbols-outlined"> info </span>
-
-          <span>
-            Field-specific AI authoring will be connected when the production field proposal
-            contract is available.
-          </span>
-        </div>
       } @else {
         <div class="ai-unavailable-state">
           <div class="ai-state-icon unavailable">
-            <span class="material-symbols-outlined"> cloud_off </span>
+            <span class="material-symbols-outlined">cloud_off</span>
           </div>
 
           <div class="ai-state-content">
@@ -60,7 +55,9 @@
               {{ aiCapabilityMessage() }}
             </p>
 
-            <span class="ai-state-hint"> You can continue by defining the field manually. </span>
+            <span class="ai-state-hint">
+              You can continue by defining the field manually.
+            </span>
           </div>
         </div>
       }

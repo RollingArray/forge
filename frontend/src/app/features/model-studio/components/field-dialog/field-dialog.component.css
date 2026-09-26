@@ -4,7 +4,7 @@
 
 .field-dialog-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
   gap: 0;
   padding: 0;
   align-items: stretch;
@@ -12,9 +12,14 @@
 
 .dialog-column {
   min-width: 0;
+  height: 700px;
+  box-sizing: border-box;
 }
 
 .ai-column {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
   margin: 20px 0 20px 20px;
   padding: 20px;
   border: 1px solid #d8cef2;
@@ -34,7 +39,6 @@
 .manual-column {
   display: flex;
   min-width: 0;
-  max-height: 700px;
   flex-direction: column;
   gap: 20px;
   margin: 20px 20px 20px 0;
@@ -50,7 +54,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  width: 58px;
+  min-height: 100%;
 }
 
 .choice-divider::before {

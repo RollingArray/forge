@@ -12,8 +12,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification.interface';
+import { AIFieldProposal } from '../../../../core/interfaces/ai-field-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
-import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
+import { FieldAiAssistPanelComponent } from '../field-ai-assist-panel/field-ai-assist-panel.component';
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { DistributionPreviewComponent } from '../../../../shared/components/distribution-preview/distribution-preview.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
@@ -49,7 +50,7 @@ export type FieldDraft = {
   imports: [
     FormsModule,
     FormDialogComponent,
-    AiAssistPanelComponent,
+    FieldAiAssistPanelComponent,
     PatternGeneratorComponent,
     SemanticGeneratorComponent,
     FieldParameterHeaderComponent,
@@ -65,6 +66,7 @@ export class FieldDialogComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly field = input<ForgeSpecificationField | null>(null);
+  readonly entityName = input.required<string>();
 
   readonly saved = output<FieldDraft>();
   readonly closed = output<void>();
@@ -94,8 +96,18 @@ export class FieldDialogComponent {
   readonly aiModel = signal<string | null>(null);
   readonly aiMode = signal<string | null>(null);
   readonly aiCapabilityMessage = signal(
-    'Field-specific FORGE AI assistance is not available yet.',
+    'FORGE AI field authoring is available.',
   );
+
+  readonly aiPrompt = signal('');
+  readonly aiGenerating = signal(false);
+  readonly aiProposal = signal<AIFieldProposal | null>(null);
+  readonly aiProposalMessage = signal('');
+  readonly aiProposalStatus = signal<
+    'PROPOSE' | 'CLARIFY' | 'UNSUPPORTED' | null
+  >(null);
+  readonly aiProposalError = signal('');
+
 
   constructor() {
     effect(() => {
@@ -461,19 +473,144 @@ export class FieldDialogComponent {
     this.generator.set('');
   }
 
-  handleAiGenerate(): void {
-    /*
-     * Field-specific AI proposal generation is intentionally not connected
-     * until the production backend exposes a field proposal contract.
-     */
+  handleAiGenerate(prompt?: string): void {
+    const request = (prompt ?? this.aiPrompt()).trim();
+
+    if (!request || this.aiGenerating()) {
+      return;
+    }
+
+    this.aiPrompt.set(request);
+    this.aiGenerating.set(true);
+    this.aiProposal.set(null);
+    this.aiProposalMessage.set('');
+    this.aiProposalStatus.set(null);
+    this.aiProposalError.set('');
+
+    this.aiService
+      .proposeField({
+        mode: this.isEditMode ? 'EDIT' : 'CREATE',
+        entityName: this.entityName(),
+        request,
+        existingField: this.isEditMode && this.field()
+          ? {
+              name: this.field()!.name,
+              type: this.field()!.type,
+              identity: this.field()!.identity ?? null,
+              generation: this.field()!.generation ?? null,
+            }
+          : null,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.aiProposalStatus.set(response.status);
+          this.aiProposalMessage.set(response.message);
+          this.aiProposal.set(response.proposal);
+          this.aiGenerating.set(false);
+        },
+        error: (error) => {
+          console.error(
+            '[FORGE FieldDialog] Field AI proposal failed:',
+            error,
+          );
+
+          this.aiProposal.set(null);
+          this.aiProposalStatus.set(null);
+          this.aiProposalMessage.set('');
+          this.aiProposalError.set(
+            'FORGE AI could not generate a field proposal. You can continue by defining the field manually.',
+          );
+          this.aiGenerating.set(false);
+        },
+      });
   }
 
   regenerateAiProposal(): void {
-    // Reserved for the field-specific AI contract.
+    this.handleAiGenerate();
   }
 
   useAiProposal(): void {
-    // Reserved for the field-specific AI contract.
+    const proposal = this.aiProposal();
+
+    if (!proposal) {
+      return;
+    }
+
+    this.applyAiProposal(proposal);
+  }
+
+  private applyAiProposal(proposal: AIFieldProposal): void {
+    this.showValidation.set(false);
+
+    this.name.set(proposal.name);
+    this.type.set(proposal.type);
+
+    this.distribution.set('');
+    this.generator.set('');
+    this.minimum.set('');
+    this.maximum.set('');
+    this.pattern.set('');
+    this.semanticDescription.set('');
+    this.minimumLength.set('');
+    this.maximumLength.set('');
+    this.categoricalValues.set('');
+
+    if (proposal.type === 'IDENTIFIER') {
+      return;
+    }
+
+    const generation = proposal.generation;
+
+    if (!generation) {
+      return;
+    }
+
+    this.distribution.set(generation.distribution ?? '');
+    this.generator.set(generation.generator ?? '');
+
+    const parameters = generation.parameters ?? {};
+
+    if (parameters['minimum'] !== undefined) {
+      this.minimum.set(String(parameters['minimum']));
+    }
+
+    if (parameters['maximum'] !== undefined) {
+      this.maximum.set(String(parameters['maximum']));
+    }
+
+    if (parameters['pattern'] !== undefined) {
+      this.pattern.set(String(parameters['pattern']));
+    }
+
+    if (parameters['description'] !== undefined) {
+      this.semanticDescription.set(String(parameters['description']));
+    }
+
+    if (parameters['minimum_length'] !== undefined) {
+      this.minimumLength.set(String(parameters['minimum_length']));
+    }
+
+    if (parameters['maximum_length'] !== undefined) {
+      this.maximumLength.set(String(parameters['maximum_length']));
+    }
+
+    if (parameters['character_set'] !== undefined) {
+      this.characterSet.set(
+        String(parameters['character_set']) as
+          | 'ALPHA'
+          | 'DIGITS'
+          | 'ALPHANUMERIC',
+      );
+    }
+
+    if (Array.isArray(parameters['values'])) {
+      this.categoricalValues.set(
+        parameters['values']
+          .map((value) => String(value))
+          .join(', '),
+      );
+    }
   }
 
   private buildGeneration(): FieldDraft['generation'] {
@@ -649,7 +786,7 @@ export class FieldDialogComponent {
           this.aiMode.set(capability.mode);
           this.aiCapabilityMessage.set(
             capability.available
-              ? 'Field-specific AI authoring will be enabled when the production field proposal contract is available.'
+              ? 'FORGE AI field authoring is available.'
               : capability.message,
           );
           this.aiCapabilityChecking.set(false);

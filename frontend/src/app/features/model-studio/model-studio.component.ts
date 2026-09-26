@@ -269,6 +269,7 @@ interface StudioStepItem {
       @if (fieldDialogOpen()) {
         <app-model-studio-field-dialog
           [field]="editingField()"
+          [entityName]="selectedEntity()"
           (saved)="handleFieldSaved($event)"
           (closed)="closeFieldDialog()"
         />

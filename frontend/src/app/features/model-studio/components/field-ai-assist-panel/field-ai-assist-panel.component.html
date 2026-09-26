@@ -1,0 +1,160 @@
+<div class="field-ai-panel">
+  <div class="ai-header">
+    <div class="ai-header-icon">
+      <span class="material-symbols-outlined">auto_awesome</span>
+    </div>
+
+    <div>
+      <span class="ai-badge">FORGE AI</span>
+      <h3>Describe the field you want</h3>
+      <p>
+        Tell FORGE what the field should represent. FORGE will propose the field definition for you
+        to review.
+      </p>
+    </div>
+  </div>
+
+  <div class="prompt-section">
+    <textarea
+      [value]="prompt()"
+      (input)="typeChanged($event)"
+      [disabled]="generating()"
+      placeholder="e.g. Create a unique identifier for aerospace components."
+      rows="4"
+    ></textarea>
+
+    <button
+      type="button"
+      class="generate-button"
+      [disabled]="!prompt().trim() || generating()"
+      (click)="submit()"
+    >
+      @if (generating()) {
+        <span class="button-spinner"></span>
+        Generating proposal...
+      } @else {
+        <span class="material-symbols-outlined">auto_awesome</span>
+        Generate field proposal with FORGE AI
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="ai-result error-result">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (status() === 'PROPOSE' && proposal()) {
+    <div class="ai-result proposal-result">
+      <div class="result-header">
+        <div>
+          <span class="result-badge">PROPOSED FIELD</span>
+          <strong>{{ proposal()!.name }}</strong>
+        </div>
+
+        <span class="field-type">{{ proposal()!.type }}</span>
+      </div>
+
+      @if (proposal()!.identity?.strategy) {
+        <div class="definition-row">
+          <span>Generation</span>
+          <strong>{{ proposal()!.identity?.strategy }}</strong>
+        </div>
+      }
+
+      @if (proposal()!.generation?.generator) {
+        <div class="definition-row">
+          <span>Text style</span>
+          <strong>{{ proposal()!.generation?.generator }}</strong>
+        </div>
+      }
+
+      @if (proposal()!.generation?.distribution) {
+        <div class="definition-row">
+          <span>Distribution</span>
+          <strong>{{ proposal()!.generation?.distribution }}</strong>
+        </div>
+      }
+
+      @if (message()) {
+        <p class="proposal-message">{{ message() }}</p>
+      }
+
+      <div class="proposal-actions">
+        <button type="button" class="secondary-button" (click)="regenerate.emit()">
+          <span class="material-symbols-outlined">refresh</span>
+          Regenerate
+        </button>
+
+        <button type="button" class="primary-button" (click)="useProposal.emit()">
+          <span class="material-symbols-outlined">check</span>
+          Use this proposal
+        </button>
+      </div>
+
+      <div class="proposal-note">
+        <span class="material-symbols-outlined">info</span>
+        <span
+          >Review the proposal before using it. You remain in control of the final field
+          definition.</span
+        >
+      </div>
+    </div>
+  }
+
+  @if (status() === 'CLARIFY') {
+    <div class="ai-result clarify-result">
+      <span class="material-symbols-outlined">help</span>
+
+      <div>
+        <strong>FORGE needs a little more detail</strong>
+        <p>{{ message() }}</p>
+      </div>
+    </div>
+  }
+
+  @if (status() === 'UNSUPPORTED') {
+    <div class="ai-result unsupported-result">
+      <span class="material-symbols-outlined">info</span>
+
+      <div>
+        <strong>This request is outside field authoring</strong>
+        <p>{{ message() }}</p>
+      </div>
+    </div>
+  }
+
+  <div class="examples-section">
+    <div class="examples-heading">
+      <span class="material-symbols-outlined">lightbulb</span>
+
+      <div>
+        <strong>Examples of requests</strong>
+        <span>Choose an example to see what you can ask FORGE to create.</span>
+      </div>
+    </div>
+
+    <div class="examples-list">
+      @for (example of examples; track example.label) {
+        <div class="example-button">
+          <div class="example-copy">
+            <span>{{ example.label }}</span>
+            <small>{{ example.prompt }}</small>
+          </div>
+
+          <button
+            type="button"
+            class="example-select-button"
+            [disabled]="generating()"
+            (click)="selectExample(example.prompt)"
+          >
+            Select
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
