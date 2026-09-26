@@ -4,9 +4,7 @@
     <div>
       <span class="eyebrow">Entity</span>
 
-      <h2>
-        {{ entity().name }}
-      </h2>
+      <h2>{{ entity().name }}</h2>
     </div>
 
     <button
@@ -15,207 +13,264 @@
       aria-label="Close entity inspector"
       (click)="closed.emit()"
     >
-      <span class="material-symbols-outlined">
-        close
-      </span>
+      <span class="material-symbols-outlined">close</span>
     </button>
   </div>
 
   <div class="inspector-summary">
     <div>
       <span>Population</span>
-      <strong>
-        {{ entity().population?.count ?? 0 }}
-      </strong>
+      <strong>{{ entity().population?.count ?? 0 }}</strong>
     </div>
 
     <div>
       <span>Fields</span>
-      <strong>
-        {{ entity().fields.length }}
-      </strong>
+      <strong>{{ entity().fields.length }}</strong>
     </div>
   </div>
 
-  <div class="inspector-section">
+  <nav class="inspector-tabs" aria-label="Entity details">
 
-    <div class="section-header">
-      <div>
-        <span class="section-title">
-          Primary Identity
-        </span>
+    <button
+      type="button"
+      class="inspector-tab"
+      [class.active]="activeTab() === 'FIELDS'"
+      (click)="selectTab('FIELDS')"
+    >
+      <span class="material-symbols-outlined">view_column</span>
+      <span>Fields</span>
+      <span class="tab-count">{{ entity().fields.length }}</span>
+    </button>
 
-        @if (identityFieldCount() > 0) {
-          <span class="section-count">
-            {{ identityFieldCount() }}
-          </span>
-        }
-      </div>
-    </div>
+    <button
+      type="button"
+      class="inspector-tab"
+      [class.active]="activeTab() === 'KEYS'"
+      (click)="selectTab('KEYS')"
+    >
+      <span class="material-symbols-outlined">key</span>
+      <span>Keys</span>
 
-    <div class="identity-card">
+      @if (identityFieldCount() > 0) {
+        <span class="tab-count">{{ identityFieldCount() }}</span>
+      }
+    </button>
 
-      <div class="identity-header">
-        <div class="identity-icon">
-          <span class="material-symbols-outlined">
-            key
-          </span>
-        </div>
+    <button
+      type="button"
+      class="inspector-tab"
+      [class.active]="activeTab() === 'RELATIONSHIPS'"
+      (click)="selectTab('RELATIONSHIPS')"
+    >
+      <span class="material-symbols-outlined">account_tree</span>
+      <span>Relationships</span>
+    </button>
 
-        <div class="identity-copy">
-          <strong>
-            @if (identityFieldCount() > 1) {
-              Composite identity
-            } @else {
-              Primary identity
-            }
-          </strong>
+    <button
+      type="button"
+      class="inspector-tab"
+      [class.active]="activeTab() === 'CONSTRAINTS'"
+      (click)="selectTab('CONSTRAINTS')"
+    >
+      <span class="material-symbols-outlined">rule</span>
+      <span>Constraints</span>
+    </button>
 
-          <span>
-            @if (identityFieldCount() === 0) {
-              Select one or more fields.
-            } @else if (identityFieldCount() === 1) {
-              One field identifies this entity.
-            } @else {
-              {{ identityFieldCount() }} fields identify this entity together.
-            }
-          </span>
-        </div>
-      </div>
+  </nav>
 
-      <div class="identity-fields">
-        @for (
-          field of entity().fields;
-          track field.name
-        ) {
-          <label class="identity-field">
-            <input
-              type="checkbox"
-              [checked]="isIdentityField(field.name)"
-              (change)="toggleIdentityField(field.name)"
-            />
+  <div class="inspector-content">
 
-            <span class="identity-field-copy">
-              <strong>
-                {{ field.name }}
-              </strong>
+    @if (activeTab() === 'FIELDS') {
+      <section class="tab-panel">
 
-              <small>
-                {{ field.type }}
-              </small>
+        <div class="section-header">
+          <div>
+            <span class="section-title">Fields</span>
+
+            <span class="section-description">
+              Information defined for this entity.
             </span>
+          </div>
 
-            @if (isIdentityField(field.name)) {
-              <span class="identity-selected">
-                <span class="material-symbols-outlined">
-                  check
-                </span>
-              </span>
-            }
-          </label>
-        }
-      </div>
+          <button
+            type="button"
+            class="add-button"
+            (click)="addField.emit()"
+          >
+            <span class="material-symbols-outlined">add</span>
+            Add Field
+          </button>
+        </div>
 
-      <button
-        type="button"
-        class="save-identity-button"
-        [disabled]="identityFieldCount() === 0"
-        (click)="saveIdentity()"
-      >
-        <span class="material-symbols-outlined">
-          save
-        </span>
+        @if (entity().fields.length === 0) {
+          <div class="empty-state">
+            <span class="material-symbols-outlined">view_column</span>
 
-        Save Identity
-      </button>
+            <strong>No fields defined yet</strong>
 
-    </div>
+            <p>
+              Add fields to describe the information this entity contains.
+            </p>
+          </div>
+        } @else {
+          <div class="field-list">
+            @for (field of entity().fields; track field.name) {
+              <div class="field-row">
 
-  </div>
+                <div class="field-icon">
+                  <span class="material-symbols-outlined">
+                    @if (field.type === 'IDENTIFIER') {
+                      key
+                    } @else {
+                      data_object
+                    }
+                  </span>
+                </div>
 
-  <div class="inspector-section fields-section">
+                <div class="field-details">
+                  <strong>{{ field.name }}</strong>
+                  <span>{{ field.type }}</span>
+                </div>
 
-    <div class="section-header">
-      <div>
-        <span class="section-title">
-          Fields
-        </span>
-
-        <span class="section-count">
-          {{ entity().fields.length }}
-        </span>
-      </div>
-
-      <button
-        type="button"
-        class="add-button"
-        (click)="addField.emit()"
-      >
-        <span class="material-symbols-outlined">
-          add
-        </span>
-
-        Add Field
-      </button>
-    </div>
-
-    @if (entity().fields.length === 0) {
-      <div class="empty-fields">
-        <span class="material-symbols-outlined">
-          view_column
-        </span>
-
-        <p>
-          No fields defined yet.
-        </p>
-      </div>
-    } @else {
-      <div class="field-list">
-        @for (
-          field of entity().fields;
-          track field.name
-        ) {
-          <div class="field-row">
-            <div class="field-icon">
-              <span class="material-symbols-outlined">
-                @if (field.type === 'IDENTIFIER') {
-                  key
-                } @else {
-                  data_object
+                @if (isIdentityField(field.name)) {
+                  <span class="field-badge">PK</span>
                 }
-              </span>
+
+                <button
+                  type="button"
+                  class="field-action"
+                  aria-label="Edit field"
+                  title="Edit field"
+                  (click)="editField.emit(field)"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+
+              </div>
+            }
+          </div>
+        }
+
+      </section>
+    }
+
+    @if (activeTab() === 'KEYS') {
+      <section class="tab-panel">
+
+        <div class="section-header">
+          <div>
+            <span class="section-title">Keys</span>
+
+            <span class="section-description">
+              Fields that identify records in this entity.
+            </span>
+          </div>
+        </div>
+
+        <div class="key-card">
+
+          <div class="key-card-header">
+            <div class="key-icon">
+              <span class="material-symbols-outlined">key</span>
             </div>
 
-            <div class="field-details">
+            <div class="key-copy">
               <strong>
-                {{ field.name }}
+                @if (identityFieldCount() > 1) {
+                  Composite Primary Identity
+                } @else {
+                  Primary Identity
+                }
               </strong>
 
               <span>
-                {{ field.type }}
+                @if (identityFieldCount() === 0) {
+                  No primary identity has been defined.
+                } @else if (identityFieldCount() === 1) {
+                  One field identifies each record.
+                } @else {
+                  {{ identityFieldCount() }} fields identify each record together.
+                }
               </span>
             </div>
-
-            @if (isIdentityField(field.name)) {
-              <span class="field-badge">
-                PK
-              </span>
-            }
-
-            <button
-              type="button"
-              class="field-action"
-              aria-label="Edit field"
-              title="Edit field"
-              (click)="editField.emit(field)"
-            >
-              <span class="material-symbols-outlined">
-                edit
-              </span>
-            </button>
           </div>
-        }
-      </div>
+
+          @if (identityFieldCount() === 0) {
+            <div class="key-empty">
+              <span class="material-symbols-outlined">key_off</span>
+
+              <p>
+                Define which existing fields form the identity of this entity.
+              </p>
+            </div>
+          } @else {
+            <div class="key-field-list">
+              @for (fieldName of identityFields(); track fieldName) {
+                <div class="key-field">
+                  <span class="material-symbols-outlined">key</span>
+                  <strong>{{ fieldName }}</strong>
+                </div>
+              }
+            </div>
+          }
+
+          <button
+            type="button"
+            class="primary-action"
+            (click)="editIdentity.emit()"
+          >
+            <span class="material-symbols-outlined">
+              {{ identityFieldCount() > 0 ? 'edit' : 'add' }}
+            </span>
+
+            {{ identityFieldCount() > 0 ? 'Edit Identity' : 'Add Identity' }}
+          </button>
+
+        </div>
+
+      </section>
+    }
+
+    @if (activeTab() === 'RELATIONSHIPS') {
+      <section class="tab-panel">
+
+        <div class="empty-state large">
+          <span class="material-symbols-outlined">account_tree</span>
+
+          <strong>No relationships defined</strong>
+
+          <p>
+            Relationships between entities will appear here.
+          </p>
+
+          <button type="button" class="secondary-action">
+            <span class="material-symbols-outlined">add</span>
+            Add Relationship
+          </button>
+        </div>
+
+      </section>
+    }
+
+    @if (activeTab() === 'CONSTRAINTS') {
+      <section class="tab-panel">
+
+        <div class="empty-state large">
+          <span class="material-symbols-outlined">rule</span>
+
+          <strong>No constraints defined</strong>
+
+          <p>
+            Rules that restrict generated values will appear here.
+          </p>
+
+          <button type="button" class="secondary-action">
+            <span class="material-symbols-outlined">add</span>
+            Add Constraint
+          </button>
+        </div>
+
+      </section>
     }
 
   </div>

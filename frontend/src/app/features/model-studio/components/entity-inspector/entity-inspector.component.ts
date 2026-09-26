@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  effect,
   input,
   output,
   signal,
@@ -11,6 +10,12 @@ import {
   ForgeSpecificationEntity,
   ForgeSpecificationField,
 } from '../../../../core/interfaces/forge-specification.interface';
+
+type InspectorTab =
+  | 'FIELDS'
+  | 'KEYS'
+  | 'RELATIONSHIPS'
+  | 'CONSTRAINTS';
 
 @Component({
   selector: 'app-model-studio-entity-inspector',
@@ -24,50 +29,24 @@ export class EntityInspectorComponent {
 
   readonly addField = output<void>();
   readonly editField = output<ForgeSpecificationField>();
-  readonly identitySaved = output<string[]>();
+  readonly editIdentity = output<void>();
   readonly closed = output<void>();
 
-  readonly selectedIdentityFields = signal<string[]>([]);
+  readonly activeTab = signal<InspectorTab>('FIELDS');
 
-  constructor() {
-    effect(() => {
-      this.selectedIdentityFields.set(
-        [...(this.entity().identity?.fields ?? [])],
-      );
-    });
-  }
-
-  isIdentityField(fieldName: string): boolean {
-    return this.selectedIdentityFields().includes(fieldName);
+  selectTab(tab: InspectorTab): void {
+    this.activeTab.set(tab);
   }
 
   identityFieldCount(): number {
-    return this.selectedIdentityFields().length;
+    return this.entity().identity?.fields?.length ?? 0;
   }
 
-  toggleIdentityField(fieldName: string): void {
-    const current = this.selectedIdentityFields();
-
-    if (current.includes(fieldName)) {
-      this.selectedIdentityFields.set(
-        current.filter((field) => field !== fieldName),
-      );
-      return;
-    }
-
-    this.selectedIdentityFields.set([
-      ...current,
-      fieldName,
-    ]);
+  identityFields(): string[] {
+    return this.entity().identity?.fields ?? [];
   }
 
-  saveIdentity(): void {
-    const fields = this.selectedIdentityFields();
-
-    if (fields.length === 0) {
-      return;
-    }
-
-    this.identitySaved.emit([...fields]);
+  isIdentityField(fieldName: string): boolean {
+    return this.identityFields().includes(fieldName);
   }
 }

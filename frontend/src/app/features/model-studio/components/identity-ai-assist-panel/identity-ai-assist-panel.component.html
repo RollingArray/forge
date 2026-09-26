@@ -1,0 +1,208 @@
+<section class="identity-ai-panel">
+  <div class="ai-recommended-badge">
+    <span class="material-symbols-outlined">auto_awesome</span>
+    Recommended
+  </div>
+
+  <header class="ai-assist-header">
+    <div class="ai-assist-icon">
+      <span class="material-symbols-outlined">auto_awesome</span>
+    </div>
+
+    <div class="ai-assist-header-content">
+      <div class="ai-assist-title-row">
+        <h3>Start with FORGE AI</h3>
+
+        @if (!capabilityLoading()) {
+          <span
+            class="llm-status"
+            [class.online]="capability()?.available"
+            [class.offline]="!capability()?.available"
+          >
+            <span class="llm-status-dot"></span>
+            {{ capability()?.available ? 'Online' : 'Offline' }}
+          </span>
+        }
+      </div>
+
+      <p>
+        Describe the identity you want in natural language. FORGE AI will
+        propose the field or fields for you to review.
+      </p>
+
+      @if (capability()?.available && capability()?.model) {
+        <span class="llm-details">
+          {{ capability()?.model }}
+
+          @if (capability()?.mode) {
+            <span class="llm-details-separator">·</span>
+            {{ capability()?.mode }}
+          }
+        </span>
+      }
+    </div>
+  </header>
+
+  <div class="ai-assist-input">
+    <textarea
+      rows="7"
+      [value]="prompt()"
+      (input)="typeChanged($event)"
+      [disabled]="generating() || !capability()?.available"
+      placeholder="e.g. Use <field_1> as the unique identity for this entity."
+      aria-label="Describe the identity you want FORGE AI to propose"
+    ></textarea>
+
+    <div class="ai-assist-input-footer">
+      <span class="ai-hint">
+        <span class="material-symbols-outlined">tips_and_updates</span>
+        Describe which existing field or fields uniquely identify each record.
+      </span>
+
+      <button
+        type="button"
+        class="generate-button"
+        [disabled]="
+          !prompt().trim() ||
+          generating() ||
+          !capability()?.available
+        "
+        (click)="submit()"
+      >
+        @if (generating()) {
+          <span class="material-symbols-outlined spin">sync</span>
+          Generating...
+        } @else {
+          <span class="material-symbols-outlined">auto_awesome</span>
+          Generate with FORGE AI
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="ai-result error-result">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (status() === 'PROPOSE' && proposal()) {
+    <div class="ai-result proposal-result">
+      <div class="result-header">
+        <span class="result-badge">PROPOSED IDENTITY</span>
+
+        <strong>
+          {{
+            proposal()!.fields.length === 1
+              ? 'Single-field identity'
+              : 'Composite identity'
+          }}
+        </strong>
+      </div>
+
+      <div class="proposed-fields">
+        @for (field of proposal()!.fields; track field) {
+          <span class="field-chip">{{ field }}</span>
+        }
+      </div>
+
+      @if (message()) {
+        <p class="proposal-message">{{ message() }}</p>
+      }
+
+      <div class="proposal-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="regenerate.emit()"
+        >
+          <span class="material-symbols-outlined">refresh</span>
+          Regenerate
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="useProposal.emit()"
+        >
+          <span class="material-symbols-outlined">check</span>
+          Use this proposal
+        </button>
+      </div>
+
+      <div class="proposal-note">
+        <span class="material-symbols-outlined">info</span>
+        <span>
+          Review the proposal before using it. You remain in control of
+          the final identity.
+        </span>
+      </div>
+    </div>
+  }
+
+  @if (status() === 'CLARIFY') {
+    <div class="ai-result clarify-result">
+      <span class="material-symbols-outlined">help</span>
+
+      <div>
+        <strong>FORGE needs a little more detail</strong>
+        <p>{{ message() }}</p>
+      </div>
+    </div>
+  }
+
+  @if (status() === 'UNSUPPORTED') {
+    <div class="ai-result unsupported-result">
+      <span class="material-symbols-outlined">info</span>
+
+      <div>
+        <strong>This request is outside identity authoring</strong>
+        <p>{{ message() }}</p>
+      </div>
+    </div>
+  }
+
+  <div class="examples-section">
+    <div class="examples-heading">
+      <span class="material-symbols-outlined">lightbulb</span>
+
+      <div>
+        <strong>Examples of requests</strong>
+        <span>Choose an example to see what you can ask FORGE.</span>
+      </div>
+    </div>
+
+    <div class="examples-list">
+      @for (example of examples; track example.label) {
+        <div class="example-button">
+          <div class="example-copy">
+            <span>{{ example.label }}</span>
+            <small>{{ example.prompt }}</small>
+          </div>
+
+          <button
+            type="button"
+            class="example-select-button"
+            [disabled]="generating() || !capability()?.available"
+            (click)="selectExample(example.prompt)"
+          >
+            Select
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="ai-assist-empty">
+    <span class="material-symbols-outlined">lightbulb</span>
+
+    <div>
+      <strong>AI proposes. You decide.</strong>
+      <p>
+        Review the suggestion and apply it to the identity when you're ready.
+      </p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,129 @@
+<app-form-dialog
+  [title]="identityFields().length > 0 ? 'Edit Entity Identity' : 'Add Entity Identity'"
+  subtitle="Choose the field or fields that uniquely identify each record."
+  icon="key"
+  width="1080px"
+  (closed)="close()"
+>
+  <div dialog-body class="identity-dialog">
+    <section class="identity-column ai-column">
+      <app-identity-ai-assist-panel
+        [generating]="aiGenerating()"
+        [proposal]="aiProposal()"
+        [status]="aiProposalStatus()"
+        [message]="aiProposalMessage()"
+        [error]="aiProposalError()"
+        [prompt]="aiPrompt()"
+        (promptChange)="aiPrompt.set($event)"
+        (generate)="handleAiGenerate($event)"
+        (regenerate)="regenerateAiProposal()"
+        (useProposal)="useAiProposal()"
+      />
+    </section>
+
+    <app-choice-divider />
+
+    <section class="identity-column manual-column">
+      <div class="manual-column-header">
+        <span class="manual-column-title">Define the identity</span>
+        <span class="manual-column-description">
+          Choose the field or fields that uniquely identify each record.
+        </span>
+      </div>
+
+      <label class="search-field">
+        <span>Identity fields</span>
+        <span class="field-help">
+          Select one or more existing fields.
+        </span>
+
+        <div class="field-search">
+          <span class="material-symbols-outlined">search</span>
+
+          <input
+            type="text"
+            placeholder="Search fields..."
+            [value]="searchTerm()"
+            (input)="searchTerm.set($any($event.target).value)"
+          />
+        </div>
+      </label>
+
+      <div class="field-list">
+        @for (field of availableFields(); track field) {
+          <button
+            type="button"
+            class="field-option"
+            [class.field-option--selected]="isSelected(field)"
+            (click)="toggleField(field)"
+          >
+            <span class="field-option__check">
+              @if (isSelected(field)) {
+                <span class="material-symbols-outlined">check</span>
+              }
+            </span>
+
+            <span class="field-option__content">
+              <strong>{{ field }}</strong>
+              <small>
+                {{
+                  entity().fields.find(
+                    (entityField) => entityField.name === field
+                  )?.type
+                }}
+              </small>
+            </span>
+          </button>
+        } @empty {
+          <div class="empty-state">
+            No fields match your search.
+          </div>
+        }
+      </div>
+
+      <div class="selection-summary">
+        <div class="selection-summary__heading">
+          <span class="material-symbols-outlined">key</span>
+          <span>Selected identity</span>
+        </div>
+
+        @if (selectedFields().length > 0) {
+          <div class="selected-fields">
+            @for (fieldName of selectedFields(); track fieldName) {
+              <span class="field-chip">
+                {{ fieldName }}
+              </span>
+            }
+          </div>
+
+          <p>
+            @if (selectedFields().length === 1) {
+              This field uniquely identifies each record.
+            } @else {
+              These fields together form a composite identity.
+            }
+          </p>
+        } @else {
+          <p>No identity field selected.</p>
+        }
+      </div>
+    </section>
+  </div>
+
+  <div dialog-footer class="dialog-footer">
+    <button type="button" class="cancel-button" (click)="close()">
+      Cancel
+    </button>
+
+    <div class="dialog-actions">
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="selectedFields().length === 0"
+        (click)="save()"
+      >
+        Save Identity
+      </button>
+    </div>
+  </div>
+</app-form-dialog>

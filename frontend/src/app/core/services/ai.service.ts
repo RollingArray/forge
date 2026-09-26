@@ -20,6 +20,7 @@ import {
 } from '../interfaces/ai-field-proposal.interface';
 import { AISemanticPreview } from '../interfaces/ai-semantic-preview.interface';
 import { AIDataModelProposal } from '../interfaces/ai-data-model-proposal.interface';
+import { AIIdentityProposalRequest, AIIdentityProposalResponse } from '../interfaces/ai-identity-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
@@ -91,6 +92,27 @@ export class AIService {
           ),
         },
       );
+  }
+
+  proposeIdentity(
+    request: AIIdentityProposalRequest,
+  ): Observable<AIIdentityProposalResponse> {
+    return this.http.post<AIIdentityProposalResponse>(
+      '/api/v1/ai/identity/propose',
+      {
+        mode: request.mode,
+        entity_name: request.entityName,
+        fields: request.fields,
+        request: request.request,
+        existing_identity: request.existingIdentity ?? null,
+      },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.GeneratingIdentityProposalWithAI,
+        ),
+      },
+    );
   }
 
   suggestDataModel(prompt: string): Observable<AIDataModelProposal> {

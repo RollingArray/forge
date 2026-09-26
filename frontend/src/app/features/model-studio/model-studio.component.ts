@@ -32,6 +32,7 @@ import { ModelCanvasComponent } from './components/model-canvas/model-canvas.com
 import { EntityDialogComponent } from './components/entity-dialog/entity-dialog.component';
 import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
 import { FieldDialogComponent, FieldDraft } from './components/field-dialog/field-dialog.component';
+import { IdentityDialogComponent } from './components/identity-dialog/identity-dialog.component';
 
 type StudioStep =
   | 'model'
@@ -49,7 +50,13 @@ interface StudioStepItem {
 @Component({
   selector: 'app-model-studio',
   standalone: true,
-  imports: [ModelCanvasComponent, EntityDialogComponent, EntityInspectorComponent, FieldDialogComponent],
+  imports: [
+    ModelCanvasComponent,
+    EntityDialogComponent,
+    EntityInspectorComponent,
+    FieldDialogComponent,
+    IdentityDialogComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="model-studio-page">
@@ -236,7 +243,7 @@ interface StudioStepItem {
                 [entity]="entity"
                 (addField)="openFieldDialog()"
                 (editField)="openFieldEditDialog($event)"
-                (identitySaved)="handleIdentitySaved($event)"
+                (editIdentity)="openIdentityDialog()"
                 (closed)="selectedEntity.set('')"
               />
             }
@@ -274,6 +281,16 @@ interface StudioStepItem {
           (saved)="handleFieldSaved($event)"
           (closed)="closeFieldDialog()"
         />
+      }
+
+      @if (identityDialogOpen()) {
+        @if (selectedEntityData(); as entity) {
+          <app-model-studio-identity-dialog
+            [entity]="entity"
+            (saved)="handleIdentitySaved($event)"
+            (closed)="closeIdentityDialog()"
+          />
+        }
       }
 
     </section>
@@ -679,6 +696,9 @@ export class ModelStudioComponent {
   readonly editingField =
     signal<ForgeSpecificationField | null>(null);
 
+  readonly identityDialogOpen =
+    signal(false);
+
   readonly errorMessage = signal<string | null>(null);
 
   readonly steps: readonly StudioStepItem[] = [
@@ -760,6 +780,18 @@ export class ModelStudioComponent {
     this.entityDialogOpen.set(false);
   }
 
+  openIdentityDialog(): void {
+    if (!this.selectedEntity()) {
+      return;
+    }
+
+    this.identityDialogOpen.set(true);
+  }
+
+  closeIdentityDialog(): void {
+    this.identityDialogOpen.set(false);
+  }
+
   handleIdentitySaved(fields: string[]): void {
     const dataModelId =
       this.route.snapshot.paramMap.get('dataModelId');
@@ -781,12 +813,13 @@ export class ModelStudioComponent {
       )
       .subscribe({
         next: () => {
+          this.closeIdentityDialog();
           this.loadSpecification(dataModelId);
         },
         error: (error: { error?: { detail?: string } }) => {
           this.errorMessage.set(
             error.error?.detail ??
-            'Unable to update entity identity.',
+            'Unable to update the entity identity.',
           );
         },
       });
