@@ -19,6 +19,7 @@ import { ColorPickerComponent } from '../../../../shared/components/color-picker
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { TagInputComponent } from '../../../../shared/components/tag-input/tag-input.component';
+import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 
 @Component({
   selector: 'app-data-model-dialog',
@@ -29,6 +30,7 @@ import { TagInputComponent } from '../../../../shared/components/tag-input/tag-i
     FormDialogComponent,
     AiAssistPanelComponent,
     TagInputComponent,
+    ChoiceDividerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './data-model-dialog.component.html',

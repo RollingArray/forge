@@ -21,6 +21,7 @@ import { FormDialogComponent } from '../../../../shared/components/form-dialog/f
 import { FieldParameterHeaderComponent } from '../../../../shared/components/field-parameter-header/field-parameter-header.component';
 import { PatternGeneratorComponent } from '../../../../shared/components/pattern-generator/pattern-generator.component';
 import { SemanticGeneratorComponent } from '../../../../shared/components/semantic-generator/semantic-generator.component';
+import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 
 export type FieldType =
   | 'IDENTIFIER'
@@ -56,7 +57,8 @@ export type FieldDraft = {
     FieldParameterHeaderComponent,
     ChoiceCardComponent,
     DistributionPreviewComponent,
-],
+    ChoiceDividerComponent,
+  ],
   templateUrl: './field-dialog.component.html',
   styleUrl: './field-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
