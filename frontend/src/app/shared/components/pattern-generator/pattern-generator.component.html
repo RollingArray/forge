@@ -1,0 +1,46 @@
+<div class="pattern-generator">
+  <div class="pattern-input-section">
+    <label class="pattern-label" for="pattern-value">
+      Pattern
+    </label>
+
+    <input
+      id="pattern-value"
+      class="pattern-input"
+      type="text"
+      [ngModel]="pattern()"
+      (ngModelChange)="updatePattern($event)"
+      placeholder="e.g. ORD-#####"
+    />
+
+    @if (showValidation() && !pattern().trim()) {
+      <small class="validation-message">
+        Enter a pattern for the generated values.
+      </small>
+    }
+  </div>
+
+  <div class="token-reference">
+    <div class="token-reference-title">
+      Pattern characters
+    </div>
+
+    <div class="token-grid">
+      @for (token of tokens; track token.symbol) {
+        <div class="token-item">
+          <span class="token-symbol">{{ token.symbol }}</span>
+
+          <div class="token-copy">
+            <strong>{{ token.meaning }}</strong>
+            <small>{{ token.example }}</small>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="mini-example">
+    <span>Example result</span>
+    <strong>{{ previewPattern(pattern()) }}</strong>
+  </div>
+</div>

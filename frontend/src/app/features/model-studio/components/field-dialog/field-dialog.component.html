@@ -1,0 +1,548 @@
+<app-form-dialog
+  [title]="title"
+  [subtitle]="
+    isEditMode
+      ? 'Update what this field represents and how FORGE should create its values.'
+      : 'Describe the kind of information this field should contain.'
+  "
+  icon="view_column"
+  width="1080px"
+  (closed)="close()"
+>
+  <div dialog-body class="field-dialog-body">
+    <div class="dialog-column ai-column">
+      @if (aiCapabilityChecking()) {
+        <div class="ai-unavailable-state">
+          <div class="ai-state-icon checking">
+            <span class="ai-check-spinner"></span>
+          </div>
+
+          <div class="ai-state-content">
+            <span class="ai-state-badge checking"> Checking </span>
+
+            <h3>Checking FORGE AI assistance</h3>
+
+            <p>Checking whether FORGE AI assistance is available in this environment.</p>
+          </div>
+        </div>
+      } @else if (aiAvailable()) {
+        <app-ai-assist-panel
+          [llmOnline]="aiAvailable()"
+          [llmModel]="aiModel()"
+          [llmMode]="aiMode()"
+          [generating]="false"
+          [proposal]="null"
+          (generate)="handleAiGenerate()"
+          (regenerate)="regenerateAiProposal()"
+          (useProposal)="useAiProposal()"
+        />
+
+        <div class="ai-contract-notice">
+          <span class="material-symbols-outlined"> info </span>
+
+          <span>
+            Field-specific AI authoring will be connected when the production field proposal
+            contract is available.
+          </span>
+        </div>
+      } @else {
+        <div class="ai-unavailable-state">
+          <div class="ai-state-icon unavailable">
+            <span class="material-symbols-outlined"> cloud_off </span>
+          </div>
+
+          <div class="ai-state-content">
+            <span class="ai-state-badge unavailable"> Unavailable </span>
+
+            <h3>FORGE AI unavailable</h3>
+
+            <p>
+              {{ aiCapabilityMessage() }}
+            </p>
+
+            <span class="ai-state-hint"> You can continue by defining the field manually. </span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="choice-divider" aria-hidden="true">
+      <span>OR</span>
+    </div>
+
+    <div class="dialog-column manual-column">
+      <div class="manual-column-header">
+        <span class="manual-column-title"> Define the field </span>
+
+        <span class="manual-column-description">
+          You don't need to know database terminology. Choose the option that best describes the
+          information you want.
+        </span>
+      </div>
+
+      <label for="field-name">
+        <span>Field Name</span>
+
+        <small class="field-help">
+          Give the field a clear name that identifies the information it stores.
+        </small>
+
+        <input
+          id="field-name"
+          type="text"
+          maxlength="120"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          placeholder="e.g. customer_name"
+          autocomplete="off"
+        />
+
+        <small class="field-example"> Example: <strong>customer_name</strong> </small>
+
+        @if (nameValidationMessage) {
+          <small class="validation-message">{{ nameValidationMessage }}</small>
+        }
+      </label>
+
+      <section class="choice-section">
+        <div class="choice-section-heading">
+          <div>
+            <span>What kind of information is this?</span>
+
+            <small> Choose the description that best matches your field. </small>
+          </div>
+        </div>
+
+        <div class="choice-grid field-type-grid">
+          <app-choice-card
+            icon="key"
+            title="Unique ID"
+            description="A value that identifies each record uniquely."
+            example="1001 · 1002 · 1003"
+            [selected]="type() === 'IDENTIFIER'"
+            (selectedChange)="handleTypeChanged('IDENTIFIER')"
+          />
+
+          <app-choice-card
+            icon="text_fields"
+            title="Text"
+            description="Names, descriptions, codes or other text."
+            example="John Smith · Boeing 737"
+            [selected]="type() === 'STRING'"
+            (selectedChange)="handleTypeChanged('STRING')"
+          />
+
+          <app-choice-card
+            icon="pin"
+            title="Whole Number"
+            description="Numbers without decimal places."
+            example="10 · 250 · 1000"
+            [selected]="type() === 'INTEGER'"
+            (selectedChange)="handleTypeChanged('INTEGER')"
+          />
+
+          <app-choice-card
+            icon="decimal_increase"
+            title="Decimal Number"
+            description="Numbers that can contain decimal places."
+            example="12.50 · 98.73 · 145.20"
+            [selected]="type() === 'DECIMAL'"
+            (selectedChange)="handleTypeChanged('DECIMAL')"
+          />
+
+          <app-choice-card
+            icon="toggle_on"
+            title="Yes / No"
+            description="Information with two possible states."
+            example="Yes · No"
+            [selected]="type() === 'BOOLEAN'"
+            (selectedChange)="handleTypeChanged('BOOLEAN')"
+          />
+
+          <app-choice-card
+            icon="category"
+            title="Choice / Category"
+            description="A value selected from a defined set of choices."
+            example="Bronze · Silver · Gold"
+            [selected]="type() === 'CATEGORICAL'"
+            (selectedChange)="handleTypeChanged('CATEGORICAL')"
+          />
+        </div>
+      </section>
+
+      @if (type() === 'IDENTIFIER') {
+        <section class="configuration-section">
+          <div class="configuration-heading">
+            <span>How should the IDs be created?</span>
+
+            <small> FORGE will automatically create a unique sequence for this field. </small>
+          </div>
+
+          <div class="explanation-card selected-card">
+            <div class="visual-preview id-preview">
+              <span>1001</span>
+              <span>1002</span>
+              <span>1003</span>
+            </div>
+
+            <div class="configuration-card-copy">
+              <strong>Sequential IDs</strong>
+
+              <span> Each record receives its own sequential identifier. </span>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (type() === 'BOOLEAN') {
+        <section class="configuration-section">
+          <div class="configuration-heading">
+            <span>How should the values be created?</span>
+
+            <small> FORGE will create a mixture of Yes and No values. </small>
+          </div>
+
+          <div class="explanation-card selected-card">
+            <div class="visual-preview boolean-preview">
+              <span>✓ Yes</span>
+              <span>✕ No</span>
+            </div>
+
+            <div class="configuration-card-copy">
+              <strong>Yes / No values</strong>
+
+              <span> Values are generated using the standard FORGE random strategy. </span>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (showStringGenerator) {
+        <section class="configuration-section">
+          <div class="configuration-heading">
+            <span>What kind of text should FORGE create?</span>
+
+            <small> Choose the style of text that best matches your data. </small>
+          </div>
+
+          <div class="choice-grid generator-grid">
+            <app-choice-card
+              icon="shuffle"
+              title="Random Text"
+              description="Random-looking text without a specific meaning."
+              example="a8Kx92Lm"
+              [selected]="generator() === 'RANDOM_STRING'"
+              (selectedChange)="generator.set('RANDOM_STRING')"
+            />
+
+            <app-choice-card
+              icon="pattern"
+              title="Pattern"
+              description="Values that follow a structure you define."
+              example="ORD-00042"
+              [selected]="generator() === 'PATTERN'"
+              (selectedChange)="generator.set('PATTERN')"
+            />
+
+            <app-choice-card
+              icon="auto_awesome"
+              title="Meaningful Text"
+              description="Text created according to what the field represents."
+              example="John Smith"
+              [selected]="generator() === 'SEMANTIC'"
+              (selectedChange)="generator.set('SEMANTIC')"
+            />
+          </div>
+
+          @if (
+            showValidation() &&
+            type() === 'STRING' &&
+            !generator()
+          ) {
+            <small class="validation-message">
+              Choose how FORGE should generate this text.
+            </small>
+          }
+
+          @if (showRandomStringParameters) {
+            <div class="parameter-panel">
+              <div class="parameter-panel-title">How long should the text be?</div>
+
+              @if (
+                showValidation() &&
+                generator() === 'RANDOM_STRING' &&
+                configurationValidationMessage
+              ) {
+                <small class="validation-message">
+                  {{ configurationValidationMessage }}
+                </small>
+              }
+
+              <div class="parameter-grid">
+                <label for="minimum-length">
+                  <small>Minimum Length</small>
+
+                  <input
+                    id="minimum-length"
+                    type="number"
+                    min="1"
+                    [ngModel]="minimumLength()"
+                    (ngModelChange)="minimumLength.set(normalizeNumberInput($event))"
+                    placeholder="e.g. 5"
+                  />
+                </label>
+
+                <label for="maximum-length">
+                  <small>Maximum Length</small>
+
+                  <input
+                    id="maximum-length"
+                    type="number"
+                    min="1"
+                    [ngModel]="maximumLength()"
+                    (ngModelChange)="maximumLength.set(normalizeNumberInput($event))"
+                    placeholder="e.g. 20"
+                  />
+                </label>
+              </div>
+
+              <div class="character-set-section">
+                <div class="configuration-heading">
+                  <span>What can the text contain?</span>
+
+                  <small> Choose the characters FORGE can use when creating the text. </small>
+                </div>
+
+                <div class="choice-grid character-set-grid">
+                  <app-choice-card
+                    icon="abc"
+                    title="Letters only"
+                    description="Uses alphabetic characters only."
+                    example="ABCxyz"
+                    [selected]="characterSet() === 'ALPHA'"
+                    (selectedChange)="characterSet.set('ALPHA')"
+                  />
+
+                  <app-choice-card
+                    icon="pin"
+                    title="Numbers only"
+                    description="Uses numeric characters only."
+                    example="123456"
+                    [selected]="characterSet() === 'DIGITS'"
+                    (selectedChange)="characterSet.set('DIGITS')"
+                  />
+
+                  <app-choice-card
+                    icon="text_fields"
+                    title="Letters and numbers"
+                    description="Uses both letters and numbers."
+                    example="A7x92B"
+                    [selected]="characterSet() === 'ALPHANUMERIC'"
+                    (selectedChange)="characterSet.set('ALPHANUMERIC')"
+                  />
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (showPatternParameters) {
+            <div class="parameter-panel">
+
+              <app-field-parameter-header
+                title="What pattern should the values follow?"
+                description="Use the pattern format supported by your FORGE model."
+              />
+
+              <app-pattern-generator
+                [pattern]="pattern()"
+                [showValidation]="showValidation()"
+                (patternChange)="pattern.set($event)"
+              />
+
+            </div>
+          }
+
+          @if (showSemanticParameters) {
+            <div class="parameter-panel">
+              <label for="semantic-description">
+                <span>What should this text represent?</span>
+
+                <small class="field-help">
+                  Describe the kind of information you want FORGE to create.
+                </small>
+
+                <textarea
+                  id="semantic-description"
+                  rows="3"
+                  maxlength="500"
+                  [ngModel]="semanticDescription()"
+                  (ngModelChange)="semanticDescription.set($event)"
+                  placeholder="e.g. A person's full name"
+                ></textarea>
+
+                @if (showValidation() && !semanticDescription().trim()) {
+                  <small class="validation-message">
+                    Describe what this field represents.
+                  </small>
+                }
+              </label>
+
+              <div class="mini-example">
+                <span>Example result</span>
+                <strong>John Smith</strong>
+              </div>
+            </div>
+          }
+        </section>
+      }
+
+      @if (showDistribution) {
+        <section class="configuration-section">
+          <div class="configuration-heading">
+            <span>How should the numbers vary?</span>
+
+            <small> Choose how FORGE should spread the generated values. </small>
+          </div>
+
+          <div class="choice-grid generator-grid">
+            @if (type() === 'INTEGER' || type() === 'DECIMAL') {
+              <app-choice-card
+                icon="linear_scale"
+                title="Evenly Distributed"
+                description="Values are spread fairly evenly across your range."
+                [selected]="distribution() === 'UNIFORM'"
+                (selectedChange)="distribution.set('UNIFORM')"
+              >
+                <app-distribution-preview type="uniform" />
+              </app-choice-card>
+            }
+
+            @if (type() === 'DECIMAL') {
+              <app-choice-card
+                icon="show_chart"
+                title="Bell-Shaped"
+                description="Most values stay near the middle of the range."
+                [selected]="distribution() === 'NORMAL'"
+                (selectedChange)="distribution.set('NORMAL')"
+              >
+                <app-distribution-preview type="normal" />
+              </app-choice-card>
+            }
+
+            @if (type() === 'INTEGER') {
+              <app-choice-card
+                icon="format_list_numbered"
+                title="Whole Numbers Across a Range"
+                description="Creates whole-number values throughout your range."
+                [selected]="distribution() === 'DISCRETE_UNIFORM'"
+                (selectedChange)="distribution.set('DISCRETE_UNIFORM')"
+              >
+                <app-distribution-preview type="discrete-uniform" />
+              </app-choice-card>
+            }
+          </div>
+
+          @if (
+            showValidation() &&
+            !distribution()
+          ) {
+            <small class="validation-message">
+              Choose how values should be distributed.
+            </small>
+          }
+
+          @if (distribution() === 'UNIFORM' || distribution() === 'DISCRETE_UNIFORM') {
+            <div class="parameter-panel">
+              <div class="parameter-panel-title">What range should the values use?</div>
+
+              @if (
+                showValidation() &&
+                configurationValidationMessage
+              ) {
+                <small class="validation-message">
+                  {{ configurationValidationMessage }}
+                </small>
+              }
+
+              <div class="parameter-grid">
+                <label for="minimum">
+                  <small>Minimum</small>
+
+                  <input
+                    id="minimum"
+                    type="number"
+                    [ngModel]="minimum()"
+                    (ngModelChange)="minimum.set(normalizeNumberInput($event))"
+                    placeholder="e.g. 1"
+                  />
+                </label>
+
+                <label for="maximum">
+                  <small>Maximum</small>
+
+                  <input
+                    id="maximum"
+                    type="number"
+                    [ngModel]="maximum()"
+                    (ngModelChange)="maximum.set(normalizeNumberInput($event))"
+                    placeholder="e.g. 100"
+                  />
+                </label>
+              </div>
+            </div>
+          }
+        </section>
+      }
+
+      @if (type() === 'CATEGORICAL') {
+        <section class="configuration-section">
+          <div class="configuration-heading">
+            <span>Which choices are allowed?</span>
+
+            <small> FORGE will generate values only from the choices you provide. </small>
+          </div>
+
+          <div class="category-preview">
+            <span>Example</span>
+
+            <div class="category-pills">
+              <span>Bronze</span>
+              <span>Silver</span>
+              <span>Gold</span>
+            </div>
+          </div>
+
+          <label for="categorical-values">
+            <span>Your choices</span>
+
+            <small class="field-help"> Enter each allowed value separated by commas. </small>
+
+            <input
+              id="categorical-values"
+              type="text"
+              [ngModel]="categoricalValues()"
+              (ngModelChange)="categoricalValues.set($event)"
+              placeholder="e.g. Bronze, Silver, Gold"
+            />
+
+            @if (showValidation() && configurationValidationMessage) {
+              <small class="validation-message">
+                {{ configurationValidationMessage }}
+              </small>
+            }
+          </label>
+        </section>
+      }
+    </div>
+  </div>
+
+  <div dialog-footer class="dialog-footer">
+    <button type="button" class="cancel-button" (click)="close()">Cancel</button>
+
+    <div class="dialog-actions">
+      <button type="button" class="save-button" [disabled]="!canSave()" (click)="save()">
+        {{ submitLabel }}
+      </button>
+    </div>
+  </div>
+</app-form-dialog>

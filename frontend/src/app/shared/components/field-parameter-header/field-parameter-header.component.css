@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.parameter-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.parameter-title {
+  color: #30364d;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.parameter-description {
+  color: #858ca1;
+  font-size: 11px;
+  line-height: 1.5;
+}

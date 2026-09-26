@@ -61,6 +61,7 @@ export interface ForgeSpecificationField {
 export interface ForgeFieldGeneration {
   strategy?: string;
   distribution?: string;
+  generator?: string;
   parameters?: Record<string, unknown>;
 }
 

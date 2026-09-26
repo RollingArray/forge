@@ -1,0 +1,127 @@
+<aside class="inspector">
+
+  <div class="inspector-header">
+    <div>
+      <span class="eyebrow">Entity</span>
+
+      <h2>
+        {{ entity().name }}
+      </h2>
+    </div>
+
+    <button
+      type="button"
+      class="close-button"
+      aria-label="Close entity inspector"
+      (click)="closed.emit()"
+    >
+      <span class="material-symbols-outlined">
+        close
+      </span>
+    </button>
+  </div>
+
+  <div class="inspector-summary">
+    <div>
+      <span>Population</span>
+      <strong>
+        {{ entity().population?.count ?? 0 }}
+      </strong>
+    </div>
+
+    <div>
+      <span>Fields</span>
+      <strong>
+        {{ entity().fields.length }}
+      </strong>
+    </div>
+  </div>
+
+  <div class="inspector-section">
+
+    <div class="section-header">
+      <div>
+        <span class="section-title">
+          Fields
+        </span>
+
+        <span class="section-count">
+          {{ entity().fields.length }}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        class="add-button"
+        (click)="addField.emit()"
+      >
+        <span class="material-symbols-outlined">
+          add
+        </span>
+
+        Add Field
+      </button>
+    </div>
+
+    @if (entity().fields.length === 0) {
+      <div class="empty-fields">
+        <span class="material-symbols-outlined">
+          view_column
+        </span>
+
+        <p>
+          No fields defined yet.
+        </p>
+      </div>
+    } @else {
+      <div class="field-list">
+        @for (
+          field of entity().fields;
+          track field.name
+        ) {
+          <div class="field-row">
+            <div class="field-icon">
+              <span class="material-symbols-outlined">
+                @if (field.type === 'IDENTIFIER') {
+                  key
+                } @else {
+                  data_object
+                }
+              </span>
+            </div>
+
+            <div class="field-details">
+              <strong>
+                {{ field.name }}
+              </strong>
+
+              <span>
+                {{ field.type }}
+              </span>
+            </div>
+
+            @if (field.identity?.strategy) {
+              <span class="field-badge">
+                PK
+              </span>
+            }
+
+            <button
+              type="button"
+              class="field-action"
+              aria-label="Edit field"
+              title="Edit field"
+              (click)="editField.emit(field)"
+            >
+              <span class="material-symbols-outlined">
+                edit
+              </span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+</aside>

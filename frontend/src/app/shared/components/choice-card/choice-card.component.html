@@ -1,0 +1,28 @@
+<button
+  type="button"
+  class="choice-card"
+  [class.selected]="selected()"
+  (click)="select()"
+>
+  <span class="choice-icon">
+    <span class="material-symbols-outlined">
+      {{ icon() }}
+    </span>
+  </span>
+
+  <span class="choice-copy">
+    <strong>{{ title() }}</strong>
+
+    <small>
+      {{ description() }}
+    </small>
+  </span>
+
+  @if (example()) {
+    <span class="choice-example visual-example">
+      {{ example() }}
+    </span>
+  }
+
+  <ng-content />
+</button>

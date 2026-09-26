@@ -38,6 +38,45 @@ interface CreateEntityRequest {
   };
 }
 
+interface CreateFieldRequest {
+  name: string;
+  type:
+    | 'IDENTIFIER'
+    | 'STRING'
+    | 'INTEGER'
+    | 'DECIMAL'
+    | 'BOOLEAN'
+    | 'CATEGORICAL';
+  identity?: {
+    strategy: 'SEQUENTIAL_ID';
+  };
+  generation?: {
+    strategy: 'RANDOM';
+    distribution?: string;
+    generator?: string;
+    parameters?: Record<string, unknown>;
+  };
+}
+
+interface UpdateFieldRequest {
+  name?: string;
+  type?: 
+    | 'IDENTIFIER'
+    | 'STRING'
+    | 'INTEGER'
+    | 'DECIMAL'
+    | 'BOOLEAN'
+    | 'CATEGORICAL';
+  identity?: {
+    strategy: 'SEQUENTIAL_ID';
+  };
+  generation?: {
+    strategy?: 'RANDOM';
+    distribution?: string;
+    parameters?: Record<string, unknown>;
+  };
+}
+
 interface SpecificationResponse {
   version: string;
   vocabulary_version: string;
@@ -73,6 +112,53 @@ export class SpecificationService {
           count: population,
         },
       } satisfies CreateEntityRequest,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.Loading,
+        ),
+      },
+    );
+  }
+
+  createField(
+    dataModelId: string,
+    entityName: string,
+    name: string,
+    type:
+      | 'IDENTIFIER'
+      | 'STRING'
+      | 'INTEGER'
+      | 'DECIMAL'
+      | 'BOOLEAN'
+      | 'CATEGORICAL',
+    options?: Pick<CreateFieldRequest, 'identity' | 'generation'>,
+  ): Observable<ForgeSpecificationField> {
+    return this.http.post<ForgeSpecificationField>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}/fields`,
+      {
+        name,
+        type,
+        ...options,
+      } satisfies CreateFieldRequest,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.Loading,
+        ),
+      },
+    );
+  }
+
+  updateField(
+    dataModelId: string,
+    entityName: string,
+    fieldName: string,
+    updates: UpdateFieldRequest,
+  ): Observable<ForgeSpecificationField> {
+    return this.http.put<ForgeSpecificationField>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}/fields/${encodeURIComponent(fieldName)}`,
+      updates,
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,

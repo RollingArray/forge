@@ -1,0 +1,99 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.choice-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 3px;
+  width: 100%;
+  min-height: 88px;
+  padding: 13px;
+  box-sizing: border-box;
+  border: 1px solid #e1dfe7;
+  border-radius: 11px;
+  background: #fff;
+  color: #35303d;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.choice-card:hover {
+  border-color: #c9b9e8;
+  background: #fcfbff;
+  box-shadow: 0 3px 10px rgb(91 70 184 / 6%);
+  transform: translateY(-1px);
+}
+
+.choice-card.selected {
+  border-color: #7657d9;
+  background: #faf8ff;
+  box-shadow:
+    0 0 0 2px rgb(118 87 217 / 10%),
+    0 4px 12px rgb(91 70 184 / 8%);
+}
+
+.choice-icon {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  grid-row: 1 / span 2;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #f1eef9;
+  color: #6852b4;
+}
+
+.choice-card.selected .choice-icon {
+  background: #e8e0fa;
+  color: #6047b7;
+}
+
+.choice-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.choice-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.choice-copy strong {
+  color: #35303d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.choice-copy small {
+  color: #77727d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.choice-example {
+  grid-column: 2;
+  overflow: hidden;
+  color: #654db9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choice-card:focus-visible {
+  outline: 2px solid #7657d9;
+  outline-offset: 2px;
+}

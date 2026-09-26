@@ -27,6 +27,8 @@ import { adaptSpecification } from './data/specification-adapter';
 import { CanvasEntity } from './models/model-studio.models';
 import { ModelCanvasComponent } from './components/model-canvas/model-canvas.component';
 import { EntityDialogComponent } from './components/entity-dialog/entity-dialog.component';
+import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
+import { FieldDialogComponent, FieldDraft } from './components/field-dialog/field-dialog.component';
 
 type StudioStep =
   | 'model'
@@ -44,7 +46,7 @@ interface StudioStepItem {
 @Component({
   selector: 'app-model-studio',
   standalone: true,
-  imports: [ModelCanvasComponent, EntityDialogComponent],
+  imports: [ModelCanvasComponent, EntityDialogComponent, EntityInspectorComponent, FieldDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="model-studio-page">
@@ -199,29 +201,39 @@ interface StudioStepItem {
 
           </section>
 
-          <section class="model-canvas-container">
-            <app-model-studio-canvas
-              [entities]="canvasEntities()"
-              [relationships]="modelRelationships()"
-              [selectedEntity]="selectedEntity()"
-              (entitySelected)="selectedEntity.set($event)"
-            />
+          <section class="model-workspace">
+            <section class="model-canvas-container">
+              <app-model-studio-canvas
+                [entities]="canvasEntities()"
+                [relationships]="modelRelationships()"
+                [selectedEntity]="selectedEntity()"
+                (entitySelected)="selectedEntity.set($event)"
+              />
 
-            @if (specification.entities.length === 0) {
-              <div class="canvas-empty-state">
-                <span class="material-symbols-outlined">
-                  account_tree
-                </span>
+              @if (specification.entities.length === 0) {
+                <div class="canvas-empty-state">
+                  <span class="material-symbols-outlined">
+                    account_tree
+                  </span>
 
-                <h2>
-                  Start building your model
-                </h2>
+                  <h2>
+                    Start building your model
+                  </h2>
 
-                <p>
-                  This Data Model does not have any entities yet.
-                </p>
+                  <p>
+                    This Data Model does not have any entities yet.
+                  </p>
 
-              </div>
+                </div>
+              }
+            </section>
+
+            @if (selectedEntityData(); as entity) {
+              <app-model-studio-entity-inspector
+                [entity]="entity"
+                (addField)="openFieldDialog()"
+                (closed)="selectedEntity.set('')"
+              />
             }
           </section>
 
@@ -247,6 +259,13 @@ interface StudioStepItem {
         <app-model-studio-entity-dialog
           (saved)="handleEntityCreated($event)"
           (closed)="closeEntityDialog()"
+        />
+      }
+
+      @if (fieldDialogOpen()) {
+        <app-model-studio-field-dialog
+          (saved)="handleFieldCreated($event)"
+          (closed)="closeFieldDialog()"
         />
       }
 
@@ -527,6 +546,15 @@ interface StudioStepItem {
       font-size: 17px;
     }
 
+    .model-workspace {
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex: 1;
+      gap: 12px;
+      overflow: hidden;
+    }
+
     .model-canvas-container {
       position: relative;
       display: flex;
@@ -630,7 +658,15 @@ export class ModelStudioComponent {
   readonly selectedEntity =
     signal('');
 
+  readonly selectedEntityData = () =>
+    this.specification()?.entities.find(
+      (entity) => entity.name === this.selectedEntity(),
+    ) ?? null;
+
   readonly entityDialogOpen =
+    signal(false);
+
+  readonly fieldDialogOpen =
     signal(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -711,6 +747,56 @@ export class ModelStudioComponent {
 
   closeEntityDialog(): void {
     this.entityDialogOpen.set(false);
+  }
+
+  openFieldDialog(): void {
+    if (!this.selectedEntity()) {
+      return;
+    }
+
+    this.fieldDialogOpen.set(true);
+  }
+
+  closeFieldDialog(): void {
+    this.fieldDialogOpen.set(false);
+  }
+
+  handleFieldCreated(draft: FieldDraft): void {
+    const dataModelId =
+      this.route.snapshot.paramMap.get('dataModelId');
+
+    const entityName = this.selectedEntity();
+
+    if (!dataModelId || !entityName) {
+      this.errorMessage.set(
+        'Data Model ID or selected entity is missing.',
+      );
+      return;
+    }
+
+    this.specificationService
+      .createField(
+        dataModelId,
+        entityName,
+        draft.name,
+        draft.type,
+        {
+          identity: draft.identity,
+          generation: draft.generation,
+        },
+      )
+      .subscribe({
+        next: () => {
+          this.closeFieldDialog();
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ??
+            'Unable to add the field.',
+          );
+        },
+      });
   }
 
   handleEntityCreated(entity: {
