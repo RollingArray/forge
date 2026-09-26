@@ -54,3 +54,23 @@ class CreateEntityRequest(BaseModel):
             raise ValueError("name must not be empty.")
 
         return value
+
+
+class UpdateEntityPopulationRequest(BaseModel):
+    """Request to update a FORGE entity population."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    count: int = Field(
+        ge=0,
+    )
+
+    @field_validator("count", mode="before")
+    @classmethod
+    def validate_count(cls, value: object) -> object:
+        """Reject booleans even though bool is an int subclass in Python."""
+
+        if isinstance(value, bool):
+            raise ValueError("count must be an integer.")
+
+        return value

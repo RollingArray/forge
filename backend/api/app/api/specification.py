@@ -12,6 +12,7 @@ from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
 from app.models.specification_entity_model import (
     CreateEntityRequest,
+    UpdateEntityPopulationRequest,
 )
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
@@ -99,3 +100,85 @@ async def create_entity(
         )
 
     return entity
+
+
+@router.put(
+    "/{data_model_id}/specification/entities/{entity_name}/population",
+    status_code=status.HTTP_200_OK,
+)
+async def update_entity_population(
+    data_model_id: str,
+    entity_name: str,
+    request: UpdateEntityPopulationRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update the population of an existing FORGE entity."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        entity = specification_service.update_entity_population(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            entity_name=entity_name,
+            count=request.count,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    if entity is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return entity
+
+
+@router.delete(
+    "/{data_model_id}/specification/entities/{entity_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_entity(
+    data_model_id: str,
+    entity_name: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Delete an entity from the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        deleted = specification_service.delete_entity(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            entity_name=entity_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Entity not found.",
+        )
