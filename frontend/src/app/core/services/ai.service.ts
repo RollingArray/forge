@@ -14,6 +14,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { AICapability } from '../interfaces/ai-capability.interface';
+import { AISemanticPreview } from '../interfaces/ai-semantic-preview.interface';
 import { AIDataModelProposal } from '../interfaces/ai-data-model-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
@@ -35,6 +36,31 @@ export class AIService {
           true,
         ),
       },
+    );
+  }
+
+  previewSemanticValues(
+    description: string,
+  ): Observable<AISemanticPreview> {
+    return this.http.post<{
+      status: AISemanticPreview['status'];
+      message: string;
+      preview_values: string[];
+    }>(
+      '/api/v1/ai/semantic/preview',
+      { description },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.GeneratingSemanticPreviewWithAI,
+        ),
+      },
+    ).pipe(
+      map((response) => ({
+        status: response.status,
+        message: response.message,
+        previewValues: response.preview_values,
+      })),
     );
   }
 

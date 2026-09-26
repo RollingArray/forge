@@ -14,6 +14,7 @@ Email: ranjoy.sen@collins.com
 
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AISemanticPreview,
     AIProvider,
     AIProviderStatus,
 )
@@ -37,3 +38,12 @@ class AIService:
         """Generate a Data Model proposal from user intent."""
 
         return self._provider.suggest_data_model(prompt)
+
+
+    def preview_semantic_values(
+        self,
+        description: str,
+    ) -> AISemanticPreview:
+        """Generate representative semantic field values for preview."""
+
+        return self._provider.preview_semantic_values(description)

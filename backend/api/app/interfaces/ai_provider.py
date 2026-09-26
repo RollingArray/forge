@@ -37,6 +37,15 @@ class AIDataModelProposal:
     reasoning: str
 
 
+@dataclass(frozen=True)
+class AISemanticPreview:
+    """Represents an AI-generated semantic field preview."""
+
+    status: str
+    message: str
+    preview_values: list[str]
+
+
 class AIProvider(ABC):
     """Contract implemented by FORGE AI/LLM providers."""
 
@@ -51,4 +60,12 @@ class AIProvider(ABC):
         prompt: str,
     ) -> AIDataModelProposal:
         """Generate a structured Data Model proposal from user intent."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def preview_semantic_values(
+        self,
+        description: str,
+    ) -> AISemanticPreview:
+        """Generate representative semantic field values for preview."""
         raise NotImplementedError

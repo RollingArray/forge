@@ -20,6 +20,10 @@ from app.models.ai_data_model_proposal_model import (
     AIDataModelProposalModel,
     AIDataModelSuggestionRequestModel,
 )
+from app.models.ai_semantic_preview_model import (
+    AISemanticPreviewModel,
+    AISemanticPreviewRequestModel,
+)
 from app.services.ai_service import AIService
 from app.services.ollama_ai_provider import OllamaAIProvider
 
@@ -50,6 +54,37 @@ def get_ai_capabilities() -> AICapabilityModel:
         mode=status_result.mode,
         model=status_result.model,
         message=status_result.message,
+    )
+
+
+@router.post(
+    "/semantic/preview",
+    response_model=AISemanticPreviewModel,
+)
+def preview_semantic_values(
+    request: AISemanticPreviewRequestModel,
+) -> AISemanticPreviewModel:
+    """Generate representative semantic field values for preview."""
+
+    try:
+        preview = _ai_service.preview_semantic_values(
+            description=request.description.strip(),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AISemanticPreviewModel(
+        status=preview.status,
+        message=preview.message,
+        preview_values=preview.preview_values,
     )
 
 

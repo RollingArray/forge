@@ -364,33 +364,11 @@
 
           @if (showSemanticParameters) {
             <div class="parameter-panel">
-              <label for="semantic-description">
-                <span>What should this text represent?</span>
-
-                <small class="field-help">
-                  Describe the kind of information you want FORGE to create.
-                </small>
-
-                <textarea
-                  id="semantic-description"
-                  rows="3"
-                  maxlength="500"
-                  [ngModel]="semanticDescription()"
-                  (ngModelChange)="semanticDescription.set($event)"
-                  placeholder="e.g. A person's full name"
-                ></textarea>
-
-                @if (showValidation() && !semanticDescription().trim()) {
-                  <small class="validation-message">
-                    Describe what this field represents.
-                  </small>
-                }
-              </label>
-
-              <div class="mini-example">
-                <span>Example result</span>
-                <strong>John Smith</strong>
-              </div>
+              <app-semantic-generator
+                [description]="semanticDescription()"
+                [showValidation]="showValidation()"
+                (descriptionChange)="semanticDescription.set($event)"
+              />
             </div>
           }
         </section>

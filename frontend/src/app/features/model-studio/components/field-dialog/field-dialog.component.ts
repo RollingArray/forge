@@ -19,6 +19,7 @@ import { DistributionPreviewComponent } from '../../../../shared/components/dist
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { FieldParameterHeaderComponent } from '../../../../shared/components/field-parameter-header/field-parameter-header.component';
 import { PatternGeneratorComponent } from '../../../../shared/components/pattern-generator/pattern-generator.component';
+import { SemanticGeneratorComponent } from '../../../../shared/components/semantic-generator/semantic-generator.component';
 
 export type FieldType =
   | 'IDENTIFIER'
@@ -50,6 +51,7 @@ export type FieldDraft = {
     FormDialogComponent,
     AiAssistPanelComponent,
     PatternGeneratorComponent,
+    SemanticGeneratorComponent,
     FieldParameterHeaderComponent,
     ChoiceCardComponent,
     DistributionPreviewComponent,

@@ -19,8 +19,11 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from app.core.ai_settings import AIConfiguration
+from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
+from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AISemanticPreview,
     AIProvider,
     AIProviderStatus,
 )
@@ -80,30 +83,7 @@ class OllamaAIProvider(AIProvider):
     ) -> AIDataModelProposal:
         """Generate a structured Data Model proposal from user intent."""
 
-        system_prompt = """
-You are FORGE AI, an assistant for creating enterprise Data Models.
-
-Your responsibility in this step is ONLY to help define the identity and
-high-level metadata of a Data Model.
-
-Rules:
-- Create a concise, meaningful Data Model name.
-- Create a concise enterprise-friendly description.
-- Suggest 3 to 10 useful tags.
-- Tags should describe business domains, processes, systems, technologies,
-  or concepts present in the user's request.
-- Keep tags concise.
-- Do not generate entities.
-- Do not generate fields.
-- Do not generate relationships.
-- Do not generate foreign keys.
-- Do not generate constraints.
-- Do not generate SAP technical table or field metadata.
-- Do not generate synthetic data.
-- Do not invent detailed technical architecture.
-- The reasoning should briefly explain how the proposal reflects the user's
-  stated intent.
-""".strip()
+        system_prompt = DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
 
         request_payload = {
             "model": self._model,
@@ -236,6 +216,166 @@ Rules:
                 for tag in suggested_tags
             ],
             reasoning=reasoning.strip(),
+        )
+
+    def preview_semantic_values(
+        self,
+        description: str,
+    ) -> AISemanticPreview:
+        """Generate representative semantic field values for preview."""
+
+        normalized_description = description.strip()
+
+        if not normalized_description:
+            raise ValueError(
+                "Semantic generation requires a description.",
+            )
+
+        system_prompt = SEMANTIC_PREVIEW_SYSTEM_PROMPT
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": normalized_description,
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "preview_values": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                        },
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "preview_values",
+                ],
+            },
+        }
+
+        request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                payload = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = payload.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty semantic preview.",
+            )
+
+        try:
+            preview = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid semantic preview.",
+            ) from exc
+
+        if not isinstance(preview, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid semantic preview structure.",
+            )
+
+        preview_status = preview.get("status")
+        preview_message = preview.get("message")
+        preview_values = preview.get("preview_values")
+
+        if preview_status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI returned an invalid semantic preview status.",
+            )
+
+        if (
+            not isinstance(preview_message, str)
+            or not preview_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI semantic preview is missing a valid message.",
+            )
+
+        if not isinstance(preview_values, list):
+            raise RuntimeError(
+                "FORGE AI semantic preview contains invalid values.",
+            )
+
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in preview_values
+        ):
+            raise RuntimeError(
+                "FORGE AI semantic preview contains invalid STRING values.",
+            )
+
+        if preview_status == "PROPOSE":
+            if len(preview_values) != 10:
+                raise RuntimeError(
+                    "FORGE AI semantic preview must contain exactly 10 values.",
+                )
+        elif preview_values:
+            raise RuntimeError(
+                "FORGE AI semantic preview must not contain values for "
+                f"{preview_status}.",
+            )
+
+        return AISemanticPreview(
+            status=preview_status,
+            message=preview_message.strip(),
+            preview_values=[
+                value.strip()
+                for value in preview_values
+            ],
         )
 
     def _get_models(self) -> list[dict[str, object]]:

@@ -1,0 +1,100 @@
+<div class="semantic-generator">
+  <app-field-parameter-header
+    title="What should this text represent?"
+    description="Describe the kind of information you want FORGE to create."
+  />
+
+  <div class="description-section">
+    <textarea
+      class="semantic-input"
+      rows="4"
+      [ngModel]="descriptionValue()"
+      (ngModelChange)="updateDescription($event)"
+      placeholder="e.g. Realistic aerospace component descriptions suitable for an engineering dataset."
+    ></textarea>
+
+    @if (showValidation() && hasAttemptedPreview() && !descriptionValue().trim()) {
+      <small class="validation-message">
+        Describe the kind of information FORGE should create.
+      </small>
+    }
+  </div>
+
+  <div class="semantic-actions">
+    <button
+      type="button"
+      class="interpret-button"
+      [disabled]="!canPreview"
+      (click)="interpretAndPreview()"
+    >
+      @if (isGenerating()) {
+        <span class="spinner" aria-hidden="true"></span>
+        Interpreting...
+      } @else {
+        <span aria-hidden="true">✦</span>
+        Interpret with FORGE AI &amp; Preview
+      }
+    </button>
+
+    @if (preview()) {
+      <button
+        type="button"
+        class="clear-button"
+        (click)="clearPreview()"
+      >
+        Clear
+      </button>
+    }
+  </div>
+
+  @if (isGenerating()) {
+    <div class="state-card loading-state">
+      <strong>FORGE AI is interpreting your description...</strong>
+      <small>
+        Generating representative examples for review.
+      </small>
+    </div>
+  }
+
+  @if (preview(); as result) {
+    @if (result.status === 'PROPOSE') {
+      <div class="state-card propose-state">
+        <div class="state-header">
+          <div>
+            <strong>FORGE AI proposal</strong>
+            <small>{{ result.message }}</small>
+          </div>
+          <span class="state-badge">10 examples</span>
+        </div>
+
+        <div class="preview-values">
+          @for (value of result.previewValues; track $index) {
+            <div class="preview-value">
+              <span>{{ $index + 1 }}</span>
+              <strong>{{ value }}</strong>
+            </div>
+          }
+        </div>
+
+        <small class="preview-note">
+          These are examples for review. Your description remains the
+          generation specification.
+        </small>
+      </div>
+    }
+
+    @if (result.status === 'CLARIFY') {
+      <div class="state-card clarify-state">
+        <strong>More detail is needed</strong>
+        <small>{{ result.message }}</small>
+      </div>
+    }
+
+    @if (result.status === 'UNSUPPORTED') {
+      <div class="state-card unsupported-state">
+        <strong>This request needs another generation method</strong>
+        <small>{{ result.message }}</small>
+      </div>
+    }
+  }
+</div>
