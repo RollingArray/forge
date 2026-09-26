@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.temp
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/generated/
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/validation/
+
+# FORGE runtime-generated artifacts
+experiments/024_specification_execution/output/quality/
+
+# FORGE local runtime state
+data/data_models.json
+data/sessions.json
+data/activities.json
+data/data_model_access.json
+
+# FORGE runtime Data Model specifications
+data/forge_*_data_model/

@@ -31,6 +31,13 @@ import {
   ForgeSpecificationRelationship,
 } from '../interfaces/forge-specification.interface';
 
+interface CreateEntityRequest {
+  name: string;
+  population: {
+    count: number;
+  };
+}
+
 interface SpecificationResponse {
   version: string;
   vocabulary_version: string;
@@ -52,6 +59,28 @@ export class SpecificationService {
   private readonly http = inject(HttpClient);
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
+
+  createEntity(
+    dataModelId: string,
+    name: string,
+    population: number,
+  ): Observable<ForgeSpecificationEntity> {
+    return this.http.post<ForgeSpecificationEntity>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities`,
+      {
+        name,
+        population: {
+          count: population,
+        },
+      } satisfies CreateEntityRequest,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.Loading,
+        ),
+      },
+    );
+  }
 
   getSpecification(
     dataModelId: string,

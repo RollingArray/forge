@@ -166,21 +166,35 @@ interface StudioStepItem {
               }
             </div>
 
-            <div class="summary-metrics">
-              <span>
-                <strong>{{ specification.entities.length }}</strong>
-                entities
-              </span>
+            <div class="summary-actions">
+              <div class="summary-metrics">
+                <span>
+                  <strong>{{ specification.entities.length }}</strong>
+                  entities
+                </span>
 
-              <span>
-                <strong>{{ specification.relationships.length }}</strong>
-                relationships
-              </span>
+                <span>
+                  <strong>{{ specification.relationships.length }}</strong>
+                  relationships
+                </span>
 
-              <span>
-                <strong>{{ specification.constraints.length }}</strong>
-                constraints
-              </span>
+                <span>
+                  <strong>{{ specification.constraints.length }}</strong>
+                  constraints
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="primary-action"
+                (click)="openEntityDialog()"
+              >
+                <span class="material-symbols-outlined">
+                  add
+                </span>
+
+                Add Entity
+              </button>
             </div>
 
           </section>
@@ -207,17 +221,6 @@ interface StudioStepItem {
                   This Data Model does not have any entities yet.
                 </p>
 
-                <button
-                  type="button"
-                  class="primary-action"
-                  (click)="openEntityDialog()"
-                >
-                  <span class="material-symbols-outlined">
-                    add
-                  </span>
-
-                  Add Entity
-                </button>
               </div>
             }
           </section>
@@ -449,6 +452,12 @@ interface StudioStepItem {
       margin: 5px 0 0;
       color: #737a8e;
       font-size: 12px;
+    }
+
+    .summary-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
     }
 
     .summary-metrics {
@@ -707,10 +716,28 @@ export class ModelStudioComponent {
   handleEntityCreated(entity: {
     name: string;
     description: string;
+    population: number;
   }): void {
-    console.log('[FORGE Model Studio] Entity candidate:', entity);
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
-    this.entityDialogOpen.set(false);
+    if (!dataModelId) {
+      this.errorMessage.set('Data Model ID is missing.');
+      return;
+    }
+
+    this.specificationService
+      .createEntity(dataModelId, entity.name, entity.population)
+      .subscribe({
+        next: () => {
+          this.entityDialogOpen.set(false);
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ?? 'Failed to create entity.',
+          );
+        },
+      });
   }
 }
 

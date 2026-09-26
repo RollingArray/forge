@@ -203,8 +203,47 @@ function findBestPosition(
     );
 
   if (neighbours.length === 0) {
+    const horizontalStep =
+      MODEL_NODE_WIDTH + options.horizontalGap;
+
+    const verticalStep =
+      MODEL_NODE_HEIGHT + options.verticalGap;
+
+    const maxColumns = Math.max(
+      1,
+      Math.ceil(Math.sqrt(entities.length)),
+    );
+
+    for (let index = 0; index < entities.length; index++) {
+      const column = index % maxColumns;
+      const row = Math.floor(index / maxColumns);
+
+      const candidate = {
+        x:
+          options.canvasPadding +
+          column * horizontalStep,
+        y:
+          options.canvasPadding +
+          row * verticalStep,
+      };
+
+      if (
+        !rectangleOverlaps(
+          candidate,
+          entities,
+          placed,
+          0,
+          0,
+        )
+      ) {
+        return candidate;
+      }
+    }
+
     return {
-      x: options.canvasPadding,
+      x:
+        options.canvasPadding +
+        placed.size * horizontalStep,
       y: options.canvasPadding,
     };
   }
