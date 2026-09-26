@@ -26,6 +26,7 @@
           [selectedDataModel]="selectedDataModel()"
           (newDataModel)="handleNewDataModel()"
           (dataModelSelected)="handleDataModelSelected($event)"
+          (editRequested)="handleDataModelEditRequested($event)"
           (shareRequested)="handleDataModelShareRequested($event)"
         />
       </div>

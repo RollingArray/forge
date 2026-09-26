@@ -35,9 +35,17 @@
       <p>{{ dataModel().description }}</p>
     </div>
 
-    <span class="material-symbols-outlined more-icon">
-      more_vert
-    </span>
+    <button
+      type="button"
+      class="more-button"
+      title="Edit Data Model"
+      aria-label="Edit Data Model"
+      (click)="edit($event)"
+    >
+      <span class="material-symbols-outlined more-icon">
+        more_vert
+      </span>
+    </button>
   </div>
 
   @if (dataModel().tags.length > 0) {

@@ -18,6 +18,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { Activity } from '../../core/interfaces/activity.interface';
 import { DataModel } from '../../core/interfaces/data-model.interface';
@@ -61,6 +62,7 @@ import {
   styleUrl: './workspace.component.css',
 })
 export class WorkspaceComponent {
+  private readonly router = inject(Router);
   private readonly workspaceService = inject(WorkspaceService);
 
   readonly metrics = signal<Metric[]>([]);
@@ -102,7 +104,14 @@ export class WorkspaceComponent {
   }
 
   handleDataModelSelected(dataModel: DataModel): void {
-    this.selectedDataModel.set(dataModel);
+    void this.router.navigate([
+      '/workspace',
+      dataModel.dataModelId,
+      'model-studio',
+    ]);
+  }
+
+  handleDataModelEditRequested(dataModel: DataModel): void {
     this.editingDataModel.set(dataModel);
     this.dataModelDialogOpen.set(true);
   }

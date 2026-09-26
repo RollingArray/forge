@@ -35,11 +35,16 @@ export class RecentDataModelsComponent {
   readonly selectedDataModel = input<DataModel | null>(null);
 
   readonly dataModelSelected = output<DataModel>();
+  readonly editRequested = output<DataModel>();
   readonly shareRequested = output<DataModel>();
   readonly newDataModel = output<void>();
 
   selectDataModel(dataModel: DataModel): void {
     this.dataModelSelected.emit(dataModel);
+  }
+
+  editDataModel(dataModel: DataModel): void {
+    this.editRequested.emit(dataModel);
   }
 
   shareDataModel(dataModel: DataModel): void {

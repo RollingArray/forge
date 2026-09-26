@@ -31,6 +31,7 @@
         [dataModel]="dataModel"
         [selected]="selectedDataModel()?.dataModelId === dataModel.dataModelId"
         (selectedChange)="selectDataModel($event)"
+        (editRequested)="editDataModel($event)"
         (shareRequested)="shareDataModel($event)"
       />
 
