@@ -53,6 +53,23 @@ class JsonSpecificationRepository:
 
             return specification
 
+    def save(
+        self,
+        data_model_id: str,
+        specification: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Persist and return the canonical specification."""
+
+        specification_path = self._specification_path(data_model_id)
+
+        with self._lock:
+            self._write(
+                specification_path,
+                specification,
+            )
+
+        return specification
+
     def _specification_path(
         self,
         data_model_id: str,
