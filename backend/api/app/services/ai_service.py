@@ -14,6 +14,7 @@ Email: ranjoy.sen@collins.com
 
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AIFieldProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -47,3 +48,19 @@ class AIService:
         """Generate representative semantic field values for preview."""
 
         return self._provider.preview_semantic_values(description)
+
+    def propose_field(
+        self,
+        mode: str,
+        entity_name: str,
+        request: str,
+        existing_field: dict[str, object] | None = None,
+    ) -> AIFieldProposal:
+        """Generate a structured FORGE field proposal."""
+
+        return self._provider.propose_field(
+            mode=mode,
+            entity_name=entity_name,
+            request=request,
+            existing_field=existing_field,
+        )

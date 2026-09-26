@@ -20,9 +20,11 @@ from urllib.request import Request, urlopen
 
 from app.core.ai_settings import AIConfiguration
 from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
+from app.prompts.field_proposal_prompt import FIELD_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AIFieldProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -216,6 +218,297 @@ class OllamaAIProvider(AIProvider):
                 for tag in suggested_tags
             ],
             reasoning=reasoning.strip(),
+        )
+
+    def propose_field(
+        self,
+        mode: str,
+        entity_name: str,
+        request: str,
+        existing_field: dict[str, object] | None = None,
+    ) -> AIFieldProposal:
+        """Generate a structured FORGE field proposal."""
+
+        normalized_mode = mode.strip().upper()
+        normalized_entity_name = entity_name.strip()
+        normalized_request = request.strip()
+
+        if normalized_mode not in {"CREATE", "EDIT"}:
+            raise ValueError(
+                "Field proposal mode must be CREATE or EDIT.",
+            )
+
+        if not normalized_entity_name:
+            raise ValueError(
+                "Field proposal requires an entity name.",
+            )
+
+        if not normalized_request:
+            raise ValueError(
+                "Field proposal requires a user request.",
+            )
+
+        user_payload = {
+            "mode": normalized_mode,
+            "entity_name": normalized_entity_name,
+            "request": normalized_request,
+        }
+
+        if normalized_mode == "EDIT":
+            if not isinstance(existing_field, dict):
+                raise ValueError(
+                    "EDIT field proposals require an existing field.",
+                )
+
+            user_payload["existing_field"] = existing_field
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": FIELD_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        user_payload,
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "proposal": {
+                        "type": [
+                            "object",
+                            "null",
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "IDENTIFIER",
+                                    "STRING",
+                                    "INTEGER",
+                                    "DECIMAL",
+                                    "BOOLEAN",
+                                    "CATEGORICAL",
+                                ],
+                            },
+                            "identity": {
+                                "type": [
+                                    "object",
+                                    "null",
+                                ],
+                                "properties": {
+                                    "strategy": {
+                                        "type": "string",
+                                        "enum": [
+                                            "SEQUENTIAL_ID",
+                                        ],
+                                    },
+                                },
+                                "required": [
+                                    "strategy",
+                                ],
+                            },
+                            "generation": {
+                                "type": [
+                                    "object",
+                                    "null",
+                                ],
+                                "properties": {
+                                    "strategy": {
+                                        "type": [
+                                            "string",
+                                            "null",
+                                        ],
+                                    },
+                                    "distribution": {
+                                        "type": [
+                                            "string",
+                                            "null",
+                                        ],
+                                    },
+                                    "generator": {
+                                        "type": [
+                                            "string",
+                                            "null",
+                                        ],
+                                    },
+                                    "parameters": {
+                                        "type": [
+                                            "object",
+                                            "null",
+                                        ],
+                                    },
+                                },
+                            },
+                        },
+                        "required": [
+                            "name",
+                            "type",
+                            "identity",
+                            "generation",
+                        ],
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "proposal",
+                ],
+            },
+        }
+
+        request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                payload = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = payload.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty field proposal.",
+            )
+
+        try:
+            proposal_response = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid structured field proposal.",
+            ) from exc
+
+        if not isinstance(proposal_response, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid field proposal structure.",
+            )
+
+        proposal_status = proposal_response.get("status")
+        proposal_message = proposal_response.get("message")
+        proposal = proposal_response.get("proposal")
+
+        if proposal_status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI returned an invalid field proposal status.",
+            )
+
+        if (
+            not isinstance(proposal_message, str)
+            or not proposal_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI field proposal is missing a valid message.",
+            )
+
+        if proposal_status != "PROPOSE":
+            if proposal is not None:
+                raise RuntimeError(
+                    "FORGE AI returned a proposal for a non-proposal status.",
+                )
+
+            return AIFieldProposal(
+                status=proposal_status,
+                message=proposal_message.strip(),
+                proposal=None,
+            )
+
+        if not isinstance(proposal, dict):
+            raise RuntimeError(
+                "FORGE AI PROPOSE response is missing a proposal.",
+            )
+
+        field_name = proposal.get("name")
+        field_type = proposal.get("type")
+
+        if not isinstance(field_name, str) or not field_name.strip():
+            raise RuntimeError(
+                "FORGE AI field proposal is missing a valid name.",
+            )
+
+        if field_type not in {
+            "IDENTIFIER",
+            "STRING",
+            "INTEGER",
+            "DECIMAL",
+            "BOOLEAN",
+            "CATEGORICAL",
+        }:
+            raise RuntimeError(
+                "FORGE AI field proposal contains an unsupported field type.",
+            )
+
+        identity = proposal.get("identity")
+        generation = proposal.get("generation")
+
+        if identity is not None and not isinstance(identity, dict):
+            raise RuntimeError(
+                "FORGE AI field proposal contains invalid identity metadata.",
+            )
+
+        if generation is not None and not isinstance(generation, dict):
+            raise RuntimeError(
+                "FORGE AI field proposal contains invalid generation metadata.",
+            )
+
+        normalized_proposal = {
+            "name": field_name.strip(),
+            "type": field_type,
+            "identity": identity,
+            "generation": generation,
+        }
+
+        return AIFieldProposal(
+            status="PROPOSE",
+            message=proposal_message.strip(),
+            proposal=normalized_proposal,
         )
 
     def preview_semantic_values(

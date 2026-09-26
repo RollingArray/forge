@@ -46,6 +46,15 @@ class AISemanticPreview:
     preview_values: list[str]
 
 
+@dataclass(frozen=True)
+class AIFieldProposal:
+    """Represents an AI-generated FORGE field proposal."""
+
+    status: str
+    message: str
+    proposal: dict[str, object] | None
+
+
 class AIProvider(ABC):
     """Contract implemented by FORGE AI/LLM providers."""
 
@@ -68,4 +77,15 @@ class AIProvider(ABC):
         description: str,
     ) -> AISemanticPreview:
         """Generate representative semantic field values for preview."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def propose_field(
+        self,
+        mode: str,
+        entity_name: str,
+        request: str,
+        existing_field: dict[str, object] | None = None,
+    ) -> AIFieldProposal:
+        """Generate a structured FORGE field proposal."""
         raise NotImplementedError
