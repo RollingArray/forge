@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "Order to Cash Data 1",
+    "description": "A high\u2011level enterprise data model that captures the end\u2011to\u2011end order\u2011to\u2011cash process\u2014from sales order creation and fulfillment to invoicing, payment receipt, and revenue."
+  },
+  "generation": {
+    "seed": 42,
+    "scenario": "NORMAL"
+  },
+  "entities": [],
+  "relationships": [],
+  "foreign_keys": [],
+  "constraints": [],
+  "dependencies": [],
+  "statistical_behavior": [],
+  "scenarios": []
+}
