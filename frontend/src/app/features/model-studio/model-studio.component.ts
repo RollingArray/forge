@@ -20,7 +20,10 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
+import {
+  ForgeSpecification,
+  ForgeSpecificationField,
+} from '../../core/interfaces/forge-specification.interface';
 import { SpecificationService } from '../../core/services/specification.service';
 
 import { adaptSpecification } from './data/specification-adapter';
@@ -232,6 +235,7 @@ interface StudioStepItem {
               <app-model-studio-entity-inspector
                 [entity]="entity"
                 (addField)="openFieldDialog()"
+                (editField)="openFieldEditDialog($event)"
                 (closed)="selectedEntity.set('')"
               />
             }
@@ -264,7 +268,8 @@ interface StudioStepItem {
 
       @if (fieldDialogOpen()) {
         <app-model-studio-field-dialog
-          (saved)="handleFieldCreated($event)"
+          [field]="editingField()"
+          (saved)="handleFieldSaved($event)"
           (closed)="closeFieldDialog()"
         />
       }
@@ -668,6 +673,10 @@ export class ModelStudioComponent {
 
   readonly fieldDialogOpen =
     signal(false);
+
+  readonly editingField =
+    signal<ForgeSpecificationField | null>(null);
+
   readonly errorMessage = signal<string | null>(null);
 
   readonly steps: readonly StudioStepItem[] = [
@@ -754,23 +763,64 @@ export class ModelStudioComponent {
       return;
     }
 
+    this.editingField.set(null);
+    this.fieldDialogOpen.set(true);
+  }
+
+  openFieldEditDialog(field: ForgeSpecificationField): void {
+    if (!this.selectedEntity()) {
+      return;
+    }
+
+    this.editingField.set(field);
     this.fieldDialogOpen.set(true);
   }
 
   closeFieldDialog(): void {
     this.fieldDialogOpen.set(false);
+    this.editingField.set(null);
   }
 
-  handleFieldCreated(draft: FieldDraft): void {
+  handleFieldSaved(draft: FieldDraft): void {
     const dataModelId =
       this.route.snapshot.paramMap.get('dataModelId');
 
     const entityName = this.selectedEntity();
+    const existingField = this.editingField();
 
     if (!dataModelId || !entityName) {
       this.errorMessage.set(
         'Data Model ID or selected entity is missing.',
       );
+      return;
+    }
+
+    if (existingField) {
+      this.specificationService
+        .updateField(
+          dataModelId,
+          entityName,
+          existingField.name,
+          {
+            name: draft.name,
+            type: draft.type,
+            identity: draft.identity,
+            generation: draft.generation,
+          },
+        )
+        .subscribe({
+          next: () => {
+            this.closeFieldDialog();
+            this.loadSpecification(dataModelId);
+          },
+          error: (error: { error?: { detail?: string } }) => {
+            this.errorMessage.set(
+              error.error?.detail ??
+              'Unable to update the field.',
+            );
+          },
+        });
+
       return;
     }
 

@@ -73,6 +73,7 @@ interface UpdateFieldRequest {
   generation?: {
     strategy?: 'RANDOM';
     distribution?: string;
+    generator?: string;
     parameters?: Record<string, unknown>;
   };
 }
