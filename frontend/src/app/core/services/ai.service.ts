@@ -14,6 +14,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { AICapability } from '../interfaces/ai-capability.interface';
+import {
+  AIFieldProposalRequest,
+  AIFieldProposalResponse,
+} from '../interfaces/ai-field-proposal.interface';
 import { AISemanticPreview } from '../interfaces/ai-semantic-preview.interface';
 import { AIDataModelProposal } from '../interfaces/ai-data-model-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
@@ -62,6 +66,31 @@ export class AIService {
         previewValues: response.preview_values,
       })),
     );
+  }
+
+  proposeField(
+    request: AIFieldProposalRequest,
+  ): Observable<AIFieldProposalResponse> {
+    return this.http
+      .post<{
+        status: AIFieldProposalResponse['status'];
+        message: string;
+        proposal: AIFieldProposalResponse['proposal'];
+      }>(
+        '/api/v1/ai/fields/propose',
+        {
+          mode: request.mode,
+          entity_name: request.entityName,
+          request: request.request,
+          existing_field: request.existingField ?? null,
+        },
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.GeneratingFieldProposalWithAI,
+          ),
+        },
+      );
   }
 
   suggestDataModel(prompt: string): Observable<AIDataModelProposal> {
