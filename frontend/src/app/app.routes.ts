@@ -12,6 +12,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { AuthenticatedLayoutComponent } from './layout/authenticated/authenticated-layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { WorkspaceComponent } from './features/workspace/workspace.component';
+import { ModelStudioComponent } from './features/model-studio/model-studio.component';
 
 export const routes: Routes = [
   {
@@ -31,6 +32,10 @@ export const routes: Routes = [
       {
         path: 'workspace',
         component: WorkspaceComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/model-studio',
+        component: ModelStudioComponent,
       },
     ],
   },
