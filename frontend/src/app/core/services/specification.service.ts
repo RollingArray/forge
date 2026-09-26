@@ -116,7 +116,7 @@ export class SpecificationService {
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
-          ApiLoadingMessage.Loading,
+          ApiLoadingMessage.CreatingEntity,
         ),
       },
     );
@@ -145,7 +145,7 @@ export class SpecificationService {
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
-          ApiLoadingMessage.Loading,
+          ApiLoadingMessage.CreatingField,
         ),
       },
     );
@@ -163,7 +163,7 @@ export class SpecificationService {
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
-          ApiLoadingMessage.Loading,
+          ApiLoadingMessage.UpdatingField,
         ),
       },
     );
@@ -178,7 +178,7 @@ export class SpecificationService {
         {
           context: new HttpContext().set(
             API_LOADING_MESSAGE,
-            ApiLoadingMessage.Loading,
+            ApiLoadingMessage.LoadingSpecification,
           ),
         },
       )
