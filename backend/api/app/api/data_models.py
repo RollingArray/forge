@@ -16,7 +16,7 @@ from app.models.data_model_model import (
     UpdateDataModelRequestModel,
 )
 from app.models.data_model_list_item_model import DataModelListItemModel
-from app.models.data_model_activity_model import DataModelActivityModel
+from app.models.workspace_activity_model import WorkspaceActivityModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.data_model_service import DataModelService
 
@@ -104,13 +104,13 @@ async def update_data_model(
 
 @router.get(
     "/{data_model_id}/activity",
-    response_model=list[DataModelActivityModel],
+    response_model=list[WorkspaceActivityModel],
     status_code=status.HTTP_200_OK,
 )
 async def get_data_model_activity(
     data_model_id: str,
     user: AuthUser = Depends(get_authenticated_user),
-) -> list[DataModelActivityModel]:
+) -> list[WorkspaceActivityModel]:
     """Return activity for a Data Model visible to the authenticated user."""
 
     if not data_model_access_service.can_view(
@@ -128,7 +128,7 @@ async def get_data_model_activity(
     )
 
     return [
-        DataModelActivityModel(
+        WorkspaceActivityModel(
             action=activity.action,
             description=activity.description,
             data_model=activity.data_model,

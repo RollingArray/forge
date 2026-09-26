@@ -13,6 +13,7 @@ from app.api.auth import router as authentication_router
 from app.api.ai import router as ai_router
 from app.api.data_models import router as data_models_router
 from app.api.data_model_access import router as data_model_access_router
+from app.api.specification import router as specification_router
 from app.api.workspace import router as workspace_router
 from app.api.users import router as users_router
 
@@ -43,6 +44,11 @@ app.include_router(
 
 app.include_router(
     data_model_access_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    specification_router,
     prefix="/api/v1",
 )
 
