@@ -1,0 +1,150 @@
+:host {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 2000;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.toast-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 13px 15px;
+  border: 1px solid;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  pointer-events: auto;
+  animation: toast-enter 180ms ease-out;
+}
+
+.toast-success {
+  border-color: #a7d7b0;
+  background: #f3fbf5;
+}
+
+.toast-info {
+  border-color: #abcce8;
+  background: #f3f8fc;
+}
+
+.toast-warning {
+  border-color: #e6ca8c;
+  background: #fffaf0;
+}
+
+.toast-error {
+  border-color: #f1b8b8;
+  background: #fff7f7;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toast-success .toast-icon {
+  background: #2e7d32;
+}
+
+.toast-info .toast-icon {
+  background: #1565c0;
+}
+
+.toast-warning .toast-icon {
+  background: #b7791f;
+}
+
+.toast-error .toast-icon {
+  background: #c62828;
+}
+
+.toast-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.toast-success .toast-title {
+  color: #205b27;
+}
+
+.toast-info .toast-title {
+  color: #164b7a;
+}
+
+.toast-warning .toast-title {
+  color: #704f10;
+}
+
+.toast-error .toast-title {
+  color: #7f1d1d;
+}
+
+.toast-message {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #3f3f46;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #52525b;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 20px;
+  padding: 0 2px;
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  :host {
+    bottom: 16px;
+  }
+
+  .toast-container {
+    width: calc(100vw - 32px);
+  }
+
+  .toast {
+    width: 100%;
+  }
+}

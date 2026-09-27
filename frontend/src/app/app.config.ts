@@ -20,6 +20,7 @@ import { AUTHENTICATION_PROVIDER } from './core/interfaces/authentication-provid
 import { DevelopmentAuthenticationProviderService } from './core/services/development-authentication-provider.service';
 import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
 import { apiLoadingInterceptor } from './core/interceptors/api-loading.interceptor';
+import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -30,6 +31,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([
         authTokenInterceptor,
         apiLoadingInterceptor,
+        apiErrorInterceptor,
       ]),
     ),
     {

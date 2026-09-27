@@ -1,0 +1,55 @@
+<div
+  class="toast-container"
+  aria-live="polite"
+  aria-atomic="false"
+>
+  @for (
+    notification of notificationService.notifications();
+    track notification.id
+  ) {
+    <aside
+      class="toast"
+      [class.toast-success]="notification.type === 'SUCCESS'"
+      [class.toast-info]="notification.type === 'INFO'"
+      [class.toast-warning]="notification.type === 'WARNING'"
+      [class.toast-error]="notification.type === 'ERROR'"
+      role="status"
+    >
+      <div class="toast-icon" aria-hidden="true">
+        @switch (notification.type) {
+          @case ('SUCCESS') {
+            ✓
+          }
+          @case ('INFO') {
+            i
+          }
+          @case ('WARNING') {
+            !
+          }
+          @case ('ERROR') {
+            !
+          }
+        }
+      </div>
+
+      <div class="toast-content">
+        <div class="toast-title">
+          {{ notification.title }}
+        </div>
+
+        <div class="toast-message">
+          {{ notification.message }}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="toast-close"
+        aria-label="Dismiss notification"
+        (click)="dismiss(notification.id)"
+      >
+        ×
+      </button>
+    </aside>
+  }
+</div>
