@@ -20,6 +20,7 @@ export enum ApiLoadingMessage {
   GeneratingSemanticPreviewWithAI = 'Generating semantic preview with FORGE AI...',
   GeneratingFieldProposalWithAI = 'Generating field proposal with FORGE AI...',
   GeneratingIdentityProposalWithAI = 'Generating identity proposal with FORGE AI...',
+  GeneratingRelationshipProposalWithAI = 'Generating relationship proposal with FORGE AI...',
   UpdatingDataModel = 'Updating Data Model...',
   DeletingDataModel = 'Deleting Data Model...',
   LoadingSpecification = 'Loading Data Model specification...',

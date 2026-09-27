@@ -518,7 +518,7 @@ class SpecificationService:
         actor_user_id: str,
         request: CreateRelationshipRequest,
     ) -> dict[str, Any] | None:
-        """Create and persist a relationship in the canonical specification."""
+        """Create a relationship using an existing compatible foreign key."""
 
         specification = self.get_specification(
             data_model_id=data_model_id,
@@ -527,10 +527,12 @@ class SpecificationService:
         if specification is None:
             return None
 
+        entities = specification.get("entities", [])
+
         source_entity = next(
             (
                 entity
-                for entity in specification.get("entities", [])
+                for entity in entities
                 if entity.get("name") == request.source_entity
             ),
             None,
@@ -539,7 +541,7 @@ class SpecificationService:
         target_entity = next(
             (
                 entity
-                for entity in specification.get("entities", [])
+                for entity in entities
                 if entity.get("name") == request.target_entity
             ),
             None,
@@ -555,33 +557,93 @@ class SpecificationService:
                 f"Unknown target entity: {request.target_entity}"
             )
 
-        if not any(
-            field.get("name") == request.source_field
-            for field in source_entity.get("fields", [])
-        ):
+        if request.source_entity == request.target_entity:
             raise ValueError(
-                f"Unknown source field: "
-                f"{request.source_entity}.{request.source_field}"
+                "A relationship must connect two different entities."
             )
 
-        if not any(
-            field.get("name") == request.target_field
-            for field in target_entity.get("fields", [])
+        foreign_keys = specification.get("foreign_keys", [])
+
+        compatible_foreign_keys = [
+            foreign_key
+            for foreign_key in foreign_keys
+            if (
+                foreign_key.get("source", {}).get("entity")
+                == request.source_entity
+                and foreign_key.get("target", {}).get("entity")
+                == request.target_entity
+            )
+            or (
+                foreign_key.get("source", {}).get("entity")
+                == request.target_entity
+                and foreign_key.get("target", {}).get("entity")
+                == request.source_entity
+            )
+        ]
+
+        if not compatible_foreign_keys:
+            raise ValueError(
+                f"No compatible foreign key exists between "
+                f"'{request.source_entity}' and "
+                f"'{request.target_entity}'. "
+                "Define a foreign key first."
+            )
+
+        if len(compatible_foreign_keys) > 1:
+            names = [
+                foreign_key.get("name", "Unnamed foreign key")
+                for foreign_key in compatible_foreign_keys
+            ]
+
+            raise ValueError(
+                "Multiple foreign keys exist between "
+                f"'{request.source_entity}' and "
+                f"'{request.target_entity}': "
+                + ", ".join(names)
+                + "."
+            )
+
+        foreign_key = compatible_foreign_keys[0]
+
+        fk_source = foreign_key.get("source", {})
+        fk_target = foreign_key.get("target", {})
+
+        fk_source_entity = fk_source.get("entity")
+        fk_source_fields = fk_source.get("fields", [])
+
+        fk_target_entity = fk_target.get("entity")
+        fk_target_fields = fk_target.get("fields", [])
+
+        if (
+            not isinstance(fk_source_entity, str)
+            or not isinstance(fk_target_entity, str)
+            or not isinstance(fk_source_fields, list)
+            or not isinstance(fk_target_fields, list)
+            or not fk_source_fields
+            or not fk_target_fields
         ):
             raise ValueError(
-                f"Unknown target field: "
-                f"{request.target_entity}.{request.target_field}"
+                "The compatible foreign key has an invalid structure."
+            )
+
+        if fk_source_entity == request.source_entity:
+            relationship_source = (
+                f"{fk_source_entity}.{fk_source_fields[0]}"
+            )
+            relationship_target = (
+                f"{fk_target_entity}.{fk_target_fields[0]}"
+            )
+        else:
+            relationship_source = (
+                f"{fk_target_entity}.{fk_target_fields[0]}"
+            )
+            relationship_target = (
+                f"{fk_source_entity}.{fk_source_fields[0]}"
             )
 
         relationship = {
-            "source": (
-                f"{request.source_entity}."
-                f"{request.source_field}"
-            ),
-            "target": (
-                f"{request.target_entity}."
-                f"{request.target_field}"
-            ),
+            "source": relationship_source,
+            "target": relationship_target,
             "type": request.type,
             "source_participation": request.source_participation,
             "target_participation": request.target_participation,
@@ -621,7 +683,10 @@ class SpecificationService:
                     f"'{relationship['target']}'"
                 ),
                 data_model_id=data_model_id,
-                metadata=relationship,
+                metadata={
+                    **relationship,
+                    "foreign_key": foreign_key.get("name"),
+                },
             )
 
         return relationship

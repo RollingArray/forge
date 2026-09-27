@@ -80,9 +80,7 @@ interface UpdateFieldRequest {
 
 interface CreateRelationshipRequest {
   source_entity: string;
-  source_field: string;
   target_entity: string;
-  target_field: string;
   type:
     | 'ONE_TO_ONE'
     | 'ONE_TO_MANY'

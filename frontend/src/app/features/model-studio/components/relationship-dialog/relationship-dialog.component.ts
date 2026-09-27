@@ -1,16 +1,42 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules & Engineered Data
+ * ============================================================================
+ *
+ * File: relationship-dialog.component.ts
+ * Purpose: Relationship authoring dialog for Model Studio.
+ *
+ * Relationships are defined between entities. The actual field linkage is
+ * resolved from an existing foreign key in the specification.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
+  inject,
   output,
   signal,
 } from '@angular/core';
+import { TitleCasePipe } from '@angular/common';
 
 import {
+  ForgeForeignKey,
   ForgeSpecificationEntity,
   ForgeSpecificationRelationship,
 } from '../../../../core/interfaces/forge-specification.interface';
+import { AIService } from '../../../../core/services/ai.service';
+import { AICapability } from '../../../../core/interfaces/ai-capability.interface';
+import { AIRelationshipProposal } from '../../../../core/interfaces/ai-relationship-proposal.interface';
+
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 
@@ -26,9 +52,7 @@ export type RelationshipParticipation =
 
 export interface RelationshipDraft {
   sourceEntity: string;
-  sourceField: string;
   targetEntity: string;
-  targetField: string;
   type: RelationshipType;
   sourceParticipation: RelationshipParticipation;
   targetParticipation: RelationshipParticipation;
@@ -40,31 +64,35 @@ interface RelationshipOption {
   description: string;
 }
 
+
 @Component({
   selector: 'app-model-studio-relationship-dialog',
   standalone: true,
   imports: [
+    TitleCasePipe,
     FormDialogComponent,
     ChoiceDividerComponent,
+    AiAssistPanelComponent,
   ],
   templateUrl: './relationship-dialog.component.html',
   styleUrl: './relationship-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RelationshipDialogComponent {
-  readonly entities =
-    input.required<ForgeSpecificationEntity[]>();
-
+  readonly entities = input<ForgeSpecificationEntity[]>([]);
+  readonly foreignKeys = input<ForgeForeignKey[]>([]);
+  readonly sourceEntityContext = input('');
   readonly existingRelationship =
     input<ForgeSpecificationRelationship | null>(null);
 
-  readonly closed = output<void>();
   readonly saved = output<RelationshipDraft>();
+  readonly closed = output<void>();
+
+  private readonly aiService = inject(AIService);
 
   readonly sourceEntity = signal('');
-  readonly sourceField = signal('');
+
   readonly targetEntity = signal('');
-  readonly targetField = signal('');
 
   readonly relationshipType =
     signal<RelationshipType>('MANY_TO_ONE');
@@ -75,48 +103,104 @@ export class RelationshipDialogComponent {
   readonly targetParticipation =
     signal<RelationshipParticipation>('OPTIONAL');
 
-  readonly relationshipOptions: readonly RelationshipOption[] = [
+  readonly aiPrompt = signal('');
+  readonly aiGenerating = signal(false);
+  readonly aiResponse =
+    signal<{
+      status: string;
+      message: string;
+      proposal: AIRelationshipProposal | null;
+    } | null>(null);
+
+  readonly aiCapability = signal<AICapability | null>(null);
+
+  readonly relationshipOptions: RelationshipOption[] = [
     {
       type: 'ONE_TO_ONE',
-      label: 'Each record connects to one record',
-      description:
-        'One record on either side can connect to only one record on the other side.',
+      label: 'One-to-One',
+      description: 'One record connects to one record.',
     },
     {
       type: 'ONE_TO_MANY',
-      label: 'One record can connect to many records',
-      description:
-        'A single source record can connect to multiple target records.',
+      label: 'One-to-Many',
+      description: 'One record can connect to many records.',
     },
     {
       type: 'MANY_TO_ONE',
-      label: 'Many records can belong to one record',
-      description:
-        'Multiple source records can connect to the same target record.',
+      label: 'Many-to-One',
+      description: 'Many records can belong to one record.',
     },
     {
       type: 'MANY_TO_MANY',
-      label: 'Records can connect to many records',
-      description:
-        'Records on both sides can connect to multiple records.',
+      label: 'Many-to-Many',
+      description: 'Records can connect to many records.',
     },
   ];
 
-  readonly sourceFields = computed(() =>
-    this.fieldsFor(this.sourceEntity()),
-  );
+  readonly aiExamples = [
+    {
+      label: 'One-to-many',
+      prompt:
+        'Each [child record] belongs to one [parent record], and a [parent record] can have many [child records].',
+      example:
+        'Each [SalesOrderItem] belongs to one [SalesOrder], and a [SalesOrder] can have many [SalesOrderItems].',
+    },
+    {
+      label: 'Optional relationship',
+      prompt:
+        'A [parent record] can have many [child records], but a [child record] may exist without a [parent record].',
+      example:
+        'A [Customer] can have many [SalesOrders], but a [SalesOrder] may exist without a [Customer].',
+    },
+    {
+      label: 'One-to-one',
+      prompt:
+        'Each [record type A] has one [record type B], and each [record type B] belongs to one [record type A].',
+      example:
+        'Each [Employee] has one [EmployeeProfile], and each [EmployeeProfile] belongs to one [Employee].',
+    },
+    {
+      label: 'Many-to-many',
+      prompt:
+        'A [record type A] can be associated with many [record type B], and a [record type B] can be associated with many [record type A].',
+      example:
+        'A [Student] can be associated with many [Courses], and a [Course] can be associated with many [Students].',
+    },
+  ];
 
-  readonly targetFields = computed(() =>
-    this.fieldsFor(this.targetEntity()),
+  readonly resolvedForeignKeys = computed(() => {
+    const source = this.sourceEntity();
+    const target = this.targetEntity();
+
+    if (!source || !target) {
+      return [];
+    }
+
+    return this.foreignKeys().filter(
+      (foreignKey) =>
+        (foreignKey.source.entity === source &&
+          foreignKey.target.entity === target) ||
+        (foreignKey.source.entity === target &&
+          foreignKey.target.entity === source),
+    );
+  });
+
+  readonly resolvedForeignKey = computed(() => {
+    const keys = this.resolvedForeignKeys();
+
+    return keys.length === 1 ? keys[0] : null;
+  });
+
+  readonly hasMultipleForeignKeys = computed(
+    () => this.resolvedForeignKeys().length > 1,
   );
 
   readonly canSave = computed(
     () =>
       this.sourceEntity().trim().length > 0 &&
-      this.sourceField().trim().length > 0 &&
       this.targetEntity().trim().length > 0 &&
-      this.targetField().trim().length > 0 &&
-      this.sourceEntity() !== this.targetEntity(),
+      this.sourceEntity() !== this.targetEntity() &&
+      this.resolvedForeignKeys().length === 1,
   );
 
   readonly sourceEntityLabel = computed(
@@ -150,21 +234,48 @@ export class RelationshipDialogComponent {
     }
   });
 
-  constructor() {
-    const existing = this.existingRelationship();
+  readonly aiOnline = computed(
+    () => this.aiCapability()?.available ?? false,
+  );
 
-    if (existing) {
-      const source = this.parseEndpoint(existing.source);
-      const target = this.parseEndpoint(existing.target);
+  readonly aiModel = computed(
+    () => this.aiCapability()?.model ?? null,
+  );
+
+  readonly aiMode = computed(
+    () => this.aiCapability()?.mode ?? null,
+  );
+
+  handleAiGenerate(prompt: string): void {
+    this.aiPrompt.set(prompt);
+    this.generateWithAi();
+  }
+
+  constructor() {
+    effect(() => {
+      const contextualEntity = this.sourceEntityContext();
+
+      if (contextualEntity && !this.existingRelationship()) {
+        this.sourceEntity.set(contextualEntity);
+      }
+    });
+
+    effect(() => {
+      const existing = this.existingRelationship();
+
+      if (!existing) {
+        return;
+      }
+
+      const source = this.parseEntity(existing.source);
+      const target = this.parseEntity(existing.target);
 
       if (source) {
-        this.sourceEntity.set(source.entity);
-        this.sourceField.set(source.field);
+        this.sourceEntity.set(source);
       }
 
       if (target) {
-        this.targetEntity.set(target.entity);
-        this.targetField.set(target.field);
+        this.targetEntity.set(target);
       }
 
       this.relationshipType.set(
@@ -180,25 +291,94 @@ export class RelationshipDialogComponent {
         (existing.target_participation ??
           'MANDATORY') as RelationshipParticipation,
       );
+    });
+
+    this.loadAiCapability();
+  }
+
+  selectAiExample(prompt: string): void {
+    this.aiPrompt.set(prompt);
+    this.aiResponse.set(null);
+  }
+
+  generateWithAi(): void {
+    const request = this.aiPrompt().trim();
+
+    if (!request || this.aiGenerating()) {
+      return;
     }
+
+    this.aiGenerating.set(true);
+    this.aiResponse.set(null);
+
+    this.aiService
+      .proposeRelationship({
+        mode: this.existingRelationship() ? 'EDIT' : 'CREATE',
+        entities: this.entities().map((entity) => ({
+          name: entity.name,
+          fields: entity.fields.map((field) => ({
+            name: field.name,
+            type: field.type,
+          })),
+          identity_fields: entity.identity?.fields ?? [],
+        })),
+        request,
+        existingRelationship: this.existingRelationship()
+          ? {
+              source: this.existingRelationship()!.source,
+              target: this.existingRelationship()!.target,
+              type: this.existingRelationship()!.type,
+              source_participation:
+                this.existingRelationship()!.source_participation,
+              target_participation:
+                this.existingRelationship()!.target_participation,
+            }
+          : null,
+      })
+      .subscribe({
+        next: (response) => {
+          this.aiResponse.set(response);
+          this.aiGenerating.set(false);
+        },
+        error: (error) => {
+          this.aiResponse.set({
+            status: 'UNSUPPORTED',
+            message:
+              error?.error?.detail ??
+              'FORGE AI could not generate a relationship proposal right now.',
+            proposal: null,
+          });
+          this.aiGenerating.set(false);
+        },
+      });
+  }
+
+  regenerateAi(): void {
+    this.generateWithAi();
+  }
+
+  applyAiProposal(): void {
+    const proposal = this.aiResponse()?.proposal;
+
+    if (!proposal) {
+      return;
+    }
+
+    this.sourceEntity.set(proposal.sourceEntity);
+    this.targetEntity.set(proposal.targetEntity);
+    this.relationshipType.set(proposal.type);
+    this.sourceParticipation.set(proposal.sourceParticipation);
+    this.targetParticipation.set(proposal.targetParticipation);
+
+    this.aiResponse.set(null);
   }
 
   selectSourceEntity(entityName: string): void {
     this.sourceEntity.set(entityName);
-    this.sourceField.set('');
   }
 
   selectTargetEntity(entityName: string): void {
     this.targetEntity.set(entityName);
-    this.targetField.set('');
-  }
-
-  selectSourceField(fieldName: string): void {
-    this.sourceField.set(fieldName);
-  }
-
-  selectTargetField(fieldName: string): void {
-    this.targetField.set(fieldName);
   }
 
   selectRelationshipType(type: RelationshipType): void {
@@ -224,9 +404,7 @@ export class RelationshipDialogComponent {
 
     this.saved.emit({
       sourceEntity: this.sourceEntity(),
-      sourceField: this.sourceField(),
       targetEntity: this.targetEntity(),
-      targetField: this.targetField(),
       type: this.relationshipType(),
       sourceParticipation: this.sourceParticipation(),
       targetParticipation: this.targetParticipation(),
@@ -237,28 +415,24 @@ export class RelationshipDialogComponent {
     this.closed.emit();
   }
 
-  private fieldsFor(
-    entityName: string,
-  ): ForgeSpecificationEntity['fields'] {
-    return (
-      this.entities().find(
-        (entity) => entity.name === entityName,
-      )?.fields ?? []
-    );
+  private loadAiCapability(): void {
+    this.aiService.getCapabilities().subscribe({
+      next: (capability) => {
+        this.aiCapability.set(capability);
+      },
+      error: () => {
+        this.aiCapability.set(null);
+      },
+    });
   }
 
-  private parseEndpoint(
-    endpoint: string,
-  ): { entity: string; field: string } | null {
+  private parseEntity(endpoint: string): string | null {
     const separator = endpoint.indexOf('.');
 
-    if (separator <= 0 || separator === endpoint.length - 1) {
+    if (separator <= 0) {
       return null;
     }
 
-    return {
-      entity: endpoint.slice(0, separator),
-      field: endpoint.slice(separator + 1),
-    };
+    return endpoint.slice(0, separator);
   }
 }

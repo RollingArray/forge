@@ -1247,30 +1247,57 @@ Rules:
 5. Never infer or create a foreign key.
 6. Only reference fields that exist in the supplied entities.
 7. If the user explicitly names entities and fields, use those exact names.
-8. Supported relationship types:
+8. The payload may identify an entity's identity fields using
+   "identity_fields". Identity fields are the fields that identify records
+   of that entity. They are useful relationship targets, but relationship
+   source fields do NOT have to be identity fields.
+9. Supported relationship types:
    ONE_TO_ONE
    ONE_TO_MANY
    MANY_TO_ONE
    MANY_TO_MANY
-9. Supported participation:
-   MANDATORY
-   OPTIONAL
-10. Preserve the user's stated relationship semantics.
-11. The request must identify enough relationship intent to determine
-    the participating entities, endpoint fields, and relationship direction.
-12. A request such as "create the relationship", "define a relationship",
+10. Supported participation:
+    MANDATORY
+    OPTIONAL
+11. Preserve the user's stated relationship semantics.
+12. Preserve the user's stated source and target direction.
+13. Interpret natural-language relationship direction literally.
+
+    For example:
+
+    "Each SalesOrder belongs to one Customer. Every SalesOrder must have a
+    Customer, and a Customer can have many SalesOrders."
+
+    MUST produce:
+
+    source_entity = "SalesOrder"
+    source_field = "CUSTOMER_ID"
+    target_entity = "Customer"
+    target_field = "CUSTOMER_ID"
+    type = "MANY_TO_ONE"
+    source_participation = "MANDATORY"
+    target_participation = "OPTIONAL"
+
+14. In a "belongs to", "references", or equivalent statement, the entity
+    doing the belonging or referencing is the source and the entity being
+    referenced is the target.
+15. If the user explicitly names endpoint fields, use those exact fields.
+16. If endpoint fields are not explicitly named, use the available model
+    semantics to identify them only when the relationship is unambiguous.
+    Otherwise return CLARIFY.
+17. A request such as "create the relationship", "define a relationship",
     or "connect these entities" without explicit relationship semantics
     MUST return CLARIFY.
-13. Do not choose a relationship direction, type, field, or participation
+18. Do not choose a relationship direction, type, field, or participation
     merely because it appears plausible from the supplied schema.
-14. If the request does not identify the entities or fields clearly enough,
+19. If the request does not identify the entities or fields clearly enough,
     return CLARIFY.
-12. If the request is asking to create a foreign key rather than define a
+20. If the request is asking to create a foreign key rather than define a
     relationship, return UNSUPPORTED.
-13. For CREATE, propose a new relationship.
-14. For EDIT, consider the supplied existing relationship.
-15. Keep the response message concise and business-friendly.
-16. Return JSON only.
+21. For CREATE, propose a new relationship.
+22. For EDIT, consider the supplied existing relationship.
+23. Keep the response message concise and business-friendly.
+24. Return JSON only.
 
 Expected JSON:
 

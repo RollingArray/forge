@@ -1,3 +1,11 @@
+"""
+File: specification_relationship_model.py
+Purpose: API contracts for FORGE relationship authoring.
+
+Author: Ranjoy Sen
+Email: ranjoy.sen@collins.com
+"""
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,9 +28,7 @@ class CreateRelationshipRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_entity: str = Field(min_length=1)
-    source_field: str = Field(min_length=1)
     target_entity: str = Field(min_length=1)
-    target_field: str = Field(min_length=1)
 
     type: RelationshipType
 
@@ -35,6 +41,8 @@ class DeleteRelationshipRequest(BaseModel):
 
     source: str = Field(min_length=1)
     target: str = Field(min_length=1)
+
     type: RelationshipType
+
     source_participation: RelationshipParticipation = "MANDATORY"
     target_participation: RelationshipParticipation = "MANDATORY"

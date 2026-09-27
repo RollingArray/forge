@@ -60,33 +60,32 @@
     </div>
   } @else {
     <div class="ai-recommended-badge">
-      <span class="material-symbols-outlined"> auto_awesome </span>
+      <span class="material-symbols-outlined">auto_awesome</span>
       Recommended
     </div>
 
     <header class="ai-assist-header">
       <div class="ai-assist-icon">
-        <span class="material-symbols-outlined"> auto_awesome </span>
+        <span class="material-symbols-outlined">auto_awesome</span>
       </div>
 
       <div class="ai-assist-header-content">
         <div class="ai-assist-title-row">
-          <h3>Start with FORGE AI</h3>
+          <h3>{{ title() }}</h3>
 
-          @if (llmOnline()) {
-            <span class="llm-status online">
-              <span class="llm-status-dot"></span>
-              Online
-            </span>
-          }
+          <span
+            class="llm-status"
+            [class.online]="llmOnline()"
+            [class.offline]="!llmOnline()"
+          >
+            <span class="llm-status-dot"></span>
+            {{ llmOnline() ? 'Online' : 'Offline' }}
+          </span>
         </div>
 
-        <p>
-          Describe what you want to model in natural language. FORGE AI will
-          propose a starting point for you to review.
-        </p>
+        <p>{{ description() }}</p>
 
-        @if (llmOnline() && llmModel()) {
+        @if (llmModel()) {
           <span class="llm-details">
             {{ llmModel() }}
 
@@ -104,48 +103,90 @@
         rows="7"
         [value]="prompt()"
         (input)="prompt.set($any($event.target).value)"
+        [disabled]="generating() || !llmOnline()"
         [placeholder]="placeholder()"
-        aria-label="Describe what you want FORGE AI to create"
+        aria-label="Describe what you want FORGE AI to propose"
       ></textarea>
 
       <div class="ai-assist-input-footer">
         <span class="ai-hint">
-          <span class="material-symbols-outlined"> tips_and_updates </span>
-          Describe the business process, system, or domain.
+          <span class="material-symbols-outlined">
+            tips_and_updates
+          </span>
+          {{ hint() }}
         </span>
 
         <button
           type="button"
           class="generate-button"
-          [disabled]="!prompt().trim() || generating()"
+          [disabled]="
+            !prompt().trim() ||
+            generating() ||
+            !llmOnline()
+          "
           (click)="generateSuggestion()"
         >
-          <span class="material-symbols-outlined"> auto_awesome </span>
-          {{ generateLabel() }}
+          @if (generating()) {
+            <span class="material-symbols-outlined spin">sync</span>
+            Generating...
+          } @else {
+            <span class="material-symbols-outlined">auto_awesome</span>
+            {{ generateLabel() }}
+          }
         </button>
       </div>
     </div>
 
-    <div class="ai-example">
-      <span class="material-symbols-outlined"> tips_and_updates </span>
+    <ng-content select="[ai-result]" />
 
-      <div>
-        <strong>Example prompt</strong>
-        <p>
-          Create a Data Model for SAP Order-to-Cash covering sales orders,
-          deliveries, billing, customers, and materials.
-        </p>
+    @if (examples().length > 0) {
+      <div class="examples-section">
+        <div class="examples-heading">
+          <span class="material-symbols-outlined">lightbulb</span>
+
+          <div>
+            <strong>{{ exampleHeading() }}</strong>
+            <span>{{ exampleDescription() }}</span>
+          </div>
+        </div>
+
+        <div class="examples-list">
+          @for (example of examples(); track example.label) {
+            <div class="example-button">
+              <div class="example-copy">
+                <span>{{ example.label }}</span>
+                <small>{{ example.prompt }}</small>
+
+                @if (example.example) {
+                  <em>
+                    Example: {{ example.example }}
+                  </em>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="example-select-button"
+                [disabled]="generating() || !llmOnline()"
+                (click)="selectExample(example.prompt)"
+              >
+                Select
+                <span class="material-symbols-outlined">
+                  arrow_forward
+                </span>
+              </button>
+            </div>
+          }
+        </div>
       </div>
-    </div>
+    }
 
     <div class="ai-assist-empty">
-      <span class="material-symbols-outlined"> lightbulb </span>
+      <span class="material-symbols-outlined">lightbulb</span>
 
       <div>
-        <strong>AI proposes. You decide.</strong>
-        <p>
-          Review the suggestion and apply it to the form when you're ready.
-        </p>
+        <strong>{{ decisionTitle() }}</strong>
+        <p>{{ decisionDescription() }}</p>
       </div>
     </div>
   }

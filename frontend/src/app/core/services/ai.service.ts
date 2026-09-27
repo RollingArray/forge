@@ -21,6 +21,11 @@ import {
 import { AISemanticPreview } from '../interfaces/ai-semantic-preview.interface';
 import { AIDataModelProposal } from '../interfaces/ai-data-model-proposal.interface';
 import { AIIdentityProposalRequest, AIIdentityProposalResponse } from '../interfaces/ai-identity-proposal.interface';
+import {
+  AIRelationshipProposal,
+  AIRelationshipProposalRequest,
+  AIRelationshipProposalResponse,
+} from '../interfaces/ai-relationship-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
@@ -113,6 +118,62 @@ export class AIService {
         ),
       },
     );
+  }
+
+
+  proposeRelationship(
+    request: AIRelationshipProposalRequest,
+  ): Observable<AIRelationshipProposalResponse> {
+    interface AIRelationshipProposalApiResponse {
+      status: AIRelationshipProposalResponse['status'];
+      message: string;
+      proposal: {
+        source_entity: string;
+        source_field: string;
+        target_entity: string;
+        target_field: string;
+        type: AIRelationshipProposal['type'];
+        source_participation: AIRelationshipProposal['sourceParticipation'];
+        target_participation: AIRelationshipProposal['targetParticipation'];
+      } | null;
+    }
+
+    return this.http
+      .post<AIRelationshipProposalApiResponse>(
+        '/api/v1/ai/relationships/propose',
+        {
+          mode: request.mode,
+          entities: request.entities,
+          request: request.request,
+          existing_relationship:
+            request.existingRelationship ?? null,
+        },
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.GeneratingRelationshipProposalWithAI,
+          ),
+        },
+      )
+      .pipe(
+        map((response): AIRelationshipProposalResponse => ({
+          status: response.status,
+          message: response.message,
+          proposal: response.proposal
+            ? {
+                sourceEntity: response.proposal.source_entity,
+                sourceField: response.proposal.source_field,
+                targetEntity: response.proposal.target_entity,
+                targetField: response.proposal.target_field,
+                type: response.proposal.type,
+                sourceParticipation:
+                  response.proposal.source_participation,
+                targetParticipation:
+                  response.proposal.target_participation,
+              }
+            : null,
+        })),
+      );
   }
 
   suggestDataModel(prompt: string): Observable<AIDataModelProposal> {

@@ -249,7 +249,7 @@ interface StudioStepItem {
                 [relationships]="specification.relationships"
                 (addField)="openFieldDialog()"
                 (editField)="openFieldEditDialog($event)"
-                (addRelationship)="openRelationshipDialog()"
+                (addRelationship)="openRelationshipDialog($event)"
                 (editIdentity)="openIdentityDialog()"
                 (closed)="selectedEntity.set('')"
               />
@@ -304,6 +304,8 @@ interface StudioStepItem {
         @if (specification(); as specification) {
           <app-model-studio-relationship-dialog
             [entities]="specification.entities"
+            [foreignKeys]="specification.foreignKeys"
+            [sourceEntityContext]="relationshipSourceEntity()"
             (saved)="handleRelationshipSaved($event)"
             (closed)="closeRelationshipDialog()"
           />
@@ -719,6 +721,9 @@ export class ModelStudioComponent {
   readonly relationshipDialogOpen =
     signal(false);
 
+  readonly relationshipSourceEntity =
+    signal('');
+
   readonly errorMessage = signal<string | null>(null);
 
   readonly steps: readonly StudioStepItem[] = [
@@ -812,16 +817,18 @@ export class ModelStudioComponent {
     this.identityDialogOpen.set(false);
   }
 
-  openRelationshipDialog(): void {
+  openRelationshipDialog(sourceEntity?: string): void {
     if (!this.specification()) {
       return;
     }
 
+    this.relationshipSourceEntity.set(sourceEntity ?? '');
     this.relationshipDialogOpen.set(true);
   }
 
   closeRelationshipDialog(): void {
     this.relationshipDialogOpen.set(false);
+    this.relationshipSourceEntity.set('');
   }
 
   handleRelationshipSaved(
@@ -842,9 +849,7 @@ export class ModelStudioComponent {
         dataModelId,
         {
           source_entity: draft.sourceEntity,
-          source_field: draft.sourceField,
           target_entity: draft.targetEntity,
-          target_field: draft.targetField,
           type: draft.type,
           source_participation:
             draft.sourceParticipation,

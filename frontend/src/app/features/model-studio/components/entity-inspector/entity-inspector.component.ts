@@ -32,7 +32,7 @@ export class EntityInspectorComponent {
     input<ForgeSpecificationRelationship[]>([]);
 
   readonly addField = output<void>();
-  readonly addRelationship = output<void>();
+  readonly addRelationship = output<string>();
   readonly editField = output<ForgeSpecificationField>();
   readonly editIdentity = output<void>();
   readonly closed = output<void>();
