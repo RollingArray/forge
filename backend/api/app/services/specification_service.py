@@ -18,6 +18,9 @@ from app.models.specification_field_model import (
     CreateFieldRequest,
     UpdateFieldRequest,
 )
+from app.models.specification_relationship_model import (
+    CreateRelationshipRequest,
+)
 from app.constants.activity import ActivityType
 from app.services.activity_service import ActivityService
 from app.repositories.json_data_model_repository import (
@@ -508,6 +511,177 @@ class SpecificationService:
             )
 
         return updated_entity
+
+    def create_relationship(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: CreateRelationshipRequest,
+    ) -> dict[str, Any] | None:
+        """Create and persist a relationship in the canonical specification."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        source_entity = next(
+            (
+                entity
+                for entity in specification.get("entities", [])
+                if entity.get("name") == request.source_entity
+            ),
+            None,
+        )
+
+        target_entity = next(
+            (
+                entity
+                for entity in specification.get("entities", [])
+                if entity.get("name") == request.target_entity
+            ),
+            None,
+        )
+
+        if source_entity is None:
+            raise ValueError(
+                f"Unknown source entity: {request.source_entity}"
+            )
+
+        if target_entity is None:
+            raise ValueError(
+                f"Unknown target entity: {request.target_entity}"
+            )
+
+        if not any(
+            field.get("name") == request.source_field
+            for field in source_entity.get("fields", [])
+        ):
+            raise ValueError(
+                f"Unknown source field: "
+                f"{request.source_entity}.{request.source_field}"
+            )
+
+        if not any(
+            field.get("name") == request.target_field
+            for field in target_entity.get("fields", [])
+        ):
+            raise ValueError(
+                f"Unknown target field: "
+                f"{request.target_entity}.{request.target_field}"
+            )
+
+        relationship = {
+            "source": (
+                f"{request.source_entity}."
+                f"{request.source_field}"
+            ),
+            "target": (
+                f"{request.target_entity}."
+                f"{request.target_field}"
+            ),
+            "type": request.type,
+            "source_participation": request.source_participation,
+            "target_participation": request.target_participation,
+        }
+
+        relationships = specification.setdefault(
+            "relationships",
+            [],
+        )
+
+        if relationship in relationships:
+            raise ValueError(
+                "Relationship already exists."
+            )
+
+        candidate = deepcopy(specification)
+        candidate["relationships"].append(relationship)
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.RELATIONSHIP_ADDED,
+                title="Relationship added",
+                description=(
+                    f"Added relationship "
+                    f"'{relationship['source']}' → "
+                    f"'{relationship['target']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=relationship,
+            )
+
+        return relationship
+
+    def delete_relationship(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        relationship: dict[str, Any],
+    ) -> bool:
+        """Delete an existing relationship."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return False
+
+        relationships = specification.get(
+            "relationships",
+            [],
+        )
+
+        if relationship not in relationships:
+            return False
+
+        candidate = deepcopy(specification)
+
+        candidate["relationships"] = [
+            item
+            for item in candidate["relationships"]
+            if item != relationship
+        ]
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.RELATIONSHIP_DELETED,
+                title="Relationship deleted",
+                description=(
+                    f"Deleted relationship "
+                    f"'{relationship.get('source')}' → "
+                    f"'{relationship.get('target')}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=relationship,
+            )
+
+        return True
 
     def delete_entity(
         self,

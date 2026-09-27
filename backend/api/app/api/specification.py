@@ -19,6 +19,10 @@ from app.models.specification_field_model import (
     CreateFieldRequest,
     UpdateFieldRequest,
 )
+from app.models.specification_relationship_model import (
+    CreateRelationshipRequest,
+    DeleteRelationshipRequest,
+)
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.specification_service import SpecificationService
@@ -279,6 +283,88 @@ async def update_entity_population(
         )
 
     return entity
+
+
+@router.post(
+    "/{data_model_id}/specification/relationships",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_relationship(
+    data_model_id: str,
+    request: CreateRelationshipRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Create a relationship in the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        relationship = specification_service.create_relationship(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if relationship is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return relationship
+
+
+@router.delete(
+    "/{data_model_id}/specification/relationships",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_relationship(
+    data_model_id: str,
+    request: DeleteRelationshipRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Delete a relationship from the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    relationship = request.model_dump()
+
+    try:
+        deleted = specification_service.delete_relationship(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            relationship=relationship,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Relationship not found.",
+        )
 
 
 @router.delete(
