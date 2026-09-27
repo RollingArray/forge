@@ -1,0 +1,306 @@
+<app-form-dialog
+  title="Add Relationship"
+  subtitle="Connect two entities and describe how their records are related."
+  icon="account_tree"
+  width="1080px"
+  (closed)="close()"
+>
+  <div dialog-body class="relationship-dialog">
+
+    <section class="relationship-column guide-column">
+
+      <div class="guide-card">
+        <div class="guide-icon">
+          <span class="material-symbols-outlined">account_tree</span>
+        </div>
+
+        <div>
+          <strong>Connect related information</strong>
+          <p>
+            Choose the records that belong together. FORGE will use this
+            relationship when building the generation plan.
+          </p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <span class="guide-section-title">How this works</span>
+
+        <div class="guide-step">
+          <span>1</span>
+          <div>
+            <strong>Choose the two entities</strong>
+            <small>Select the records that should be connected.</small>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <span>2</span>
+          <div>
+            <strong>Choose the connecting fields</strong>
+            <small>Select the existing fields that identify the connection.</small>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <span>3</span>
+          <div>
+            <strong>Describe how records connect</strong>
+            <small>Use the plain-language choices on the right.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-note">
+        <span class="material-symbols-outlined">info</span>
+        <p>
+          Relationships connect existing entities and fields. FORGE does not
+          create new fields as part of this step.
+        </p>
+      </div>
+
+    </section>
+
+    <app-choice-divider />
+
+    <section class="relationship-column manual-column">
+
+      <div class="manual-header">
+        <div>
+          <span class="manual-title">Define the relationship</span>
+          <span class="manual-description">
+            Tell FORGE how the records connect.
+          </span>
+        </div>
+      </div>
+
+      <div class="connection-section">
+
+        <div class="connection-row">
+
+          <label class="form-field">
+            <span>From entity</span>
+
+            <select
+              [value]="sourceEntity()"
+              (change)="selectSourceEntity($any($event.target).value)"
+            >
+              <option value="">Choose an entity...</option>
+
+              @for (entity of entities(); track entity.name) {
+                <option
+                  [value]="entity.name"
+                  [disabled]="entity.name === targetEntity()"
+                >
+                  {{ entity.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <span class="connection-arrow material-symbols-outlined">
+            arrow_forward
+          </span>
+
+          <label class="form-field">
+            <span>To entity</span>
+
+            <select
+              [value]="targetEntity()"
+              (change)="selectTargetEntity($any($event.target).value)"
+            >
+              <option value="">Choose an entity...</option>
+
+              @for (entity of entities(); track entity.name) {
+                <option
+                  [value]="entity.name"
+                  [disabled]="entity.name === sourceEntity()"
+                >
+                  {{ entity.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+        </div>
+
+        <div class="connection-row">
+
+          <label class="form-field">
+            <span>Connecting field</span>
+
+            <select
+              [value]="sourceField()"
+              [disabled]="!sourceEntity()"
+              (change)="selectSourceField($any($event.target).value)"
+            >
+              <option value="">Choose a field...</option>
+
+              @for (field of sourceFields(); track field.name) {
+                <option [value]="field.name">
+                  {{ field.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <span class="connection-arrow material-symbols-outlined">
+            link
+          </span>
+
+          <label class="form-field">
+            <span>Connecting field</span>
+
+            <select
+              [value]="targetField()"
+              [disabled]="!targetEntity()"
+              (change)="selectTargetField($any($event.target).value)"
+            >
+              <option value="">Choose a field...</option>
+
+              @for (field of targetFields(); track field.name) {
+                <option [value]="field.name">
+                  {{ field.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+        </div>
+
+      </div>
+
+      <div class="relationship-section">
+
+        <div class="section-label">
+          <strong>How can these records be connected?</strong>
+          <span>Choose the description that matches your data.</span>
+        </div>
+
+        <div class="relationship-options">
+          @for (
+            option of relationshipOptions;
+            track option.type
+          ) {
+            <button
+              type="button"
+              class="relationship-option"
+              [class.relationship-option--selected]="
+                relationshipType() === option.type
+              "
+              (click)="selectRelationshipType(option.type)"
+            >
+              <span class="option-radio">
+                @if (relationshipType() === option.type) {
+                  <span></span>
+                }
+              </span>
+
+              <span class="option-copy">
+                <strong>{{ option.label }}</strong>
+                <small>{{ option.description }}</small>
+              </span>
+            </button>
+          }
+        </div>
+
+      </div>
+
+      <div class="participation-section">
+
+        <div class="section-label">
+          <strong>Does every record need this connection?</strong>
+          <span>This controls whether the connection is required or optional.</span>
+        </div>
+
+        <div class="participation-grid">
+
+          <div class="participation-card">
+            <span>
+              {{ sourceEntityLabel() }}
+            </span>
+
+            <div class="segmented-control">
+              <button
+                type="button"
+                [class.active]="sourceParticipation() === 'MANDATORY'"
+                (click)="setSourceParticipation('MANDATORY')"
+              >
+                Every record
+              </button>
+
+              <button
+                type="button"
+                [class.active]="sourceParticipation() === 'OPTIONAL'"
+                (click)="setSourceParticipation('OPTIONAL')"
+              >
+                Some records
+              </button>
+            </div>
+          </div>
+
+          <div class="participation-card">
+            <span>
+              {{ targetEntityLabel() }}
+            </span>
+
+            <div class="segmented-control">
+              <button
+                type="button"
+                [class.active]="targetParticipation() === 'MANDATORY'"
+                (click)="setTargetParticipation('MANDATORY')"
+              >
+                Every record
+              </button>
+
+              <button
+                type="button"
+                [class.active]="targetParticipation() === 'OPTIONAL'"
+                (click)="setTargetParticipation('OPTIONAL')"
+              >
+                Some records
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="relationship-preview">
+        <div class="preview-icon">
+          <span class="material-symbols-outlined">visibility</span>
+        </div>
+
+        <div>
+          <span>In plain language</span>
+          <strong>{{ relationshipSummary() }}</strong>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div dialog-footer class="dialog-footer">
+    <button
+      type="button"
+      class="cancel-button"
+      (click)="close()"
+    >
+      Cancel
+    </button>
+
+    <div class="dialog-actions">
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="!canSave()"
+        (click)="save()"
+      >
+        <span class="material-symbols-outlined">account_tree</span>
+        Save Relationship
+      </button>
+    </div>
+  </div>
+</app-form-dialog>

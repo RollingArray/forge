@@ -16,6 +16,7 @@ from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIFieldProposal,
     AIIdentityProposal,
+    AIRelationshipProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -65,6 +66,23 @@ class AIService:
             request=request,
             existing_identity=existing_identity,
         )
+
+    def propose_relationship(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_relationship: dict[str, object] | None = None,
+    ) -> AIRelationshipProposal:
+        """Generate a structured FORGE relationship proposal."""
+
+        return self._provider.propose_relationship(
+            mode=mode,
+            entities=entities,
+            request=request,
+            existing_relationship=existing_relationship,
+        )
+
 
     def propose_field(
         self,

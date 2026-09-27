@@ -33,6 +33,10 @@ import { EntityDialogComponent } from './components/entity-dialog/entity-dialog.
 import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
 import { FieldDialogComponent, FieldDraft } from './components/field-dialog/field-dialog.component';
 import { IdentityDialogComponent } from './components/identity-dialog/identity-dialog.component';
+import {
+  RelationshipDialogComponent,
+  RelationshipDraft,
+} from './components/relationship-dialog/relationship-dialog.component';
 
 type StudioStep =
   | 'model'
@@ -56,6 +60,7 @@ interface StudioStepItem {
     EntityInspectorComponent,
     FieldDialogComponent,
     IdentityDialogComponent,
+    RelationshipDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -241,8 +246,10 @@ interface StudioStepItem {
             @if (selectedEntityData(); as entity) {
               <app-model-studio-entity-inspector
                 [entity]="entity"
+                [relationships]="specification.relationships"
                 (addField)="openFieldDialog()"
                 (editField)="openFieldEditDialog($event)"
+                (addRelationship)="openRelationshipDialog()"
                 (editIdentity)="openIdentityDialog()"
                 (closed)="selectedEntity.set('')"
               />
@@ -289,6 +296,16 @@ interface StudioStepItem {
             [entity]="entity"
             (saved)="handleIdentitySaved($event)"
             (closed)="closeIdentityDialog()"
+          />
+        }
+      }
+
+      @if (relationshipDialogOpen()) {
+        @if (specification(); as specification) {
+          <app-model-studio-relationship-dialog
+            [entities]="specification.entities"
+            (saved)="handleRelationshipSaved($event)"
+            (closed)="closeRelationshipDialog()"
           />
         }
       }
@@ -699,6 +716,9 @@ export class ModelStudioComponent {
   readonly identityDialogOpen =
     signal(false);
 
+  readonly relationshipDialogOpen =
+    signal(false);
+
   readonly errorMessage = signal<string | null>(null);
 
   readonly steps: readonly StudioStepItem[] = [
@@ -790,6 +810,60 @@ export class ModelStudioComponent {
 
   closeIdentityDialog(): void {
     this.identityDialogOpen.set(false);
+  }
+
+  openRelationshipDialog(): void {
+    if (!this.specification()) {
+      return;
+    }
+
+    this.relationshipDialogOpen.set(true);
+  }
+
+  closeRelationshipDialog(): void {
+    this.relationshipDialogOpen.set(false);
+  }
+
+  handleRelationshipSaved(
+    draft: RelationshipDraft,
+  ): void {
+    const dataModelId =
+      this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!dataModelId) {
+      this.errorMessage.set(
+        'Data Model ID is missing from the route.',
+      );
+      return;
+    }
+
+    this.specificationService
+      .createRelationship(
+        dataModelId,
+        {
+          source_entity: draft.sourceEntity,
+          source_field: draft.sourceField,
+          target_entity: draft.targetEntity,
+          target_field: draft.targetField,
+          type: draft.type,
+          source_participation:
+            draft.sourceParticipation,
+          target_participation:
+            draft.targetParticipation,
+        },
+      )
+      .subscribe({
+        next: () => {
+          this.closeRelationshipDialog();
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ??
+            'Unable to create the relationship.',
+          );
+        },
+      });
   }
 
   handleIdentitySaved(fields: string[]): void {

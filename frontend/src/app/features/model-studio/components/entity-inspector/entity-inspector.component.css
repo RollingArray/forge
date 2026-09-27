@@ -484,3 +484,70 @@ h2 {
   background: #faf9ff;
   color: #554dd4;
 }
+
+.relationship-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.relationship-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #e5e7ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.relationship-card-icon {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 7px;
+  background: #f0eeff;
+  color: #554dd4;
+}
+
+.relationship-card-icon .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.relationship-card-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.relationship-card-route {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.relationship-card-route strong {
+  overflow: hidden;
+  color: #30364d;
+  font-size: 9px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relationship-card-route .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: #9a9fb0;
+  font-size: 13px;
+}
+
+.relationship-card-type {
+  color: #858ca1;
+  font-size: 8px;
+  line-height: 1.4;
+}

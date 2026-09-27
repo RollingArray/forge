@@ -234,20 +234,93 @@
     @if (activeTab() === 'RELATIONSHIPS') {
       <section class="tab-panel">
 
-        <div class="empty-state large">
-          <span class="material-symbols-outlined">account_tree</span>
+        <div class="section-header">
+          <div>
+            <span class="section-title">Relationships</span>
 
-          <strong>No relationships defined</strong>
+            <span class="section-description">
+              Connections involving this entity.
+            </span>
+          </div>
 
-          <p>
-            Relationships between entities will appear here.
-          </p>
-
-          <button type="button" class="secondary-action">
+          <button
+            type="button"
+            class="add-button"
+            (click)="addRelationship.emit()"
+          >
             <span class="material-symbols-outlined">add</span>
-            Add Relationship
+            Add
           </button>
         </div>
+
+        @if (relationshipsForEntity().length === 0) {
+          <div class="empty-state large">
+            <span class="material-symbols-outlined">account_tree</span>
+
+            <strong>No relationships yet</strong>
+
+            <p>
+              Connect this entity to another entity to describe how their
+              records belong together.
+            </p>
+
+            <button
+              type="button"
+              class="secondary-action"
+              (click)="addRelationship.emit()"
+            >
+              <span class="material-symbols-outlined">add</span>
+              Add Relationship
+            </button>
+          </div>
+        } @else {
+          <div class="relationship-list">
+
+            @for (
+              relationship of relationshipsForEntity();
+              track relationship.source + relationship.target + relationship.type
+            ) {
+              <div class="relationship-card">
+
+                <div class="relationship-card-icon">
+                  <span class="material-symbols-outlined">
+                    account_tree
+                  </span>
+                </div>
+
+                <div class="relationship-card-content">
+
+                  <div class="relationship-card-route">
+                    <strong>
+                      {{ relationship.source }}
+                    </strong>
+
+                    <span class="material-symbols-outlined">
+                      arrow_forward
+                    </span>
+
+                    <strong>
+                      {{ relationship.target }}
+                    </strong>
+                  </div>
+
+                  <span class="relationship-card-type">
+                    {{ relationship.type === 'ONE_TO_ONE'
+                      ? 'One record connects to one record'
+                      : relationship.type === 'ONE_TO_MANY'
+                        ? 'One record can connect to many records'
+                        : relationship.type === 'MANY_TO_ONE'
+                          ? 'Many records can belong to one record'
+                          : 'Records can connect to many records' }}
+                  </span>
+
+                </div>
+
+              </div>
+            }
+
+          </div>
+        }
 
       </section>
     }

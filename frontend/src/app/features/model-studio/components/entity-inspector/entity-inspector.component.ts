@@ -9,6 +9,7 @@ import {
 import {
   ForgeSpecificationEntity,
   ForgeSpecificationField,
+  ForgeSpecificationRelationship,
 } from '../../../../core/interfaces/forge-specification.interface';
 
 type InspectorTab =
@@ -27,10 +28,48 @@ type InspectorTab =
 export class EntityInspectorComponent {
   readonly entity = input.required<ForgeSpecificationEntity>();
 
+  readonly relationships =
+    input<ForgeSpecificationRelationship[]>([]);
+
   readonly addField = output<void>();
+  readonly addRelationship = output<void>();
   readonly editField = output<ForgeSpecificationField>();
   readonly editIdentity = output<void>();
   readonly closed = output<void>();
+
+  relationshipsForEntity(): ForgeSpecificationRelationship[] {
+    const entityName = this.entity().name;
+
+    return this.relationships().filter(
+      (relationship) =>
+        relationship.source.startsWith(`${entityName}.`) ||
+        relationship.target.startsWith(`${entityName}.`),
+    );
+  }
+
+  relationshipOtherSide(
+    relationship: ForgeSpecificationRelationship,
+  ): string {
+    const entityName = this.entity().name;
+
+    if (relationship.source.startsWith(`${entityName}.`)) {
+      return relationship.target;
+    }
+
+    return relationship.source;
+  }
+
+  relationshipDirection(
+    relationship: ForgeSpecificationRelationship,
+  ): string {
+    const entityName = this.entity().name;
+
+    if (relationship.source.startsWith(`${entityName}.`)) {
+      return 'Connects to';
+    }
+
+    return 'Connected from';
+  }
 
   readonly activeTab = signal<InspectorTab>('FIELDS');
 

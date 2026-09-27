@@ -27,6 +27,7 @@ from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIFieldProposal,
     AIIdentityProposal,
+    AIRelationshipProposal,
     AISemanticPreview,
     AIProvider,
     AIProviderStatus,
@@ -448,6 +449,317 @@ class OllamaAIProvider(AIProvider):
             message=response_message.strip(),
             proposal=proposal,
         )
+
+    def propose_relationship(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_relationship: dict[str, object] | None = None,
+    ) -> AIRelationshipProposal:
+        """Generate a structured FORGE relationship proposal."""
+
+        normalized_mode = mode.strip().upper()
+        normalized_request = request.strip()
+
+        if normalized_mode not in {"CREATE", "EDIT"}:
+            raise ValueError(
+                "Relationship proposal mode must be CREATE or EDIT.",
+            )
+
+        if len(entities) < 2:
+            raise ValueError(
+                "At least two entities are required for a relationship proposal.",
+            )
+
+        if not normalized_request:
+            raise ValueError(
+                "Relationship proposal request must not be empty.",
+            )
+
+        if normalized_mode == "EDIT" and existing_relationship is None:
+            raise ValueError(
+                "Existing relationship is required in EDIT mode.",
+            )
+
+        payload = {
+            "mode": normalized_mode,
+            "entities": entities,
+            "request": normalized_request,
+            "existing_relationship": existing_relationship,
+        }
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": RELATIONSHIP_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        payload,
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "proposal": {
+                        "type": [
+                            "object",
+                            "null",
+                        ],
+                        "properties": {
+                            "source_entity": {"type": "string"},
+                            "source_field": {"type": "string"},
+                            "target_entity": {"type": "string"},
+                            "target_field": {"type": "string"},
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "ONE_TO_ONE",
+                                    "ONE_TO_MANY",
+                                    "MANY_TO_ONE",
+                                    "MANY_TO_MANY",
+                                ],
+                            },
+                            "source_participation": {
+                                "type": "string",
+                                "enum": [
+                                    "MANDATORY",
+                                    "OPTIONAL",
+                                ],
+                            },
+                            "target_participation": {
+                                "type": "string",
+                                "enum": [
+                                    "MANDATORY",
+                                    "OPTIONAL",
+                                ],
+                            },
+                        },
+                        "required": [
+                            "source_entity",
+                            "source_field",
+                            "target_entity",
+                            "target_field",
+                            "type",
+                            "source_participation",
+                            "target_participation",
+                        ],
+                        "additionalProperties": False,
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "proposal",
+                ],
+                "additionalProperties": False,
+            },
+        }
+
+        provider_request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                provider_request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                provider_response = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = provider_response.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty relationship proposal.",
+            )
+
+        try:
+            proposal_response = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid structured relationship proposal.",
+            ) from exc
+
+        if not isinstance(proposal_response, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid relationship proposal structure.",
+            )
+
+        proposal_status = proposal_response.get("status")
+        response_message = proposal_response.get("message")
+        proposal = proposal_response.get("proposal")
+
+        if proposal_status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI relationship proposal returned an invalid status.",
+            )
+
+        if (
+            not isinstance(response_message, str)
+            or not response_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI relationship proposal returned an invalid message.",
+            )
+
+        if proposal_status == "PROPOSE":
+            if not isinstance(proposal, dict):
+                raise RuntimeError(
+                    "FORGE AI relationship proposal is missing proposal data.",
+                )
+
+            for field_name in (
+                "source_entity",
+                "source_field",
+                "target_entity",
+                "target_field",
+            ):
+                value = proposal.get(field_name)
+                if not isinstance(value, str) or not value.strip():
+                    raise RuntimeError(
+                        f"FORGE AI relationship proposal contains "
+                        f"an invalid {field_name}.",
+                    )
+
+            if proposal.get("type") not in {
+                "ONE_TO_ONE",
+                "ONE_TO_MANY",
+                "MANY_TO_ONE",
+                "MANY_TO_MANY",
+            }:
+                raise RuntimeError(
+                    "FORGE AI relationship proposal contains "
+                    "an invalid relationship type.",
+                )
+
+            if proposal.get("source_participation") not in {
+                "MANDATORY",
+                "OPTIONAL",
+            }:
+                raise RuntimeError(
+                    "FORGE AI relationship proposal contains "
+                    "invalid source participation.",
+                )
+
+            if proposal.get("target_participation") not in {
+                "MANDATORY",
+                "OPTIONAL",
+            }:
+                raise RuntimeError(
+                    "FORGE AI relationship proposal contains "
+                    "invalid target participation.",
+                )
+
+            available_entities = {
+                entity.get("name")
+                for entity in entities
+                if isinstance(entity, dict)
+            }
+
+            source_entity = proposal["source_entity"]
+            target_entity = proposal["target_entity"]
+
+            if source_entity not in available_entities:
+                raise RuntimeError(
+                    "FORGE AI relationship proposal references "
+                    "an unknown source entity.",
+                )
+
+            if target_entity not in available_entities:
+                raise RuntimeError(
+                    "FORGE AI relationship proposal references "
+                    "an unknown target entity.",
+                )
+
+            entity_fields = {
+                entity.get("name"): {
+                    field.get("name")
+                    for field in entity.get("fields", [])
+                    if isinstance(field, dict)
+                }
+                for entity in entities
+                if isinstance(entity, dict)
+            }
+
+            if proposal["source_field"] not in entity_fields.get(
+                source_entity,
+                set(),
+            ):
+                raise RuntimeError(
+                    "FORGE AI relationship proposal references "
+                    "an unknown source field.",
+                )
+
+            if proposal["target_field"] not in entity_fields.get(
+                target_entity,
+                set(),
+            ):
+                raise RuntimeError(
+                    "FORGE AI relationship proposal references "
+                    "an unknown target field.",
+                )
+
+            proposal = {
+                "source_entity": source_entity,
+                "source_field": proposal["source_field"],
+                "target_entity": target_entity,
+                "target_field": proposal["target_field"],
+                "type": proposal["type"],
+                "source_participation": proposal["source_participation"],
+                "target_participation": proposal["target_participation"],
+            }
+
+        else:
+            proposal = None
+
+        return AIRelationshipProposal(
+            status=proposal_status,
+            message=response_message.strip(),
+            proposal=proposal,
+        )
+
 
     def propose_field(
         self,
@@ -918,3 +1230,63 @@ class OllamaAIProvider(AIProvider):
             )
 
         return payload.get("models", [])
+
+
+RELATIONSHIP_PROPOSAL_SYSTEM_PROMPT = r'''
+You are FORGE AI, an assistant for authoring executable synthetic-data specifications.
+
+Propose an explicit relationship using ONLY entities and fields supplied in the
+user payload.
+
+Rules:
+
+1. Never invent an entity.
+2. Never invent a field.
+3. Never rename a field.
+4. Never create a helper field.
+5. Never infer or create a foreign key.
+6. Only reference fields that exist in the supplied entities.
+7. If the user explicitly names entities and fields, use those exact names.
+8. Supported relationship types:
+   ONE_TO_ONE
+   ONE_TO_MANY
+   MANY_TO_ONE
+   MANY_TO_MANY
+9. Supported participation:
+   MANDATORY
+   OPTIONAL
+10. Preserve the user's stated relationship semantics.
+11. The request must identify enough relationship intent to determine
+    the participating entities, endpoint fields, and relationship direction.
+12. A request such as "create the relationship", "define a relationship",
+    or "connect these entities" without explicit relationship semantics
+    MUST return CLARIFY.
+13. Do not choose a relationship direction, type, field, or participation
+    merely because it appears plausible from the supplied schema.
+14. If the request does not identify the entities or fields clearly enough,
+    return CLARIFY.
+12. If the request is asking to create a foreign key rather than define a
+    relationship, return UNSUPPORTED.
+13. For CREATE, propose a new relationship.
+14. For EDIT, consider the supplied existing relationship.
+15. Keep the response message concise and business-friendly.
+16. Return JSON only.
+
+Expected JSON:
+
+{
+  "status": "PROPOSE | CLARIFY | UNSUPPORTED",
+  "message": "short explanation",
+  "proposal": {
+    "source_entity": "...",
+    "source_field": "...",
+    "target_entity": "...",
+    "target_field": "...",
+    "type": "ONE_TO_ONE | ONE_TO_MANY | MANY_TO_ONE | MANY_TO_MANY",
+    "source_participation": "MANDATORY | OPTIONAL",
+    "target_participation": "MANDATORY | OPTIONAL"
+  }
+}
+
+For CLARIFY and UNSUPPORTED, proposal must be null.
+'''

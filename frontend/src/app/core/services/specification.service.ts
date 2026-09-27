@@ -78,6 +78,32 @@ interface UpdateFieldRequest {
   };
 }
 
+interface CreateRelationshipRequest {
+  source_entity: string;
+  source_field: string;
+  target_entity: string;
+  target_field: string;
+  type:
+    | 'ONE_TO_ONE'
+    | 'ONE_TO_MANY'
+    | 'MANY_TO_ONE'
+    | 'MANY_TO_MANY';
+  source_participation: 'MANDATORY' | 'OPTIONAL';
+  target_participation: 'MANDATORY' | 'OPTIONAL';
+}
+
+interface DeleteRelationshipRequest {
+  source: string;
+  target: string;
+  type:
+    | 'ONE_TO_ONE'
+    | 'ONE_TO_MANY'
+    | 'MANY_TO_ONE'
+    | 'MANY_TO_MANY';
+  source_participation: 'MANDATORY' | 'OPTIONAL';
+  target_participation: 'MANDATORY' | 'OPTIONAL';
+}
+
 interface SpecificationResponse {
   version: string;
   vocabulary_version: string;
@@ -181,6 +207,38 @@ export class SpecificationService {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
           ApiLoadingMessage.UpdatingField,
+        ),
+      },
+    );
+  }
+
+  createRelationship(
+    dataModelId: string,
+    request: CreateRelationshipRequest,
+  ): Observable<ForgeSpecificationRelationship> {
+    return this.http.post<ForgeSpecificationRelationship>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/relationships`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.CreatingRelationship,
+        ),
+      },
+    );
+  }
+
+  deleteRelationship(
+    dataModelId: string,
+    relationship: DeleteRelationshipRequest,
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/relationships`,
+      {
+        body: relationship,
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.DeletingRelationship,
         ),
       },
     );

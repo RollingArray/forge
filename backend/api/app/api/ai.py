@@ -24,6 +24,10 @@ from app.models.ai_identity_proposal_model import (
     AIIdentityProposalRequestModel,
     AIIdentityProposalResponseModel,
 )
+from app.models.ai_relationship_proposal_model import (
+    AIRelationshipProposalRequestModel,
+    AIRelationshipProposalResponseModel,
+)
 from app.models.ai_data_model_proposal_model import (
     AIDataModelProposalModel,
     AIDataModelSuggestionRequestModel,
@@ -125,6 +129,40 @@ def propose_identity(
         ) from exc
 
     return AIIdentityProposalResponseModel(
+        status=proposal.status,
+        message=proposal.message,
+        proposal=proposal.proposal,
+    )
+
+
+@router.post(
+    "/relationships/propose",
+    response_model=AIRelationshipProposalResponseModel,
+)
+def propose_relationship(
+    request: AIRelationshipProposalRequestModel,
+) -> AIRelationshipProposalResponseModel:
+    """Generate an AI proposal for a FORGE relationship."""
+
+    try:
+        proposal = _ai_service.propose_relationship(
+            mode=request.mode,
+            entities=request.entities,
+            request=request.request.strip(),
+            existing_relationship=request.existing_relationship,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AIRelationshipProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
