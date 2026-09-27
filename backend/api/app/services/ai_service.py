@@ -14,6 +14,7 @@ Email: ranjoy.sen@collins.com
 
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AIConstraintProposal,
     AIFieldProposal,
     AIIdentityProposal,
     AIRelationshipProposal,
@@ -83,6 +84,22 @@ class AIService:
             existing_relationship=existing_relationship,
         )
 
+
+    def propose_constraint(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_constraint: dict[str, object] | None = None,
+    ) -> AIConstraintProposal:
+        """Generate a structured FORGE constraint proposal."""
+
+        return self._provider.propose_constraint(
+            mode=mode,
+            entities=entities,
+            request=request,
+            existing_constraint=existing_constraint,
+        )
 
     def propose_field(
         self,

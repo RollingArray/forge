@@ -557,3 +557,232 @@ h2 {
   font-size: 8px;
   line-height: 1.4;
 }
+
+/* ==========================================================================
+   Constraints
+   ========================================================================== */
+
+.constraint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.constraint-card {
+  display: flex;
+  align-items: stretch;
+  min-height: 118px;
+  overflow: hidden;
+
+  border: 1px solid #e3dfeb;
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #faf9fc 100%
+    );
+
+  box-shadow:
+    0 2px 6px rgb(55 43 82 / 5%),
+    0 1px 2px rgb(55 43 82 / 4%);
+
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.constraint-card:hover {
+  border-color: #cfc5e6;
+
+  box-shadow:
+    0 6px 16px rgb(76 55 125 / 9%),
+    0 2px 4px rgb(76 55 125 / 5%);
+
+  transform: translateY(-1px);
+}
+
+.constraint-card-icon {
+  display: flex;
+  width: 58px;
+  flex: 0 0 58px;
+  align-items: center;
+  justify-content: center;
+
+  border-right: 1px solid #e9e5ef;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f5f1fc 0%,
+      #eee9f8 100%
+    );
+}
+
+.constraint-card-icon .material-symbols-outlined {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #d8cdef;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #654bb8;
+
+  font-size: 20px;
+
+  box-shadow:
+    0 2px 5px rgb(76 55 125 / 8%);
+}
+
+.constraint-card-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.constraint-card-field {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  color: #302b39;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constraint-card-operator {
+  display: inline-flex;
+  min-width: 34px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+
+  border: 1px solid #d9d1eb;
+  border-radius: 7px;
+
+  background: #f3effb;
+  color: #654bb8;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+.constraint-card-value {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  color: #654bb8;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constraint-card-entity {
+  display: inline-flex;
+  align-items: center;
+
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 2px 9px;
+
+  border: 1px solid #e4dff0;
+  border-radius: 999px;
+
+  background: #f8f6fb;
+  color: #80778f;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 17px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  .constraint-card-icon {
+    width: 48px;
+    flex-basis: 48px;
+  }
+
+  .constraint-card-content {
+    padding: 10px 12px;
+  }
+}
+
+.constraint-card-edit {
+  display: flex;
+  width: 42px;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+
+  margin: 10px 10px 10px 0;
+
+  border: 1px solid #ddd5ee;
+  border-radius: 9px;
+
+  background: #faf8fd;
+  color: #7657c8;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.constraint-card-edit:hover {
+  border-color: #c9b9e8;
+  background: #f1ecfa;
+  color: #5f43b4;
+
+  box-shadow:
+    0 3px 8px rgb(76 55 125 / 10%);
+}
+
+.constraint-card-edit:focus-visible {
+  outline: 2px solid #7657d9;
+  outline-offset: 2px;
+}
+
+.constraint-card-edit .material-symbols-outlined {
+  font-size: 19px;
+}

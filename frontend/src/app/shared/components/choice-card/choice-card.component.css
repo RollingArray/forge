@@ -11,8 +11,8 @@
   column-gap: 10px;
   row-gap: 3px;
   width: 100%;
-  min-height: 88px;
-  padding: 13px;
+  min-height: 76px;
+  padding: 11px 13px;
   box-sizing: border-box;
   border: 1px solid #e1dfe7;
   border-radius: 11px;
@@ -77,9 +77,13 @@
 }
 
 .choice-copy small {
+  display: -webkit-box;
+  overflow: hidden;
   color: #77727d;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .choice-example {

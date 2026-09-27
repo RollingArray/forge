@@ -16,6 +16,10 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.core.ai_settings import load_ai_configuration
 from app.models.ai_capability_model import AICapabilityModel
+from app.models.ai_constraint_proposal_model import (
+    AIConstraintProposalRequestModel,
+    AIConstraintProposalResponseModel,
+)
 from app.models.ai_field_proposal_model import (
     AIFieldProposalRequestModel,
     AIFieldProposalResponseModel,
@@ -163,6 +167,40 @@ def propose_relationship(
         ) from exc
 
     return AIRelationshipProposalResponseModel(
+        status=proposal.status,
+        message=proposal.message,
+        proposal=proposal.proposal,
+    )
+
+
+@router.post(
+    "/constraints/propose",
+    response_model=AIConstraintProposalResponseModel,
+)
+def propose_constraint(
+    request: AIConstraintProposalRequestModel,
+) -> AIConstraintProposalResponseModel:
+    """Generate an AI proposal for a FORGE field constraint."""
+
+    try:
+        proposal = _ai_service.propose_constraint(
+            mode=request.mode,
+            entities=request.entities,
+            request=request.request.strip(),
+            existing_constraint=request.existing_constraint,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AIConstraintProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,

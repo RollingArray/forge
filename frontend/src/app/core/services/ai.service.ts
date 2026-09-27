@@ -26,6 +26,10 @@ import {
   AIRelationshipProposalRequest,
   AIRelationshipProposalResponse,
 } from '../interfaces/ai-relationship-proposal.interface';
+import {
+  AIConstraintProposalRequest,
+  AIConstraintProposalResponse,
+} from '../interfaces/ai-constraint-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
@@ -174,6 +178,26 @@ export class AIService {
             : null,
         })),
       );
+  }
+
+  proposeConstraint(
+    request: AIConstraintProposalRequest,
+  ): Observable<AIConstraintProposalResponse> {
+    return this.http.post<AIConstraintProposalResponse>(
+      '/api/v1/ai/constraints/propose',
+      {
+        mode: request.mode,
+        entities: request.entities,
+        request: request.request,
+        existing_constraint: request.existingConstraint ?? null,
+      },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.GeneratingConstraintProposalWithAI,
+        ),
+      },
+    );
   }
 
   suggestDataModel(prompt: string): Observable<AIDataModelProposal> {

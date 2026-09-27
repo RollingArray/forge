@@ -20,10 +20,14 @@ from urllib.request import Request, urlopen
 
 from app.core.ai_settings import AIConfiguration
 from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
+from app.prompts.constraint_proposal_prompt import (
+    CONSTRAINT_PROPOSAL_SYSTEM_PROMPT,
+)
 from app.prompts.field_proposal_prompt import FIELD_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.identity_proposal_prompt import IDENTITY_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
 from app.interfaces.ai_provider import (
+    AIConstraintProposal,
     AIDataModelProposal,
     AIFieldProposal,
     AIIdentityProposal,
@@ -1210,6 +1214,287 @@ class OllamaAIProvider(AIProvider):
                 value.strip()
                 for value in preview_values
             ],
+        )
+
+    def propose_constraint(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_constraint: dict[str, object] | None = None,
+    ) -> AIConstraintProposal:
+        """Generate a structured FORGE constraint proposal."""
+
+        normalized_mode = mode.strip().upper()
+        normalized_request = request.strip()
+
+        if normalized_mode not in {"CREATE", "EDIT"}:
+            raise ValueError(
+                "Constraint proposal mode must be CREATE or EDIT.",
+            )
+
+        if not entities:
+            raise ValueError(
+                "At least one entity is required for a constraint proposal.",
+            )
+
+        if not normalized_request:
+            raise ValueError(
+                "Constraint proposal request must not be empty.",
+            )
+
+        if normalized_mode == "EDIT" and existing_constraint is None:
+            raise ValueError(
+                "Existing constraint is required in EDIT mode.",
+            )
+
+        payload = {
+            "mode": normalized_mode,
+            "entities": entities,
+            "request": normalized_request,
+            "existing_constraint": existing_constraint,
+        }
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": CONSTRAINT_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        payload,
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "proposal": {
+                        "type": [
+                            "object",
+                            "null",
+                        ],
+                        "properties": {
+                            "entity": {
+                                "type": "string",
+                            },
+                            "field": {
+                                "type": "string",
+                            },
+                            "operator": {
+                                "type": "string",
+                                "enum": [
+                                    ">",
+                                    ">=",
+                                    "<",
+                                    "<=",
+                                    "==",
+                                    "!=",
+                                ],
+                            },
+                            "value": {
+                                "type": [
+                                    "string",
+                                    "integer",
+                                    "number",
+                                    "boolean",
+                                ],
+                            },
+                        },
+                        "required": [
+                            "entity",
+                            "field",
+                            "operator",
+                            "value",
+                        ],
+                        "additionalProperties": False,
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "proposal",
+                ],
+                "additionalProperties": False,
+            },
+        }
+
+        provider_request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                provider_request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                provider_response = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = provider_response.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty constraint proposal.",
+            )
+
+        try:
+            proposal_response = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid structured constraint proposal.",
+            ) from exc
+
+        if not isinstance(proposal_response, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid constraint proposal structure.",
+            )
+
+        proposal_status = proposal_response.get("status")
+        response_message = proposal_response.get("message")
+        proposal = proposal_response.get("proposal")
+
+        if proposal_status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI constraint proposal returned an invalid status.",
+            )
+
+        if (
+            not isinstance(response_message, str)
+            or not response_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI constraint proposal returned an invalid message.",
+            )
+
+        if proposal_status != "PROPOSE":
+            if proposal is not None:
+                raise RuntimeError(
+                    "FORGE AI returned a proposal for a non-proposal status.",
+                )
+
+            return AIConstraintProposal(
+                status=proposal_status,
+                message=response_message.strip(),
+                proposal=None,
+            )
+
+        if not isinstance(proposal, dict):
+            raise RuntimeError(
+                "FORGE AI constraint proposal is missing proposal data.",
+            )
+
+        entity = proposal.get("entity")
+        field = proposal.get("field")
+        operator = proposal.get("operator")
+        value = proposal.get("value")
+
+        if not isinstance(entity, str) or not entity.strip():
+            raise RuntimeError(
+                "FORGE AI constraint proposal contains an invalid entity.",
+            )
+
+        if not isinstance(field, str) or not field.strip():
+            raise RuntimeError(
+                "FORGE AI constraint proposal contains an invalid field.",
+            )
+
+        if operator not in {
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "==",
+            "!=",
+        }:
+            raise RuntimeError(
+                "FORGE AI constraint proposal contains an invalid operator.",
+            )
+
+        if isinstance(value, (dict, list)) or value is None:
+            raise RuntimeError(
+                "FORGE AI constraint proposal contains an invalid value.",
+            )
+
+        normalized_entity = entity.strip()
+        normalized_field = field.strip()
+
+        available_entities = {
+            item.get("name")
+            for item in entities
+            if isinstance(item, dict)
+        }
+
+        if normalized_entity not in available_entities:
+            raise RuntimeError(
+                "FORGE AI constraint proposal references "
+                "an unknown entity.",
+            )
+
+        entity_fields = {
+            item.get("name")
+            for item in entities
+            if isinstance(item, dict)
+            and item.get("name") == normalized_entity
+            for item in item.get("fields", [])
+            if isinstance(item, dict)
+        }
+
+        if normalized_field not in entity_fields:
+            raise RuntimeError(
+                "FORGE AI constraint proposal references "
+                "an unknown field.",
+            )
+
+        normalized_proposal = {
+            "entity": normalized_entity,
+            "field": normalized_field,
+            "operator": operator,
+            "value": value,
+        }
+
+        return AIConstraintProposal(
+            status="PROPOSE",
+            message=response_message.strip(),
+            proposal=normalized_proposal,
         )
 
     def _get_models(self) -> list[dict[str, object]]:

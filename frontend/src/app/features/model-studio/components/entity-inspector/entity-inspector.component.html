@@ -338,20 +338,99 @@
     @if (activeTab() === 'CONSTRAINTS') {
       <section class="tab-panel">
 
-        <div class="empty-state large">
-          <span class="material-symbols-outlined">rule</span>
+        <div class="section-header">
+          <div>
+            <span class="section-title">Constraints</span>
 
-          <strong>No constraints defined</strong>
+            <span class="section-description">
+              Rules that restrict generated values for this entity.
+            </span>
+          </div>
 
-          <p>
-            Rules that restrict generated values will appear here.
-          </p>
-
-          <button type="button" class="secondary-action">
+          <button
+            type="button"
+            class="add-button"
+            (click)="addConstraint.emit()"
+          >
             <span class="material-symbols-outlined">add</span>
-            Add Constraint
+            Add
           </button>
         </div>
+
+        @if (constraintsForEntity().length === 0) {
+          <div class="empty-state large">
+            <span class="material-symbols-outlined">rule</span>
+
+            <strong>No constraints defined</strong>
+
+            <p>
+              Add rules that restrict the values generated for this entity.
+            </p>
+
+            <button
+              type="button"
+              class="secondary-action"
+              (click)="addConstraint.emit()"
+            >
+              <span class="material-symbols-outlined">add</span>
+              Add Constraint
+            </button>
+          </div>
+        } @else {
+          <div class="constraint-list">
+
+            @for (
+              constraint of constraintsForEntity();
+              track constraint.entity + constraint.field + constraint.operator + constraint.value
+            ) {
+              <div class="constraint-card">
+
+                <div class="constraint-card-icon">
+                  <span class="material-symbols-outlined">rule</span>
+                </div>
+
+                <div class="constraint-card-content">
+
+                  <strong class="constraint-card-field">
+                    {{ constraint.field }}
+                  </strong>
+
+                  <span class="constraint-card-operator">
+                    {{
+                      constraint.operator === '=='
+                        ? '='
+                        : constraint.operator === '!='
+                          ? '≠'
+                          : constraint.operator
+                    }}
+                  </span>
+
+                  <strong class="constraint-card-value">
+                    {{ constraint.value }}
+                  </strong>
+
+                  <span class="constraint-card-entity">
+                    {{ constraint.entity }}
+                  </span>
+
+                </div>
+
+                <button
+                  type="button"
+                  class="constraint-card-edit"
+                  aria-label="Edit constraint"
+                  title="Edit constraint"
+                  (click)="editConstraint.emit(constraint)"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+
+              </div>
+
+            }
+
+          </div>
+        }
 
       </section>
     }

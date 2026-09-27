@@ -21,6 +21,7 @@ export enum ApiLoadingMessage {
   GeneratingFieldProposalWithAI = 'Generating field proposal with FORGE AI...',
   GeneratingIdentityProposalWithAI = 'Generating identity proposal with FORGE AI...',
   GeneratingRelationshipProposalWithAI = 'Generating relationship proposal with FORGE AI...',
+  GeneratingConstraintProposalWithAI = 'Generating constraint proposal with FORGE AI...',
   UpdatingDataModel = 'Updating Data Model...',
   DeletingDataModel = 'Deleting Data Model...',
   LoadingSpecification = 'Loading Data Model specification...',
@@ -29,6 +30,9 @@ export enum ApiLoadingMessage {
   CreatingRelationship = 'Adding relationship to Data Model...',
   UpdatingRelationship = 'Updating relationship...',
   DeletingRelationship = 'Removing relationship from Data Model...',
+  CreatingConstraint = 'Adding constraint to Data Model...',
+  UpdatingConstraint = 'Updating constraint...',
+  DeletingConstraint = 'Removing constraint from Data Model...',
   UpdatingEntityIdentity = 'Updating entity identity...',
   UpdatingField = 'Updating field definition...',
 }

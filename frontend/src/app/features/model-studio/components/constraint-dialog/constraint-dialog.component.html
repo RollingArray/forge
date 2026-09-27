@@ -1,0 +1,458 @@
+<app-form-dialog
+  title="Add Constraint"
+  subtitle="Define a rule that restricts the values generated for this entity."
+  icon="rule"
+  width="1180px"
+  (closed)="close()"
+>
+  <div dialog-body class="constraint-dialog">
+
+    <section class="constraint-column ai-column">
+
+      <app-ai-assist-panel
+        class="constraint-ai-panel"
+        [title]="'Start with FORGE AI'"
+        [description]="
+          'Describe the rule in business language. FORGE AI will propose a constraint for you to review.'
+        "
+        [placeholder]="
+          'e.g. Customer AGE must be greater than or equal to 18.'
+        "
+        [hint]="'Describe the rule using the field and comparison you need.'"
+        [generateLabel]="
+          aiResponse()
+            ? 'Generate again'
+            : 'Generate with FORGE AI'
+        "
+        [generating]="aiGenerating()"
+        [llmOnline]="aiOnline()"
+        [llmModel]="aiModel()"
+        [llmMode]="aiMode()"
+        [examples]="aiExamples"
+        [exampleHeading]="'Try an example'"
+        [exampleDescription]="
+          'Choose an example to see how you can describe a constraint.'
+        "
+        [decisionTitle]="'AI proposes. You decide.'"
+        [decisionDescription]="
+          'Review the constraint suggestion and apply it when you are ready.'
+        "
+        (generate)="handleAiGenerate($event)"
+        (regenerate)="regenerateAi()"
+        (exampleSelected)="selectAiExample($event)"
+      >
+
+        <div ai-result>
+
+          @if (aiResponse(); as response) {
+
+            @if (response.status === 'PROPOSE' && response.proposal) {
+
+              <section class="constraint-ai-proposal">
+
+                <div class="proposal-heading">
+                  <span class="material-symbols-outlined">
+                    check_circle
+                  </span>
+
+                  <div>
+                    <span>FORGE AI Proposal</span>
+                    <strong>{{ response.message }}</strong>
+                  </div>
+                </div>
+
+                <div class="proposal-rule">
+                  <strong>{{ response.proposal.entity }}</strong>
+                  <span>.</span>
+                  <strong>{{ response.proposal.field }}</strong>
+                  <span>{{ response.proposal.operator }}</span>
+                  <strong>{{ response.proposal.value }}</strong>
+                </div>
+
+                <div class="ai-proposal-actions">
+
+                  <button
+                    type="button"
+                    class="regenerate-button"
+                    (click)="regenerateAi()"
+                  >
+                    <span class="material-symbols-outlined">
+                      refresh
+                    </span>
+                    Regenerate
+                  </button>
+
+                  <button
+                    type="button"
+                    class="use-proposal-button"
+                    (click)="applyAiProposal()"
+                  >
+                    <span class="material-symbols-outlined">
+                      check_circle
+                    </span>
+                    Apply to Constraint
+                  </button>
+
+                </div>
+
+              </section>
+
+            } @else {
+
+              <section class="constraint-ai-response">
+
+                <span class="material-symbols-outlined">
+                  @if (response.status === 'CLARIFY') {
+                    help
+                  } @else {
+                    info
+                  }
+                </span>
+
+                <div>
+
+                  <strong>
+                    @if (response.status === 'CLARIFY') {
+                      More information needed
+                    } @else {
+                      Constraint not supported
+                    }
+                  </strong>
+
+                  <p>{{ response.message }}</p>
+
+                </div>
+
+              </section>
+
+            }
+
+          }
+
+        </div>
+
+      </app-ai-assist-panel>
+
+    </section>
+
+    <app-choice-divider />
+
+    <section class="constraint-column manual-column">
+
+      <div class="manual-column-header">
+        <span class="manual-column-title">
+          Define the constraint
+        </span>
+
+        <span class="manual-column-description">
+          You don't need to know database terminology. Choose the rule that
+          best describes the restriction you want FORGE to enforce.
+        </span>
+      </div>
+
+      <div class="constraint-entity-card">
+
+        <div class="entity-card-icon">
+          <span class="material-symbols-outlined">account_tree</span>
+        </div>
+
+        <div>
+          <span>Entity</span>
+          <strong>{{ entity().name }}</strong>
+        </div>
+
+      </div>
+
+      <section class="choice-section">
+
+        <div class="choice-section-heading">
+          <div>
+            <span>Which field should this rule apply to?</span>
+
+            <small>
+              Choose one of the fields defined for this entity.
+            </small>
+          </div>
+        </div>
+
+        <div class="choice-grid field-grid">
+
+          @for (
+            availableField of entity().fields;
+            track availableField.name
+          ) {
+
+            <app-choice-card
+              icon="data_object"
+              [title]="availableField.name"
+              [description]="availableField.type"
+              [selected]="field() === availableField.name"
+              (selectedChange)="selectField(availableField.name)"
+            />
+
+          }
+
+        </div>
+
+      </section>
+
+      <section class="choice-section">
+
+        <div class="choice-section-heading">
+          <div>
+            <span>How should the value be restricted?</span>
+
+            <small>
+              Choose the comparison that best describes your rule.
+            </small>
+          </div>
+        </div>
+
+        <div class="operator-grid">
+
+          @if (availableOperatorOptions().length > 0) {
+
+            @for (
+              option of availableOperatorOptions();
+              track option.operator
+            ) {
+
+              <button
+                type="button"
+                class="operator-card"
+                [class.selected]="operator() === option.operator"
+                (click)="selectOperator(option.operator)"
+              >
+                <div class="operator-top">
+
+                  <span class="operator-icon">
+                    <span class="material-symbols-outlined">
+                      {{
+                        option.operator === '>' || option.operator === '>='
+                          ? 'keyboard_arrow_up'
+                          : option.operator === '<' || option.operator === '<='
+                            ? 'keyboard_arrow_down'
+                            : option.operator === '=='
+                              ? 'check'
+                              : 'block'
+                      }}
+                    </span>
+                  </span>
+
+                  <span class="operator-symbol">
+                    {{
+                      option.operator === '=='
+                        ? '='
+                        : option.operator === '!='
+                          ? '≠'
+                          : option.operator
+                    }}
+                  </span>
+
+                </div>
+
+                <strong class="operator-label">
+                  {{
+                    option.operator === '>='
+                      ? 'Greater or equal'
+                      : option.operator === '<='
+                        ? 'Less or equal'
+                        : option.label
+                  }}
+                </strong>
+
+                <span class="operator-example">
+                  {{
+                    option.operator === '=='
+                      ? 'Exact match'
+                      : option.operator === '!='
+                        ? 'Must be different'
+                        : '0 · 1 · 10 · 100'
+                  }}
+                </span>
+
+              </button>
+
+            }
+
+          } @else {
+
+            <div class="operator-empty-state">
+
+              <span class="material-symbols-outlined">info</span>
+
+              <div>
+                <strong>
+                  Constraints are not supported for this field
+                </strong>
+
+                <span>
+                  Choose a numeric or categorical field to define a constraint.
+                </span>
+              </div>
+
+            </div>
+
+          }
+
+        </div>
+
+      </section>
+
+      <section class="configuration-section">
+
+        <div class="configuration-heading">
+          <span>What value should be compared?</span>
+
+          <small>
+            Enter the value that FORGE should use when evaluating this rule.
+          </small>
+        </div>
+
+        @if (selectedField()?.type === 'CATEGORICAL') {
+
+          @if (categoricalVocabularyAvailable()) {
+
+            <div class="categorical-value-list">
+
+              @for (
+                categoricalValue of categoricalValues();
+                track categoricalValue
+              ) {
+
+                <button
+                  type="button"
+                  class="categorical-value-option"
+                  [class.selected]="
+                    value() === categoricalValueAsString(categoricalValue)
+                  "
+                  (click)="selectCategoricalValue(categoricalValue)"
+                >
+                  <span class="material-symbols-outlined">
+                    {{
+                      value() === categoricalValueAsString(categoricalValue)
+                        ? 'check_circle'
+                        : 'radio_button_unchecked'
+                    }}
+                  </span>
+
+                  <strong>
+                    {{ categoricalValue }}
+                  </strong>
+
+                </button>
+
+              }
+
+            </div>
+
+          } @else {
+
+            <div class="categorical-empty-state">
+
+              <span class="material-symbols-outlined">
+                info
+              </span>
+
+              <div>
+                <strong>
+                  No categorical vocabulary is defined
+                </strong>
+
+                <span>
+                  This categorical field has no declared vocabulary.
+                  Add categorical values to the field before creating
+                  a constraint.
+                </span>
+              </div>
+
+            </div>
+
+          }
+
+        } @else {
+
+          <label for="constraint-value">
+
+            <span>Comparison value</span>
+
+            <input
+              id="constraint-value"
+              type="text"
+              [value]="value()"
+              placeholder="e.g. 18, 500"
+              autocomplete="off"
+              (input)="setValue($any($event.target).value)"
+            />
+
+            <small class="field-example">
+              Example:
+              <strong>18</strong>
+            </small>
+
+          </label>
+
+        }
+
+      </section>
+
+      <div class="constraint-preview">
+
+        <div class="preview-icon">
+          <span class="material-symbols-outlined">
+            visibility
+          </span>
+        </div>
+
+        <div>
+          <span>Constraint preview</span>
+
+          @if (field() && value()) {
+            <strong>
+              {{ entity().name }}.{{ field() }}
+              {{ operator() }}
+              {{ value() }}
+            </strong>
+          } @else {
+            <strong>
+              Choose a field and value to preview the constraint.
+            </strong>
+          }
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+  <div dialog-footer class="dialog-footer">
+
+    <button
+      type="button"
+      class="cancel-button"
+      (click)="close()"
+    >
+      Cancel
+    </button>
+
+    <div class="dialog-actions">
+
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="!canSave()"
+        (click)="save()"
+      >
+        <span class="material-symbols-outlined">
+          rule
+        </span>
+
+        Save Constraint
+      </button>
+
+    </div>
+
+  </div>
+
+</app-form-dialog>

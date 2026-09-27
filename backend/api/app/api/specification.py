@@ -19,6 +19,11 @@ from app.models.specification_field_model import (
     CreateFieldRequest,
     UpdateFieldRequest,
 )
+from app.models.specification_constraint_model import (
+    CreateConstraintRequest,
+    UpdateConstraintRequest,
+    DeleteConstraintRequest,
+)
 from app.models.specification_relationship_model import (
     CreateRelationshipRequest,
     DeleteRelationshipRequest,
@@ -325,6 +330,122 @@ async def create_relationship(
         )
 
     return relationship
+
+
+
+@router.post(
+    "/{data_model_id}/specification/constraints",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_constraint(
+    data_model_id: str,
+    request: CreateConstraintRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Create a deterministic constraint in a FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        constraint = specification_service.create_constraint(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if constraint is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return constraint
+
+
+@router.put(
+    "/{data_model_id}/specification/constraints",
+    status_code=status.HTTP_200_OK,
+)
+async def update_constraint(
+    data_model_id: str,
+    request: UpdateConstraintRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update a deterministic constraint."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        constraint = specification_service.update_constraint(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if constraint is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return constraint
+
+
+@router.delete(
+    "/{data_model_id}/specification/constraints",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_constraint(
+    data_model_id: str,
+    request: DeleteConstraintRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Delete a deterministic constraint."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    deleted = specification_service.delete_constraint(
+        data_model_id=data_model_id,
+        actor_user_id=user.user_id,
+        request=request.model_dump(),
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Constraint not found.",
+        )
 
 
 @router.put(

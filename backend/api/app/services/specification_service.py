@@ -18,6 +18,10 @@ from app.models.specification_field_model import (
     CreateFieldRequest,
     UpdateFieldRequest,
 )
+from app.models.specification_constraint_model import (
+    CreateConstraintRequest,
+    UpdateConstraintRequest,
+)
 from app.models.specification_relationship_model import (
     CreateRelationshipRequest,
 )
@@ -933,6 +937,294 @@ class SpecificationService:
                 ),
                 data_model_id=data_model_id,
                 metadata=relationship,
+            )
+
+        return True
+
+
+    def _validate_constraint_compatibility(
+        self,
+        field: dict[str, Any],
+        operator: str,
+    ) -> None:
+        """Validate that a constraint can be executed for a field."""
+
+        field_type = field.get("type")
+
+        supported_operators = {
+            "INTEGER": {">", ">=", "<", "<="},
+            "DECIMAL": {">", ">=", "<", "<="},
+            "CATEGORICAL": {">", ">=", "<", "<=", "==", "!="},
+        }
+
+        operators = supported_operators.get(field_type)
+
+        if operators is None:
+            raise ValueError(
+                f"Constraints are not supported for "
+                f"{field_type} fields."
+            )
+
+        if operator not in operators:
+            raise ValueError(
+                f"Operator {operator!r} is not supported for "
+                f"{field_type} fields."
+            )
+
+    def create_constraint(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: CreateConstraintRequest,
+    ) -> dict[str, Any] | None:
+        """Create and persist a deterministic field constraint."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        entity = next(
+            (
+                item
+                for item in specification.get("entities", [])
+                if item.get("name") == request.entity
+            ),
+            None,
+        )
+
+        if entity is None:
+            raise ValueError(
+                f"Unknown entity: {request.entity}"
+            )
+
+        field = next(
+            (
+                item
+                for item in entity.get("fields", [])
+                if item.get("name") == request.field
+            ),
+            None,
+        )
+
+        if field is None:
+            raise ValueError(
+                f"Unknown field: {request.entity}.{request.field}"
+            )
+
+        self._validate_constraint_compatibility(
+            field=field,
+            operator=request.operator,
+        )
+
+        constraints = specification.setdefault(
+            "constraints",
+            [],
+        )
+
+        candidate_constraint = request.model_dump()
+
+        if candidate_constraint in constraints:
+            raise ValueError(
+                "Constraint already exists."
+            )
+
+        candidate = deepcopy(specification)
+        candidate.setdefault("constraints", []).append(
+            candidate_constraint,
+        )
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.CONSTRAINT_ADDED,
+                title="Constraint added",
+                description=(
+                    f"Added constraint on "
+                    f"'{request.entity}.{request.field}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=candidate_constraint,
+            )
+
+        return candidate_constraint
+
+    def update_constraint(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: UpdateConstraintRequest,
+    ) -> dict[str, Any] | None:
+        """Replace an existing deterministic field constraint."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        existing = request.existing.model_dump()
+        updated = request.constraint.model_dump()
+
+        constraints = specification.setdefault(
+            "constraints",
+            [],
+        )
+
+        existing_index = next(
+            (
+                index
+                for index, constraint in enumerate(constraints)
+                if constraint == existing
+            ),
+            None,
+        )
+
+        if existing_index is None:
+            raise ValueError(
+                "Existing constraint was not found."
+            )
+
+        entity = next(
+            (
+                item
+                for item in specification.get("entities", [])
+                if item.get("name") == updated["entity"]
+            ),
+            None,
+        )
+
+        if entity is None:
+            raise ValueError(
+                f"Unknown entity: {updated['entity']}"
+            )
+
+        field = next(
+            (
+                item
+                for item in entity.get("fields", [])
+                if item.get("name") == updated["field"]
+            ),
+            None,
+        )
+
+        if field is None:
+            raise ValueError(
+                f"Unknown field: "
+                f"{updated['entity']}.{updated['field']}"
+            )
+
+        self._validate_constraint_compatibility(
+            field=field,
+            operator=updated["operator"],
+        )
+
+        for index, constraint in enumerate(constraints):
+            if index != existing_index and constraint == updated:
+                raise ValueError(
+                    "Constraint already exists."
+                )
+
+        candidate = deepcopy(specification)
+        candidate["constraints"][existing_index] = updated
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.CONSTRAINT_UPDATED,
+                title="Constraint updated",
+                description=(
+                    f"Updated constraint on "
+                    f"'{updated['entity']}.{updated['field']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "previous": existing,
+                    "updated": updated,
+                },
+            )
+
+        return updated
+
+    def delete_constraint(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: dict[str, Any],
+    ) -> bool:
+        """Delete an existing deterministic field constraint."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return False
+
+        constraints = specification.setdefault(
+            "constraints",
+            [],
+        )
+
+        index = next(
+            (
+                index
+                for index, constraint in enumerate(constraints)
+                if constraint == request
+            ),
+            None,
+        )
+
+        if index is None:
+            return False
+
+        candidate = deepcopy(specification)
+        deleted = candidate["constraints"].pop(index)
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.CONSTRAINT_DELETED,
+                title="Constraint deleted",
+                description=(
+                    f"Deleted constraint on "
+                    f"'{deleted.get('entity')}.{deleted.get('field')}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=deleted,
             )
 
         return True

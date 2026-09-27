@@ -559,3 +559,7 @@
     width: 100%;
   }
 }
+
+:host(.constraint-ai-panel) .ai-assist-empty {
+  margin-bottom: 20px;
+}

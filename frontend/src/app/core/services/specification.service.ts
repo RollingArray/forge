@@ -263,6 +263,57 @@ export class SpecificationService {
     );
   }
 
+  createConstraint(
+    dataModelId: string,
+    constraint: ForgeConstraint,
+  ): Observable<ForgeConstraint> {
+    return this.http.post<ForgeConstraint>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/constraints`,
+      constraint,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.CreatingConstraint,
+        ),
+      },
+    );
+  }
+
+  updateConstraint(
+    dataModelId: string,
+    request: {
+      existing: ForgeConstraint;
+      constraint: ForgeConstraint;
+    },
+  ): Observable<ForgeConstraint> {
+    return this.http.put<ForgeConstraint>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/constraints`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.UpdatingConstraint,
+        ),
+      },
+    );
+  }
+
+  deleteConstraint(
+    dataModelId: string,
+    constraint: ForgeConstraint,
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/constraints`,
+      {
+        body: constraint,
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.DeletingConstraint,
+        ),
+      },
+    );
+  }
+
   getSpecification(
     dataModelId: string,
   ): Observable<ForgeSpecification> {

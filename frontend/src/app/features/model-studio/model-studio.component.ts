@@ -16,6 +16,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute } from '@angular/router';
 
 import {
+  ForgeConstraint,
   ForgeSpecification,
   ForgeSpecificationField,
   ForgeSpecificationRelationship,
@@ -29,6 +30,10 @@ import { EntityDialogComponent } from './components/entity-dialog/entity-dialog.
 import { EntityInspectorComponent } from './components/entity-inspector/entity-inspector.component';
 import { FieldDialogComponent, FieldDraft } from './components/field-dialog/field-dialog.component';
 import { IdentityDialogComponent } from './components/identity-dialog/identity-dialog.component';
+import {
+  ConstraintDialogComponent,
+  ConstraintDraft,
+} from './components/constraint-dialog/constraint-dialog.component';
 import {
   RelationshipDialogComponent,
   RelationshipDraft,
@@ -51,6 +56,7 @@ interface StudioStepItem {
     EntityInspectorComponent,
     FieldDialogComponent,
     IdentityDialogComponent,
+    ConstraintDialogComponent,
     RelationshipDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -188,7 +194,10 @@ interface StudioStepItem {
               <app-model-studio-entity-inspector
                 [entity]="entity"
                 [relationships]="specification.relationships"
+                [constraints]="specification.constraints"
                 (addField)="openFieldDialog()"
+                (addConstraint)="openConstraintDialog()"
+                (editConstraint)="openConstraintEditDialog($event)"
                 (editField)="openFieldEditDialog($event)"
                 (addRelationship)="openRelationshipDialog($event)"
                 (editRelationship)="openRelationshipEditDialog($event)"
@@ -230,6 +239,17 @@ interface StudioStepItem {
             [entity]="entity"
             (saved)="handleIdentitySaved($event)"
             (closed)="closeIdentityDialog()"
+          />
+        }
+      }
+
+      @if (constraintDialogOpen()) {
+        @if (selectedEntityData(); as entity) {
+          <app-model-studio-constraint-dialog
+            [entity]="entity"
+            [existingConstraint]="editingConstraint()"
+            (saved)="handleConstraintSaved($event)"
+            (closed)="closeConstraintDialog()"
           />
         }
       }
@@ -708,6 +728,11 @@ export class ModelStudioComponent {
 
   readonly identityDialogOpen = signal(false);
 
+  readonly constraintDialogOpen = signal(false);
+
+  readonly editingConstraint =
+    signal<ForgeConstraint | null>(null);
+
   readonly relationshipDialogOpen = signal(false);
 
   readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
@@ -788,6 +813,75 @@ export class ModelStudioComponent {
 
   closeIdentityDialog(): void {
     this.identityDialogOpen.set(false);
+  }
+
+  openConstraintDialog(): void {
+    if (!this.selectedEntity() || !this.specification()) {
+      return;
+    }
+
+    this.editingConstraint.set(null);
+    this.constraintDialogOpen.set(true);
+  }
+
+  openConstraintEditDialog(constraint: ForgeConstraint): void {
+    if (!this.specification()) {
+      return;
+    }
+
+    this.editingConstraint.set(constraint);
+    this.constraintDialogOpen.set(true);
+  }
+
+  closeConstraintDialog(): void {
+    this.constraintDialogOpen.set(false);
+    this.editingConstraint.set(null);
+  }
+
+  handleConstraintSaved(draft: ConstraintDraft): void {
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!dataModelId) {
+      this.errorMessage.set('Data Model ID is missing from the route.');
+      return;
+    }
+
+    const existingConstraint = this.editingConstraint();
+
+    if (existingConstraint) {
+      this.specificationService
+        .updateConstraint(dataModelId, {
+          existing: existingConstraint,
+          constraint: draft,
+        })
+        .subscribe({
+          next: () => {
+            this.closeConstraintDialog();
+            this.loadSpecification(dataModelId);
+          },
+          error: (error: { error?: { detail?: string } }) => {
+            this.errorMessage.set(
+              error.error?.detail ?? 'Unable to update the constraint.',
+            );
+          },
+        });
+
+      return;
+    }
+
+    this.specificationService
+      .createConstraint(dataModelId, draft)
+      .subscribe({
+        next: () => {
+          this.closeConstraintDialog();
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ?? 'Unable to add the constraint.',
+          );
+        },
+      });
   }
 
   openRelationshipDialog(sourceEntity?: string): void {

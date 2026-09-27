@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 
 import {
+  ForgeConstraint,
   ForgeSpecificationEntity,
   ForgeSpecificationField,
   ForgeSpecificationRelationship,
@@ -31,13 +32,25 @@ export class EntityInspectorComponent {
   readonly relationships =
     input<ForgeSpecificationRelationship[]>([]);
 
+  readonly constraints = input<ForgeConstraint[]>([]);
+
   readonly addField = output<void>();
+  readonly addConstraint = output<void>();
+  readonly editConstraint = output<ForgeConstraint>();
   readonly addRelationship = output<string>();
   readonly editRelationship =
     output<ForgeSpecificationRelationship>();
   readonly editField = output<ForgeSpecificationField>();
   readonly editIdentity = output<void>();
   readonly closed = output<void>();
+
+  constraintsForEntity(): ForgeConstraint[] {
+    const entityName = this.entity().name;
+
+    return this.constraints().filter(
+      (constraint) => constraint.entity === entityName,
+    );
+  }
 
   relationshipsForEntity(): ForgeSpecificationRelationship[] {
     const entityName = this.entity().name;

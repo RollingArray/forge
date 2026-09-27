@@ -71,6 +71,15 @@ class AIRelationshipProposal:
     proposal: dict[str, object] | None
 
 
+@dataclass(frozen=True)
+class AIConstraintProposal:
+    """Represents an AI-generated FORGE constraint proposal."""
+
+    status: str
+    message: str
+    proposal: dict[str, object] | None
+
+
 class AIProvider(ABC):
     """Contract implemented by FORGE AI/LLM providers."""
 
@@ -126,6 +135,17 @@ class AIProvider(ABC):
         existing_relationship: dict[str, object] | None = None,
     ) -> AIRelationshipProposal:
         """Generate a structured FORGE relationship proposal."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def propose_constraint(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_constraint: dict[str, object] | None = None,
+    ) -> AIConstraintProposal:
+        """Generate a structured FORGE constraint proposal."""
         raise NotImplementedError
 
 
