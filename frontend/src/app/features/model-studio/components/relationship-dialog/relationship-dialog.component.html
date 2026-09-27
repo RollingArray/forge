@@ -212,12 +212,16 @@
 
             <span>From entity</span>
 
-            @if (sourceEntityContext()) {
+            @if (existingRelationship() || sourceEntityContext()) {
 
               <div class="contextual-entity">
                 <span>{{ sourceEntity() }}</span>
 
-                <span class="material-symbols-outlined">
+                <span
+                  class="material-symbols-outlined"
+                  aria-hidden="true"
+                  title="Entity cannot be changed while editing"
+                >
                   lock
                 </span>
               </div>
@@ -255,24 +259,42 @@
 
             <span>To entity</span>
 
-            <select
-              [value]="targetEntity()"
-              (change)="selectTargetEntity($any($event.target).value)"
-            >
-              <option value="">Choose an entity...</option>
+            @if (existingRelationship()) {
 
-              @for (entity of entities(); track entity.name) {
+              <div class="contextual-entity">
+                <span>{{ targetEntity() }}</span>
 
-                <option
-                  [value]="entity.name"
-                  [disabled]="entity.name === sourceEntity()"
+                <span
+                  class="material-symbols-outlined"
+                  aria-hidden="true"
+                  title="Entity cannot be changed while editing"
                 >
-                  {{ entity.name }}
-                </option>
+                  lock
+                </span>
+              </div>
 
-              }
+            } @else {
 
-            </select>
+              <select
+                [value]="targetEntity()"
+                (change)="selectTargetEntity($any($event.target).value)"
+              >
+                <option value="">Choose an entity...</option>
+
+                @for (entity of entities(); track entity.name) {
+
+                  <option
+                    [value]="entity.name"
+                    [disabled]="entity.name === sourceEntity()"
+                  >
+                    {{ entity.name }}
+                  </option>
+
+                }
+
+              </select>
+
+            }
 
           </label>
 

@@ -90,6 +90,11 @@ interface CreateRelationshipRequest {
   target_participation: 'MANDATORY' | 'OPTIONAL';
 }
 
+interface UpdateRelationshipRequest {
+  existing: DeleteRelationshipRequest;
+  relationship: CreateRelationshipRequest;
+}
+
 interface DeleteRelationshipRequest {
   source: string;
   target: string;
@@ -221,6 +226,22 @@ export class SpecificationService {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
           ApiLoadingMessage.CreatingRelationship,
+        ),
+      },
+    );
+  }
+
+  updateRelationship(
+    dataModelId: string,
+    request: UpdateRelationshipRequest,
+  ): Observable<ForgeSpecificationRelationship> {
+    return this.http.put<ForgeSpecificationRelationship>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/relationships`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.UpdatingRelationship,
         ),
       },
     );

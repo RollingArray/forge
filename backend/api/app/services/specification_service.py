@@ -691,6 +691,195 @@ class SpecificationService:
 
         return relationship
 
+    def update_relationship(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        existing_relationship: dict[str, Any],
+        request: UpdateRelationshipRequest,
+    ) -> dict[str, Any] | None:
+        """Update an existing relationship using an existing compatible foreign key."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        relationships = specification.get("relationships", [])
+
+        existing = next(
+            (
+                relationship
+                for relationship in relationships
+                if relationship == existing_relationship
+            ),
+            None,
+        )
+
+        if existing is None:
+            raise ValueError("Relationship not found.")
+
+        if request.source_entity == request.target_entity:
+            raise ValueError(
+                "A relationship must connect two different entities."
+            )
+
+        entities = specification.get("entities", [])
+
+        source_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == request.source_entity
+            ),
+            None,
+        )
+
+        target_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == request.target_entity
+            ),
+            None,
+        )
+
+        if source_entity is None:
+            raise ValueError(
+                f"Unknown source entity: {request.source_entity}"
+            )
+
+        if target_entity is None:
+            raise ValueError(
+                f"Unknown target entity: {request.target_entity}"
+            )
+
+        foreign_keys = specification.get("foreign_keys", [])
+
+        compatible_foreign_keys = [
+            foreign_key
+            for foreign_key in foreign_keys
+            if (
+                foreign_key.get("source", {}).get("entity")
+                == request.source_entity
+                and foreign_key.get("target", {}).get("entity")
+                == request.target_entity
+            )
+            or (
+                foreign_key.get("source", {}).get("entity")
+                == request.target_entity
+                and foreign_key.get("target", {}).get("entity")
+                == request.source_entity
+            )
+        ]
+
+        if not compatible_foreign_keys:
+            raise ValueError(
+                f"No compatible foreign key exists between "
+                f"'{request.source_entity}' and "
+                f"'{request.target_entity}'. "
+                "Define a foreign key first."
+            )
+
+        if len(compatible_foreign_keys) > 1:
+            names = [
+                foreign_key.get("name", "Unnamed foreign key")
+                for foreign_key in compatible_foreign_keys
+            ]
+
+            raise ValueError(
+                "Multiple compatible foreign keys exist between "
+                f"'{request.source_entity}' and "
+                f"'{request.target_entity}': "
+                + ", ".join(names)
+            )
+
+        foreign_key = compatible_foreign_keys[0]
+
+        fk_source = foreign_key.get("source", {})
+        fk_target = foreign_key.get("target", {})
+
+        fk_source_entity = fk_source.get("entity")
+        fk_target_entity = fk_target.get("entity")
+
+        fk_source_fields = fk_source.get("fields", [])
+        fk_target_fields = fk_target.get("fields", [])
+
+        if not fk_source_entity or not fk_target_entity:
+            raise ValueError(
+                "The foreign key does not define valid source and target entities."
+            )
+
+        if not fk_source_fields or not fk_target_fields:
+            raise ValueError(
+                "The foreign key does not define valid source and target fields."
+            )
+
+        if fk_source_entity == request.source_entity:
+            relationship_source = (
+                f"{fk_source_entity}.{fk_source_fields[0]}"
+            )
+            relationship_target = (
+                f"{fk_target_entity}.{fk_target_fields[0]}"
+            )
+        else:
+            relationship_source = (
+                f"{fk_target_entity}.{fk_target_fields[0]}"
+            )
+            relationship_target = (
+                f"{fk_source_entity}.{fk_source_fields[0]}"
+            )
+
+        updated_relationship = {
+            "source": relationship_source,
+            "target": relationship_target,
+            "type": request.type,
+            "source_participation": request.source_participation,
+            "target_participation": request.target_participation,
+        }
+
+        candidate = deepcopy(specification)
+
+        candidate["relationships"] = [
+            updated_relationship
+            if relationship == existing
+            else relationship
+            for relationship in candidate["relationships"]
+        ]
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.RELATIONSHIP_UPDATED,
+                title="Relationship updated",
+                description=(
+                    f"Updated relationship "
+                    f"'{updated_relationship['source']}' → "
+                    f"'{updated_relationship['target']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "previous": existing,
+                    "updated": updated_relationship,
+                    "foreign_key": foreign_key.get("name"),
+                },
+            )
+
+        return updated_relationship
+
+
     def delete_relationship(
         self,
         data_model_id: str,

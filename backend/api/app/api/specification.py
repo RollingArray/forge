@@ -22,6 +22,7 @@ from app.models.specification_field_model import (
 from app.models.specification_relationship_model import (
     CreateRelationshipRequest,
     DeleteRelationshipRequest,
+    UpdateRelationshipRequest,
 )
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
@@ -310,6 +311,48 @@ async def create_relationship(
             data_model_id=data_model_id,
             actor_user_id=user.user_id,
             request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if relationship is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return relationship
+
+
+@router.put(
+    "/{data_model_id}/specification/relationships",
+    status_code=status.HTTP_200_OK,
+)
+async def update_relationship(
+    data_model_id: str,
+    request: UpdateRelationshipRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update an existing relationship in the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        relationship = specification_service.update_relationship(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            existing_relationship=request.existing.model_dump(),
+            request=request.relationship,
         )
     except ValueError as exc:
         raise HTTPException(

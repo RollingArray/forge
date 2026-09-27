@@ -3,9 +3,7 @@
     <div class="ai-proposal">
       <header class="ai-proposal-header">
         <div class="ai-proposal-title">
-          <span class="material-symbols-outlined ai-proposal-icon">
-            auto_awesome
-          </span>
+          <span class="material-symbols-outlined ai-proposal-icon"> auto_awesome </span>
 
           <div>
             <span class="ai-state-badge">FORGE AI Proposal</span>
@@ -39,20 +37,12 @@
       </div>
 
       <div class="ai-proposal-actions">
-        <button
-          type="button"
-          class="regenerate-button"
-          (click)="regenerateProposal()"
-        >
+        <button type="button" class="regenerate-button" (click)="regenerateProposal()">
           <span class="material-symbols-outlined">refresh</span>
           Regenerate
         </button>
 
-        <button
-          type="button"
-          class="use-proposal-button"
-          (click)="applyProposal()"
-        >
+        <button type="button" class="use-proposal-button" (click)="applyProposal()">
           <span class="material-symbols-outlined">check_circle</span>
           Use This Proposal
         </button>
@@ -73,28 +63,13 @@
         <div class="ai-assist-title-row">
           <h3>{{ title() }}</h3>
 
-          <span
-            class="llm-status"
-            [class.online]="llmOnline()"
-            [class.offline]="!llmOnline()"
-          >
+          <span class="llm-status" [class.online]="llmOnline()" [class.offline]="!llmOnline()">
             <span class="llm-status-dot"></span>
             {{ llmOnline() ? 'Online' : 'Offline' }}
           </span>
         </div>
 
         <p>{{ description() }}</p>
-
-        @if (llmModel()) {
-          <span class="llm-details">
-            {{ llmModel() }}
-
-            @if (llmMode()) {
-              <span class="llm-details-separator">·</span>
-              {{ llmMode() }}
-            }
-          </span>
-        }
       </div>
     </header>
 
@@ -110,20 +85,14 @@
 
       <div class="ai-assist-input-footer">
         <span class="ai-hint">
-          <span class="material-symbols-outlined">
-            tips_and_updates
-          </span>
+          <span class="material-symbols-outlined"> tips_and_updates </span>
           {{ hint() }}
         </span>
 
         <button
           type="button"
           class="generate-button"
-          [disabled]="
-            !prompt().trim() ||
-            generating() ||
-            !llmOnline()
-          "
+          [disabled]="!prompt().trim() || generating() || !llmOnline()"
           (click)="generateSuggestion()"
         >
           @if (generating()) {
@@ -158,9 +127,7 @@
                 <small>{{ example.prompt }}</small>
 
                 @if (example.example) {
-                  <em>
-                    Example: {{ example.example }}
-                  </em>
+                  <em> Example: {{ example.example }} </em>
                 }
               </div>
 
@@ -171,9 +138,7 @@
                 (click)="selectExample(example.prompt)"
               >
                 Select
-                <span class="material-symbols-outlined">
-                  arrow_forward
-                </span>
+                <span class="material-symbols-outlined"> arrow_forward </span>
               </button>
             </div>
           }

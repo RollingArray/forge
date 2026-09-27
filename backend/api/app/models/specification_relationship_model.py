@@ -46,3 +46,10 @@ class DeleteRelationshipRequest(BaseModel):
 
     source_participation: RelationshipParticipation = "MANDATORY"
     target_participation: RelationshipParticipation = "MANDATORY"
+
+
+class UpdateRelationshipRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    existing: DeleteRelationshipRequest
+    relationship: CreateRelationshipRequest

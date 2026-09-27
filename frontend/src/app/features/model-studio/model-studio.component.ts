@@ -23,6 +23,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
   ForgeSpecification,
   ForgeSpecificationField,
+  ForgeSpecificationRelationship,
 } from '../../core/interfaces/forge-specification.interface';
 import { SpecificationService } from '../../core/services/specification.service';
 
@@ -250,6 +251,7 @@ interface StudioStepItem {
                 (addField)="openFieldDialog()"
                 (editField)="openFieldEditDialog($event)"
                 (addRelationship)="openRelationshipDialog($event)"
+                (editRelationship)="openRelationshipEditDialog($event)"
                 (editIdentity)="openIdentityDialog()"
                 (closed)="selectedEntity.set('')"
               />
@@ -306,6 +308,7 @@ interface StudioStepItem {
             [entities]="specification.entities"
             [foreignKeys]="specification.foreignKeys"
             [sourceEntityContext]="relationshipSourceEntity()"
+            [existingRelationship]="editingRelationship()"
             (saved)="handleRelationshipSaved($event)"
             (closed)="closeRelationshipDialog()"
           />
@@ -721,6 +724,9 @@ export class ModelStudioComponent {
   readonly relationshipDialogOpen =
     signal(false);
 
+  readonly editingRelationship =
+    signal<ForgeSpecificationRelationship | null>(null);
+
   readonly relationshipSourceEntity =
     signal('');
 
@@ -822,12 +828,26 @@ export class ModelStudioComponent {
       return;
     }
 
+    this.editingRelationship.set(null);
     this.relationshipSourceEntity.set(sourceEntity ?? '');
+    this.relationshipDialogOpen.set(true);
+  }
+
+  openRelationshipEditDialog(
+    relationship: ForgeSpecificationRelationship,
+  ): void {
+    if (!this.specification()) {
+      return;
+    }
+
+    this.editingRelationship.set(relationship);
+    this.relationshipSourceEntity.set('');
     this.relationshipDialogOpen.set(true);
   }
 
   closeRelationshipDialog(): void {
     this.relationshipDialogOpen.set(false);
+    this.editingRelationship.set(null);
     this.relationshipSourceEntity.set('');
   }
 
@@ -841,6 +861,57 @@ export class ModelStudioComponent {
       this.errorMessage.set(
         'Data Model ID is missing from the route.',
       );
+      return;
+    }
+
+    const existing = this.editingRelationship();
+
+    if (existing) {
+      this.specificationService
+        .updateRelationship(
+          dataModelId,
+          {
+            existing: {
+              source: existing.source,
+              target: existing.target,
+              type: existing.type as
+                | 'ONE_TO_ONE'
+                | 'ONE_TO_MANY'
+                | 'MANY_TO_ONE'
+                | 'MANY_TO_MANY',
+              source_participation:
+                (existing.source_participation ?? 'MANDATORY') as
+                  | 'MANDATORY'
+                  | 'OPTIONAL',
+              target_participation:
+                (existing.target_participation ?? 'MANDATORY') as
+                  | 'MANDATORY'
+                  | 'OPTIONAL',
+            },
+            relationship: {
+              source_entity: draft.sourceEntity,
+              target_entity: draft.targetEntity,
+              type: draft.type,
+              source_participation:
+                draft.sourceParticipation,
+              target_participation:
+                draft.targetParticipation,
+            },
+          },
+        )
+        .subscribe({
+          next: () => {
+            this.closeRelationshipDialog();
+            this.loadSpecification(dataModelId);
+          },
+          error: (error: { error?: { detail?: string } }) => {
+            this.errorMessage.set(
+              error.error?.detail ??
+              'Unable to update the relationship.',
+            );
+          },
+        });
+
       return;
     }
 
