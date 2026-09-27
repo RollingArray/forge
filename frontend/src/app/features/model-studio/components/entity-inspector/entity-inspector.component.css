@@ -11,9 +11,15 @@
   height: 100%;
   box-sizing: border-box;
   flex-direction: column;
-  border-left: 1px solid #e2e5ed;
-  background: #ffffff;
-  box-shadow: -4px 0 14px rgba(35, 45, 75, 0.05);
+  border: 1px solid rgba(226, 215, 208, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 1px 2px rgba(74, 58, 48, 0.04),
+    0 8px 22px rgba(105, 77, 60, 0.07),
+    0 22px 44px rgba(225, 174, 139, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
 }
 
 .inspector-header {

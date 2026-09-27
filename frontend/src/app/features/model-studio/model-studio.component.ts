@@ -12,12 +12,7 @@
  * ============================================================================
  */
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -39,12 +34,7 @@ import {
   RelationshipDraft,
 } from './components/relationship-dialog/relationship-dialog.component';
 
-type StudioStep =
-  | 'model'
-  | 'validate'
-  | 'population'
-  | 'generate'
-  | 'results';
+type StudioStep = 'model' | 'validate' | 'population' | 'generate' | 'results';
 
 interface StudioStepItem {
   id: StudioStep;
@@ -66,19 +56,10 @@ interface StudioStepItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="model-studio-page">
-
       <section class="workflow-page-header">
-
         <div class="workflow-stepper-row">
-          <nav
-            class="workflow-stepper"
-            aria-label="FORGE workflow"
-          >
-            @for (
-              step of steps;
-              track step.id;
-              let last = $last
-            ) {
+          <nav class="workflow-stepper" aria-label="FORGE workflow">
+            @for (step of steps; track step.id; let last = $last) {
               <button
                 type="button"
                 class="step"
@@ -88,9 +69,7 @@ interface StudioStepItem {
               >
                 <span class="step-number">
                   @if (isCompleted(step.number)) {
-                    <span class="material-symbols-outlined">
-                      check
-                    </span>
+                    <span class="material-symbols-outlined"> check </span>
                   } @else {
                     {{ step.number }}
                   }
@@ -102,10 +81,7 @@ interface StudioStepItem {
               </button>
 
               @if (!last) {
-                <span
-                  class="step-chevron material-symbols-outlined"
-                  aria-hidden="true"
-                >
+                <span class="step-chevron material-symbols-outlined" aria-hidden="true">
                   chevron_right
                 </span>
               }
@@ -114,64 +90,42 @@ interface StudioStepItem {
         </div>
 
         <div class="page-identity">
-
           <div class="identity-main">
-
             <div class="title-row">
-              <span
-                class="page-icon material-symbols-outlined"
-                aria-hidden="true"
-              >
+              <span class="page-icon material-symbols-outlined" aria-hidden="true">
                 account_tree
               </span>
 
-              <h1>
-                Model Studio
-              </h1>
+              <h1>Model Studio</h1>
             </div>
 
             <p>
-              Define and review the entities, relationships, and
-              constraints that drive synthetic data generation.
+              Define and review the entities, relationships, and constraints that drive synthetic
+              data generation.
             </p>
-
           </div>
 
-          <div
-            class="step-progress"
-            aria-label="Workflow progress"
-          >
+          <div class="step-progress" aria-label="Workflow progress">
             {{ activeStepNumber() }} of {{ steps.length }} steps
           </div>
-
         </div>
-
       </section>
 
       <main class="model-studio-content">
-
         @if (errorMessage(); as error) {
           <section class="model-state">
-            <span class="material-symbols-outlined">
-              error
-            </span>
+            <span class="material-symbols-outlined"> error </span>
 
-            <h2>
-              Unable to load Model Studio
-            </h2>
+            <h2>Unable to load Model Studio</h2>
 
             <p>
               {{ error }}
             </p>
           </section>
         } @else if (specification(); as specification) {
-
           <section class="model-summary">
-
             <div>
-              <span class="summary-label">
-                Data Model
-              </span>
+              <span class="summary-label"> Data Model </span>
 
               <h2>
                 {{ specification.model.name }}
@@ -202,19 +156,12 @@ interface StudioStepItem {
                 </span>
               </div>
 
-              <button
-                type="button"
-                class="primary-action"
-                (click)="openEntityDialog()"
-              >
-                <span class="material-symbols-outlined">
-                  add
-                </span>
+              <button type="button" class="primary-action" (click)="openEntityDialog()">
+                <span class="material-symbols-outlined"> add </span>
 
                 Add Entity
               </button>
             </div>
-
           </section>
 
           <section class="model-workspace">
@@ -228,18 +175,11 @@ interface StudioStepItem {
 
               @if (specification.entities.length === 0) {
                 <div class="canvas-empty-state">
-                  <span class="material-symbols-outlined">
-                    account_tree
-                  </span>
+                  <span class="material-symbols-outlined"> account_tree </span>
 
-                  <h2>
-                    Start building your model
-                  </h2>
+                  <h2>Start building your model</h2>
 
-                  <p>
-                    This Data Model does not have any entities yet.
-                  </p>
-
+                  <p>This Data Model does not have any entities yet.</p>
                 </div>
               }
             </section>
@@ -257,23 +197,15 @@ interface StudioStepItem {
               />
             }
           </section>
-
         } @else {
           <section class="model-state">
-            <span class="material-symbols-outlined">
-              account_tree
-            </span>
+            <span class="material-symbols-outlined"> account_tree </span>
 
-            <h2>
-              Loading Model Studio
-            </h2>
+            <h2>Loading Model Studio</h2>
 
-            <p>
-              Loading the Data Model specification.
-            </p>
+            <p>Loading the Data Model specification.</p>
           </section>
         }
-
       </main>
 
       @if (entityDialogOpen()) {
@@ -314,421 +246,473 @@ interface StudioStepItem {
           />
         }
       }
-
     </section>
   `,
-  styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-      overflow: hidden;
-      background: #ffffff;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(
+            circle at 34% 0%,
+            rgba(255, 215, 198, 0.82) 0%,
+            rgba(255, 215, 198, 0.42) 22%,
+            transparent 46%
+          ),
+          radial-gradient(
+            circle at 82% 18%,
+            rgba(222, 216, 255, 0.72) 0%,
+            rgba(222, 216, 255, 0.28) 25%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 72% 88%,
+            rgba(255, 226, 193, 0.62) 0%,
+            rgba(255, 226, 193, 0.2) 28%,
+            transparent 52%
+          ),
+          linear-gradient(135deg, #f7f1ef 0%, #faf5f1 42%, #f7f4f9 72%, #f5f3fa 100%);
+      }
 
-    .model-studio-page {
-      display: flex;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-      flex-direction: column;
-      overflow: hidden;
-      background: #ffffff;
-    }
+      .model-studio-page {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        overflow: hidden;
+        background:
+          radial-gradient(
+            circle at 34% 0%,
+            rgba(255, 215, 198, 0.82) 0%,
+            rgba(255, 215, 198, 0.42) 22%,
+            transparent 46%
+          ),
+          radial-gradient(
+            circle at 82% 18%,
+            rgba(222, 216, 255, 0.72) 0%,
+            rgba(222, 216, 255, 0.28) 25%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 72% 88%,
+            rgba(255, 226, 193, 0.62) 0%,
+            rgba(255, 226, 193, 0.2) 28%,
+            transparent 52%
+          ),
+          linear-gradient(135deg, #f7f1ef 0%, #faf5f1 42%, #f7f4f9 72%, #f5f3fa 100%);
+      }
 
-    .workflow-page-header {
-      display: flex;
-      flex-direction: column;
-      flex: 0 0 auto;
-      border-bottom: 1px solid #e7e9f0;
-      background: #ffffff;
-    }
+      .workflow-page-header {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 auto;
+        border-bottom: 1px solid #e7e9f0;
+        background: #ffffff;
+      }
 
-    .workflow-stepper-row {
-      display: flex;
-      min-height: 62px;
-      align-items: center;
-      padding: 0 16px;
-      border-bottom: 1px solid #eef0f5;
-    }
-
-    .workflow-stepper {
-      display: inline-flex;
-      height: 38px;
-      align-items: center;
-      padding: 0 7px;
-      border: 1px solid #e1e4ec;
-      border-radius: 9px;
-      background: #ffffff;
-    }
-
-    .step {
-      display: inline-flex;
-      height: 30px;
-      align-items: center;
-      gap: 8px;
-      padding: 0 7px;
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: #8a92aa;
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .step:hover {
-      color: #4d46c5;
-      background: #faf9ff;
-    }
-
-    .step-number {
-      display: grid;
-      width: 21px;
-      height: 21px;
-      place-items: center;
-      border-radius: 50%;
-      background: #e7e9ef;
-      color: #66708e;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .step.active {
-      color: #453dcc;
-      background: #f3f1ff;
-    }
-
-    .step.active .step-number {
-      background: #5b53dc;
-      color: #ffffff;
-    }
-
-    .step.completed {
-      color: #566078;
-    }
-
-    .step.completed .step-number {
-      background: #e7f6ef;
-      color: #14945d;
-    }
-
-    .step-chevron {
-      color: #b0b5c4;
-      font-size: 15px;
-    }
-
-    .page-identity {
-      display: flex;
-      min-height: 88px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 16px 24px;
-    }
-
-    .identity-main {
-      min-width: 0;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .page-icon {
-      flex: 0 0 auto;
-      color: #554dd4;
-      font-size: 25px;
-    }
-
-    .page-identity h1 {
-      margin: 0;
-      color: #171c38;
-      font-size: 20px;
-      font-weight: 650;
-      line-height: 1.25;
-    }
-
-    .page-identity p {
-      max-width: 850px;
-      margin: 5px 0 0;
-      color: #737a8e;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .step-progress {
-      flex: 0 0 auto;
-      padding: 6px 10px;
-      border: 1px solid #dedcf4;
-      border-radius: 7px;
-      background: #f7f6ff;
-      color: #554dd4;
-      font-size: 11px;
-      font-weight: 650;
-      white-space: nowrap;
-    }
-
-    .model-studio-content {
-      display: flex;
-      min-width: 0;
-      min-height: 0;
-      flex: 1;
-      flex-direction: column;
-      gap: 16px;
-      overflow: hidden;
-      padding: 20px 24px 24px;
-      background: #f8f9fc;
-    }
-
-    .model-summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 20px;
-      border: 1px solid #e5e7ee;
-      border-radius: 10px;
-      background: #ffffff;
-    }
-
-    .summary-label {
-      color: #858ca1;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .model-summary h2,
-    .entity-preview h2 {
-      margin: 4px 0 0;
-      color: #171c38;
-      font-size: 18px;
-      font-weight: 650;
-    }
-
-    .model-summary p {
-      margin: 5px 0 0;
-      color: #737a8e;
-      font-size: 12px;
-    }
-
-    .summary-actions {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .summary-metrics {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      color: #737a8e;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .summary-metrics strong {
-      color: #171c38;
-      font-size: 16px;
-    }
-
-    .model-state {
-      display: flex;
-      min-height: 280px;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      border: 1px dashed #d9dce7;
-      border-radius: 10px;
-      background: #ffffff;
-      text-align: center;
-    }
-
-    .model-state > .material-symbols-outlined {
-      margin-bottom: 10px;
-      color: #554dd4;
-      font-size: 34px;
-    }
-
-    .model-state h2 {
-      margin: 0;
-      color: #171c38;
-      font-size: 18px;
-      font-weight: 650;
-    }
-
-    .model-state p {
-      max-width: 440px;
-      margin: 7px 0 18px;
-      color: #737a8e;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .primary-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 8px 13px;
-      border: 0;
-      border-radius: 7px;
-      background: #554dd4;
-      color: #ffffff;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .primary-action .material-symbols-outlined {
-      font-size: 17px;
-    }
-
-    .model-workspace {
-      display: flex;
-      min-width: 0;
-      min-height: 0;
-      flex: 1;
-      gap: 12px;
-      overflow: hidden;
-    }
-
-    .model-canvas-container {
-      position: relative;
-      display: flex;
-      min-width: 0;
-      min-height: 0;
-      flex: 1;
-      overflow: hidden;
-      border: 1px solid #e5e7ee;
-      border-radius: 10px;
-      background: #f7f8fc;
-    }
-
-    .canvas-empty-state {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      text-align: center;
-    }
-
-    .canvas-empty-state > .material-symbols-outlined {
-      margin-bottom: 10px;
-      color: #554dd4;
-      font-size: 34px;
-    }
-
-    .canvas-empty-state h2 {
-      margin: 0;
-      color: #171c38;
-      font-size: 18px;
-      font-weight: 650;
-    }
-
-    .canvas-empty-state p {
-      max-width: 440px;
-      margin: 7px 0 18px;
-      color: #737a8e;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .canvas-empty-state .primary-action {
-      pointer-events: auto;
-    }
-
-    app-model-studio-canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-    }
-
-    @media (max-width: 760px) {
       .workflow-stepper-row {
-        overflow-x: auto;
+        display: flex;
+        min-height: 62px;
+        align-items: center;
+        padding: 0 16px;
+        border-bottom: 1px solid #eef0f5;
       }
 
       .workflow-stepper {
-        flex: 0 0 auto;
+        display: inline-flex;
+        height: 38px;
+        align-items: center;
+        padding: 0 7px;
+        border: 1px solid #e1e4ec;
+        border-radius: 9px;
+        background: #ffffff;
+      }
+
+      .step {
+        display: inline-flex;
+        height: 30px;
+        align-items: center;
+        gap: 8px;
+        padding: 0 7px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #8a92aa;
+        font-family: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .step:hover {
+        color: #4d46c5;
+        background: #faf9ff;
+      }
+
+      .step-number {
+        display: grid;
+        width: 21px;
+        height: 21px;
+        place-items: center;
+        border-radius: 50%;
+        background: #e7e9ef;
+        color: #66708e;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .step.active {
+        color: #453dcc;
+        background: #f3f1ff;
+      }
+
+      .step.active .step-number {
+        background: #5b53dc;
+        color: #ffffff;
+      }
+
+      .step.completed {
+        color: #566078;
+      }
+
+      .step.completed .step-number {
+        background: #e7f6ef;
+        color: #14945d;
+      }
+
+      .step-chevron {
+        color: #b0b5c4;
+        font-size: 15px;
       }
 
       .page-identity {
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 14px 16px;
+        display: flex;
+        min-height: 88px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 16px 24px;
+      }
+
+      .identity-main {
+        min-width: 0;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .page-icon {
+        flex: 0 0 auto;
+        color: #554dd4;
+        font-size: 25px;
+      }
+
+      .page-identity h1 {
+        margin: 0;
+        color: #171c38;
+        font-size: 20px;
+        font-weight: 650;
+        line-height: 1.25;
+      }
+
+      .page-identity p {
+        max-width: 850px;
+        margin: 5px 0 0;
+        color: #737a8e;
+        font-size: 12px;
+        line-height: 1.5;
       }
 
       .step-progress {
-        align-self: flex-start;
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        border: 1px solid #dedcf4;
+        border-radius: 7px;
+        background: #f7f6ff;
+        color: #554dd4;
+        font-size: 11px;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .model-studio-content {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+        flex-direction: column;
+        gap: 16px;
+        overflow: hidden;
+        padding: 20px 24px 24px;
+        background:
+          radial-gradient(
+            circle at 34% 0%,
+            rgba(255, 215, 198, 0.82) 0%,
+            rgba(255, 215, 198, 0.42) 22%,
+            transparent 46%
+          ),
+          radial-gradient(
+            circle at 82% 18%,
+            rgba(222, 216, 255, 0.72) 0%,
+            rgba(222, 216, 255, 0.28) 25%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 72% 88%,
+            rgba(255, 226, 193, 0.62) 0%,
+            rgba(255, 226, 193, 0.2) 28%,
+            transparent 52%
+          ),
+          linear-gradient(135deg, #f7f1ef 0%, #faf5f1 42%, #f7f4f9 72%, #f5f3fa 100%);
       }
 
       .model-summary {
-        align-items: flex-start;
-        flex-direction: column;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 20px;
+        border: 1px solid #e5e7ee;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.82);
+        border-color: rgba(226, 215, 208, 0.92);
+        box-shadow:
+          0 1px 2px rgba(74, 58, 48, 0.04),
+          0 8px 22px rgba(105, 77, 60, 0.07),
+          0 22px 44px rgba(225, 174, 139, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(8px);
+      }
+
+      .summary-label {
+        color: #858ca1;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .model-summary h2,
+      .entity-preview h2 {
+        margin: 4px 0 0;
+        color: #171c38;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      .model-summary p {
+        margin: 5px 0 0;
+        color: #737a8e;
+        font-size: 12px;
+      }
+
+      .summary-actions {
+        display: flex;
+        align-items: center;
+        gap: 20px;
       }
 
       .summary-metrics {
-        flex-wrap: wrap;
-        white-space: normal;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: #737a8e;
+        font-size: 12px;
+        white-space: nowrap;
       }
-    }
-  `],
+
+      .summary-metrics strong {
+        color: #171c38;
+        font-size: 16px;
+      }
+
+      .model-state {
+        display: flex;
+        min-height: 280px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        border: 1px dashed #d9dce7;
+        border-radius: 10px;
+        background: #ffffff;
+        text-align: center;
+      }
+
+      .model-state > .material-symbols-outlined {
+        margin-bottom: 10px;
+        color: #554dd4;
+        font-size: 34px;
+      }
+
+      .model-state h2 {
+        margin: 0;
+        color: #171c38;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      .model-state p {
+        max-width: 440px;
+        margin: 7px 0 18px;
+        color: #737a8e;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .primary-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 13px;
+        border: 0;
+        border-radius: 7px;
+        background: #554dd4;
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .primary-action .material-symbols-outlined {
+        font-size: 17px;
+      }
+
+      .model-workspace {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+        gap: 12px;
+        overflow: hidden;
+      }
+
+      .model-canvas-container {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+        border: 1px solid #e5e7ee;
+        border-radius: 10px;
+        background: #f7f8fc;
+      }
+
+      .canvas-empty-state {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        text-align: center;
+      }
+
+      .canvas-empty-state > .material-symbols-outlined {
+        margin-bottom: 10px;
+        color: #554dd4;
+        font-size: 34px;
+      }
+
+      .canvas-empty-state h2 {
+        margin: 0;
+        color: #171c38;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      .canvas-empty-state p {
+        max-width: 440px;
+        margin: 7px 0 18px;
+        color: #737a8e;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .canvas-empty-state .primary-action {
+        pointer-events: auto;
+      }
+
+      app-model-studio-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      @media (max-width: 760px) {
+        .workflow-stepper-row {
+          overflow-x: auto;
+        }
+
+        .workflow-stepper {
+          flex: 0 0 auto;
+        }
+
+        .page-identity {
+          align-items: flex-start;
+          flex-direction: column;
+          padding: 14px 16px;
+        }
+
+        .step-progress {
+          align-self: flex-start;
+        }
+
+        .model-summary {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .summary-metrics {
+          flex-wrap: wrap;
+          white-space: normal;
+        }
+      }
+    `,
+  ],
 })
 export class ModelStudioComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly specificationService = inject(SpecificationService);
 
-  readonly specification =
-    signal<ForgeSpecification | null>(null);
+  readonly specification = signal<ForgeSpecification | null>(null);
 
-  readonly canvasEntities =
-    signal<CanvasEntity[]>([]);
+  readonly canvasEntities = signal<CanvasEntity[]>([]);
 
-  readonly modelRelationships =
-    signal<ReturnType<typeof adaptSpecification>['relationships']>([]);
+  readonly modelRelationships = signal<ReturnType<typeof adaptSpecification>['relationships']>([]);
 
-  readonly selectedEntity =
-    signal('');
+  readonly selectedEntity = signal('');
 
   readonly selectedEntityData = () =>
-    this.specification()?.entities.find(
-      (entity) => entity.name === this.selectedEntity(),
-    ) ?? null;
+    this.specification()?.entities.find((entity) => entity.name === this.selectedEntity()) ?? null;
 
-  readonly entityDialogOpen =
-    signal(false);
+  readonly entityDialogOpen = signal(false);
 
-  readonly fieldDialogOpen =
-    signal(false);
+  readonly fieldDialogOpen = signal(false);
 
-  readonly editingField =
-    signal<ForgeSpecificationField | null>(null);
+  readonly editingField = signal<ForgeSpecificationField | null>(null);
 
-  readonly identityDialogOpen =
-    signal(false);
+  readonly identityDialogOpen = signal(false);
 
-  readonly relationshipDialogOpen =
-    signal(false);
+  readonly relationshipDialogOpen = signal(false);
 
-  readonly editingRelationship =
-    signal<ForgeSpecificationRelationship | null>(null);
+  readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
 
-  readonly relationshipSourceEntity =
-    signal('');
+  readonly relationshipSourceEntity = signal('');
 
   readonly errorMessage = signal<string | null>(null);
 
@@ -743,18 +727,13 @@ export class ModelStudioComponent {
   readonly activeStep = signal<StudioStep>('model');
 
   readonly activeStepNumber = () =>
-    this.steps.find(
-      (step) => step.id === this.activeStep(),
-    )?.number ?? 1;
+    this.steps.find((step) => step.id === this.activeStep())?.number ?? 1;
 
   constructor() {
-    const dataModelId =
-      this.route.snapshot.paramMap.get('dataModelId');
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     if (!dataModelId) {
-      this.errorMessage.set(
-        'Data Model ID is missing from the route.',
-      );
+      this.errorMessage.set('Data Model ID is missing from the route.');
       return;
     }
 
@@ -770,37 +749,25 @@ export class ModelStudioComponent {
   }
 
   private loadSpecification(dataModelId: string): void {
-    this.specificationService
-      .getSpecification(dataModelId)
-      .subscribe({
-        next: (specification) => {
-          this.specification.set(specification);
+    this.specificationService.getSpecification(dataModelId).subscribe({
+      next: (specification) => {
+        this.specification.set(specification);
 
-          const modelStudioData =
-            adaptSpecification(specification);
+        const modelStudioData = adaptSpecification(specification);
 
-          this.canvasEntities.set(
-            modelStudioData.entities,
-          );
+        this.canvasEntities.set(modelStudioData.entities);
 
-          this.modelRelationships.set(
-            modelStudioData.relationships,
-          );
+        this.modelRelationships.set(modelStudioData.relationships);
 
-          this.errorMessage.set(null);
-        },
-        error: (error) => {
-          console.error(
-            '[FORGE Model Studio] Failed to load specification:',
-            error,
-          );
+        this.errorMessage.set(null);
+      },
+      error: (error) => {
+        console.error('[FORGE Model Studio] Failed to load specification:', error);
 
-          this.specification.set(null);
-          this.errorMessage.set(
-            'Unable to load the Data Model specification.',
-          );
-        },
-      });
+        this.specification.set(null);
+        this.errorMessage.set('Unable to load the Data Model specification.');
+      },
+    });
   }
 
   openEntityDialog(): void {
@@ -833,9 +800,7 @@ export class ModelStudioComponent {
     this.relationshipDialogOpen.set(true);
   }
 
-  openRelationshipEditDialog(
-    relationship: ForgeSpecificationRelationship,
-  ): void {
+  openRelationshipEditDialog(relationship: ForgeSpecificationRelationship): void {
     if (!this.specification()) {
       return;
     }
@@ -851,16 +816,11 @@ export class ModelStudioComponent {
     this.relationshipSourceEntity.set('');
   }
 
-  handleRelationshipSaved(
-    draft: RelationshipDraft,
-  ): void {
-    const dataModelId =
-      this.route.snapshot.paramMap.get('dataModelId');
+  handleRelationshipSaved(draft: RelationshipDraft): void {
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     if (!dataModelId) {
-      this.errorMessage.set(
-        'Data Model ID is missing from the route.',
-      );
+      this.errorMessage.set('Data Model ID is missing from the route.');
       return;
     }
 
@@ -868,47 +828,31 @@ export class ModelStudioComponent {
 
     if (existing) {
       this.specificationService
-        .updateRelationship(
-          dataModelId,
-          {
-            existing: {
-              source: existing.source,
-              target: existing.target,
-              type: existing.type as
-                | 'ONE_TO_ONE'
-                | 'ONE_TO_MANY'
-                | 'MANY_TO_ONE'
-                | 'MANY_TO_MANY',
-              source_participation:
-                (existing.source_participation ?? 'MANDATORY') as
-                  | 'MANDATORY'
-                  | 'OPTIONAL',
-              target_participation:
-                (existing.target_participation ?? 'MANDATORY') as
-                  | 'MANDATORY'
-                  | 'OPTIONAL',
-            },
-            relationship: {
-              source_entity: draft.sourceEntity,
-              target_entity: draft.targetEntity,
-              type: draft.type,
-              source_participation:
-                draft.sourceParticipation,
-              target_participation:
-                draft.targetParticipation,
-            },
+        .updateRelationship(dataModelId, {
+          existing: {
+            source: existing.source,
+            target: existing.target,
+            type: existing.type as 'ONE_TO_ONE' | 'ONE_TO_MANY' | 'MANY_TO_ONE' | 'MANY_TO_MANY',
+            source_participation: (existing.source_participation ?? 'MANDATORY') as
+              'MANDATORY' | 'OPTIONAL',
+            target_participation: (existing.target_participation ?? 'MANDATORY') as
+              'MANDATORY' | 'OPTIONAL',
           },
-        )
+          relationship: {
+            source_entity: draft.sourceEntity,
+            target_entity: draft.targetEntity,
+            type: draft.type,
+            source_participation: draft.sourceParticipation,
+            target_participation: draft.targetParticipation,
+          },
+        })
         .subscribe({
           next: () => {
             this.closeRelationshipDialog();
             this.loadSpecification(dataModelId);
           },
           error: (error: { error?: { detail?: string } }) => {
-            this.errorMessage.set(
-              error.error?.detail ??
-              'Unable to update the relationship.',
-            );
+            this.errorMessage.set(error.error?.detail ?? 'Unable to update the relationship.');
           },
         });
 
@@ -916,63 +860,43 @@ export class ModelStudioComponent {
     }
 
     this.specificationService
-      .createRelationship(
-        dataModelId,
-        {
-          source_entity: draft.sourceEntity,
-          target_entity: draft.targetEntity,
-          type: draft.type,
-          source_participation:
-            draft.sourceParticipation,
-          target_participation:
-            draft.targetParticipation,
-        },
-      )
+      .createRelationship(dataModelId, {
+        source_entity: draft.sourceEntity,
+        target_entity: draft.targetEntity,
+        type: draft.type,
+        source_participation: draft.sourceParticipation,
+        target_participation: draft.targetParticipation,
+      })
       .subscribe({
         next: () => {
           this.closeRelationshipDialog();
           this.loadSpecification(dataModelId);
         },
         error: (error: { error?: { detail?: string } }) => {
-          this.errorMessage.set(
-            error.error?.detail ??
-            'Unable to create the relationship.',
-          );
+          this.errorMessage.set(error.error?.detail ?? 'Unable to create the relationship.');
         },
       });
   }
 
   handleIdentitySaved(fields: string[]): void {
-    const dataModelId =
-      this.route.snapshot.paramMap.get('dataModelId');
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     const entityName = this.selectedEntity();
 
     if (!dataModelId || !entityName) {
-      this.errorMessage.set(
-        'Data Model ID or selected entity is missing.',
-      );
+      this.errorMessage.set('Data Model ID or selected entity is missing.');
       return;
     }
 
-    this.specificationService
-      .updateEntityIdentity(
-        dataModelId,
-        entityName,
-        fields,
-      )
-      .subscribe({
-        next: () => {
-          this.closeIdentityDialog();
-          this.loadSpecification(dataModelId);
-        },
-        error: (error: { error?: { detail?: string } }) => {
-          this.errorMessage.set(
-            error.error?.detail ??
-            'Unable to update the entity identity.',
-          );
-        },
-      });
+    this.specificationService.updateEntityIdentity(dataModelId, entityName, fields).subscribe({
+      next: () => {
+        this.closeIdentityDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.errorMessage.set(error.error?.detail ?? 'Unable to update the entity identity.');
+      },
+    });
   }
 
   openFieldDialog(): void {
@@ -999,42 +923,31 @@ export class ModelStudioComponent {
   }
 
   handleFieldSaved(draft: FieldDraft): void {
-    const dataModelId =
-      this.route.snapshot.paramMap.get('dataModelId');
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     const entityName = this.selectedEntity();
     const existingField = this.editingField();
 
     if (!dataModelId || !entityName) {
-      this.errorMessage.set(
-        'Data Model ID or selected entity is missing.',
-      );
+      this.errorMessage.set('Data Model ID or selected entity is missing.');
       return;
     }
 
     if (existingField) {
       this.specificationService
-        .updateField(
-          dataModelId,
-          entityName,
-          existingField.name,
-          {
-            name: draft.name,
-            type: draft.type,
-            identity: draft.identity,
-            generation: draft.generation,
-          },
-        )
+        .updateField(dataModelId, entityName, existingField.name, {
+          name: draft.name,
+          type: draft.type,
+          identity: draft.identity,
+          generation: draft.generation,
+        })
         .subscribe({
           next: () => {
             this.closeFieldDialog();
             this.loadSpecification(dataModelId);
           },
           error: (error: { error?: { detail?: string } }) => {
-            this.errorMessage.set(
-              error.error?.detail ??
-              'Unable to update the field.',
-            );
+            this.errorMessage.set(error.error?.detail ?? 'Unable to update the field.');
           },
         });
 
@@ -1042,35 +955,22 @@ export class ModelStudioComponent {
     }
 
     this.specificationService
-      .createField(
-        dataModelId,
-        entityName,
-        draft.name,
-        draft.type,
-        {
-          identity: draft.identity,
-          generation: draft.generation,
-        },
-      )
+      .createField(dataModelId, entityName, draft.name, draft.type, {
+        identity: draft.identity,
+        generation: draft.generation,
+      })
       .subscribe({
         next: () => {
           this.closeFieldDialog();
           this.loadSpecification(dataModelId);
         },
         error: (error: { error?: { detail?: string } }) => {
-          this.errorMessage.set(
-            error.error?.detail ??
-            'Unable to add the field.',
-          );
+          this.errorMessage.set(error.error?.detail ?? 'Unable to add the field.');
         },
       });
   }
 
-  handleEntityCreated(entity: {
-    name: string;
-    description: string;
-    population: number;
-  }): void {
+  handleEntityCreated(entity: { name: string; description: string; population: number }): void {
     const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     if (!dataModelId) {
@@ -1078,19 +978,14 @@ export class ModelStudioComponent {
       return;
     }
 
-    this.specificationService
-      .createEntity(dataModelId, entity.name, entity.population)
-      .subscribe({
-        next: () => {
-          this.entityDialogOpen.set(false);
-          this.loadSpecification(dataModelId);
-        },
-        error: (error: { error?: { detail?: string } }) => {
-          this.errorMessage.set(
-            error.error?.detail ?? 'Failed to create entity.',
-          );
-        },
-      });
+    this.specificationService.createEntity(dataModelId, entity.name, entity.population).subscribe({
+      next: () => {
+        this.entityDialogOpen.set(false);
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.errorMessage.set(error.error?.detail ?? 'Failed to create entity.');
+      },
+    });
   }
 }
-
