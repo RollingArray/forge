@@ -13,7 +13,7 @@
  */
 
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import {
   ForgeConstraint,
@@ -42,6 +42,7 @@ import {
   ForeignKeyDialogComponent,
   ForeignKeyDraft,
 } from './components/foreign-key-dialog/foreign-key-dialog.component';
+import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 
 type StudioStep = 'model' | 'validate' | 'population' | 'generate' | 'results';
 
@@ -63,6 +64,7 @@ interface StudioStepItem {
     ConstraintDialogComponent,
     RelationshipDialogComponent,
     ForeignKeyDialogComponent,
+    WorkflowActionBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -285,6 +287,15 @@ interface StudioStepItem {
           />
         }
       }
+      <app-workflow-action-bar
+        icon="fact_check"
+        title="Model ready for validation"
+        description="Review the model structure and relationships before continuing to validation."
+        primaryLabel="Continue to Validation"
+        primaryIcon="arrow_forward"
+        [primaryDisabled]="(specification()?.entities?.length ?? 0) === 0"
+        (primaryAction)="continueToValidation()"
+      />
     </section>
   `,
   styles: [
@@ -726,6 +737,7 @@ interface StudioStepItem {
 })
 export class ModelStudioComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly specificationService = inject(SpecificationService);
 
   readonly specification = signal<ForgeSpecification | null>(null);
@@ -1150,4 +1162,18 @@ export class ModelStudioComponent {
       },
     });
   }
+  continueToValidation(): void {
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!dataModelId || (this.specification()?.entities?.length ?? 0) === 0) {
+      return;
+    }
+
+    void this.router.navigate([
+      '/workspace',
+      dataModelId,
+      'model-validation',
+    ]);
+  }
+
 }
