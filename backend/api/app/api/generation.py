@@ -3,11 +3,17 @@ File: generation.py
 Purpose: FORGE generation API endpoints.
 """
 
+from csv import DictReader
+from pathlib import Path
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 
 from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
 from app.models.generation_model import (
+    GenerationArtifactPreviewResponse,
+    GenerationArtifactResponse,
     GenerationJobResponse,
     GenerationReadinessResponse,
 )
@@ -15,6 +21,7 @@ from app.core.ai_settings import load_ai_configuration
 from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.generation_service import GenerationService
+from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
 
 
@@ -34,6 +41,7 @@ generation_service = GenerationService(
 )
 
 data_model_access_service = DataModelAccessService()
+artifact_writer = GenerationArtifactWriter()
 
 
 @router.get(
@@ -143,6 +151,187 @@ async def get_generation_job(
         )
 
     return job
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/artifacts",
+    response_model=list[GenerationArtifactResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def list_generation_artifacts(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> list[GenerationArtifactResponse]:
+    """List consolidated CSV artifacts for a generation job."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(job_id)
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    artifacts: list[GenerationArtifactResponse] = []
+
+    for entity in job.entities:
+        path = artifact_writer.get_entity_csv_path(
+            job_id=job_id,
+            entity_name=entity.entity_name,
+        )
+
+        if not path.is_file():
+            continue
+
+        artifacts.append(
+            GenerationArtifactResponse(
+                entity_name=entity.entity_name,
+                filename=path.name,
+                rows=entity.generated_rows,
+                size_bytes=path.stat().st_size,
+            )
+        )
+
+    return artifacts
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/artifacts/{entity_name}/preview",
+    response_model=GenerationArtifactPreviewResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def preview_generation_artifact(
+    data_model_id: str,
+    job_id: str,
+    entity_name: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationArtifactPreviewResponse:
+    """Return a small preview of one generated CSV artifact."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(job_id)
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    try:
+        path = artifact_writer.get_entity_csv_path(
+            job_id=job_id,
+            entity_name=entity_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if not path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generated artifact not found.",
+        )
+
+    preview_limit = 100
+    rows: list[dict[str, object]] = []
+    columns: list[str] = []
+    total_rows = 0
+
+    with path.open(
+        "r",
+        newline="",
+        encoding="utf-8",
+    ) as file:
+        reader = DictReader(file)
+        columns = reader.fieldnames or []
+
+        for row in reader:
+            total_rows += 1
+
+            if len(rows) < preview_limit:
+                rows.append(dict(row))
+
+    return GenerationArtifactPreviewResponse(
+        entity_name=entity_name,
+        filename=path.name,
+        columns=columns,
+        rows=rows,
+        total_rows=total_rows,
+        preview_rows=len(rows),
+    )
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/artifacts/{entity_name}/download",
+    status_code=status.HTTP_200_OK,
+)
+async def download_generation_artifact(
+    data_model_id: str,
+    job_id: str,
+    entity_name: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> FileResponse:
+    """Download one generated CSV artifact."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(job_id)
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    try:
+        path = artifact_writer.get_entity_csv_path(
+            job_id=job_id,
+            entity_name=entity_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if not path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generated artifact not found.",
+        )
+
+    return FileResponse(
+        path=path,
+        media_type="text/csv",
+        filename=path.name,
+    )
 
 
 @router.post(

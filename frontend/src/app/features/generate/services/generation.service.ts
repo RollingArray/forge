@@ -2,6 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import {
+  GenerationArtifact,
+  GenerationArtifactPreview,
+} from '../../results/results.models';
+
 import { environment } from '../../../../environments/environment';
 import {
   GenerationJobResponse,
@@ -52,4 +57,35 @@ export class GenerationService {
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}`,
     );
   }
+
+  getGenerationArtifacts(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationArtifact[]> {
+    return this.http.get<GenerationArtifact[]>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts`,
+    );
+  }
+
+  getGenerationArtifactPreview(
+    dataModelId: string,
+    jobId: string,
+    entityName: string,
+  ): Observable<GenerationArtifactPreview> {
+    return this.http.get<GenerationArtifactPreview>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts/${encodeURIComponent(entityName)}/preview`,
+    );
+  }
+
+  downloadGenerationArtifact(
+    dataModelId: string,
+    jobId: string,
+    entityName: string,
+  ): Observable<Blob> {
+    return this.http.get(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts/${encodeURIComponent(entityName)}/download`,
+      { responseType: 'blob' },
+    );
+  }
+
 }

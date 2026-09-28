@@ -117,6 +117,8 @@
 
 .summary-card,
 .workspace-section {
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   background: #ffffff;
@@ -125,6 +127,7 @@
 }
 
 .summary-card {
+  min-width: 0;
   min-height: 118px;
   padding: 18px;
 }
@@ -583,11 +586,14 @@
 
 .summary-job-id {
   display: block;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow-wrap: anywhere;
   font-size: 24px;
   line-height: 1.2;
+  box-sizing: border-box;
 }

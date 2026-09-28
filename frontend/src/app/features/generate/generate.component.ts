@@ -87,9 +87,19 @@ export class GenerateComponent {
       case 'generate':
         break;
 
-      case 'results':
-        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'results']);
+      case 'results': {
+        const jobId = this.generationJob()?.job_id;
+
+        if (!jobId) {
+          return;
+        }
+
+        this.router.navigate(
+          ['/workspace', this.dataModelId, 'data-model', 'results'],
+          { queryParams: { jobId } },
+        );
         break;
+      }
     }
   }
 
@@ -191,6 +201,9 @@ export class GenerateComponent {
       return;
     }
 
-    this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'results']);
+    this.router.navigate(
+      ['/workspace', this.dataModelId, 'data-model', 'results'],
+      { queryParams: { jobId: this.generationJob()!.job_id } },
+    );
   }
 }

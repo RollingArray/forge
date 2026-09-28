@@ -154,6 +154,26 @@
   font-weight: 600;
 }
 
+
+.organization-logo {
+  display: flex;
+
+  margin-top: auto;
+
+  padding: 20px 24px 24px;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.organization-logo img {
+  display: block;
+
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+}
+
 @media (max-width: 760px) {
   .sidebar {
     height: auto;

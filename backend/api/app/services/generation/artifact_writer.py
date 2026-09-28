@@ -121,6 +121,21 @@ class GenerationArtifactWriter:
 
         return len(rows)
 
+    def get_entity_csv_path(
+        self,
+        job_id: str,
+        entity_name: str,
+    ) -> Path:
+        """Return the consolidated CSV path for one generated entity."""
+        if not entity_name or "/" in entity_name or "\\" in entity_name:
+            raise ValueError("Invalid entity name.")
+
+        return (
+            self._job_directory(job_id)
+            / "generated"
+            / f"{entity_name}.csv"
+        )
+
     def _job_directory(self, job_id: str) -> Path:
         """Return the root artifact directory for a generation job."""
         return self._data_directory / "generation" / job_id

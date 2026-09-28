@@ -168,6 +168,18 @@ Email: ranjoy.sen@collins.com
   height: 52px;
 }
 
+.organization-logo {
+  margin-top: 24px;
+}
+
+.organization-logo img {
+  display: block;
+
+  width: 260px;
+  max-width: 100%;
+  height: auto;
+}
+
 /* ============================================================= */
 /* FORGE LOGO                                                     */
 /* ============================================================= */

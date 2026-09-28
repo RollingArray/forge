@@ -110,6 +110,26 @@ class GenerationJobResponse(BaseModel):
 
         return self.total_generated_rows / elapsed_seconds
 
+class GenerationArtifactResponse(BaseModel):
+    """One generated CSV artifact."""
+
+    entity_name: str
+    filename: str
+    rows: int = Field(ge=0)
+    size_bytes: int = Field(ge=0)
+
+
+class GenerationArtifactPreviewResponse(BaseModel):
+    """Preview of one generated CSV artifact."""
+
+    entity_name: str
+    filename: str
+    columns: list[str] = Field(default_factory=list)
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+    total_rows: int = Field(ge=0)
+    preview_rows: int = Field(ge=0)
+
+
 class GenerationEntityResult(BaseModel):
     entity_name: str
     target_rows: int = Field(ge=0)

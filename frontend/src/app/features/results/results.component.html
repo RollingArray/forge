@@ -1,33 +1,288 @@
-<main class="results-page">
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  [pageIcon]="'bar_chart'"
+  [pageTitle]="'Generation Results'"
+  [pageDescription]="'Review the generated dataset and execution outcome.'"
+  [progressLabel]="'5 of 5 steps'"
+  [actionBarIcon]="'bar_chart'"
+  [actionBarTitle]="'Generation completed'"
+  [actionBarDescription]="'Generated data is ready for review and download.'"
+  [secondaryLabel]="'Back to Generate'"
+  [secondaryIcon]="'arrow_back'"
+  [primaryLabel]="'Results Ready'"
+  [primaryIcon]="'check'"
+  [primaryDisabled]="true"
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToGenerate()"
+>
 
-  <header class="results-header">
-    <div>
-      <span class="section-eyebrow">Results</span>
-      <h1>Generation Results</h1>
-      <p>
-        Review the generated dataset and execution outcome.
-      </p>
-    </div>
-  </header>
+  <div class="results-workspace">
 
-  <section class="results-shell forge-card">
-    <div class="results-shell-header">
-      <div>
-        <span class="section-eyebrow">Execution</span>
-        <h2>Generation completed</h2>
-      </div>
+    <section class="results-summary-grid">
 
-      <span class="section-state">Ready</span>
-    </div>
+      <article class="results-summary-card">
+        <div>
+          <span class="results-summary-label">Generation Status</span>
 
-    <div class="results-placeholder">
-      <span class="results-placeholder-icon">✓</span>
-      <h3>Results are ready</h3>
-      <p>
-        Generated data, execution metrics, and downloadable artifacts
-        will appear here.
-      </p>
-    </div>
-  </section>
+          <strong class="results-summary-value">
+            {{ generationJob()?.status ?? 'Completed' }}
+          </strong>
 
-</main>
+          <span class="results-summary-detail">
+            Generation finished successfully
+          </span>
+        </div>
+
+        <span class="results-summary-icon success">
+          <span class="material-symbols-outlined">check</span>
+        </span>
+      </article>
+
+      <article class="results-summary-card">
+        <div>
+          <span class="results-summary-label">Job ID</span>
+
+          <strong
+            class="results-summary-value results-job-id"
+            [title]="generationJob()?.job_id ?? jobId"
+          >
+            {{ generationJob()?.job_id ?? jobId }}
+          </strong>
+
+          <span class="results-summary-detail">
+            Generation job identifier
+          </span>
+        </div>
+
+        <span class="results-summary-icon neutral">
+          <span class="material-symbols-outlined">content_copy</span>
+        </span>
+      </article>
+
+      <article class="results-summary-card">
+        <div>
+          <span class="results-summary-label">Total Generated Rows</span>
+
+          <strong class="results-summary-value">
+            {{ generationJob()?.total_generated_rows ?? 0 | number }}
+          </strong>
+
+          <span class="results-summary-detail">
+            Across {{ generationJob()?.entities?.length ?? 0 }} entities
+          </span>
+        </div>
+
+        <span class="results-summary-icon peach">
+          <span class="material-symbols-outlined">database</span>
+        </span>
+      </article>
+
+      <article class="results-summary-card">
+        <div>
+          <span class="results-summary-label">Throughput</span>
+
+          <strong class="results-summary-value">
+            {{
+              generationJob()?.throughput_rows_per_second !== null
+                ? (generationJob()?.throughput_rows_per_second | number:'1.0-0')
+                : '—'
+            }}
+          </strong>
+
+          <span class="results-summary-detail">
+            Rows per second
+          </span>
+        </div>
+
+        <span class="results-summary-icon purple">
+          <span class="material-symbols-outlined">bolt</span>
+        </span>
+      </article>
+
+    </section>
+
+    <section class="results-content-grid">
+
+      <section class="results-panel">
+
+        <div class="results-panel-header">
+
+          <div>
+            <span class="section-eyebrow">Generated Data</span>
+            <h2>Generated Files</h2>
+
+            <p>
+              {{ artifacts().length }} files generated successfully.
+              Select a file to preview its contents.
+            </p>
+          </div>
+
+          <label class="results-search">
+            <span class="material-symbols-outlined">search</span>
+
+            <input
+              type="search"
+              placeholder="Search files..."
+              [value]="searchTerm()"
+              (input)="updateSearchTerm($any($event.target).value)"
+            />
+          </label>
+
+        </div>
+
+        <div
+          *ngIf="artifactsLoading()"
+          class="results-state"
+        >
+          Loading generated files...
+        </div>
+
+        <div
+          *ngIf="artifactsError()"
+          class="results-state results-state-error"
+        >
+          {{ artifactsError() }}
+        </div>
+
+        <div
+          *ngIf="
+            !artifactsLoading()
+            && !artifactsError()
+            && filteredArtifacts().length === 0
+          "
+          class="results-state"
+        >
+          No generated files match your search.
+        </div>
+
+        <div
+          *ngIf="!artifactsLoading() && filteredArtifacts().length > 0"
+          class="results-file-table"
+        >
+
+          <div class="results-file-header">
+            <span>#</span>
+            <span>File Name</span>
+            <span>Rows</span>
+            <span>Size</span>
+            <span>Actions</span>
+          </div>
+
+          <article
+            *ngFor="let artifact of filteredArtifacts(); let i = index"
+            class="results-file-row"
+            [class.results-file-row-selected]="
+              selectedArtifact()?.entity_name === artifact.entity_name
+            "
+            (click)="selectArtifact(artifact)"
+          >
+
+            <span class="file-index">
+              {{ i + 1 }}
+            </span>
+
+            <div class="results-file-name">
+              <span class="file-type">CSV</span>
+              <strong>{{ artifact.filename }}</strong>
+            </div>
+
+            <span class="file-metric">
+              {{ artifact.rows | number }}
+            </span>
+
+            <span class="file-metric">
+              {{ artifact.size_bytes / 1024 | number:'1.0-1' }} KB
+            </span>
+
+            <button
+              type="button"
+              class="file-download"
+              (click)="$event.stopPropagation(); downloadArtifact(artifact)"
+              aria-label="Download generated file"
+            >
+              <span class="material-symbols-outlined">
+                download
+              </span>
+            </button>
+
+          </article>
+
+        </div>
+
+      </section>
+
+      <section class="results-panel preview-panel">
+
+        <div
+          *ngIf="selectedArtifact()"
+          class="preview-header"
+        >
+          <div>
+            <span class="section-eyebrow">File Preview</span>
+
+            <h2>{{ selectedArtifact()?.filename }}</h2>
+
+            <span class="preview-file-meta">
+              {{ selectedArtifact()?.rows | number }} rows
+              ·
+              {{ selectedArtifact()!.size_bytes / 1024 | number:'1.0-1' }} KB
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="preview-download"
+            (click)="downloadArtifact(selectedArtifact()!)"
+          >
+            <span class="material-symbols-outlined">
+              download
+            </span>
+            Download File
+          </button>
+        </div>
+
+        <div
+          *ngIf="previewLoading()"
+          class="results-state"
+        >
+          Loading preview...
+        </div>
+
+        <div
+          *ngIf="previewError()"
+          class="results-state results-state-error"
+        >
+          {{ previewError() }}
+        </div>
+
+        <div
+          *ngIf="preview()"
+          class="preview-table-wrapper"
+        >
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th *ngFor="let column of preview()!.columns">
+                  {{ column }}
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of preview()!.rows">
+                <td *ngFor="let column of preview()!.columns">
+                  {{ row[column] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </section>
+
+  </div>
+
+</app-workflow-page>
