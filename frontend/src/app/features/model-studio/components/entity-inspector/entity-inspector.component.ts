@@ -8,6 +8,7 @@ import {
 
 import {
   ForgeConstraint,
+  ForgeForeignKey,
   ForgeSpecificationEntity,
   ForgeSpecificationField,
   ForgeSpecificationRelationship,
@@ -17,6 +18,7 @@ type InspectorTab =
   | 'FIELDS'
   | 'KEYS'
   | 'RELATIONSHIPS'
+  | 'FOREIGN_KEYS'
   | 'CONSTRAINTS';
 
 @Component({
@@ -34,10 +36,13 @@ export class EntityInspectorComponent {
 
   readonly constraints = input<ForgeConstraint[]>([]);
 
+  readonly foreignKeys = input<ForgeForeignKey[]>([]);
+
   readonly addField = output<void>();
   readonly addConstraint = output<void>();
   readonly editConstraint = output<ForgeConstraint>();
   readonly addRelationship = output<string>();
+  readonly addForeignKey = output<string>();
   readonly editRelationship =
     output<ForgeSpecificationRelationship>();
   readonly editField = output<ForgeSpecificationField>();
@@ -49,6 +54,16 @@ export class EntityInspectorComponent {
 
     return this.constraints().filter(
       (constraint) => constraint.entity === entityName,
+    );
+  }
+
+  foreignKeysForEntity(): ForgeForeignKey[] {
+    const entityName = this.entity().name;
+
+    return this.foreignKeys().filter(
+      (foreignKey) =>
+        foreignKey.source.entity === entityName ||
+        foreignKey.target.entity === entityName,
     );
   }
 

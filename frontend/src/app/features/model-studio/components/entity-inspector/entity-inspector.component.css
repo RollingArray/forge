@@ -494,68 +494,126 @@ h2 {
 .relationship-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .relationship-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 10px;
-  border: 1px solid #e5e7ee;
-  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e3dfeb;
+  border-radius: 12px;
   background: #ffffff;
+  box-shadow:
+    0 2px 6px rgb(55 43 82 / 5%),
+    0 1px 2px rgb(55 43 82 / 4%);
 }
 
-.relationship-card-icon {
-  display: grid;
-  width: 29px;
-  height: 29px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 7px;
-  background: #f0eeff;
-  color: #554dd4;
-}
-
-.relationship-card-icon .material-symbols-outlined {
-  font-size: 16px;
-}
-
-.relationship-card-content {
+.relationship-card-header {
   display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.relationship-card-route {
-  display: flex;
-  min-width: 0;
+  min-height: 54px;
   align-items: center;
-  gap: 4px;
+  gap: 11px;
+  padding: 0 16px;
+  border-bottom: 1px solid #e9e5ef;
+  background: linear-gradient(135deg, #ffffff 0%, #faf9fc 100%);
 }
 
-.relationship-card-route strong {
+.relationship-card-header .material-symbols-outlined {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8cdef;
+  border-radius: 8px;
+  background: #f5f1fc;
+  color: #654bb8;
+  font-size: 17px;
+}
+
+.relationship-card-header strong {
   overflow: hidden;
   color: #30364d;
-  font-size: 9px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.relationship-card-route .material-symbols-outlined {
-  flex: 0 0 auto;
-  color: #9a9fb0;
-  font-size: 13px;
+.foreign-key-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 14px 16px;
+  background: #ffffff;
 }
 
-.relationship-card-type {
-  color: #858ca1;
-  font-size: 8px;
-  line-height: 1.4;
+.foreign-key-endpoint {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 15px;
+  border: 1px solid #e2deea;
+  border-radius: 10px;
+  background: #faf9fc;
+  text-align: center;
+}
+
+.foreign-key-entity {
+  display: block;
+  margin-bottom: 9px;
+  color: #403b50;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.foreign-key-fields {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.foreign-key-field {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid #e6e2ec;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #686274;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.foreign-key-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 48px;
+  color: #654bb8;
+}
+
+.foreign-key-line {
+  width: 1px;
+  flex: 1;
+  background: #cfc5e6;
+}
+
+.foreign-key-connector .material-symbols-outlined {
+  display: flex;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8cdef;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #654bb8;
+  font-size: 15px;
 }
 
 /* ==========================================================================

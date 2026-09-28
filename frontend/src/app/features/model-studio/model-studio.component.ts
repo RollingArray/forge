@@ -38,6 +38,10 @@ import {
   RelationshipDialogComponent,
   RelationshipDraft,
 } from './components/relationship-dialog/relationship-dialog.component';
+import {
+  ForeignKeyDialogComponent,
+  ForeignKeyDraft,
+} from './components/foreign-key-dialog/foreign-key-dialog.component';
 
 type StudioStep = 'model' | 'validate' | 'population' | 'generate' | 'results';
 
@@ -58,6 +62,7 @@ interface StudioStepItem {
     IdentityDialogComponent,
     ConstraintDialogComponent,
     RelationshipDialogComponent,
+    ForeignKeyDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -195,11 +200,13 @@ interface StudioStepItem {
                 [entity]="entity"
                 [relationships]="specification.relationships"
                 [constraints]="specification.constraints"
+                [foreignKeys]="specification.foreignKeys"
                 (addField)="openFieldDialog()"
                 (addConstraint)="openConstraintDialog()"
                 (editConstraint)="openConstraintEditDialog($event)"
                 (editField)="openFieldEditDialog($event)"
                 (addRelationship)="openRelationshipDialog($event)"
+                (addForeignKey)="openForeignKeyDialog($event)"
                 (editRelationship)="openRelationshipEditDialog($event)"
                 (editIdentity)="openIdentityDialog()"
                 (closed)="selectedEntity.set('')"
@@ -263,6 +270,18 @@ interface StudioStepItem {
             [existingRelationship]="editingRelationship()"
             (saved)="handleRelationshipSaved($event)"
             (closed)="closeRelationshipDialog()"
+          />
+        }
+      }
+
+      @if (foreignKeyDialogOpen()) {
+        @if (specification(); as specification) {
+          <app-model-studio-foreign-key-dialog
+            [entities]="specification.entities"
+            [foreignKeys]="specification.foreignKeys"
+            [sourceEntityContext]="foreignKeySourceEntity()"
+            (saved)="handleForeignKeySaved($event)"
+            (closed)="closeForeignKeyDialog()"
           />
         }
       }
@@ -735,9 +754,13 @@ export class ModelStudioComponent {
 
   readonly relationshipDialogOpen = signal(false);
 
+  readonly foreignKeyDialogOpen = signal(false);
+
   readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
 
   readonly relationshipSourceEntity = signal('');
+
+  readonly foreignKeySourceEntity = signal('');
 
   readonly errorMessage = signal<string | null>(null);
 
@@ -879,6 +902,51 @@ export class ModelStudioComponent {
         error: (error: { error?: { detail?: string } }) => {
           this.errorMessage.set(
             error.error?.detail ?? 'Unable to add the constraint.',
+          );
+        },
+      });
+  }
+
+  openForeignKeyDialog(sourceEntity?: string): void {
+    if (!this.specification()) {
+      return;
+    }
+
+    this.foreignKeySourceEntity.set(sourceEntity ?? '');
+    this.foreignKeyDialogOpen.set(true);
+  }
+
+  closeForeignKeyDialog(): void {
+    this.foreignKeyDialogOpen.set(false);
+    this.foreignKeySourceEntity.set('');
+  }
+
+  handleForeignKeySaved(draft: ForeignKeyDraft): void {
+    const dataModelId =
+      this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!dataModelId) {
+      this.errorMessage.set(
+        'Data Model ID is missing from the route.',
+      );
+      return;
+    }
+
+    this.specificationService
+      .createForeignKey(dataModelId, {
+        source_entity: draft.sourceEntity,
+        source_fields: draft.sourceFields,
+        target_entity: draft.targetEntity,
+      })
+      .subscribe({
+        next: () => {
+          this.closeForeignKeyDialog();
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ??
+              'Unable to add the foreign key.',
           );
         },
       });

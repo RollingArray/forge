@@ -69,6 +69,20 @@
     <button
       type="button"
       class="inspector-tab"
+      [class.active]="activeTab() === 'FOREIGN_KEYS'"
+      (click)="selectTab('FOREIGN_KEYS')"
+    >
+      <span class="material-symbols-outlined">link</span>
+      <span>Foreign Keys</span>
+
+      @if (foreignKeysForEntity().length > 0) {
+        <span class="tab-count">{{ foreignKeysForEntity().length }}</span>
+      }
+    </button>
+
+    <button
+      type="button"
+      class="inspector-tab"
       [class.active]="activeTab() === 'CONSTRAINTS'"
       (click)="selectTab('CONSTRAINTS')"
     >
@@ -282,49 +296,143 @@
             ) {
               <div class="relationship-card">
 
-                <div class="relationship-card-icon">
+                <div class="relationship-card-header">
                   <span class="material-symbols-outlined">
                     account_tree
                   </span>
+
+                  <strong>
+                    {{ relationshipOtherSide(relationship) }}
+                  </strong>
                 </div>
 
                 <div class="relationship-card-content">
-
-                  <div class="relationship-card-route">
-                    <strong>
-                      {{ relationship.source }}
-                    </strong>
-
-                    <span class="material-symbols-outlined">
-                      arrow_forward
-                    </span>
-
-                    <strong>
-                      {{ relationship.target }}
-                    </strong>
-                  </div>
-
                   <span class="relationship-card-type">
-                    {{ relationship.type === 'ONE_TO_ONE'
-                      ? 'One record connects to one record'
-                      : relationship.type === 'ONE_TO_MANY'
-                        ? 'One record can connect to many records'
-                        : relationship.type === 'MANY_TO_ONE'
-                          ? 'Many records can belong to one record'
-                          : 'Records can connect to many records' }}
+                    {{ relationshipDirection(relationship) }}
                   </span>
-
                 </div>
 
-                <button
-                  type="button"
-                  class="relationship-card-edit"
-                  aria-label="Edit relationship"
-                  title="Edit relationship"
-                  (click)="editRelationship.emit(relationship)"
-                >
-                  <span class="material-symbols-outlined">edit</span>
-                </button>
+              </div>
+            }
+
+          </div>
+        }
+
+      </section>
+    }
+
+    @if (activeTab() === 'FOREIGN_KEYS') {
+      <section class="tab-panel">
+
+        <div class="section-header">
+          <div>
+            <span class="section-title">Foreign Keys</span>
+
+            <span class="section-description">
+              Source fields mapped to target identity fields.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="add-button"
+            (click)="addForeignKey.emit(entity().name)"
+          >
+            <span class="material-symbols-outlined">add</span>
+            Add
+          </button>
+        </div>
+
+        @if (foreignKeysForEntity().length === 0) {
+          <div class="empty-state large">
+            <span class="material-symbols-outlined">link</span>
+
+            <strong>No foreign keys yet</strong>
+
+            <p>
+              Add a foreign key to connect this entity to another entity's
+              identity.
+            </p>
+
+            <button
+              type="button"
+              class="secondary-action"
+              (click)="addForeignKey.emit(entity().name)"
+            >
+              <span class="material-symbols-outlined">add</span>
+              Add Foreign Key
+            </button>
+          </div>
+        } @else {
+          <div class="relationship-list">
+
+            @for (
+              foreignKey of foreignKeysForEntity();
+              track foreignKey.name
+            ) {
+              <div class="relationship-card">
+
+                <div class="relationship-card-header">
+                  <span class="material-symbols-outlined">
+                    link
+                  </span>
+
+                  <strong>
+                    {{ foreignKey.name }}
+                  </strong>
+                </div>
+
+                <div class="foreign-key-diagram">
+
+                  <div class="foreign-key-endpoint source">
+
+                    <span class="foreign-key-entity">
+                      {{ foreignKey.source.entity }}
+                    </span>
+
+                    <div class="foreign-key-fields">
+                      @for (
+                        field of foreignKey.source.fields;
+                        track field
+                      ) {
+                        <span class="foreign-key-field">
+                          {{ field }}
+                        </span>
+                      }
+                    </div>
+
+                  </div>
+
+                  <div class="foreign-key-connector">
+                    <span class="foreign-key-line"></span>
+
+                    <span class="material-symbols-outlined">
+                      link
+                    </span>
+
+                    <span class="foreign-key-line"></span>
+                  </div>
+
+                  <div class="foreign-key-endpoint target">
+
+                    <span class="foreign-key-entity">
+                      {{ foreignKey.target.entity }}
+                    </span>
+
+                    <div class="foreign-key-fields">
+                      @for (
+                        field of foreignKey.target.fields;
+                        track field
+                      ) {
+                        <span class="foreign-key-field">
+                          {{ field }}
+                        </span>
+                      }
+                    </div>
+
+                  </div>
+
+                </div>
 
               </div>
             }

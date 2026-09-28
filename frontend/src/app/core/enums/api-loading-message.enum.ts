@@ -35,4 +35,7 @@ export enum ApiLoadingMessage {
   DeletingConstraint = 'Removing constraint from Data Model...',
   UpdatingEntityIdentity = 'Updating entity identity...',
   UpdatingField = 'Updating field definition...',
+  CreatingForeignKey = 'Adding foreign key to Data Model...',
+  UpdatingForeignKey = 'Updating foreign key...',
+  DeletingForeignKey = 'Removing foreign key from Data Model...',
 }

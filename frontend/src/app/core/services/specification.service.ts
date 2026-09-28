@@ -78,6 +78,24 @@ interface UpdateFieldRequest {
   };
 }
 
+interface CreateForeignKeyRequest {
+  source_entity: string;
+  source_fields: string[];
+  target_entity: string;
+}
+
+interface UpdateForeignKeyRequest {
+  existing: {
+    name: string;
+  };
+  foreign_key: CreateForeignKeyRequest;
+}
+
+interface DeleteForeignKeyRequest {
+  name: string;
+}
+
+
 interface CreateRelationshipRequest {
   source_entity: string;
   target_entity: string;
@@ -210,6 +228,54 @@ export class SpecificationService {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
           ApiLoadingMessage.UpdatingField,
+        ),
+      },
+    );
+  }
+
+  createForeignKey(
+    dataModelId: string,
+    request: CreateForeignKeyRequest,
+  ): Observable<ForgeForeignKey> {
+    return this.http.post<ForgeForeignKey>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/foreign-keys`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.CreatingForeignKey,
+        ),
+      },
+    );
+  }
+
+  updateForeignKey(
+    dataModelId: string,
+    request: UpdateForeignKeyRequest,
+  ): Observable<ForgeForeignKey> {
+    return this.http.put<ForgeForeignKey>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/foreign-keys`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.UpdatingForeignKey,
+        ),
+      },
+    );
+  }
+
+  deleteForeignKey(
+    dataModelId: string,
+    foreignKey: DeleteForeignKeyRequest,
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/foreign-keys`,
+      {
+        body: foreignKey,
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.DeletingForeignKey,
         ),
       },
     );
