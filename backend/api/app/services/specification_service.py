@@ -25,6 +25,11 @@ from app.models.specification_constraint_model import (
 from app.models.specification_relationship_model import (
     CreateRelationshipRequest,
 )
+from app.models.specification_foreign_key_model import (
+    CreateForeignKeyRequest,
+    ExistingForeignKeyRequest,
+    UpdateForeignKeyRequest,
+)
 from app.constants.activity import ActivityType
 from app.services.activity_service import ActivityService
 from app.repositories.json_data_model_repository import (
@@ -515,6 +520,388 @@ class SpecificationService:
             )
 
         return updated_entity
+
+    def create_foreign_key(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: CreateForeignKeyRequest,
+    ) -> dict[str, Any] | None:
+        """Create and persist a deterministic foreign key."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        entities = specification.get("entities", [])
+
+        source_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == request.source_entity
+            ),
+            None,
+        )
+
+        target_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == request.target_entity
+            ),
+            None,
+        )
+
+        if source_entity is None:
+            raise ValueError(
+                f"Unknown source entity: {request.source_entity}"
+            )
+
+        if target_entity is None:
+            raise ValueError(
+                f"Unknown target entity: {request.target_entity}"
+            )
+
+        if request.source_entity == request.target_entity:
+            raise ValueError(
+                "A foreign key must connect two different entities."
+            )
+
+        source_fields = source_entity.get("fields", [])
+
+        source_field_names = {
+            field.get("name")
+            for field in source_fields
+            if isinstance(field, dict)
+        }
+
+        unknown_source_fields = [
+            field_name
+            for field_name in request.source_fields
+            if field_name not in source_field_names
+        ]
+
+        if unknown_source_fields:
+            raise ValueError(
+                "Unknown source field(s): "
+                + ", ".join(unknown_source_fields)
+                + "."
+            )
+
+        identity = target_entity.get("identity", {})
+        target_identity_fields = identity.get("fields", [])
+
+        if not isinstance(target_identity_fields, list):
+            target_identity_fields = []
+
+        if not target_identity_fields:
+            raise ValueError(
+                f"Target entity '{request.target_entity}' "
+                "must define an identity before it can be referenced "
+                "by a foreign key."
+            )
+
+        if len(request.source_fields) != len(target_identity_fields):
+            raise ValueError(
+                "The number of source fields must match the number "
+                "of target identity fields."
+            )
+
+        foreign_key = {
+            "name": (
+                f"FK_{request.source_entity}_"
+                f"{request.target_entity}"
+            ),
+            "source": {
+                "entity": request.source_entity,
+                "fields": list(request.source_fields),
+            },
+            "target": {
+                "entity": request.target_entity,
+                "fields": list(target_identity_fields),
+            },
+        }
+
+        foreign_keys = specification.setdefault(
+            "foreign_keys",
+            [],
+        )
+
+        if foreign_key in foreign_keys:
+            raise ValueError(
+                "Foreign key already exists."
+            )
+
+        candidate = deepcopy(specification)
+        candidate.setdefault("foreign_keys", []).append(
+            foreign_key,
+        )
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.FOREIGN_KEY_ADDED,
+                title="Foreign key added",
+                description=(
+                    f"Added foreign key "
+                    f"'{foreign_key['name']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=foreign_key,
+            )
+
+        return foreign_key
+
+    def update_foreign_key(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: UpdateForeignKeyRequest,
+    ) -> dict[str, Any] | None:
+        """Update an existing deterministic foreign key mapping."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        foreign_keys = specification.get("foreign_keys", [])
+
+        existing = next(
+            (
+                foreign_key
+                for foreign_key in foreign_keys
+                if isinstance(foreign_key, dict)
+                and foreign_key.get("name") == request.existing.name
+            ),
+            None,
+        )
+
+        if existing is None:
+            raise ValueError("Foreign key not found.")
+
+        new_request = request.foreign_key
+
+        if new_request.source_entity == new_request.target_entity:
+            raise ValueError(
+                "A foreign key must connect two different entities."
+            )
+
+        entities = specification.get("entities", [])
+
+        source_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == new_request.source_entity
+            ),
+            None,
+        )
+
+        target_entity = next(
+            (
+                entity
+                for entity in entities
+                if entity.get("name") == new_request.target_entity
+            ),
+            None,
+        )
+
+        if source_entity is None:
+            raise ValueError(
+                f"Unknown source entity: {new_request.source_entity}"
+            )
+
+        if target_entity is None:
+            raise ValueError(
+                f"Unknown target entity: {new_request.target_entity}"
+            )
+
+        source_fields = source_entity.get("fields", [])
+
+        source_field_names = {
+            field.get("name")
+            for field in source_fields
+            if isinstance(field, dict)
+        }
+
+        unknown_source_fields = [
+            field_name
+            for field_name in new_request.source_fields
+            if field_name not in source_field_names
+        ]
+
+        if unknown_source_fields:
+            raise ValueError(
+                "Unknown source field(s): "
+                + ", ".join(unknown_source_fields)
+                + "."
+            )
+
+        identity = target_entity.get("identity", {})
+        target_identity_fields = identity.get("fields", [])
+
+        if not isinstance(target_identity_fields, list):
+            target_identity_fields = []
+
+        if not target_identity_fields:
+            raise ValueError(
+                f"Target entity '{new_request.target_entity}' "
+                "must define an identity before it can be referenced "
+                "by a foreign key."
+            )
+
+        if len(new_request.source_fields) != len(
+            target_identity_fields
+        ):
+            raise ValueError(
+                "The number of source fields must match the number "
+                "of target identity fields."
+            )
+
+        updated_foreign_key = {
+            "name": request.existing.name,
+            "source": {
+                "entity": new_request.source_entity,
+                "fields": list(new_request.source_fields),
+            },
+            "target": {
+                "entity": new_request.target_entity,
+                "fields": list(target_identity_fields),
+            },
+        }
+
+        if updated_foreign_key != existing:
+            duplicate = next(
+                (
+                    foreign_key
+                    for foreign_key in foreign_keys
+                    if isinstance(foreign_key, dict)
+                    and foreign_key != existing
+                    and foreign_key == updated_foreign_key
+                ),
+                None,
+            )
+
+            if duplicate is not None:
+                raise ValueError(
+                    "Foreign key already exists."
+                )
+
+        candidate = deepcopy(specification)
+
+        candidate["foreign_keys"] = [
+            updated_foreign_key
+            if foreign_key == existing
+            else foreign_key
+            for foreign_key in candidate["foreign_keys"]
+        ]
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.FOREIGN_KEY_UPDATED,
+                title="Foreign key updated",
+                description=(
+                    f"Updated foreign key "
+                    f"'{updated_foreign_key['name']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "previous": existing,
+                    "current": updated_foreign_key,
+                },
+            )
+
+        return updated_foreign_key
+
+    def delete_foreign_key(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        request: ExistingForeignKeyRequest,
+    ) -> dict[str, Any] | None:
+        """Delete an existing deterministic foreign key."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        foreign_keys = specification.get("foreign_keys", [])
+
+        existing = next(
+            (
+                foreign_key
+                for foreign_key in foreign_keys
+                if isinstance(foreign_key, dict)
+                and foreign_key.get("name") == request.name
+            ),
+            None,
+        )
+
+        if existing is None:
+            raise ValueError("Foreign key not found.")
+
+        candidate = deepcopy(specification)
+
+        candidate["foreign_keys"] = [
+            foreign_key
+            for foreign_key in foreign_keys
+            if foreign_key != existing
+        ]
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.FOREIGN_KEY_DELETED,
+                title="Foreign key deleted",
+                description=(
+                    f"Deleted foreign key '{existing['name']}'"
+                ),
+                data_model_id=data_model_id,
+                metadata=existing,
+            )
+
+        return existing
 
     def create_relationship(
         self,

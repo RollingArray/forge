@@ -35,6 +35,10 @@ class ActivityType(StrEnum):
     RELATIONSHIP_UPDATED = "RELATIONSHIP_UPDATED"
     RELATIONSHIP_DELETED = "RELATIONSHIP_DELETED"
 
+    FOREIGN_KEY_ADDED = "FOREIGN_KEY_ADDED"
+    FOREIGN_KEY_UPDATED = "FOREIGN_KEY_UPDATED"
+    FOREIGN_KEY_DELETED = "FOREIGN_KEY_DELETED"
+
     CONSTRAINT_ADDED = "CONSTRAINT_ADDED"
     CONSTRAINT_UPDATED = "CONSTRAINT_UPDATED"
     CONSTRAINT_DELETED = "CONSTRAINT_DELETED"
@@ -130,6 +134,18 @@ ACTIVITY_PRESENTATION: dict[ActivityType, ActivityPresentation] = {
     ),
     ActivityType.RELATIONSHIP_DELETED: ActivityPresentation(
         icon="hub",
+        accent="red",
+    ),
+    ActivityType.FOREIGN_KEY_ADDED: ActivityPresentation(
+        icon="link",
+        accent="green",
+    ),
+    ActivityType.FOREIGN_KEY_UPDATED: ActivityPresentation(
+        icon="link",
+        accent="blue",
+    ),
+    ActivityType.FOREIGN_KEY_DELETED: ActivityPresentation(
+        icon="link",
         accent="red",
     ),
     ActivityType.CONSTRAINT_ADDED: ActivityPresentation(

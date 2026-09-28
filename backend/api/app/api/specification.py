@@ -29,6 +29,11 @@ from app.models.specification_relationship_model import (
     DeleteRelationshipRequest,
     UpdateRelationshipRequest,
 )
+from app.models.specification_foreign_key_model import (
+    CreateForeignKeyRequest,
+    ExistingForeignKeyRequest,
+    UpdateForeignKeyRequest,
+)
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.specification_service import SpecificationService
@@ -289,6 +294,127 @@ async def update_entity_population(
         )
 
     return entity
+
+
+@router.post(
+    "/{data_model_id}/specification/foreign-keys",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_foreign_key(
+    data_model_id: str,
+    request: CreateForeignKeyRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Create a deterministic foreign key in the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        foreign_key = specification_service.create_foreign_key(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if foreign_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return foreign_key
+
+
+@router.put(
+    "/{data_model_id}/specification/foreign-keys",
+)
+async def update_foreign_key(
+    data_model_id: str,
+    request: UpdateForeignKeyRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update a deterministic foreign key in the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        foreign_key = specification_service.update_foreign_key(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if foreign_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return foreign_key
+
+
+@router.delete(
+    "/{data_model_id}/specification/foreign-keys",
+)
+async def delete_foreign_key(
+    data_model_id: str,
+    request: ExistingForeignKeyRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Delete a deterministic foreign key from the canonical FORGE specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        foreign_key = specification_service.delete_foreign_key(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if foreign_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return foreign_key
 
 
 @router.post(
