@@ -37,6 +37,7 @@ from app.models.specification_foreign_key_model import (
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.specification_service import SpecificationService
+from app.services.specification_validation_service import SpecificationValidationService
 
 
 router = APIRouter(
@@ -45,6 +46,7 @@ router = APIRouter(
 )
 
 specification_service = SpecificationService()
+specification_validation_service = SpecificationValidationService()
 data_model_access_service = DataModelAccessService()
 
 
@@ -79,6 +81,38 @@ async def get_specification(
         )
 
     return SpecificationModel(**specification)
+
+
+@router.get(
+    "/{data_model_id}/specification/validation",
+    status_code=status.HTTP_200_OK,
+)
+async def validate_specification(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Validate the canonical FORGE specification for a visible Data Model."""
+
+    if not data_model_access_service.can_view(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    specification = specification_service.get_specification(
+        data_model_id=data_model_id,
+    )
+
+    if specification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return specification_validation_service.validate(specification)
 
 
 @router.post(

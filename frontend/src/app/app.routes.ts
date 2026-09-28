@@ -13,6 +13,7 @@ import { AuthenticatedLayoutComponent } from './layout/authenticated/authenticat
 import { LoginComponent } from './features/login/login.component';
 import { WorkspaceComponent } from './features/workspace/workspace.component';
 import { ModelStudioComponent } from './features/model-studio/model-studio.component';
+import { ModelValidationComponent } from './features/model-validation/model-validation.component';
 
 export const routes: Routes = [
   {
@@ -36,6 +37,10 @@ export const routes: Routes = [
       {
         path: 'workspace/:dataModelId/model-studio',
         component: ModelStudioComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/model-validation',
+        component: ModelValidationComponent,
       },
     ],
   },

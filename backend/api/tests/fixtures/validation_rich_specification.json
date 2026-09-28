@@ -1,0 +1,471 @@
+{
+  "version": "1.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "FORGE Validation Test Model",
+    "description": "Rich specification used to exercise deterministic validation scenarios."
+  },
+  "generation": {
+    "seed": 20260928,
+    "scenario": "BASELINE"
+  },
+  "entities": [
+    {
+      "name": "CUSTOMER",
+      "description": "Customer master.",
+      "population": {
+        "count": 1000
+      },
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "CUSTOMER_NAME",
+          "type": "STRING"
+        },
+        {
+          "name": "CUSTOMER_STATUS",
+          "type": "CATEGORICAL"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      }
+    },
+    {
+      "name": "PRODUCT",
+      "description": "Product master.",
+      "population": {
+        "count": 500
+      },
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "PRODUCT_NAME",
+          "type": "STRING"
+        },
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      }
+    },
+    {
+      "name": "SALES_CHANNEL",
+      "description": "Sales channel.",
+      "population": {
+        "count": 5
+      },
+      "fields": [
+        {
+          "name": "CHANNEL_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "CHANNEL_NAME",
+          "type": "STRING"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "CHANNEL_ID"
+        ]
+      }
+    },
+    {
+      "name": "REGION",
+      "description": "Sales region.",
+      "population": {
+        "count": 7
+      },
+      "fields": [
+        {
+          "name": "REGION_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "REGION_NAME",
+          "type": "STRING"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "REGION_ID"
+        ]
+      }
+    },
+    {
+      "name": "SALES_ORDER",
+      "description": "Sales order header.",
+      "population": {
+        "count": 5000
+      },
+      "fields": [
+        {
+          "name": "ORDER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "CHANNEL_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "REGION_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "ORDER_STATUS",
+          "type": "CATEGORICAL"
+        },
+        {
+          "name": "TOTAL_AMOUNT",
+          "type": "DECIMAL"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "ORDER_ID"
+        ]
+      }
+    },
+    {
+      "name": "SALES_ORDER_LINE",
+      "description": "Sales order lines.",
+      "population": {
+        "count": 12000
+      },
+      "fields": [
+        {
+          "name": "ORDER_LINE_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "ORDER_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER"
+        },
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "ORDER_LINE_ID"
+        ]
+      }
+    },
+    {
+      "name": "WAREHOUSE",
+      "description": "Fulfillment warehouse.",
+      "population": {
+        "count": 20
+      },
+      "fields": [
+        {
+          "name": "WAREHOUSE_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "WAREHOUSE_CODE",
+          "type": "STRING"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "WAREHOUSE_ID"
+        ]
+      }
+    },
+    {
+      "name": "SHIPMENT",
+      "description": "Shipment associated with an order.",
+      "population": {
+        "count": 4500
+      },
+      "fields": [
+        {
+          "name": "SHIPMENT_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "UUID"
+          }
+        },
+        {
+          "name": "ORDER_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "WAREHOUSE_ID",
+          "type": "IDENTIFIER"
+        },
+        {
+          "name": "SHIPMENT_STATUS",
+          "type": "CATEGORICAL"
+        }
+      ],
+      "identity": {
+        "fields": [
+          "SHIPMENT_ID"
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "CUSTOMER",
+      "target": "SALES_ORDER",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "SALES_ORDER",
+      "target": "SALES_ORDER_LINE",
+      "type": "ONE_TO_MANY",
+      "source_participation": "MANDATORY",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "PRODUCT",
+      "target": "SALES_ORDER_LINE",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "SALES_CHANNEL",
+      "target": "SALES_ORDER",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "REGION",
+      "target": "SALES_ORDER",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "SALES_ORDER",
+      "target": "SHIPMENT",
+      "type": "ONE_TO_ONE",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "WAREHOUSE",
+      "target": "SHIPMENT",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    },
+    {
+      "source": "PRODUCT",
+      "target": "WAREHOUSE",
+      "type": "MANY_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "OPTIONAL"
+    },
+    {
+      "source": "CUSTOMER",
+      "target": "SALES_CHANNEL",
+      "type": "MANY_TO_ONE",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "name": "FK_SALES_ORDER_CUSTOMER",
+      "source": {
+        "entity": "SALES_ORDER",
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      },
+      "target": {
+        "entity": "CUSTOMER",
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SALES_ORDER_SALES_CHANNEL",
+      "source": {
+        "entity": "SALES_ORDER",
+        "fields": [
+          "CHANNEL_ID"
+        ]
+      },
+      "target": {
+        "entity": "SALES_CHANNEL",
+        "fields": [
+          "CHANNEL_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SALES_ORDER_REGION",
+      "source": {
+        "entity": "SALES_ORDER",
+        "fields": [
+          "REGION_ID"
+        ]
+      },
+      "target": {
+        "entity": "REGION",
+        "fields": [
+          "REGION_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SALES_ORDER_LINE_SALES_ORDER",
+      "source": {
+        "entity": "SALES_ORDER_LINE",
+        "fields": [
+          "ORDER_ID"
+        ]
+      },
+      "target": {
+        "entity": "SALES_ORDER",
+        "fields": [
+          "ORDER_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SALES_ORDER_LINE_PRODUCT",
+      "source": {
+        "entity": "SALES_ORDER_LINE",
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      },
+      "target": {
+        "entity": "PRODUCT",
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SHIPMENT_SALES_ORDER",
+      "source": {
+        "entity": "SHIPMENT",
+        "fields": [
+          "ORDER_ID"
+        ]
+      },
+      "target": {
+        "entity": "SALES_ORDER",
+        "fields": [
+          "ORDER_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_SHIPMENT_WAREHOUSE",
+      "source": {
+        "entity": "SHIPMENT",
+        "fields": [
+          "WAREHOUSE_ID"
+        ]
+      },
+      "target": {
+        "entity": "WAREHOUSE",
+        "fields": [
+          "WAREHOUSE_ID"
+        ]
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "entity": "SALES_ORDER",
+      "field": "TOTAL_AMOUNT",
+      "operator": ">",
+      "value": 0
+    },
+    {
+      "entity": "SALES_ORDER",
+      "field": "TOTAL_AMOUNT",
+      "operator": ">=",
+      "value": 1
+    },
+    {
+      "entity": "SALES_ORDER_LINE",
+      "field": "QUANTITY",
+      "operator": "<",
+      "value": 10000
+    },
+    {
+      "entity": "SALES_ORDER_LINE",
+      "field": "QUANTITY",
+      "operator": "<=",
+      "value": 1000
+    },
+    {
+      "entity": "PRODUCT",
+      "field": "UNIT_PRICE",
+      "operator": "==",
+      "value": 100
+    },
+    {
+      "entity": "CUSTOMER",
+      "field": "CUSTOMER_STATUS",
+      "operator": "!=",
+      "value": "INACTIVE"
+    }
+  ],
+  "dependencies": [],
+  "statistical_behavior": [],
+  "scenarios": []
+}

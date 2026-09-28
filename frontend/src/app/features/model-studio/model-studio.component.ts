@@ -43,14 +43,14 @@ import {
   ForeignKeyDraft,
 } from './components/foreign-key-dialog/foreign-key-dialog.component';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
+import {
+  WorkflowStepperComponent,
+  WorkflowStep,
+  WorkflowStepItem,
+} from '../../shared/components/workflow-stepper/workflow-stepper.component';
 
-type StudioStep = 'model' | 'validate' | 'population' | 'generate' | 'results';
-
-interface StudioStepItem {
-  id: StudioStep;
-  number: number;
-  label: string;
-}
+type StudioStep = WorkflowStep;
+type StudioStepItem = WorkflowStepItem;
 
 @Component({
   selector: 'app-model-studio',
@@ -65,41 +65,18 @@ interface StudioStepItem {
     RelationshipDialogComponent,
     ForeignKeyDialogComponent,
     WorkflowActionBarComponent,
+    WorkflowStepperComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="model-studio-page">
       <section class="workflow-page-header">
         <div class="workflow-stepper-row">
-          <nav class="workflow-stepper" aria-label="FORGE workflow">
-            @for (step of steps; track step.id; let last = $last) {
-              <button
-                type="button"
-                class="step"
-                [class.active]="activeStep() === step.id"
-                [class.completed]="isCompleted(step.number)"
-                (click)="selectStep(step.id)"
-              >
-                <span class="step-number">
-                  @if (isCompleted(step.number)) {
-                    <span class="material-symbols-outlined"> check </span>
-                  } @else {
-                    {{ step.number }}
-                  }
-                </span>
-
-                <span class="step-label">
-                  {{ step.label }}
-                </span>
-              </button>
-
-              @if (!last) {
-                <span class="step-chevron material-symbols-outlined" aria-hidden="true">
-                  chevron_right
-                </span>
-              }
-            }
-          </nav>
+          <app-workflow-stepper
+            [steps]="steps"
+            [activeStep]="activeStep()"
+            (stepSelected)="selectStep($event)"
+          />
         </div>
 
         <div class="page-identity">
@@ -360,9 +337,14 @@ interface StudioStepItem {
       }
 
       .workflow-page-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+
         display: flex;
         flex-direction: column;
         flex: 0 0 auto;
+
         border-bottom: 1px solid #e7e9f0;
         background: #ffffff;
       }
@@ -373,72 +355,6 @@ interface StudioStepItem {
         align-items: center;
         padding: 0 16px;
         border-bottom: 1px solid #eef0f5;
-      }
-
-      .workflow-stepper {
-        display: inline-flex;
-        height: 38px;
-        align-items: center;
-        padding: 0 7px;
-        border: 1px solid #e1e4ec;
-        border-radius: 9px;
-        background: #ffffff;
-      }
-
-      .step {
-        display: inline-flex;
-        height: 30px;
-        align-items: center;
-        gap: 8px;
-        padding: 0 7px;
-        border: 0;
-        border-radius: 7px;
-        background: transparent;
-        color: #8a92aa;
-        font-family: inherit;
-        font-size: 12px;
-        cursor: pointer;
-      }
-
-      .step:hover {
-        color: #4d46c5;
-        background: #faf9ff;
-      }
-
-      .step-number {
-        display: grid;
-        width: 21px;
-        height: 21px;
-        place-items: center;
-        border-radius: 50%;
-        background: #e7e9ef;
-        color: #66708e;
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      .step.active {
-        color: #453dcc;
-        background: #f3f1ff;
-      }
-
-      .step.active .step-number {
-        background: #5b53dc;
-        color: #ffffff;
-      }
-
-      .step.completed {
-        color: #566078;
-      }
-
-      .step.completed .step-number {
-        background: #e7f6ef;
-        color: #14945d;
-      }
-
-      .step-chevron {
-        color: #b0b5c4;
-        font-size: 15px;
       }
 
       .page-identity {

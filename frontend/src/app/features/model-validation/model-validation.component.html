@@ -1,0 +1,390 @@
+<section class="model-validation">
+  <section class="workflow-page-header">
+    <div class="workflow-stepper-row">
+      <app-workflow-stepper
+        [steps]="steps"
+        [activeStep]="activeStep"
+        (stepSelected)="selectStep($event)"
+      />
+    </div>
+
+    <div class="page-identity">
+      <div class="identity-main">
+        <div class="title-row">
+          <span class="page-icon material-symbols-outlined" aria-hidden="true"> verified </span>
+
+          <h1>Model Validation</h1>
+        </div>
+
+        <p>Validate the canonical FORGE specification before continuing to population planning.</p>
+      </div>
+
+      <div class="step-progress" aria-label="Workflow progress">2 of 5 steps</div>
+    </div>
+  </section>
+
+  <main class="model-validation-content">
+    @if (validation(); as result) {
+      @if (specification(); as model) {
+        <section class="forge-card model-summary validation-model-summary">
+          <div class="model-summary-main">
+            <span class="summary-label">Data Model</span>
+
+            <h2>{{ model.model.name }}</h2>
+
+            @if (model.model.description) {
+              <p>{{ model.model.description }}</p>
+            }
+          </div>
+
+          <div class="validation-summary-side">
+            <div class="summary-metrics">
+              <span>
+                <strong>{{ model.entities.length }}</strong>
+                entities
+              </span>
+
+              <span>
+                <strong>{{ model.relationships.length }}</strong>
+                relationships
+              </span>
+
+              <span>
+                <strong>{{ model.constraints.length }}</strong>
+                constraints
+              </span>
+            </div>
+
+            <div
+              class="validation-readiness"
+              [class.ready]="result.canContinue"
+              [class.blocked]="!result.canContinue"
+            >
+              <span class="status-dot"></span>
+
+              <div>
+                <span class="status-label">VALIDATION STATUS</span>
+
+                <strong>
+                  @if (result.canContinue) {
+                    Ready for Population
+                  } @else {
+                    Action Required
+                  }
+                </strong>
+
+                <small>
+                  @if (result.canContinue) {
+                    Specification is ready for population planning.
+                  } @else {
+                    Specification requires attention before continuing.
+                  }
+                </small>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="overview-grid">
+        <article class="forge-card summary-card validation-summary-card">
+          <div class="card-heading">
+            <div>
+              <h2>Validation results</h2>
+              <p>Distribution of specification checks for the current FORGE model.</p>
+            </div>
+          </div>
+
+          <div class="donut-layout">
+            <div class="donut-chart">
+              <canvas
+                #validationChart
+                aria-label="Validation results"
+              ></canvas>
+
+              <div class="donut-center">
+                <strong>{{ passRate() }}%</strong>
+                <span>passed</span>
+              </div>
+            </div>
+
+            <div class="summary-legend">
+              <div class="legend-item">
+                <span class="legend-marker passed"></span>
+                <span>Passed</span>
+                <strong>{{ result.passed }}</strong>
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-marker warning"></span>
+                <span>Warnings</span>
+                <strong>{{ result.warnings }}</strong>
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-marker error"></span>
+                <span>Errors</span>
+                <strong>{{ result.errors }}</strong>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <div class="metric-stack">
+          <article class="forge-card metric-card">
+            <span class="metric-label">Total checks</span>
+            <strong>{{ result.totalChecks }}</strong>
+            <span class="metric-caption">Specification rules evaluated</span>
+          </article>
+
+          <article class="forge-card metric-card">
+            <span class="metric-label">Entities</span>
+            <strong>{{ result.entitiesValidated }}</strong>
+            <span class="metric-caption">Entities validated</span>
+          </article>
+
+          <article class="forge-card metric-card">
+            <span class="metric-label">Errors</span>
+            <strong class="metric-error">{{ result.errors }}</strong>
+            <span class="metric-caption">Blocking findings</span>
+          </article>
+
+          <article class="forge-card metric-card">
+            <span class="metric-label">Warnings</span>
+            <strong class="metric-warning">{{ result.warnings }}</strong>
+            <span class="metric-caption">Non-blocking findings</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="validation-section entity-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-eyebrow">ENTITY HEALTH</span>
+            <h2>Validation by entity</h2>
+            <p>
+              Each bar shows the validation checks for an entity, segmented by passed, warnings, and errors.
+            </p>
+          </div>
+
+
+        </div>
+
+        <div class="entity-chart">
+          <canvas
+            #entityValidationChart
+            aria-label="Entity validation checks"
+          ></canvas>
+        </div>
+
+        <div class="forge-data-surface entity-table">
+          <div class="entity-table-header">
+            <span>Entity</span>
+            <span>Checks</span>
+            <span>Errors</span>
+            <span>Warnings</span>
+            <span>Status</span>
+          </div>
+
+          @for (entity of result.entities; track entity.name) {
+            <div class="forge-data-row entity-table-row">
+              <strong>{{ entity.name }}</strong>
+              <span>{{ entity.checks }}</span>
+              <span [class.value-error]="entity.errors > 0">
+                {{ entity.errors }}
+              </span>
+              <span [class.value-warning]="entity.warnings > 0">
+                {{ entity.warnings }}
+              </span>
+
+              <span
+                class="status-chip"
+                [class.status-chip-valid]="entity.status === 'valid'"
+                [class.status-chip-warning]="entity.status === 'warning'"
+                [class.status-chip-error]="entity.status === 'error'"
+              >
+                <i></i>
+                {{
+                  entity.status === 'valid'
+                    ? 'Valid'
+                    : entity.status === 'warning'
+                      ? 'Warning'
+                      : 'Error'
+                }}
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="validation-section findings-section">
+        <div class="section-heading findings-heading">
+          <div>
+            <span class="section-eyebrow">DETAILED FINDINGS</span>
+            <h2>Validation results</h2>
+            <p>Review every deterministic check performed against the specification.</p>
+          </div>
+
+          <span class="findings-count">
+            {{ filteredFindings().length }} of {{ result.totalChecks }}
+          </span>
+        </div>
+
+        <div class="findings-toolbar">
+          <div class="search-box">
+            <span class="search-icon">⌕</span>
+
+            <input
+              type="search"
+              placeholder="Search validation results..."
+              [value]="searchQuery()"
+              (input)="updateSearch($event)"
+            />
+
+            @if (searchQuery()) {
+              <button
+                type="button"
+                class="clear-search"
+                aria-label="Clear search"
+                (click)="clearSearch()"
+              >
+                ×
+              </button>
+            }
+          </div>
+
+          <div class="filter-group">
+            <button
+              type="button"
+              class="filter-button"
+              [class.active]="activeFilter() === 'all'"
+              (click)="setFilter('all')"
+            >
+              All
+              <span>{{ filterCount('all') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="filter-button"
+              [class.active]="activeFilter() === 'error'"
+              (click)="setFilter('error')"
+            >
+              Errors
+              <span>{{ filterCount('error') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="filter-button"
+              [class.active]="activeFilter() === 'warning'"
+              (click)="setFilter('warning')"
+            >
+              Warnings
+              <span>{{ filterCount('warning') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="filter-button"
+              [class.active]="activeFilter() === 'passed'"
+              (click)="setFilter('passed')"
+            >
+              Passed
+              <span>{{ filterCount('passed') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="forge-data-surface findings-list">
+          @for (finding of filteredFindings(); track finding.id) {
+            <article
+              class="forge-data-row finding-row"
+              [class.finding-error]="finding.severity === 'error'"
+              [class.finding-warning]="finding.severity === 'warning'"
+              [class.finding-passed]="finding.severity === 'passed'"
+            >
+              <div class="finding-icon" [attr.data-severity]="finding.severity">
+                @if (finding.severity === 'error') {
+                  !
+                } @else if (finding.severity === 'warning') {
+                  !
+                } @else {
+                  ✓
+                }
+              </div>
+
+              <div class="finding-main">
+                <div class="finding-title-row">
+                  <strong>{{ finding.title }}</strong>
+
+                  <span class="category-chip">
+                    {{ finding.category }}
+                  </span>
+                </div>
+
+                <p>{{ finding.details }}</p>
+
+                @if (finding.entity || finding.field) {
+                  <div class="finding-context">
+                    @if (finding.entity) {
+                      <span>{{ finding.entity }}</span>
+                    }
+
+                    @if (finding.field) {
+                      <span>{{ finding.field }}</span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <span class="severity-label" [attr.data-severity]="finding.severity">
+                {{ finding.severity }}
+              </span>
+            </article>
+          } @empty {
+            <div class="empty-findings">
+              <div class="empty-icon">⌕</div>
+              <strong>No validation results found</strong>
+              <span> Try a different search term or filter. </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="specification-meta">
+        <span>Specification {{ result.specificationVersion }}</span>
+        <span>Vocabulary {{ result.vocabularyVersion }}</span>
+        <span>{{ result.totalChecks }} deterministic checks</span>
+      </div>
+    } @else if (error(); as message) {
+      <section class="state-card error-state">
+        <div class="state-icon">!</div>
+        <div>
+          <h2>Validation could not be completed</h2>
+          <p>{{ message }}</p>
+        </div>
+      </section>
+    } @else {
+      <section class="state-card loading-state">
+        <div class="loading-spinner"></div>
+        <div>
+          <h2>Validating model specification</h2>
+          <p>Running deterministic checks against the canonical FORGE specification.</p>
+        </div>
+      </section>
+    }
+  </main>
+
+  <app-workflow-action-bar
+    title="Model validation complete"
+    description="Review validation findings before continuing to population planning."
+    secondaryLabel="Back to Model"
+    secondaryIcon="arrow_back"
+    primaryLabel="Continue to Population"
+    primaryIcon="arrow_forward"
+    [primaryDisabled]="!validation()?.canContinue"
+    (secondaryAction)="backToModelStudio()"
+    (primaryAction)="continueToPopulation()"
+  />
+</section>

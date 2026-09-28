@@ -30,6 +30,9 @@ import {
   ForgeSpecificationModel,
   ForgeSpecificationRelationship,
 } from '../interfaces/forge-specification.interface';
+import {
+  SpecificationValidationResult,
+} from '../interfaces/specification-validation.interface';
 
 interface CreateEntityRequest {
   name: string;
@@ -146,6 +149,42 @@ export class SpecificationService {
   private readonly http = inject(HttpClient);
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
+
+  validate(
+    dataModelId: string,
+  ): Observable<SpecificationValidationResult> {
+    return this.http
+      .get<{
+        model_name: string;
+        specification_version: string;
+        vocabulary_version: string;
+        errors: number;
+        warnings: number;
+        passed: number;
+        total_checks: number;
+        entities_validated: number;
+        can_continue: boolean;
+        findings: SpecificationValidationResult['findings'];
+        entities: SpecificationValidationResult['entities'];
+      }>(
+        `${this.apiBaseUrl}/data-models/${dataModelId}/specification/validation`,
+      )
+      .pipe(
+        map((response) => ({
+          modelName: response.model_name,
+          specificationVersion: response.specification_version,
+          vocabularyVersion: response.vocabulary_version,
+          errors: response.errors,
+          warnings: response.warnings,
+          passed: response.passed,
+          totalChecks: response.total_checks,
+          entitiesValidated: response.entities_validated,
+          canContinue: response.can_continue,
+          findings: response.findings,
+          entities: response.entities,
+        })),
+      );
+  }
 
   createEntity(
     dataModelId: string,
