@@ -38,6 +38,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SpecificationService } from '../../core/services/specification.service';
 import { SpecificationValidationResult } from '../../core/interfaces/specification-validation.interface';
+import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 import {
@@ -63,6 +64,7 @@ Chart.register(
   selector: 'app-model-validation',
   standalone: true,
   imports: [
+    WorkflowPageComponent,
     WorkflowActionBarComponent,
     WorkflowStepperComponent,
   ],

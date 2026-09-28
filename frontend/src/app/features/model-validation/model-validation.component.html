@@ -1,29 +1,22 @@
-<section class="model-validation">
-  <section class="workflow-page-header">
-    <div class="workflow-stepper-row">
-      <app-workflow-stepper
-        [steps]="steps"
-        [activeStep]="activeStep"
-        (stepSelected)="selectStep($event)"
-      />
-    </div>
+<app-workflow-page
+    [steps]="steps"
+    [activeStep]="activeStep"
+    pageIcon="verified"
+    pageTitle="Model Validation"
+    pageDescription="Validate the canonical FORGE specification before continuing to population planning."
+    progressLabel="2 of 5 steps"
+    actionBarTitle="Model validation complete"
+    actionBarDescription="Review validation findings before continuing to population planning."
+    secondaryLabel="Back to Model"
+    secondaryIcon="arrow_back"
+    primaryLabel="Continue to Population"
+    primaryIcon="arrow_forward"
+    [primaryDisabled]="!validation()?.canContinue"
+    (stepSelected)="selectStep($event)"
+    (secondaryAction)="backToModelStudio()"
+    (primaryAction)="continueToPopulation()"
+  >
 
-    <div class="page-identity">
-      <div class="identity-main">
-        <div class="title-row">
-          <span class="page-icon material-symbols-outlined" aria-hidden="true"> verified </span>
-
-          <h1>Model Validation</h1>
-        </div>
-
-        <p>Validate the canonical FORGE specification before continuing to population planning.</p>
-      </div>
-
-      <div class="step-progress" aria-label="Workflow progress">2 of 5 steps</div>
-    </div>
-  </section>
-
-  <main class="model-validation-content">
     @if (validation(); as result) {
       @if (specification(); as model) {
         <section class="forge-card model-summary validation-model-summary">
@@ -374,17 +367,4 @@
         </div>
       </section>
     }
-  </main>
-
-  <app-workflow-action-bar
-    title="Model validation complete"
-    description="Review validation findings before continuing to population planning."
-    secondaryLabel="Back to Model"
-    secondaryIcon="arrow_back"
-    primaryLabel="Continue to Population"
-    primaryIcon="arrow_forward"
-    [primaryDisabled]="!validation()?.canContinue"
-    (secondaryAction)="backToModelStudio()"
-    (primaryAction)="continueToPopulation()"
-  />
-</section>
+</app-workflow-page>

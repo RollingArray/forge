@@ -1,0 +1,47 @@
+.workflow-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.identity-main {
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-icon {
+  font-size: 24px;
+  color: #7a5a48;
+}
+
+h1 {
+  margin: 0;
+  color: #101828;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 28px;
+}
+
+p {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.step-progress {
+  flex: 0 0 auto;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}

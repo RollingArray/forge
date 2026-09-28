@@ -1,0 +1,31 @@
+<section class="workflow-page">
+  <app-workflow-stepper
+    [steps]="steps()"
+    [activeStep]="activeStep()"
+    (stepSelected)="stepSelected.emit($event)"
+  />
+
+  <app-workflow-page-header
+    [icon]="pageIcon()"
+    [title]="pageTitle()"
+    [description]="pageDescription()"
+    [progress]="progressLabel()"
+  />
+
+  <app-workflow-content>
+    <ng-content />
+  </app-workflow-content>
+
+  <app-workflow-action-bar
+    [icon]="actionBarIcon()"
+    [title]="actionBarTitle()"
+    [description]="actionBarDescription()"
+    [secondaryLabel]="secondaryLabel()"
+    [secondaryIcon]="secondaryIcon()"
+    [primaryLabel]="primaryLabel()"
+    [primaryIcon]="primaryIcon()"
+    [primaryDisabled]="primaryDisabled()"
+    (secondaryAction)="secondaryAction.emit()"
+    (primaryAction)="primaryAction.emit()"
+  />
+</section>

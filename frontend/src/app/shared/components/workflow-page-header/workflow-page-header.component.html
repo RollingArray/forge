@@ -1,0 +1,20 @@
+<div class="workflow-page-header">
+  <div class="identity-main">
+    <div class="title-row">
+      <span
+        class="page-icon material-symbols-outlined"
+        aria-hidden="true"
+      >
+        {{ icon() }}
+      </span>
+
+      <h1>{{ title() }}</h1>
+    </div>
+
+    <p>{{ description() }}</p>
+  </div>
+
+  <div class="step-progress" aria-label="Workflow progress">
+    {{ progress() }}
+  </div>
+</div>
