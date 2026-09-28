@@ -20,6 +20,10 @@ from app.models.ai_constraint_proposal_model import (
     AIConstraintProposalRequestModel,
     AIConstraintProposalResponseModel,
 )
+from app.models.ai_foreign_key_proposal_model import (
+    AIForeignKeyProposalRequestModel,
+    AIForeignKeyProposalResponseModel,
+)
 from app.models.ai_field_proposal_model import (
     AIFieldProposalRequestModel,
     AIFieldProposalResponseModel,
@@ -167,6 +171,40 @@ def propose_relationship(
         ) from exc
 
     return AIRelationshipProposalResponseModel(
+        status=proposal.status,
+        message=proposal.message,
+        proposal=proposal.proposal,
+    )
+
+
+@router.post(
+    "/foreign-keys/propose",
+    response_model=AIForeignKeyProposalResponseModel,
+)
+def propose_foreign_key(
+    request: AIForeignKeyProposalRequestModel,
+) -> AIForeignKeyProposalResponseModel:
+    """Generate an AI proposal for a FORGE foreign key."""
+
+    try:
+        proposal = _ai_service.propose_foreign_key(
+            mode=request.mode,
+            entities=request.entities,
+            request=request.request.strip(),
+            existing_foreign_key=request.existing_foreign_key,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AIForeignKeyProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,

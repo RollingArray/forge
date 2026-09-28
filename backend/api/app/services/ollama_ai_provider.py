@@ -28,6 +28,7 @@ from app.prompts.identity_proposal_prompt import IDENTITY_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
 from app.interfaces.ai_provider import (
     AIConstraintProposal,
+    AIForeignKeyProposal,
     AIDataModelProposal,
     AIFieldProposal,
     AIIdentityProposal,
@@ -36,6 +37,7 @@ from app.interfaces.ai_provider import (
     AIProvider,
     AIProviderStatus,
 )
+from app.prompts.foreign_key_proposal_prompt import FORGE_FOREIGN_KEY_PROPOSAL_SYSTEM_PROMPT
 
 
 class OllamaAIProvider(AIProvider):
@@ -1214,6 +1216,306 @@ class OllamaAIProvider(AIProvider):
                 value.strip()
                 for value in preview_values
             ],
+        )
+
+    def propose_foreign_key(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_foreign_key: dict[str, object] | None = None,
+    ) -> AIForeignKeyProposal:
+        """Generate a structured FORGE foreign key proposal."""
+
+        normalized_mode = mode.strip().upper()
+        normalized_request = request.strip()
+
+        if normalized_mode not in {"CREATE", "EDIT"}:
+            raise ValueError(
+                "Foreign key proposal mode must be CREATE or EDIT.",
+            )
+
+        if len(entities) < 2:
+            raise ValueError(
+                "At least two entities are required for a foreign key proposal.",
+            )
+
+        if not normalized_request:
+            raise ValueError(
+                "Foreign key proposal request must not be empty.",
+            )
+
+        if normalized_mode == "EDIT" and existing_foreign_key is None:
+            raise ValueError(
+                "Existing foreign key is required in EDIT mode.",
+            )
+
+        payload = {
+            "mode": normalized_mode,
+            "entities": entities,
+            "request": normalized_request,
+            "existing_foreign_key": existing_foreign_key,
+        }
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": FORGE_FOREIGN_KEY_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        payload,
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PROPOSE",
+                            "CLARIFY",
+                            "UNSUPPORTED",
+                        ],
+                    },
+                    "message": {
+                        "type": "string",
+                    },
+                    "proposal": {
+                        "type": [
+                            "object",
+                            "null",
+                        ],
+                        "properties": {
+                            "source_entity": {
+                                "type": "string",
+                            },
+                            "source_fields": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                },
+                            },
+                            "target_entity": {
+                                "type": "string",
+                            },
+                        },
+                        "required": [
+                            "source_entity",
+                            "source_fields",
+                            "target_entity",
+                        ],
+                        "additionalProperties": False,
+                    },
+                },
+                "required": [
+                    "status",
+                    "message",
+                    "proposal",
+                ],
+                "additionalProperties": False,
+            },
+        }
+
+        provider_request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                provider_request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                provider_response = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = provider_response.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty foreign key proposal.",
+            )
+
+        try:
+            proposal_response = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid structured foreign key proposal.",
+            ) from exc
+
+        if not isinstance(proposal_response, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid foreign key proposal structure.",
+            )
+
+        proposal_status = proposal_response.get("status")
+        response_message = proposal_response.get("message")
+        proposal = proposal_response.get("proposal")
+
+        if proposal_status not in {
+            "PROPOSE",
+            "CLARIFY",
+            "UNSUPPORTED",
+        }:
+            raise RuntimeError(
+                "FORGE AI foreign key proposal returned an invalid status.",
+            )
+
+        if (
+            not isinstance(response_message, str)
+            or not response_message.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal returned an invalid message.",
+            )
+
+        if proposal_status != "PROPOSE":
+            if proposal is not None:
+                raise RuntimeError(
+                    "FORGE AI returned a proposal for a non-proposal status.",
+                )
+
+            return AIForeignKeyProposal(
+                status=proposal_status,
+                message=response_message.strip(),
+                proposal=None,
+            )
+
+        if not isinstance(proposal, dict):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal is missing proposal data.",
+            )
+
+        source_entity = proposal.get("source_entity")
+        source_fields = proposal.get("source_fields")
+        target_entity = proposal.get("target_entity")
+
+        if (
+            not isinstance(source_entity, str)
+            or not source_entity.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains an invalid source entity.",
+            )
+
+        if (
+            not isinstance(source_fields, list)
+            or not source_fields
+            or not all(
+                isinstance(field, str) and field.strip()
+                for field in source_fields
+            )
+        ):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains invalid source fields.",
+            )
+
+        if (
+            not isinstance(target_entity, str)
+            or not target_entity.strip()
+        ):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains an invalid target entity.",
+            )
+
+        normalized_source_entity = source_entity.strip()
+        normalized_source_fields = [
+            field.strip()
+            for field in source_fields
+        ]
+        normalized_target_entity = target_entity.strip()
+
+        if normalized_source_entity == normalized_target_entity:
+            raise RuntimeError(
+                "FORGE AI foreign key proposal cannot reference the same entity.",
+            )
+
+        entity_by_name = {
+            item.get("name"): item
+            for item in entities
+            if isinstance(item, dict) and item.get("name")
+        }
+
+        source_metadata = entity_by_name.get(normalized_source_entity)
+        target_metadata = entity_by_name.get(normalized_target_entity)
+
+        if source_metadata is None:
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains an unknown source entity.",
+            )
+
+        if target_metadata is None:
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains an unknown target entity.",
+            )
+
+        source_metadata_fields = {
+            field.get("name")
+            for field in source_metadata.get("fields", [])
+            if isinstance(field, dict) and field.get("name")
+        }
+
+        missing_source_fields = [
+            field
+            for field in normalized_source_fields
+            if field not in source_metadata_fields
+        ]
+
+        if missing_source_fields:
+            raise RuntimeError(
+                "FORGE AI foreign key proposal contains source fields "
+                "that do not exist: "
+                + ", ".join(missing_source_fields),
+            )
+
+        target_identity_fields = target_metadata.get("identity_fields", [])
+
+        if (
+            not isinstance(target_identity_fields, list)
+            or not target_identity_fields
+        ):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal targets an entity without an identity.",
+            )
+
+        if len(normalized_source_fields) != len(target_identity_fields):
+            raise RuntimeError(
+                "FORGE AI foreign key proposal source-field count does not "
+                "match the target identity.",
+            )
+
+        return AIForeignKeyProposal(
+            status=proposal_status,
+            message=response_message.strip(),
+            proposal={
+                "source_entity": normalized_source_entity,
+                "source_fields": normalized_source_fields,
+                "target_entity": normalized_target_entity,
+            },
         )
 
     def propose_constraint(

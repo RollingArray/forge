@@ -30,6 +30,10 @@ import {
   AIConstraintProposalRequest,
   AIConstraintProposalResponse,
 } from '../interfaces/ai-constraint-proposal.interface';
+import {
+  AIForeignKeyProposalRequest,
+  AIForeignKeyProposalResponse,
+} from '../interfaces/ai-foreign-key-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
@@ -174,6 +178,51 @@ export class AIService {
                   response.proposal.source_participation,
                 targetParticipation:
                   response.proposal.target_participation,
+              }
+            : null,
+        })),
+      );
+  }
+
+  proposeForeignKey(
+    request: AIForeignKeyProposalRequest,
+  ): Observable<AIForeignKeyProposalResponse> {
+    interface AIForeignKeyProposalApiResponse {
+      status: AIForeignKeyProposalResponse['status'];
+      message: string;
+      proposal: {
+        source_entity: string;
+        source_fields: string[];
+        target_entity: string;
+      } | null;
+    }
+
+    return this.http
+      .post<AIForeignKeyProposalApiResponse>(
+        '/api/v1/ai/foreign-keys/propose',
+        {
+          mode: request.mode,
+          entities: request.entities,
+          request: request.request,
+          existing_foreign_key:
+            request.existingForeignKey ?? null,
+        },
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.GeneratingForeignKeyProposalWithAI,
+          ),
+        },
+      )
+      .pipe(
+        map((response): AIForeignKeyProposalResponse => ({
+          status: response.status,
+          message: response.message,
+          proposal: response.proposal
+            ? {
+                sourceEntity: response.proposal.source_entity,
+                sourceFields: response.proposal.source_fields,
+                targetEntity: response.proposal.target_entity,
               }
             : null,
         })),

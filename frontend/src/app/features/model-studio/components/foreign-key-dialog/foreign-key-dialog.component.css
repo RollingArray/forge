@@ -101,6 +101,194 @@
 }
 
 /* ========================================================================
+   AI FOREIGN KEY PROPOSAL
+   ======================================================================== */
+
+.foreign-key-ai-proposal,
+.foreign-key-ai-response {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #ddd5f1;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 78%);
+}
+
+.proposal-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.proposal-heading > .material-symbols-outlined {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #7657d9;
+  font-size: 22px;
+}
+
+.proposal-heading > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proposal-heading > div > span {
+  color: #7657d9;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.proposal-heading > div > strong {
+  color: #40394e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.proposal-mapping {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e4dfeb;
+  border-radius: 10px;
+  background: #faf8ff;
+}
+
+.proposal-endpoint {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proposal-endpoint > span {
+  color: #81798f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.proposal-endpoint > strong {
+  overflow: hidden;
+  color: #40394e;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proposal-endpoint > small {
+  overflow: hidden;
+  color: #7657d9;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proposal-arrow {
+  color: #7657d9;
+  font-size: 20px;
+}
+
+.foreign-key-ai-response {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-color: #e0d7f7;
+  background: rgb(249 247 255 / 96%);
+}
+
+.foreign-key-ai-response > .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: #7657d9;
+  font-size: 22px;
+}
+
+.foreign-key-ai-response > div {
+  min-width: 0;
+}
+
+.foreign-key-ai-response strong {
+  display: block;
+  color: #40394e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.foreign-key-ai-response p {
+  margin: 4px 0 0;
+  color: #625c6b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ========================================================================
+   AI PROPOSAL ACTIONS
+   ======================================================================== */
+
+.ai-proposal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-proposal-actions .regenerate-button,
+.ai-proposal-actions .use-proposal-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ai-proposal-actions .regenerate-button {
+  border: 1px solid #d6cee4;
+  background: #ffffff;
+  color: #665d70;
+  box-shadow:
+    0 1px 3px rgb(55 43 82 / 5%);
+}
+
+.ai-proposal-actions .regenerate-button:hover {
+  border-color: #b9aad4;
+  background: #f9f7fc;
+}
+
+.ai-proposal-actions .use-proposal-button {
+  border: 1px solid #5d45a8;
+  background: #654bb8;
+  color: #ffffff;
+  box-shadow:
+    0 3px 8px rgb(76 55 125 / 16%);
+}
+
+.ai-proposal-actions .use-proposal-button:hover {
+  background: #5d45a8;
+  box-shadow:
+    0 5px 12px rgb(76 55 125 / 20%);
+}
+
+.ai-proposal-actions .material-symbols-outlined {
+  font-size: 17px;
+}
+
+/* ========================================================================
    MANUAL FOREIGN KEY AUTHORING
    ======================================================================== */
 
@@ -473,12 +661,22 @@
    ======================================================================== */
 
 .dialog-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
+  gap: 16px;
   min-height: 76px;
   padding: 16px 24px;
+}
+
+.dialog-footer .validation-card {
+  grid-column: 1;
+  margin: 0;
+}
+
+.dialog-footer .dialog-actions {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .dialog-actions {

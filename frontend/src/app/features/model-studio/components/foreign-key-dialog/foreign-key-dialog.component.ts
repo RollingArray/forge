@@ -1,17 +1,37 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules & Engineered Data
+ * ============================================================================
+ *
+ * File: foreign-key-dialog.component.ts
+ * Purpose: Foreign-key authoring dialog for Model Studio.
+ *
+ * FORGE AI proposes a foreign-key mapping. The user reviews and applies the
+ * proposal to the manual form. Saving is handled by the parent through the
+ * deterministic SpecificationService.
+ *
+ * ============================================================================
+ */
+
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
 } from '@angular/core';
 
 import {
-  ForgeSpecificationEntity,
   ForgeForeignKey,
+  ForgeSpecificationEntity,
 } from '../../../../core/interfaces/forge-specification.interface';
+import {
+  AIForeignKeyProposalResponse,
+} from '../../../../core/interfaces/ai-foreign-key-proposal.interface';
+import { AIService } from '../../../../core/services/ai.service';
 
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
@@ -43,21 +63,34 @@ export class ForeignKeyDialogComponent {
   readonly saved = output<ForeignKeyDraft>();
   readonly closed = output<void>();
 
+  private readonly aiService = inject(AIService);
+
+  readonly aiPrompt = signal('');
+  readonly aiGenerating = signal(false);
+  readonly aiResponse =
+    signal<AIForeignKeyProposalResponse | null>(null);
+
+  readonly aiCapability = signal<{
+    available: boolean;
+    model?: string | null;
+    mode?: string | null;
+  } | null>(null);
+
   readonly aiExamples = [
     {
       label: 'Single-field reference',
       prompt:
-        'Make <source_field> reference the identity of <target_entity>.',
+        'Make CUSTOMER_ID on SALES_ORDER reference the identity of CUSTOMER.',
     },
     {
       label: 'Composite reference',
       prompt:
-        'Make <source_field_1> and <source_field_2> reference the composite identity of <target_entity>.',
+        'Make PRODUCT_ID and PLANT_ID on INVENTORY reference the composite identity of PRODUCT_PLANT.',
     },
     {
       label: 'Child-to-parent reference',
       prompt:
-        '<source_entity> references <target_entity> using the matching identity fields.',
+        'Make SALES_ORDER_LINE reference SALES_ORDER using the matching identity fields.',
     },
   ];
 
@@ -123,14 +156,19 @@ export class ForeignKeyDialogComponent {
 
   readonly duplicateForeignKey = computed(() => {
     const source = this.sourceEntity();
-    const sourceFields = this.sourceFields().map((field) => field.name);
+    const sourceFields = this.sourceFields().map(
+      (field) => field.name,
+    );
     const target = this.targetEntity();
 
     return this.foreignKeys().some(
       (foreignKey) =>
         foreignKey.source.entity === source &&
         foreignKey.target.entity === target &&
-        this.sameFields(foreignKey.source.fields, sourceFields),
+        this.sameFields(
+          foreignKey.source.fields,
+          sourceFields,
+        ),
     );
   });
 
@@ -170,7 +208,21 @@ export class ForeignKeyDialogComponent {
     return '';
   });
 
+  readonly aiOnline = computed(
+    () => this.aiCapability()?.available ?? false,
+  );
+
+  readonly aiModel = computed(
+    () => this.aiCapability()?.model ?? null,
+  );
+
+  readonly aiMode = computed(
+    () => this.aiCapability()?.mode ?? null,
+  );
+
   constructor() {
+    this.loadAiCapability();
+
     effect(() => {
       const sourceContext = this.sourceEntityContext();
 
@@ -178,6 +230,75 @@ export class ForeignKeyDialogComponent {
         this.sourceEntity.set(sourceContext);
       }
     });
+  }
+
+  handleAiGenerate(prompt: string): void {
+    this.aiPrompt.set(prompt);
+    this.generateWithAi();
+  }
+
+  selectAiExample(prompt: string): void {
+    this.aiPrompt.set(prompt);
+    this.aiResponse.set(null);
+  }
+
+  generateWithAi(): void {
+    const request = this.aiPrompt().trim();
+
+    if (!request || this.aiGenerating()) {
+      return;
+    }
+
+    this.aiGenerating.set(true);
+    this.aiResponse.set(null);
+
+    this.aiService
+      .proposeForeignKey({
+        mode: 'CREATE',
+        entities: this.entities().map((entity) => ({
+          name: entity.name,
+          fields: entity.fields.map((field) => ({
+            name: field.name,
+            type: field.type,
+          })),
+          identity_fields: entity.identity?.fields ?? [],
+        })),
+        request,
+        existingForeignKey: null,
+      })
+      .subscribe({
+        next: (response) => {
+          this.aiResponse.set(response);
+          this.aiGenerating.set(false);
+        },
+        error: (error) => {
+          this.aiResponse.set({
+            status: 'UNSUPPORTED',
+            message:
+              error?.error?.detail ??
+              'FORGE AI could not generate a foreign key proposal right now.',
+            proposal: null,
+          });
+          this.aiGenerating.set(false);
+        },
+      });
+  }
+
+  regenerateAi(): void {
+    this.generateWithAi();
+  }
+
+  applyAiProposal(): void {
+    const proposal = this.aiResponse()?.proposal;
+
+    if (!proposal) {
+      return;
+    }
+
+    this.sourceEntity.set(proposal.sourceEntity);
+    this.targetEntity.set(proposal.targetEntity);
+
+    this.aiResponse.set(null);
   }
 
   selectSourceEntity(entityName: string): void {
@@ -195,13 +316,26 @@ export class ForeignKeyDialogComponent {
 
     this.saved.emit({
       sourceEntity: this.sourceEntity(),
-      sourceFields: this.sourceFields().map((field) => field.name),
+      sourceFields: this.sourceFields().map(
+        (field) => field.name,
+      ),
       targetEntity: this.targetEntity(),
     });
   }
 
   close(): void {
     this.closed.emit();
+  }
+
+  private loadAiCapability(): void {
+    this.aiService.getCapabilities().subscribe({
+      next: (capability) => {
+        this.aiCapability.set(capability);
+      },
+      error: () => {
+        this.aiCapability.set(null);
+      },
+    });
   }
 
   private sameFields(left: string[], right: string[]): boolean {

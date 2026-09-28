@@ -15,6 +15,7 @@ Email: ranjoy.sen@collins.com
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIConstraintProposal,
+    AIForeignKeyProposal,
     AIFieldProposal,
     AIIdentityProposal,
     AIRelationshipProposal,
@@ -84,6 +85,22 @@ class AIService:
             existing_relationship=existing_relationship,
         )
 
+
+    def propose_foreign_key(
+        self,
+        mode: str,
+        entities: list[dict[str, object]],
+        request: str,
+        existing_foreign_key: dict[str, object] | None = None,
+    ) -> AIForeignKeyProposal:
+        """Generate a structured FORGE foreign key proposal."""
+
+        return self._provider.propose_foreign_key(
+            mode=mode,
+            entities=entities,
+            request=request,
+            existing_foreign_key=existing_foreign_key,
+        )
 
     def propose_constraint(
         self,

@@ -21,6 +21,7 @@ export enum ApiLoadingMessage {
   GeneratingFieldProposalWithAI = 'Generating field proposal with FORGE AI...',
   GeneratingIdentityProposalWithAI = 'Generating identity proposal with FORGE AI...',
   GeneratingRelationshipProposalWithAI = 'Generating relationship proposal with FORGE AI...',
+  GeneratingForeignKeyProposalWithAI = 'Generating foreign key proposal with FORGE AI...',
   GeneratingConstraintProposalWithAI = 'Generating constraint proposal with FORGE AI...',
   UpdatingDataModel = 'Updating Data Model...',
   DeletingDataModel = 'Deleting Data Model...',

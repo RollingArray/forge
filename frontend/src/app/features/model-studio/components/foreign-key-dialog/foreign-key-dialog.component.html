@@ -6,42 +6,205 @@
   (closed)="close()"
 >
   <div dialog-body class="foreign-key-dialog">
+
     <section class="foreign-key-column ai-column">
+
       <app-ai-assist-panel
-        title="Start with FORGE AI"
-        description="Describe how one entity references another. FORGE AI will propose the foreign key mapping for you to review."
-        placeholder="e.g. Sales Order references Customer using Customer ID."
-        hint="Describe which existing fields reference the target entity identity."
-        generateLabel="Generate with FORGE AI"
-        [llmOnline]="false"
+        class="foreign-key-ai-panel"
+        [title]="'Start with FORGE AI'"
+        [description]="
+          'Describe how one entity references another. FORGE AI will propose the foreign key mapping for you to review.'
+        "
+        [placeholder]="
+          'e.g. Sales Order references Customer using Customer ID.'
+        "
+        [hint]="
+          'Describe which existing fields reference the target entity identity.'
+        "
+        [generateLabel]="
+          aiResponse()
+            ? 'Generate again'
+            : 'Generate with FORGE AI'
+        "
+        [generating]="aiGenerating()"
+        [llmOnline]="aiOnline()"
+        [llmModel]="aiModel()"
+        [llmMode]="aiMode()"
         [examples]="aiExamples"
-        exampleHeading="Examples of requests"
-        exampleDescription="Choose an example to see what you can ask FORGE."
-        decisionTitle="AI proposes. You decide."
-        decisionDescription="Review the suggestion before applying it. The final foreign key must still pass FORGE's deterministic specification validation."
-      />
+        [exampleHeading]="'Examples of requests'"
+        [exampleDescription]="
+          'Choose an example to see what you can ask FORGE.'
+        "
+        [decisionTitle]="'AI proposes. You decide.'"
+        [decisionDescription]="
+          'Review the suggestion before applying it. The final foreign key must still pass FORGE deterministic specification validation.'
+        "
+        (generate)="handleAiGenerate($event)"
+        (regenerate)="regenerateAi()"
+        (exampleSelected)="selectAiExample($event)"
+      >
+
+        <div ai-result>
+
+          @if (aiResponse(); as response) {
+
+            @if (response.status === 'PROPOSE' && response.proposal) {
+
+              <section class="foreign-key-ai-proposal">
+
+                <div class="proposal-heading">
+
+                  <span class="material-symbols-outlined">
+                    check_circle
+                  </span>
+
+                  <div>
+                    <span>FORGE AI Proposal</span>
+                    <strong>{{ response.message }}</strong>
+                  </div>
+
+                </div>
+
+                <div class="proposal-mapping">
+
+                  <div class="proposal-endpoint source">
+
+                    <span>Source</span>
+
+                    <strong>
+                      {{ response.proposal.sourceEntity }}
+                    </strong>
+
+                    <small>
+                      {{ response.proposal.sourceFields.join(' + ') }}
+                    </small>
+
+                  </div>
+
+                  <span class="material-symbols-outlined proposal-arrow">
+                    arrow_forward
+                  </span>
+
+                  <div class="proposal-endpoint target">
+
+                    <span>Target</span>
+
+                    <strong>
+                      {{ response.proposal.targetEntity }}
+                    </strong>
+
+                    <small>
+                      Target identity
+                    </small>
+
+                  </div>
+
+                </div>
+
+                <div class="ai-proposal-actions">
+
+                  <button
+                    type="button"
+                    class="regenerate-button"
+                    (click)="regenerateAi()"
+                  >
+                    <span class="material-symbols-outlined">
+                      refresh
+                    </span>
+                    Regenerate
+                  </button>
+
+                  <button
+                    type="button"
+                    class="use-proposal-button"
+                    (click)="applyAiProposal()"
+                  >
+                    <span class="material-symbols-outlined">
+                      check_circle
+                    </span>
+                    Apply to Foreign Key
+                  </button>
+
+                </div>
+
+              </section>
+
+            } @else {
+
+              <section class="foreign-key-ai-response">
+
+                <span class="material-symbols-outlined">
+
+                  @if (response.status === 'CLARIFY') {
+                    help
+                  } @else {
+                    info
+                  }
+
+                </span>
+
+                <div>
+
+                  <strong>
+
+                    @if (response.status === 'CLARIFY') {
+                      More information needed
+                    } @else {
+                      Foreign key not supported
+                    }
+
+                  </strong>
+
+                  <p>{{ response.message }}</p>
+
+                </div>
+
+              </section>
+
+            }
+
+          }
+
+        </div>
+
+      </app-ai-assist-panel>
+
     </section>
 
     <app-choice-divider />
 
     <section class="foreign-key-column manual-column">
+
       <div class="manual-header">
+
         <div>
-          <span class="manual-title">Define the foreign key</span>
+
+          <span class="manual-title">
+            Define the foreign key
+          </span>
+
           <span class="manual-description">
             Choose the source entity and the target entity it references.
           </span>
+
         </div>
+
       </div>
 
       <div class="connection-section">
+
         <div class="connection-row">
+
           <label class="form-field">
+
             <span>Source entity</span>
 
             @if (sourceEntityContext()) {
+
               <div class="contextual-entity">
+
                 <span>{{ sourceEntity() }}</span>
+
                 <span
                   class="material-symbols-outlined"
                   aria-hidden="true"
@@ -49,24 +212,35 @@
                 >
                   lock
                 </span>
+
               </div>
+
             } @else {
+
               <select
                 [value]="sourceEntity()"
                 (change)="selectSourceEntity($any($event.target).value)"
               >
-                <option value="">Choose an entity...</option>
+
+                <option value="">
+                  Choose an entity...
+                </option>
 
                 @for (entity of entities(); track entity.name) {
+
                   <option
                     [value]="entity.name"
                     [disabled]="entity.name === targetEntity()"
                   >
                     {{ entity.name }}
                   </option>
+
                 }
+
               </select>
+
             }
+
           </label>
 
           <span class="connection-arrow material-symbols-outlined">
@@ -74,135 +248,230 @@
           </span>
 
           <label class="form-field">
+
             <span>Target entity</span>
 
             <select
               [value]="targetEntity()"
               (change)="selectTargetEntity($any($event.target).value)"
             >
-              <option value="">Choose an entity...</option>
+
+              <option value="">
+                Choose an entity...
+              </option>
 
               @for (entity of entities(); track entity.name) {
+
                 <option
                   [value]="entity.name"
                   [disabled]="entity.name === sourceEntity()"
                 >
                   {{ entity.name }}
                 </option>
+
               }
+
             </select>
+
           </label>
+
         </div>
+
       </div>
 
       @if (targetEntity()) {
+
         <section class="identity-section">
+
           <div class="section-label">
+
             <strong>Target identity</strong>
+
             <span>
               FORGE automatically uses the target entity's defined identity.
             </span>
+
           </div>
 
           @if (!hasTargetIdentity()) {
+
             <div class="foreign-key-warning">
-              <span class="material-symbols-outlined">warning</span>
+
+              <span class="material-symbols-outlined">
+                warning
+              </span>
 
               <div>
+
                 <strong>Target identity required</strong>
+
                 <p>
-                  Target entity <strong>{{ targetEntity() }}</strong> must
-                  define an identity before it can be referenced by a foreign
-                  key.
+                  Target entity
+                  <strong>{{ targetEntity() }}</strong>
+                  must define an identity before it can be referenced by a
+                  foreign key.
                 </p>
+
               </div>
+
             </div>
+
           } @else {
+
             <div class="foreign-key-card">
+
               <div class="foreign-key-icon">
-                <span class="material-symbols-outlined">key</span>
+
+                <span class="material-symbols-outlined">
+                  key
+                </span>
+
               </div>
 
               <div class="foreign-key-content">
-                <strong>{{ targetEntity() }} identity</strong>
-                <span>{{ targetIdentityFields().join(' + ') }}</span>
+
+                <strong>
+                  {{ targetEntity() }} identity
+                </strong>
+
+                <span>
+                  {{ targetIdentityFields().join(' + ') }}
+                </span>
+
               </div>
 
               <span class="resolved-badge">
+
                 {{ targetIdentityCount() }}
+
                 {{ targetIdentityCount() === 1 ? 'field' : 'fields' }}
+
               </span>
+
             </div>
+
           }
+
         </section>
+
       }
 
       @if (sourceEntity() && targetEntity() && hasTargetIdentity()) {
+
         <section class="source-fields-section">
+
           <div class="section-label">
-            <strong>Source → Target mapping</strong>
+
+            <strong>
+              Source → Target mapping
+            </strong>
+
             <span>
               FORGE automatically maps source fields to the target identity.
             </span>
+
           </div>
 
           @if (missingSourceFields().length > 0) {
+
             <div class="source-field-required">
+
               <div class="source-field-required-icon">
-                <span class="material-symbols-outlined">link_off</span>
+
+                <span class="material-symbols-outlined">
+                  link_off
+                </span>
+
               </div>
 
               <div class="source-field-required-content">
-                <strong>Source field required</strong>
+
+                <strong>
+                  Source field required
+                </strong>
+
                 <p>
+
                   {{ sourceEntity() }} does not contain the required
                   source field{{ missingSourceFields().length === 1 ? '' : 's' }}
                   {{ missingSourceFields().join(', ') }}
-                  to reference the identity of {{ targetEntity() }}.
+                  to reference the identity of
+                  {{ targetEntity() }}.
+
                 </p>
+
                 <span>
-                  Add the required field{{ missingSourceFields().length === 1 ? '' : 's' }}
+
+                  Add the required field{{
+                    missingSourceFields().length === 1 ? '' : 's'
+                  }}
                   to the source entity before creating this foreign key.
+
                 </span>
+
               </div>
+
             </div>
+
           } @else {
+
             <div class="mapping-card">
+
               <div class="mapping-card-header">
+
                 <div class="mapping-entity">
+
                   <span>Source entity</span>
+
                   <strong>{{ sourceEntity() }}</strong>
+
                 </div>
 
-                <span class="material-symbols-outlined mapping-header-arrow">
+                <span
+                  class="material-symbols-outlined mapping-header-arrow"
+                >
                   arrow_forward
                 </span>
 
                 <div class="mapping-entity target">
+
                   <span>Target entity</span>
+
                   <strong>{{ targetEntity() }}</strong>
+
                 </div>
+
               </div>
 
               <div class="mapping-divider"></div>
 
               <div class="mapping-labels">
+
                 <span>Source field</span>
                 <span>Target identity</span>
+
               </div>
 
               <div class="mapping-rows">
+
                 @for (
                   targetField of targetIdentityFields();
                   track targetField;
                   let index = $index
                 ) {
+
                   <div class="mapping-row">
+
                     <div class="mapping-field source">
+
                       <span class="material-symbols-outlined">
                         key
                       </span>
-                      <strong>{{ sourceFields()[index].name }}</strong>
+
+                      <strong>
+                        {{ sourceFields()[index].name }}
+                      </strong>
+
                     </div>
 
                     <span class="mapping-arrow material-symbols-outlined">
@@ -210,49 +479,98 @@
                     </span>
 
                     <div class="mapping-field target">
+
                       <span class="material-symbols-outlined">
                         key
                       </span>
-                      <strong>{{ targetField }}</strong>
+
+                      <strong>
+                        {{ targetField }}
+                      </strong>
+
                     </div>
+
                   </div>
+
                 }
+
               </div>
 
               <div class="mapping-confirmation">
+
                 <span class="material-symbols-outlined">
                   check_circle
                 </span>
+
                 <span>
                   Automatically matched by field name
                 </span>
+
               </div>
+
             </div>
+
           }
+
         </section>
+
       }
+
     </section>
+
+    @if (validationMessage()) {
+      <div class="validation-card">
+        <span class="material-symbols-outlined">
+          info
+        </span>
+
+        <span>
+          {{ validationMessage() }}
+        </span>
+      </div>
+    }
+
   </div>
 
   <div dialog-footer class="dialog-footer">
-    <button
-      type="button"
-      class="cancel-button"
-      (click)="close()"
-    >
-      Cancel
-    </button>
+
+    @if (validationMessage()) {
+      <div class="validation-card">
+        <span class="material-symbols-outlined">
+          info
+        </span>
+
+        <span>
+          {{ validationMessage() }}
+        </span>
+      </div>
+    }
 
     <div class="dialog-actions">
+
+      <button
+        type="button"
+        class="cancel-button"
+        (click)="close()"
+      >
+        Cancel
+      </button>
+
       <button
         type="button"
         class="save-button"
         [disabled]="!canSave()"
         (click)="save()"
       >
-        <span class="material-symbols-outlined">link</span>
+        <span class="material-symbols-outlined">
+          link
+        </span>
+
         Save Foreign Key
       </button>
+
     </div>
+
   </div>
+
 </app-form-dialog>
