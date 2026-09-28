@@ -231,13 +231,18 @@ export class PopulationComponent {
 
   reviewAndAcceptPlan(): void {
     const candidate = this.candidatePlan();
+    const plan = this.displayedPlan();
 
-    if (!this.dataModelId || !candidate?.feasible) {
+    if (!this.dataModelId || !plan) {
+      return;
+    }
+
+    if (candidate && !candidate.feasible) {
       return;
     }
 
     const populations = Object.fromEntries(
-      Object.entries(candidate.populations).map(
+      Object.entries(plan.populations).map(
         ([entity, population]) => [
           entity,
           population.resolved ?? 0,

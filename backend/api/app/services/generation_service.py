@@ -1,0 +1,360 @@
+"""
+File: generation_service.py
+Purpose: FORGE generation planning and readiness service.
+"""
+
+from datetime import datetime, timezone
+from math import ceil
+from uuid import uuid4
+
+from app.models.generation_model import (
+    GenerationEntityProgress,
+    GenerationEntityReadiness,
+    GenerationEntityStatus,
+    GenerationJobResponse,
+    GenerationJobStatus,
+    GenerationReadinessResponse,
+)
+from app.services.ai_service import AIService
+from app.services.generation_planner import GenerationPlanner
+from app.services.generation.executor import GenerationExecutor
+from app.services.generation.validator import GenerationValidator
+from app.services.generation.run_service import GenerationRunService
+from app.services.specification_service import SpecificationService
+
+
+class GenerationService:
+    """Provide generation planning and readiness information."""
+
+    def __init__(
+        self,
+        specification_service: SpecificationService | None = None,
+        generation_planner: GenerationPlanner | None = None,
+        generation_run_service: GenerationRunService | None = None,
+        ai_service: AIService | None = None,
+    ) -> None:
+        self._specification_service = (
+            specification_service
+            if specification_service is not None
+            else SpecificationService()
+        )
+        self._generation_planner = (
+            generation_planner
+            if generation_planner is not None
+            else GenerationPlanner()
+        )
+        self._generation_run_service = generation_run_service
+        self._ai_service = ai_service
+        self._jobs: dict[str, GenerationJobResponse] = {}
+
+    def get_readiness(
+        self,
+        data_model_id: str,
+    ) -> GenerationReadinessResponse | None:
+        """Build the generation readiness contract for a Data Model."""
+
+        specification = self._specification_service.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        plan = self._generation_planner.build(
+            specification=specification,
+        )
+
+        entity_plans = {
+            entity_plan.entity_name: entity_plan
+            for entity_plan in plan.entities
+        }
+
+        entities = [
+            GenerationEntityReadiness(
+                entity_name=entity_name,
+                target_rows=entity_plans[entity_name].target_rows,
+                generation_order=index,
+                dependencies=[
+                    dependency.parent_entity
+                    for dependency in entity_plans[entity_name].dependencies
+                ],
+            )
+            for index, entity_name in enumerate(
+                plan.generation_order,
+                start=1,
+            )
+        ]
+
+        return GenerationReadinessResponse(
+            data_model_id=data_model_id,
+            ready=bool(entities),
+            entity_count=len(entities),
+            total_target_rows=sum(
+                entity.target_rows
+                for entity in entities
+            ),
+            generation_order=[
+                entity.entity_name
+                for entity in entities
+            ],
+            entities=entities,
+            generation=specification.get("generation", {}),
+        )
+
+
+    def create_job(
+        self,
+        data_model_id: str,
+    ) -> GenerationJobResponse | None:
+        """Create a generation job without executing it."""
+
+        specification = self._specification_service.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        plan = self._generation_planner.build(
+            specification=specification,
+        )
+
+        entity_plans = {
+            entity_plan.entity_name: entity_plan
+            for entity_plan in plan.entities
+        }
+
+        now = datetime.now(timezone.utc)
+        job_id = f"FORGE-{uuid4().hex.upper()}"
+
+        chunk_size = 50
+
+        entities = [
+            GenerationEntityProgress(
+                entity_name=entity_name,
+                target_rows=entity_plans[entity_name].target_rows,
+                chunk_size=chunk_size,
+                total_chunks=(
+                    ceil(
+                        entity_plans[entity_name].target_rows
+                        / chunk_size
+                    )
+                    if entity_plans[entity_name].target_rows > 0
+                    else 0
+                ),
+            )
+            for entity_name in plan.generation_order
+        ]
+
+        job = GenerationJobResponse(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            status=GenerationJobStatus.CREATED,
+            created_at=now,
+            total_target_rows=sum(
+                entity.target_rows
+                for entity in entities
+            ),
+            total_generated_rows=0,
+            progress=0.0,
+            entities=entities,
+        )
+
+        self._jobs[job_id] = job
+
+        return job
+
+    def start_job(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse | None:
+        """Prepare a generation job for asynchronous execution."""
+
+        job = self._jobs.get(job_id)
+
+        if job is None:
+            return None
+
+        if job.data_model_id != data_model_id:
+            return None
+
+        if job.status != GenerationJobStatus.CREATED:
+            raise ValueError(
+                f"Generation job '{job_id}' cannot be started from "
+                f"status '{job.status}'."
+            )
+
+        specification = self._specification_service.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        job.status = GenerationJobStatus.PLANNING
+        job.started_at = datetime.now(timezone.utc)
+
+        plan = self._generation_planner.build(
+            specification=specification,
+        )
+
+        job.status = GenerationJobStatus.RUNNING
+
+        return job
+
+    def execute_job(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> None:
+        """Execute a started generation job in the background."""
+
+        job = self._jobs.get(job_id)
+
+        if job is None:
+            return
+
+        if job.data_model_id != data_model_id:
+            return
+
+        if job.status != GenerationJobStatus.RUNNING:
+            return
+
+        specification = self._specification_service.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            job.status = GenerationJobStatus.FAILED
+            job.error = "Data model not found."
+            job.completed_at = datetime.now(timezone.utc)
+            return
+
+        try:
+            plan = self._generation_planner.build(
+                specification=specification,
+            )
+
+            generation = specification.get("generation") or {}
+            seed = generation.get("seed", 42)
+
+            run_service = GenerationRunService(
+                executor=GenerationExecutor(
+                    seed=seed,
+                    ai_service=self._ai_service,
+                ),
+                validator=GenerationValidator(),
+            )
+
+            def on_chunk_completed(
+                entity_name: str,
+                completed_chunks: int,
+                total_chunks: int,
+                generated_rows: int,
+                _chunk_rows: list[dict[str, object]],
+            ) -> None:
+                for entity_progress in job.entities:
+                    if entity_progress.entity_name == entity_name:
+                        entity_progress.generated_rows = generated_rows
+                        entity_progress.completed_chunks = completed_chunks
+                        entity_progress.total_chunks = total_chunks
+                        entity_progress.status = (
+                            GenerationEntityStatus.RUNNING
+                        )
+                        break
+
+                job.total_generated_rows = sum(
+                    entity.generated_rows
+                    for entity in job.entities
+                )
+
+                job.progress = (
+                    job.total_generated_rows / job.total_target_rows
+                    if job.total_target_rows > 0
+                    else 1.0
+                )
+
+            def on_entity_completed(entity_run) -> None:
+                for entity_progress in job.entities:
+                    if entity_progress.entity_name == entity_run.entity_name:
+                        entity_progress.generated_rows = (
+                            entity_run.generated_rows
+                        )
+                        entity_progress.status = (
+                            GenerationEntityStatus.COMPLETED
+                        )
+                        break
+
+                job.total_generated_rows = sum(
+                    entity.generated_rows
+                    for entity in job.entities
+                )
+
+                job.progress = (
+                    job.total_generated_rows / job.total_target_rows
+                    if job.total_target_rows > 0
+                    else 1.0
+                )
+
+            result = run_service.run(
+                specification=specification,
+                plan=plan,
+                data_model_id=data_model_id,
+                job_id=job_id,
+                on_entity_completed=on_entity_completed,
+                on_chunk_completed=on_chunk_completed,
+            )
+
+            job.status = result.status
+            job.total_generated_rows = result.generated_rows
+            job.progress = (
+                result.generated_rows / result.requested_rows
+                if result.requested_rows > 0
+                else 1.0
+            )
+            job.entities = [
+                GenerationEntityProgress(
+                    entity_name=entity.entity_name,
+                    target_rows=entity.target_rows,
+                    generated_rows=entity.generated_rows,
+                    chunk_size=50,
+                    completed_chunks=(
+                        ceil(entity.generated_rows / 50)
+                        if entity.generated_rows > 0
+                        else 0
+                    ),
+                    total_chunks=(
+                        ceil(entity.target_rows / 50)
+                        if entity.target_rows > 0
+                        else 0
+                    ),
+                    status=(
+                        GenerationEntityStatus.COMPLETED
+                        if entity.generated_rows == entity.target_rows
+                        else GenerationEntityStatus.FAILED
+                    ),
+                )
+                for entity in result.entities
+            ]
+            job.completed_at = datetime.now(timezone.utc)
+
+            if not result.validation.valid:
+                job.error = (
+                    result.validation.errors[0]
+                    if result.validation.errors
+                    else "Generation validation failed."
+                )
+
+        except Exception as exc:
+            job.status = GenerationJobStatus.FAILED
+            job.error = str(exc)
+            job.completed_at = datetime.now(timezone.utc)
+
+    def get_job(
+        self,
+        job_id: str,
+    ) -> GenerationJobResponse | None:
+        """Return a generation job created by this service."""
+
+        return self._jobs.get(job_id)

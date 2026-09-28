@@ -114,6 +114,16 @@ class AIProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def generate_semantic_values(
+        self,
+        description: str,
+        mode: str,
+        count: int,
+    ) -> list[str]:
+        """Generate semantic STRING values for production data generation."""
+        raise NotImplementedError
+
+    @abstractmethod
     def propose_identity(
         self,
         mode: str,

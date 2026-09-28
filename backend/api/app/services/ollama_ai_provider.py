@@ -25,7 +25,10 @@ from app.prompts.constraint_proposal_prompt import (
 )
 from app.prompts.field_proposal_prompt import FIELD_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.identity_proposal_prompt import IDENTITY_PROPOSAL_SYSTEM_PROMPT
-from app.prompts.semantic_prompt import SEMANTIC_PREVIEW_SYSTEM_PROMPT
+from app.prompts.semantic_prompt import (
+    SEMANTIC_GENERATION_SYSTEM_PROMPT,
+    SEMANTIC_PREVIEW_SYSTEM_PROMPT,
+)
 from app.interfaces.ai_provider import (
     AIConstraintProposal,
     AIForeignKeyProposal,
@@ -1217,6 +1220,145 @@ class OllamaAIProvider(AIProvider):
                 for value in preview_values
             ],
         )
+
+    def generate_semantic_values(
+        self,
+        description: str,
+        mode: str,
+        count: int,
+    ) -> list[str]:
+        """Generate semantic STRING values for production generation."""
+
+        normalized_description = description.strip()
+        normalized_mode = mode.strip().upper()
+
+        if not normalized_description:
+            raise ValueError(
+                "Semantic generation requires a description.",
+            )
+
+        if normalized_mode not in {"UNIQUE", "VOCABULARY"}:
+            raise ValueError(
+                "Semantic generation mode must be UNIQUE or VOCABULARY.",
+            )
+
+        if count <= 0:
+            raise ValueError(
+                "Semantic generation count must be greater than zero.",
+            )
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SEMANTIC_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Mode: {normalized_mode}\n"
+                        f"Count: {count}\n"
+                        f"Description: {normalized_description}"
+                    ),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                        },
+                    },
+                },
+                "required": ["values"],
+            },
+        }
+
+        request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                payload = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider.",
+            ) from exc
+
+        message = payload.get("message")
+
+        if not isinstance(message, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid chat response.",
+            )
+
+        raw_response = message.get("content")
+
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError(
+                "FORGE AI returned an empty semantic generation response.",
+            )
+
+        try:
+            result = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned invalid semantic generation JSON.",
+            ) from exc
+
+        if not isinstance(result, dict):
+            raise RuntimeError(
+                "FORGE AI returned an invalid semantic generation structure.",
+            )
+
+        values = result.get("values")
+
+        if not isinstance(values, list):
+            raise RuntimeError(
+                "FORGE AI semantic generation did not return a values list.",
+            )
+
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in values
+        ):
+            raise RuntimeError(
+                "FORGE AI semantic generation returned invalid STRING values.",
+            )
+
+        normalized_values = [
+            value.strip()
+            for value in values
+        ]
+
+        if len(normalized_values) != count:
+            raise RuntimeError(
+                "FORGE AI semantic generation returned "
+                f"{len(normalized_values)} values; expected {count}.",
+            )
+
+        if len(set(normalized_values)) != len(normalized_values):
+            raise RuntimeError(
+                "FORGE AI semantic generation returned duplicate values.",
+            )
+
+        return normalized_values
 
     def propose_foreign_key(
         self,

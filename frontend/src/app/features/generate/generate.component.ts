@@ -1,13 +1,20 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { interval, Subscription } from 'rxjs';
+
+import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
+import {
+  WorkflowStep,
+  WorkflowStepItem,
+} from '../../shared/components/workflow-stepper/workflow-stepper.component';
+import { GenerationService } from './services/generation.service';
+import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
   selector: 'app-generate',
   standalone: true,
+  imports: [CommonModule, WorkflowPageComponent],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,20 +22,175 @@ import { ActivatedRoute, Router } from '@angular/router';
 export class GenerateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly generationService = inject(GenerationService);
 
-  readonly dataModelId =
-    this.route.snapshot.paramMap.get('dataModelId') ?? '';
+  readonly dataModelId = this.route.snapshot.paramMap.get('dataModelId') ?? '';
+
+  readonly steps: readonly WorkflowStepItem[] = [
+    { id: 'model', number: 1, label: 'Model' },
+    { id: 'validate', number: 2, label: 'Validate' },
+    { id: 'population', number: 3, label: 'Population' },
+    { id: 'generate', number: 4, label: 'Generate' },
+    { id: 'results', number: 5, label: 'Results' },
+  ];
+
+  readonly activeStep: WorkflowStep = 'generate';
+
+  private generationPollingSubscription: Subscription | null = null;
+
+  constructor() {
+    this.loadGenerationReadiness();
+  }
+
+  private loadGenerationReadiness(): void {
+    if (!this.dataModelId) {
+      this.generationLoading.set(false);
+      this.generationError.set('Data model could not be identified.');
+      return;
+    }
+
+    this.generationService.getGenerationReadiness(this.dataModelId).subscribe({
+      next: (readiness) => {
+        this.generationReadiness.set(readiness);
+        this.generationLoading.set(false);
+      },
+      error: () => {
+        this.generationLoading.set(false);
+        this.generationError.set('Generation readiness could not be loaded.');
+      },
+    });
+  }
+
+  readonly generationReadiness = signal<GenerationReadiness | null>(null);
+  readonly generationLoading = signal(true);
+  readonly generationError = signal<string | null>(null);
+  readonly generationJob = signal<GenerationJobResponse | null>(null);
+
+  selectStep(step: WorkflowStep): void {
+    if (!this.dataModelId) {
+      return;
+    }
+
+    switch (step) {
+      case 'model':
+        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'studio']);
+        break;
+
+      case 'validate':
+        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'validation']);
+        break;
+
+      case 'population':
+        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'population']);
+        break;
+
+      case 'generate':
+        break;
+
+      case 'results':
+        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'results']);
+        break;
+    }
+  }
 
   backToPopulation(): void {
     if (!this.dataModelId) {
       return;
     }
 
-    this.router.navigate([
-      '/workspace',
-      this.dataModelId,
-      'data-model',
-      'population',
-    ]);
+    this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'population']);
+  }
+
+  handlePrimaryAction(): void {
+    if (this.generationJob() === null) {
+      this.startGeneration();
+      return;
+    }
+
+    this.continueToResults();
+  }
+
+  startGeneration(): void {
+    if (!this.dataModelId || this.generationJob() !== null) {
+      return;
+    }
+
+    this.generationError.set(null);
+
+    this.generationService.createGenerationJob(this.dataModelId).subscribe({
+      next: (job) => {
+        this.generationJob.set(job);
+
+        this.generationService.startGenerationJob(this.dataModelId, job.job_id).subscribe({
+          next: (startedJob) => {
+            this.generationError.set(null);
+            this.generationJob.set(startedJob);
+            this.startGenerationPolling();
+          },
+          error: (error) => {
+            const message =
+              error?.error?.detail ?? error?.message ?? 'Generation job could not be started.';
+
+            this.generationError.set(message);
+          },
+        });
+      },
+      error: (error) => {
+        const message =
+          error?.error?.detail ?? error?.message ?? 'Unable to create the generation job.';
+
+        this.generationError.set(message);
+      },
+    });
+  }
+
+  private startGenerationPolling(): void {
+    if (!this.dataModelId) {
+      return;
+    }
+
+    const job = this.generationJob();
+
+    if (!job || this.isTerminalGenerationStatus(job.status)) {
+      return;
+    }
+
+    this.generationPollingSubscription?.unsubscribe();
+
+    this.generationPollingSubscription = interval(10000).subscribe(() => {
+      const currentJob = this.generationJob();
+
+      if (!currentJob) {
+        return;
+      }
+
+      this.generationService.getGenerationJob(this.dataModelId, currentJob.job_id).subscribe({
+        next: (updatedJob) => {
+          this.generationJob.set(updatedJob);
+
+          if (this.isTerminalGenerationStatus(updatedJob.status)) {
+            this.generationPollingSubscription?.unsubscribe();
+            this.generationPollingSubscription = null;
+          }
+        },
+        error: (error) => {
+          const message =
+            error?.error?.detail ?? error?.message ?? 'Generation status could not be updated.';
+          this.generationError.set(message);
+        },
+      });
+    });
+  }
+
+  private isTerminalGenerationStatus(status: GenerationJobResponse['status']): boolean {
+    return status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED';
+  }
+
+  continueToResults(): void {
+    if (!this.dataModelId || this.generationJob() === null) {
+      return;
+    }
+
+    this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'results']);
   }
 }

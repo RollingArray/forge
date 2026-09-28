@@ -1,66 +1,503 @@
-<main class="generate-page">
-  <header class="generate-header">
-    <div>
-      <span class="generate-eyebrow">Generate</span>
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  [pageIcon]="'database'"
+  [pageTitle]="'Synthetic Data Generation'"
+  [pageDescription]="'Generate synthetic data from the validated model and accepted population plan.'"
+  [progressLabel]="'4 of 5 steps'"
+  [actionBarIcon]="'database'"
+  [actionBarTitle]="
+    generationLoading()
+      ? 'Loading generation plan'
+      : generationJob()?.status === 'RUNNING'
+        ? 'Generation in progress'
+        : generationJob()?.status === 'COMPLETED'
+          ? 'Generation completed'
+          : generationJob()?.status === 'FAILED'
+            ? 'Generation failed'
+            : generationReadiness()?.ready
+              ? 'Generation is ready'
+              : 'Generation is not ready'
+  "
+  [actionBarDescription]="
+    generationLoading()
+      ? 'Loading the generation plan from the backend.'
+      : generationJob()?.status === 'RUNNING'
+        ? 'Synthetic data is currently being generated.'
+        : generationJob()?.status === 'COMPLETED'
+          ? 'Generated data is ready for review.'
+          : generationJob()?.status === 'FAILED'
+            ? 'Generation could not be completed. Review the execution details.'
+            : generationReadiness()?.ready
+              ? 'Review the generation workspace before starting execution.'
+              : 'Resolve the generation readiness issues before continuing.'
+  "
+  [secondaryLabel]="'Back to Population'"
+  [secondaryIcon]="'arrow_back'"
+  [primaryLabel]="
+    generationJob()?.status === 'COMPLETED'
+      ? 'Continue to Results'
+      : generationJob()?.status === 'RUNNING'
+        ? 'Generation in Progress'
+        : generationJob()?.status === 'CREATED'
+          ? 'Starting Generation'
+          : generationJob()?.status === 'FAILED'
+            ? 'Generation Failed'
+            : 'Start Generation'
+  "
+  [primaryIcon]="'arrow_forward'"
+  [primaryDisabled]="
+    generationLoading()
+      || (
+        generationJob() !== null
+        && generationJob()?.status !== 'COMPLETED'
+      )
+  "
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToPopulation()"
+  (primaryAction)="handlePrimaryAction()"
+>
+  <section class="generate-shell">
 
-      <h1>Synthetic Data Generation</h1>
-
-      <p>
-        The accepted population plan is ready for generation.
-      </p>
-    </div>
-
-    <span class="material-symbols-outlined generate-icon">
-      database
-    </span>
-  </header>
-
-  <section class="generation-card">
-    <div class="generation-card-icon">
-      <span class="material-symbols-outlined">
-        check_circle
-      </span>
-    </div>
-
-    <div>
-      <h2>Population plan accepted</h2>
-
-      <p>
-        The accepted population has been persisted to the
-        model specification and is now the population input
-        for generation.
-      </p>
-
-      <div class="generation-model">
-        <span>Data Model</span>
-        <strong>{{ dataModelId }}</strong>
+    <section class="generation-status-card">
+      <div class="status-icon">
+        <span class="material-symbols-outlined">
+          {{ generationLoading() ? 'hourglass_top' : (generationReadiness()?.ready ? 'check_circle' : 'error') }}
+        </span>
       </div>
-    </div>
+
+      <div class="status-content">
+        <div class="status-header">
+          <div>
+            <span class="section-eyebrow">Generation</span>
+            <h2>
+              {{
+                generationLoading()
+                  ? 'Loading generation plan'
+                  : generationJob()?.status === 'CREATED'
+                    ? 'Generation job is ready to begin execution'
+                    : generationJob()?.status === 'RUNNING'
+                      ? 'Generation is currently running'
+                      : generationJob()?.status === 'COMPLETED'
+                        ? 'Generation completed'
+                        : generationJob()?.status === 'FAILED'
+                          ? 'Generation failed'
+                          : generationReadiness()?.ready
+                            ? 'Generation is ready'
+                            : 'Generation is not ready'
+              }}
+            </h2>
+          </div>
+
+          <span class="status-badge">
+            {{
+              generationLoading()
+                ? 'LOADING'
+                : generationJob()?.status ?? (generationReadiness()?.ready ? 'READY' : 'NOT READY')
+            }}
+          </span>
+        </div>
+
+        <p *ngIf="generationLoading()">
+          The backend is loading the canonical specification and generation
+          plan.
+        </p>
+
+        <p *ngIf="generationError()">
+          {{ generationError() }}
+        </p>
+
+        <p *ngIf="!generationLoading() && !generationError() && generationReadiness()?.ready">
+          {{
+            generationJob()?.status === 'CREATED'
+              ? 'The generation job has been created and is ready to begin execution.'
+              : generationJob()?.status === 'RUNNING'
+                ? 'Generation is actively producing synthetic data.'
+                : generationJob()?.status === 'COMPLETED'
+                  ? 'Generation has completed and the generated data is ready for review.'
+                  : generationJob()?.status === 'FAILED'
+                    ? 'Generation could not be completed. Review the execution details below.'
+                    : 'The accepted population plan is available as the authoritative population input for generation.'
+          }}
+        </p>
+
+        <div class="status-details" *ngIf="!generationLoading() && generationReadiness()">
+          <div class="status-detail">
+            <span>Data Model</span>
+            <strong>{{ dataModelId }}</strong>
+          </div>
+
+          <div class="status-detail">
+            <span>Execution</span>
+            <strong>{{ generationJob()?.status ?? 'Not started' }}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+
+      <article class="summary-card">
+        <span class="summary-label">Job ID</span>
+        <strong class="summary-value summary-job-id" [title]="generationJob()?.job_id ?? '—'">
+          {{ generationJob()?.job_id ?? '—' }}
+        </strong>
+        <span class="summary-detail">
+          {{ generationJob() ? 'Generation job created' : 'Assigned when generation starts' }}
+        </span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-label">Total Target Rows</span>
+        <strong class="summary-value">
+          {{
+            generationJob()?.total_target_rows
+              ?? generationReadiness()?.total_target_rows
+              ?? 0
+              | number
+          }}
+        </strong>
+        <span class="summary-detail">
+          Rows planned for generation
+        </span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-label">Entities</span>
+        <strong class="summary-value">
+          {{ generationJob()?.entities?.length ?? generationReadiness()?.entity_count ?? '—' }}
+        </strong>
+        <span class="summary-detail">
+          Entities in generation plan
+        </span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-label">Throughput</span>
+        <strong class="summary-value">
+          {{
+            generationJob()?.throughput_rows_per_second !== null
+              ? (generationJob()?.throughput_rows_per_second | number:'1.0-0')
+              : '—'
+          }}
+          <span *ngIf="generationJob()?.throughput_rows_per_second !== null">rows/sec</span>
+        </strong>
+        <span class="summary-detail">
+          {{
+            generationJob()?.throughput_rows_per_second !== null
+              ? 'Measured generation throughput'
+              : 'Available after execution completes'
+          }}
+        </span>
+      </article>
+
+    </section>
+
+    <section class="workspace-section forge-card">
+
+      <div class="section-heading">
+        <div>
+          <span class="section-eyebrow">Execution</span>
+          <h2>Generation Pipeline</h2>
+        </div>
+
+        <span class="section-state">
+          {{ generationLoading() ? 'Loading' : (generationReadiness()?.ready ? 'Ready' : 'Not ready') }}
+        </span>
+      </div>
+
+      <div class="pipeline">
+
+        <ng-container
+          *ngFor="let entity of generationReadiness()?.entities; let i = index"
+        >
+          <article class="pipeline-stage">
+            <span class="pipeline-number">{{ i + 1 }}</span>
+
+            <div>
+              <strong>{{ entity.entity_name }}</strong>
+              <span>
+                {{ entity.target_rows | number }} rows
+                <ng-container *ngIf="entity.dependencies.length">
+                  · depends on {{ entity.dependencies.join(', ') }}
+                </ng-container>
+              </span>
+            </div>
+          </article>
+
+          <span
+            class="pipeline-arrow material-symbols-outlined"
+            *ngIf="i < (generationReadiness()?.entities?.length ?? 0) - 1"
+          >
+            arrow_forward
+          </span>
+        </ng-container>
+
+        <div
+          class="empty-state"
+          *ngIf="!generationLoading() && !generationReadiness()?.entities?.length"
+        >
+          <span class="material-symbols-outlined">
+            account_tree
+          </span>
+
+          <strong>No generation plan available</strong>
+
+          <span>
+            A generation plan is required before execution can begin.
+          </span>
+        </div>
+
+      </div>
+
+    </section>
+
+    <section class="two-column-grid">
+
+      <section class="workspace-section generate-deferred-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-eyebrow">Activity</span>
+            <h2>Current Activity</h2>
+          </div>
+        </div>
+
+        <div class="empty-state">
+          <span class="material-symbols-outlined">
+            pending
+          </span>
+
+          <strong>Generation has not started</strong>
+
+          <span>
+            Execution activity will appear here once a generation job exists.
+          </span>
+        </div>
+      </section>
+
+      <section class="workspace-section generate-deferred-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-eyebrow">Logs</span>
+            <h2>Generation Logs</h2>
+          </div>
+        </div>
+
+        <div class="empty-state">
+          <span class="material-symbols-outlined">
+            terminal
+          </span>
+
+          <strong>No execution logs</strong>
+
+          <span>
+            Detailed generation activity will appear here when available.
+          </span>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="workspace-section forge-card">
+
+      <div class="section-heading">
+        <div>
+          <span class="section-eyebrow">Entities</span>
+          <h2>Entity Generation Progress</h2>
+        </div>
+
+        <span class="section-state">
+          {{
+            generationJob()
+              ? generationJob()?.total_generated_rows + ' / ' + generationJob()?.total_target_rows + ' rows'
+              : 'Awaiting execution'
+          }}
+        </span>
+      </div>
+
+      <div class="entity-progress-list" *ngIf="generationJob()?.entities?.length; else noEntityExecution">
+
+        <article
+          class="entity-progress-item"
+          *ngFor="let entity of generationJob()?.entities"
+        >
+          <div class="entity-progress-header">
+            <div>
+              <strong>{{ entity.entity_name }}</strong>
+              <span>
+                {{ entity.generated_rows | number }}
+                /
+                {{ entity.target_rows | number }} rows
+                · Chunks {{ entity.completed_chunks }}
+                /
+                {{ entity.total_chunks }}
+              </span>
+            </div>
+
+            <span class="entity-progress-status">
+              {{ entity.status }}
+            </span>
+          </div>
+
+          <div class="entity-progress-track">
+            <div
+              class="entity-progress-fill"
+              [style.width.%]="
+                entity.target_rows > 0
+                  ? (entity.generated_rows / entity.target_rows) * 100
+                  : 0
+              "
+            ></div>
+          </div>
+        </article>
+
+      </div>
+
+      <ng-template #noEntityExecution>
+        <div class="empty-table">
+          <div class="empty-table-icon">
+            <span class="material-symbols-outlined">
+              table_rows
+            </span>
+          </div>
+
+          <strong>No entity execution data yet</strong>
+
+          <span>
+            Planned and generated row counts will appear here after
+            generation begins.
+          </span>
+        </div>
+      </ng-template>
+
+    </section>
+
+    <section class="two-column-grid">
+
+      <section class="workspace-section generate-deferred-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-eyebrow">Quality</span>
+            <h2>Data Quality</h2>
+          </div>
+        </div>
+
+        <div class="quality-grid">
+          <div class="quality-item">
+            <span>Population Fidelity</span>
+            <strong>—</strong>
+          </div>
+
+          <div class="quality-item">
+            <span>Distribution Fidelity</span>
+            <strong>—</strong>
+          </div>
+
+          <div class="quality-item">
+            <span>Statistical Fidelity</span>
+            <strong>—</strong>
+          </div>
+
+          <div class="quality-item">
+            <span>Identity Space</span>
+            <strong>—</strong>
+          </div>
+
+          <div class="quality-item">
+            <span>Relationship Fidelity</span>
+            <strong>—</strong>
+          </div>
+
+          <div class="quality-item">
+            <span>Performance</span>
+            <strong>—</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-section generate-deferred-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-eyebrow">Validation</span>
+            <h2>Generation Validation</h2>
+          </div>
+        </div>
+
+        <div class="validation-state">
+          <span class="material-symbols-outlined">
+            fact_check
+          </span>
+
+          <div>
+            <strong>Validation pending</strong>
+            <span>
+              Validation results will be available after generated data
+              has been produced.
+            </span>
+          </div>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="workspace-section generate-deferred-section">
+
+      <div class="section-heading">
+        <div>
+          <span class="section-eyebrow">Recovery</span>
+          <h2>Checkpoints &amp; Recovery</h2>
+        </div>
+      </div>
+
+      <div class="checkpoint-state">
+
+        <div class="checkpoint-item">
+          <span class="material-symbols-outlined">
+            save
+          </span>
+
+          <div>
+            <span>Last checkpoint</span>
+            <strong>—</strong>
+          </div>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="material-symbols-outlined">
+            schedule
+          </span>
+
+          <div>
+            <span>Checkpoint timestamp</span>
+            <strong>—</strong>
+          </div>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="material-symbols-outlined">
+            layers
+          </span>
+
+          <div>
+            <span>Chunks committed</span>
+            <strong>—</strong>
+          </div>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="material-symbols-outlined">
+            fingerprint
+          </span>
+
+          <div>
+            <span>Specification hash</span>
+            <strong>—</strong>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
   </section>
-
-  <footer class="generation-actions">
-    <button
-      type="button"
-      class="secondary-button"
-      (click)="backToPopulation()"
-    >
-      <span class="material-symbols-outlined">
-        arrow_back
-      </span>
-
-      Back to Population
-    </button>
-
-    <button
-      type="button"
-      class="primary-button"
-      disabled
-    >
-      <span class="material-symbols-outlined">
-        play_circle
-      </span>
-
-      Start Generation
-    </button>
-  </footer>
-</main>
+</app-workflow-page>

@@ -44,6 +44,20 @@ class AIService:
 
         return self._provider.suggest_data_model(prompt)
 
+    def generate_semantic_values(
+        self,
+        description: str,
+        mode: str,
+        count: int,
+    ) -> list[str]:
+        """Generate semantic values for production data generation."""
+
+        return self._provider.generate_semantic_values(
+            description=description,
+            mode=mode,
+            count=count,
+        )
+
 
     def preview_semantic_values(
         self,

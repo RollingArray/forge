@@ -16,6 +16,7 @@ import { ModelStudioComponent } from './features/model-studio/model-studio.compo
 import { ModelValidationComponent } from './features/model-validation/model-validation.component';
 import { PopulationComponent } from './features/population/population.component';
 import { GenerateComponent } from './features/generate/generate.component';
+import { ResultsComponent } from './features/results/results.component';
 
 export const routes: Routes = [
   {
@@ -51,6 +52,10 @@ export const routes: Routes = [
       {
         path: 'workspace/:dataModelId/data-model/generate',
         component: GenerateComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/data-model/results',
+        component: ResultsComponent,
       },
     ],
   },
