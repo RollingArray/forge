@@ -31,12 +31,26 @@ export class ApiLoadingService {
 
   start(message: ApiLoadingMessage = ApiLoadingMessage.Loading): void {
     this.activeRequestCount.update((count) => count + 1);
+
+    console.log(
+      '[FORGE API LOADING] START',
+      message,
+      'count:',
+      this.activeRequestCount(),
+    );
     this.activeMessages.update((messages) => [...messages, message]);
     this.message.set(message);
   }
 
   stop(message: ApiLoadingMessage = ApiLoadingMessage.Loading): void {
     this.activeRequestCount.update((count) => Math.max(0, count - 1));
+
+    console.log(
+      '[FORGE API LOADING] STOP',
+      message,
+      'count:',
+      this.activeRequestCount(),
+    );
 
     this.activeMessages.update((messages) => {
       const index = messages.lastIndexOf(message);

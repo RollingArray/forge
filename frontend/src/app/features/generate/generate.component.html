@@ -1,0 +1,66 @@
+<main class="generate-page">
+  <header class="generate-header">
+    <div>
+      <span class="generate-eyebrow">Generate</span>
+
+      <h1>Synthetic Data Generation</h1>
+
+      <p>
+        The accepted population plan is ready for generation.
+      </p>
+    </div>
+
+    <span class="material-symbols-outlined generate-icon">
+      database
+    </span>
+  </header>
+
+  <section class="generation-card">
+    <div class="generation-card-icon">
+      <span class="material-symbols-outlined">
+        check_circle
+      </span>
+    </div>
+
+    <div>
+      <h2>Population plan accepted</h2>
+
+      <p>
+        The accepted population has been persisted to the
+        model specification and is now the population input
+        for generation.
+      </p>
+
+      <div class="generation-model">
+        <span>Data Model</span>
+        <strong>{{ dataModelId }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <footer class="generation-actions">
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="backToPopulation()"
+    >
+      <span class="material-symbols-outlined">
+        arrow_back
+      </span>
+
+      Back to Population
+    </button>
+
+    <button
+      type="button"
+      class="primary-button"
+      disabled
+    >
+      <span class="material-symbols-outlined">
+        play_circle
+      </span>
+
+      Start Generation
+    </button>
+  </footer>
+</main>

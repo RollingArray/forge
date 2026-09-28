@@ -14,6 +14,8 @@ import { LoginComponent } from './features/login/login.component';
 import { WorkspaceComponent } from './features/workspace/workspace.component';
 import { ModelStudioComponent } from './features/model-studio/model-studio.component';
 import { ModelValidationComponent } from './features/model-validation/model-validation.component';
+import { PopulationComponent } from './features/population/population.component';
+import { GenerateComponent } from './features/generate/generate.component';
 
 export const routes: Routes = [
   {
@@ -41,6 +43,14 @@ export const routes: Routes = [
       {
         path: 'workspace/:dataModelId/model-validation',
         component: ModelValidationComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/data-model/population',
+        component: PopulationComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/data-model/generate',
+        component: GenerateComponent,
       },
     ],
   },

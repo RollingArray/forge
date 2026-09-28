@@ -485,7 +485,8 @@ export class ModelValidationComponent
     this.router.navigate([
       '/workspace',
       this.dataModelId,
-      'population-plan',
+      'data-model',
+      'population',
     ]);
   }
 

@@ -120,9 +120,12 @@ class SpecificationService:
         if request.population is not None:
             entity["population"] = {
                 "count": request.population.count,
+                "scaling": request.population.scaling.value,
             }
         else:
-            entity["population"] = {}
+            entity["population"] = {
+                "scaling": "SCALABLE",
+            }
 
         candidate = deepcopy(specification)
         candidate["entities"].append(entity)
@@ -449,6 +452,97 @@ class SpecificationService:
 
         return candidate_field
 
+    def accept_population_plan(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        populations: dict[str, int],
+    ) -> dict[str, Any] | None:
+        """Persist an accepted population plan into the canonical specification."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        specification_entities = specification.get("entities", [])
+        specification_by_name = {
+            entity.get("name"): entity
+            for entity in specification_entities
+        }
+
+        unknown_entities = [
+            entity_name
+            for entity_name in populations
+            if entity_name not in specification_by_name
+        ]
+
+        if unknown_entities:
+            raise ValueError(
+                "Unknown population entity(s): "
+                + ", ".join(sorted(unknown_entities))
+            )
+
+        invalid_populations = [
+            entity_name
+            for entity_name, count in populations.items()
+            if isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 0
+        ]
+
+        if invalid_populations:
+            raise ValueError(
+                "Population counts must be non-negative integers: "
+                + ", ".join(sorted(invalid_populations))
+            )
+
+        candidate = deepcopy(specification)
+
+        for entity in candidate.get("entities", []):
+            entity_name = entity.get("name")
+
+            if entity_name not in populations:
+                continue
+
+            existing_population = entity.get("population") or {}
+
+            entity["population"] = {
+                "count": populations[entity_name],
+                "scaling": existing_population.get(
+                    "scaling",
+                    "SCALABLE",
+                ),
+            }
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.ENTITY_UPDATED,
+                title="Population plan accepted",
+                description="Accepted population plan for generation",
+                data_model_id=data_model_id,
+                metadata={
+                    "operation": "ACCEPT_POPULATION_PLAN",
+                    "entity_count": len(populations),
+                    "total_population": sum(populations.values()),
+                },
+            )
+
+        return candidate
+
     def update_entity_population(
         self,
         data_model_id: str,
@@ -489,8 +583,17 @@ class SpecificationService:
             if item.get("name") == entity_name
         )
 
+        existing_population = updated_entity.get(
+            "population",
+            {},
+        )
+
         updated_entity["population"] = {
             "count": count,
+            "scaling": existing_population.get(
+                "scaling",
+                "SCALABLE",
+            ),
         }
 
         self._specification_repository.save(
@@ -520,6 +623,91 @@ class SpecificationService:
             )
 
         return updated_entity
+
+    def update_entity_population_scaling(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        entity_name: str,
+        scaling: str,
+    ) -> dict[str, Any] | None:
+        """Update the population scaling intent of an entity."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        entities = specification.setdefault(
+            "entities",
+            [],
+        )
+
+        entity = next(
+            (
+                item
+                for item in entities
+                if item.get("name") == entity_name
+            ),
+            None,
+        )
+
+        if entity is None:
+            raise ValueError(
+                f"Unknown entity: {entity_name}"
+            )
+
+        if scaling not in {"FIXED", "SCALABLE"}:
+            raise ValueError(
+                f"Invalid population scaling: {scaling}"
+            )
+
+        candidate = deepcopy(specification)
+
+        updated_entity = next(
+            item
+            for item in candidate["entities"]
+            if item.get("name") == entity_name
+        )
+
+        population = updated_entity.setdefault(
+            "population",
+            {},
+        )
+
+        population["scaling"] = scaling
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.ENTITY_UPDATED,
+                title="Entity updated",
+                description=(
+                    f"Updated population scaling for entity "
+                    f"'{entity_name}'"
+                ),
+                data_model_id=data_model_id,
+                metadata={
+                    "entity_name": entity_name,
+                    "operation": "UPDATE_POPULATION_SCALING",
+                    "scaling": scaling,
+                },
+            )
+
+        return updated_entity
+
 
     def create_foreign_key(
         self,

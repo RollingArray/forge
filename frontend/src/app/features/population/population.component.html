@@ -1,0 +1,195 @@
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  [pageIcon]="'groups'"
+  [pageTitle]="'Population Plan'"
+  [pageDescription]="'Plan the size and shape of the synthetic dataset while FORGE explains the model constraints.'"
+  [progressLabel]="'Population'"
+  [actionBarIcon]="'fact_check'"
+  [actionBarTitle]="'Review population plan'"
+  [actionBarDescription]="'Review the planned populations and model constraints before continuing to generation.'"
+  [secondaryLabel]="'Back to Validation'"
+  [secondaryIcon]="'arrow_back'"
+  [primaryLabel]="'Review & Accept Plan'"
+  [primaryIcon]="'arrow_forward'"
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToValidation()"
+  (primaryAction)="reviewAndAcceptPlan()"
+>
+  @if (displayedPlan(); as plan) {
+    <section class="population-shell">
+
+      <section class="summary-grid">
+        <article class="summary-card">
+          <span class="summary-label">Target Dataset Size</span>
+          <strong class="summary-value">
+            {{ targetRows() !== null ? (targetRows() | number) : '—' }}
+          </strong>
+          <span class="summary-detail">
+            User-defined dataset target
+          </span>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">
+            {{ isCandidate() ? 'Candidate Records' : 'Current Planned Records' }}
+          </span>
+          <strong class="summary-value">
+            {{ resolvedRows() | number }}
+          </strong>
+          <span class="summary-detail">
+            {{ isCandidate() ? 'Proposed population allocation' : 'Resolved population rows' }}
+          </span>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Gap</span>
+          <strong class="summary-value">
+            {{ gapRows() !== null ? (gapRows() | number) : '—' }}
+          </strong>
+          <span class="summary-detail">
+            Difference from target
+          </span>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Feasibility</span>
+          <strong class="summary-value">
+            {{ feasibleCount() }} / {{ entityCount() }}
+          </strong>
+          <span class="summary-detail">
+            {{ isCandidate() ? 'Candidate entities feasible' : 'Entities currently feasible' }}
+          </span>
+        </article>
+      </section>
+
+      <section class="target-section">
+        <div class="target-content">
+          <div class="target-copy">
+            <span class="section-eyebrow">Population Target</span>
+            <h2>How much synthetic data do you need?</h2>
+            <p>
+              Define the total dataset size you want FORGE to plan.
+              FORGE will distribute that target across the model and then
+              evaluate the resulting population against its constraints.
+            </p>
+          </div>
+
+          <div class="target-controls">
+            <label for="population-target">Target records</label>
+
+            <div class="target-input-row">
+              <input
+                id="population-target"
+                type="number"
+                min="1"
+                step="1"
+                [value]="targetRows() ?? ''"
+                (input)="setTarget($any($event.target).value)"
+                placeholder="e.g. 1,000,000"
+              />
+
+              <button
+                type="button"
+                class="target-button"
+                [disabled]="targetRows() === null || isDistributing()"
+                (click)="distributeTarget()"
+              >
+                <span class="material-symbols-outlined">
+                  {{ isDistributing() ? 'progress_activity' : 'tune' }}
+                </span>
+
+                {{ isDistributing() ? 'Distributing…' : 'Distribute Target' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      @if (errorMessage(); as error) {
+        <section class="population-message population-message-error">
+          <strong>Unable to build candidate plan</strong>
+          <span>{{ error }}</span>
+        </section>
+      }
+
+      @if (candidatePlan(); as candidate) {
+        <section
+          class="candidate-decision-card"
+          [class.candidate-decision-card-success]="candidate.feasible"
+          [class.candidate-decision-card-warning]="!candidate.feasible"
+        >
+          <div class="candidate-decision-icon">
+            <span class="material-symbols-outlined">
+              {{ candidate.feasible ? 'check_circle' : 'warning' }}
+            </span>
+          </div>
+
+          <div class="candidate-decision-content">
+            <div class="candidate-decision-header">
+              <strong>
+                {{
+                  candidate.feasible
+                    ? 'Candidate plan is feasible'
+                    : 'Target cannot be achieved with this driver'
+                }}
+              </strong>
+
+              <span class="candidate-decision-status">
+                {{ candidate.feasible ? 'FEASIBLE' : 'NEEDS REVIEW' }}
+              </span>
+            </div>
+
+            @if (candidate.feasible) {
+              <p>
+                FORGE allocated
+                <strong>{{ candidate.allocated_total | number }}</strong>
+                records across
+                <strong>{{ entityCount() }}</strong>
+                entities and the resulting population satisfies the model constraints.
+              </p>
+            } @else {
+              <p>
+                The requested target of
+                <strong>{{ candidate.target | number }}</strong>
+                records cannot be reached with
+                <strong>{{ candidate.driver }}</strong>
+                as the selected population driver.
+              </p>
+
+              @if (candidate.target_reason) {
+                <div class="candidate-decision-reason">
+                  <span class="material-symbols-outlined">info</span>
+                  <span>{{ candidate.target_reason }}</span>
+                </div>
+              }
+
+              <div class="candidate-decision-guidance">
+                <strong>What you can do</strong>
+                <span>
+                  Increase the target, or choose a different population driver
+                  that allows more of the model to scale.
+                </span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="population-table-section">
+        <app-entity-population-table
+  [plan]="plan"
+  [originalPlan]="populationPlan()!"
+/>
+      </section>
+
+    </section>
+  } @else {
+    <section class="population-shell">
+      <div class="loading-card">
+        <h2>Loading population plan…</h2>
+        <p>Loading the derived population plan from FORGE.</p>
+      </div>
+    </section>
+  }
+</app-workflow-page>

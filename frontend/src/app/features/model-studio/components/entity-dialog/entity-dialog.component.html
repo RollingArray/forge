@@ -1,0 +1,243 @@
+    <app-form-dialog
+      title="Add Entity"
+      subtitle="Define an entity for this Data Model."
+      icon="table_view"
+      width="1080px"
+      (closed)="closed.emit()"
+    >
+      <div dialog-body class="entity-dialog-body">
+        <div class="authoring-layout">
+
+          <section class="ai-panel">
+            <div class="recommended-badge">
+              <span class="material-symbols-outlined">auto_awesome</span>
+              RECOMMENDED
+            </div>
+
+            <div class="ai-heading">
+              <div class="ai-icon">
+                <span class="material-symbols-outlined">auto_awesome</span>
+              </div>
+
+              <div>
+                <h2>Start with FORGE AI</h2>
+                <span class="online-badge">
+                  <span class="online-dot"></span>
+                  ONLINE
+                </span>
+              </div>
+            </div>
+
+            <p class="ai-description">
+              Describe the entity you want to model in natural language.
+              FORGE AI will propose a starting point for you to review.
+            </p>
+
+            <textarea
+              class="ai-prompt"
+              [(ngModel)]="aiPrompt"
+              placeholder="e.g. Create a CUSTOMER entity representing enterprise customers with 50,000 records."
+              maxlength="2000"
+            ></textarea>
+
+            <div class="ai-action-row">
+              <span class="ai-hint">
+                <span class="material-symbols-outlined">lightbulb</span>
+                Describe the business entity and expected population.
+              </span>
+
+              <button
+                type="button"
+                class="ai-button"
+                [disabled]="!aiPrompt().trim()"
+                (click)="requestAiProposal()"
+              >
+                <span class="material-symbols-outlined">auto_awesome</span>
+                Generate with FORGE AI
+              </button>
+            </div>
+
+            <div class="examples-section">
+              <div class="examples-title">
+                <span class="material-symbols-outlined">lightbulb</span>
+                <strong>Example prompts</strong>
+              </div>
+
+              <button
+                type="button"
+                class="example-prompt"
+                (click)="useExample('I need 100 customers.')"
+              >
+                I need 100 customers.
+              </button>
+
+              <button
+                type="button"
+                class="example-prompt"
+                (click)="useExample('Create an SAP customer master table named KNA1 with 100 records.')"
+              >
+                Create an SAP customer master table named KNA1 with 100 records.
+              </button>
+
+              <button
+                type="button"
+                class="example-prompt"
+                (click)="useExample('Create a sales order header entity called VBAK with 200 records.')"
+              >
+                Create a sales order header entity called VBAK with 200 records.
+              </button>
+            </div>
+
+            <div class="decision-card">
+              <span class="material-symbols-outlined">lightbulb</span>
+              <div>
+                <strong>AI proposes. You decide.</strong>
+                <p>
+                  Review the proposed entity before it becomes part of the
+                  FORGE specification.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div class="divider">
+            <span>OR</span>
+          </div>
+
+          <section class="manual-panel">
+            <h2>Enter manually</h2>
+            <p class="manual-intro">
+              Prefer to define the entity yourself? Enter the details below.
+            </p>
+
+            <label class="field-label" for="entity-name">
+              Entity Name
+            </label>
+            <p class="field-help">
+              Give the entity a clear name that identifies the business
+              process, system, or table it represents.
+              <span class="field-example">Examples: CUSTOMER, KNA1, VBAK</span>
+            </p>
+
+            <input
+              id="entity-name"
+              class="field-input"
+              type="text"
+              [(ngModel)]="name"
+              maxlength="120"
+              placeholder="e.g. CUSTOMER"
+            />
+
+            <label class="field-label" for="entity-description">
+              Description
+            </label>
+            <p class="field-help">
+              Describe what this entity represents.
+              <span class="field-example">
+                Examples: Customer master data, Sales order header, Product catalog
+              </span>
+            </p>
+
+            <textarea
+              id="entity-description"
+              class="field-input description-input"
+              [(ngModel)]="description"
+              maxlength="500"
+              placeholder="Describe the entity."
+            ></textarea>
+
+            <label class="field-label" for="entity-population">
+              Population
+            </label>
+            <p class="field-help">
+              Specify the number of records FORGE should engineer for this
+              entity.
+              <span class="field-example">Examples: 100, 10,000, 50,000</span>
+            </p>
+
+            <div class="population-input">
+              <input
+                id="entity-population"
+                class="field-input"
+                type="number"
+                min="0"
+                step="1"
+                [(ngModel)]="population"
+              />
+              <span>records</span>
+            </div>
+
+            <label
+  class="field-label scaling-label"
+  for="entity-population-scaling"
+>
+  Population Scaling
+</label>
+
+<p class="field-help">
+  Decide whether FORGE may change this entity's population when
+  distributing the overall dataset target.
+</p>
+
+<div class="scaling-options">
+  <label
+    class="scaling-option"
+    [class.selected]="populationScaling === 'SCALABLE'"
+  >
+    <input
+      id="entity-population-scaling"
+      type="radio"
+      name="population-scaling"
+      value="SCALABLE"
+      [checked]="populationScaling === 'SCALABLE'"
+      (change)="populationScaling = 'SCALABLE'"
+    />
+
+    <span class="scaling-option-content">
+      <strong>SCALABLE</strong>
+      <span>FORGE may adjust this population.</span>
+    </span>
+  </label>
+
+  <label
+    class="scaling-option"
+    [class.selected]="populationScaling === 'FIXED'"
+  >
+    <input
+      type="radio"
+      name="population-scaling"
+      value="FIXED"
+      [checked]="populationScaling === 'FIXED'"
+      (change)="populationScaling = 'FIXED'"
+    />
+
+    <span class="scaling-option-content">
+      <strong>FIXED</strong>
+      <span>Keep this population unchanged.</span>
+    </span>
+  </label>
+</div>
+          </section>
+
+        </div>
+      </div>
+
+      <div dialog-footer class="dialog-footer">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="closed.emit()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="!canSave()"
+          (click)="save()"
+        >
+          Add Entity
+        </button>
+      </div>
+    </app-form-dialog>

@@ -1060,7 +1060,12 @@ export class ModelStudioComponent {
       });
   }
 
-  handleEntityCreated(entity: { name: string; description: string; population: number }): void {
+  handleEntityCreated(entity: {
+    name: string;
+    description: string;
+    population: number;
+    scaling: 'FIXED' | 'SCALABLE';
+  }): void {
     const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
 
     if (!dataModelId) {
@@ -1068,15 +1073,24 @@ export class ModelStudioComponent {
       return;
     }
 
-    this.specificationService.createEntity(dataModelId, entity.name, entity.population).subscribe({
-      next: () => {
-        this.entityDialogOpen.set(false);
-        this.loadSpecification(dataModelId);
-      },
-      error: (error: { error?: { detail?: string } }) => {
-        this.errorMessage.set(error.error?.detail ?? 'Failed to create entity.');
-      },
-    });
+    this.specificationService
+      .createEntity(
+        dataModelId,
+        entity.name,
+        entity.population,
+        entity.scaling,
+      )
+      .subscribe({
+        next: () => {
+          this.entityDialogOpen.set(false);
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ?? 'Failed to create entity.',
+          );
+        },
+      });
   }
   continueToValidation(): void {
     const dataModelId = this.route.snapshot.paramMap.get('dataModelId');

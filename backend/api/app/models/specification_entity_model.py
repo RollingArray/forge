@@ -6,7 +6,16 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
+from enum import Enum
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class PopulationScaling(str, Enum):
+    """Controls whether an entity may scale with the dataset target."""
+
+    FIXED = "FIXED"
+    SCALABLE = "SCALABLE"
 
 
 class EntityPopulationModel(BaseModel):
@@ -17,6 +26,10 @@ class EntityPopulationModel(BaseModel):
     count: int | None = Field(
         default=None,
         ge=0,
+    )
+
+    scaling: PopulationScaling = Field(
+        default=PopulationScaling.SCALABLE,
     )
 
     @field_validator("count", mode="before")
@@ -38,6 +51,7 @@ class CreateEntityRequest(BaseModel):
     name: str = Field(
         min_length=1,
     )
+
     population: EntityPopulationModel | None = None
 
     @field_validator("name", mode="before")
@@ -54,6 +68,14 @@ class CreateEntityRequest(BaseModel):
             raise ValueError("name must not be empty.")
 
         return value
+
+
+class UpdateEntityPopulationScalingRequest(BaseModel):
+    """Request to update the population scaling behavior of an entity."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scaling: PopulationScaling
 
 
 class UpdateEntityPopulationRequest(BaseModel):
@@ -75,6 +97,7 @@ class UpdateEntityPopulationRequest(BaseModel):
 
         return value
 
+
 class UpdateEntityIdentityRequest(BaseModel):
     """Request to define the identity fields for a FORGE entity."""
 
@@ -89,27 +112,12 @@ class UpdateEntityIdentityRequest(BaseModel):
     def validate_fields(cls, value: list[str]) -> list[str]:
         """Require non-empty, unique field names."""
 
-        normalized = []
+        normalized = [field.strip() for field in value]
 
-        for field_name in value:
-            if not isinstance(field_name, str):
-                raise ValueError(
-                    "identity.fields must contain strings."
-                )
-
-            field_name = field_name.strip()
-
-            if not field_name:
-                raise ValueError(
-                    "identity.fields must not contain empty names."
-                )
-
-            normalized.append(field_name)
+        if any(not field for field in normalized):
+            raise ValueError("identity fields must not be empty.")
 
         if len(normalized) != len(set(normalized)):
-            raise ValueError(
-                "identity.fields must not contain duplicates."
-            )
+            raise ValueError("identity fields must be unique.")
 
         return normalized
-

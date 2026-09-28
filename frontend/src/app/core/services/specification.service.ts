@@ -34,10 +34,13 @@ import {
   SpecificationValidationResult,
 } from '../interfaces/specification-validation.interface';
 
+type PopulationScaling = 'FIXED' | 'SCALABLE';
+
 interface CreateEntityRequest {
   name: string;
   population: {
     count: number;
+    scaling: PopulationScaling;
   };
 }
 
@@ -190,6 +193,7 @@ export class SpecificationService {
     dataModelId: string,
     name: string,
     population: number,
+    scaling: PopulationScaling = 'SCALABLE',
   ): Observable<ForgeSpecificationEntity> {
     return this.http.post<ForgeSpecificationEntity>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities`,
@@ -197,6 +201,7 @@ export class SpecificationService {
         name,
         population: {
           count: population,
+          scaling,
         },
       } satisfies CreateEntityRequest,
       {

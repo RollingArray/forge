@@ -10,10 +10,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
+from app.models.population_model import (
+    AcceptPopulationPlanRequest,
+    PopulationTargetRequest,
+)
 from app.models.specification_entity_model import (
     CreateEntityRequest,
     UpdateEntityIdentityRequest,
     UpdateEntityPopulationRequest,
+    UpdateEntityPopulationScalingRequest,
 )
 from app.models.specification_field_model import (
     CreateFieldRequest,
@@ -36,6 +41,7 @@ from app.models.specification_foreign_key_model import (
 )
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
+from app.services.population_service import PopulationService
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
 
@@ -45,6 +51,7 @@ router = APIRouter(
     tags=["Specifications"],
 )
 
+population_service = PopulationService()
 specification_service = SpecificationService()
 specification_validation_service = SpecificationValidationService()
 data_model_access_service = DataModelAccessService()
@@ -113,6 +120,114 @@ async def validate_specification(
         )
 
     return specification_validation_service.validate(specification)
+
+
+@router.get(
+    "/{data_model_id}/population-plan",
+    status_code=status.HTTP_200_OK,
+)
+async def get_population_plan(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Return the population plan for a visible Data Model."""
+
+    if not data_model_access_service.can_view(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    population_plan = population_service.get_population_plan(
+        data_model_id=data_model_id,
+    )
+
+    if population_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return population_plan
+
+
+@router.post(
+    "/{data_model_id}/population-plan/candidate",
+    status_code=status.HTTP_200_OK,
+)
+async def build_population_candidate(
+    data_model_id: str,
+    request: PopulationTargetRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Build and evaluate a target-driven candidate population plan."""
+
+    if not data_model_access_service.can_view(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    candidate = population_service.build_candidate_plan(
+        data_model_id=data_model_id,
+        target=request.target,
+        driver=request.driver,
+    )
+
+    if candidate is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return candidate
+
+
+@router.post(
+    "/{data_model_id}/population-plan/accept",
+    status_code=status.HTTP_200_OK,
+)
+async def accept_population_plan(
+    data_model_id: str,
+    request: AcceptPopulationPlanRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Accept and persist the population plan for generation."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        specification = specification_service.accept_population_plan(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            populations=request.populations,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if specification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return specification
 
 
 @router.post(
@@ -285,6 +400,49 @@ async def update_field(
         )
 
     return field
+
+
+@router.put(
+    "/{data_model_id}/specification/entities/{entity_name}/population/scaling",
+    status_code=status.HTTP_200_OK,
+)
+async def update_entity_population_scaling(
+    data_model_id: str,
+    entity_name: str,
+    request: UpdateEntityPopulationScalingRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update the population scaling of an existing FORGE entity."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        entity = specification_service.update_entity_population_scaling(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            entity_name=entity_name,
+            scaling=request.scaling.value,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    if entity is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return entity
 
 
 @router.put(
