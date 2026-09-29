@@ -10,8 +10,8 @@
 .forge-artwork {
   position: absolute;
   top: 0;
-  right: -3%;
-  width: 74%;
+  right: 0%;
+  width: 100%;
   height: 58%;
   overflow: hidden;
   pointer-events: none;

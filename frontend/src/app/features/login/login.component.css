@@ -24,8 +24,8 @@ Email: ranjoy.sen@collins.com
 .forge-artwork {
   position: absolute;
   top: 0;
-  right: -3%;
-  width: 74%;
+  right: 0%;
+  width: 100%;
   height: 58%;
   overflow: hidden;
   pointer-events: none;
@@ -168,15 +168,82 @@ Email: ranjoy.sen@collins.com
   height: 52px;
 }
 
-.organization-logo {
-  margin-top: 24px;
+/* ============================================================= */
+/* BRAND PARTNERSHIP                                              */
+/* ============================================================= */
+
+.brand-partnership {
+  display: flex;
+
+  align-items: center;
+
+  gap: 26px;
+
+  margin-top: 8px;
 }
 
-.organization-logo img {
+
+/* ============================================================= */
+/* FORGE BRAND                                                    */
+/* ============================================================= */
+
+.forge-brand {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  flex: 0 0 auto;
+}
+
+.forge-brand-name {
+  color: #11152f;
+
+  font-size: 25px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.11em;
+
+  line-height: 1;
+}
+
+
+/* ============================================================= */
+/* BRAND DIVIDER                                                  */
+/* ============================================================= */
+
+.brand-divider {
+  width: 1px;
+
+  height: 48px;
+
+  flex: 0 0 auto;
+
+  background: rgba(80, 87, 120, 0.28);
+}
+
+
+/* ============================================================= */
+/* COLLINS AEROSPACE                                              */
+/* ============================================================= */
+
+.collins-brand {
+  display: flex;
+
+  align-items: center;
+
+  min-width: 0;
+}
+
+.collins-brand img {
   display: block;
 
-  width: 260px;
+  width: 245px;
+
   max-width: 100%;
+
   height: auto;
 }
 
