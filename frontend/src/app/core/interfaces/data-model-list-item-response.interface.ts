@@ -11,4 +11,6 @@ export interface DataModelListItemResponse {
   created_at: string;
   updated_at: string;
   access_role: 'OWNER' | 'CONTRIBUTOR' | 'VIEWER';
+  entities: number;
+  relationships: number;
 }

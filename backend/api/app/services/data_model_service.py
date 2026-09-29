@@ -16,6 +16,7 @@ from app.repositories.json_data_model_repository import (
 from app.repositories.json_data_model_access_repository import JsonDataModelAccessRepository
 from app.services.activity_service import ActivityService
 from app.services.data_model_access_service import DataModelAccessService
+from app.repositories.json_specification_repository import JsonSpecificationRepository
 
 
 class DataModelService:
@@ -52,6 +53,7 @@ class DataModelService:
                 activity_service=self._activity_service,
             )
         )
+        self._specification_repository = JsonSpecificationRepository()
 
     def create_data_model(
         self,
@@ -376,6 +378,26 @@ class DataModelService:
             data_models_by_id.values(),
             key=lambda data_model: data_model.updated_at,
             reverse=True,
+        )
+
+    def get_data_model_counts(
+        self,
+        data_model: DataModel,
+    ) -> tuple[int, int]:
+        """Return entity and relationship counts from the canonical specification."""
+
+        specification = self._specification_repository.get_or_create(
+            data_model_id=data_model.data_model_id,
+            model_name=data_model.name,
+            model_description=data_model.description,
+        )
+
+        entities = specification.get("entities", [])
+        relationships = specification.get("relationships", [])
+
+        return (
+            len(entities) if isinstance(entities, list) else 0,
+            len(relationships) if isinstance(relationships, list) else 0,
         )
 
     @staticmethod

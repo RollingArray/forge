@@ -20,3 +20,6 @@ class DataModelListItemModel(BaseModel):
     created_at: datetime
     updated_at: datetime
     access_role: Literal["OWNER", "CONTRIBUTOR", "VIEWER"]
+
+    entities: int = Field(default=0, ge=0)
+    relationships: int = Field(default=0, ge=0)

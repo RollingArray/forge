@@ -196,8 +196,8 @@ export class WorkspaceService {
       description: response.description,
       color: response.color,
       tags: response.tags ?? [],
-      entities: 0,
-      relationships: 0,
+      entities: response.entities,
+      relationships: response.relationships,
       updated: this.formatUpdated(response.updated_at),
       status: response.status,
     };

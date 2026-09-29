@@ -178,22 +178,32 @@ async def get_data_models(
         owner_user_id=user.user_id,
     )
 
-    return [
-        DataModelListItemModel(
-            data_model_id=data_model.data_model_id,
-            owner_user_id=data_model.owner_user_id,
-            name=data_model.name,
-            description=data_model.description,
-            color=data_model.color,
-            tags=data_model.tags,
-            status=data_model.status,
-            created_at=data_model.created_at,
-            updated_at=data_model.updated_at,
-            access_role=data_model_access_service.get_role(
-                data_model_id=data_model.data_model_id,
-                user_id=user.user_id,
-            )
-            or "VIEWER",
+    response: list[DataModelListItemModel] = []
+
+    for data_model in data_models:
+        entities, relationships = data_model_service.get_data_model_counts(
+            data_model,
         )
-        for data_model in data_models
-    ]
+
+        response.append(
+            DataModelListItemModel(
+                data_model_id=data_model.data_model_id,
+                owner_user_id=data_model.owner_user_id,
+                name=data_model.name,
+                description=data_model.description,
+                color=data_model.color,
+                tags=data_model.tags,
+                status=data_model.status,
+                created_at=data_model.created_at,
+                updated_at=data_model.updated_at,
+                access_role=data_model_access_service.get_role(
+                    data_model_id=data_model.data_model_id,
+                    user_id=user.user_id,
+                )
+                or "VIEWER",
+                entities=entities,
+                relationships=relationships,
+            )
+        )
+
+    return response
