@@ -153,7 +153,7 @@ class EntityGenerator:
         context: GenerationContext,
         fields: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
-        """Allocate unique identity values from FK and local components."""
+        """Allocate unique identity values without materializing the full Cartesian product."""
 
         if target_rows == 0 or not identity_fields:
             return [{} for _ in range(target_rows)]
@@ -267,10 +267,15 @@ class EntityGenerator:
                 f"{identity_fields}"
             )
 
+        component_sizes = [
+            len(values)
+            for _, values in components
+        ]
+
         candidate_count = 1
 
-        for _, values in components:
-            candidate_count *= len(values)
+        for size in component_sizes:
+            candidate_count *= size
 
         if target_rows > candidate_count:
             raise EntityGenerationError(
@@ -279,18 +284,35 @@ class EntityGenerator:
                 "are available."
             )
 
-        candidates = []
+        if not components:
+            return [{} for _ in range(target_rows)]
 
-        for combination in product(
-            *[values for _, values in components]
-        ):
+        # Select unique positions in the Cartesian product without
+        # materializing the complete product.
+        selected_indexes = self._select_cartesian_indexes(
+            candidate_count=candidate_count,
+            target_rows=target_rows,
+        )
+
+        candidates: list[dict[str, Any]] = []
+
+        for flat_index in selected_indexes:
             row: dict[str, Any] = {}
+            remaining = flat_index
 
-            for (component_fields, _), key in zip(
-                components,
-                combination,
-                strict=True,
+            for component_index in range(
+                len(components) - 1,
+                -1,
+                -1,
             ):
+                component_fields, values = components[component_index]
+                size = len(values)
+
+                value_index = remaining % size
+                remaining //= size
+
+                key = values[value_index]
+
                 for field, value in zip(
                     component_fields,
                     key,
@@ -300,9 +322,23 @@ class EntityGenerator:
 
             candidates.append(row)
 
-        self._random.shuffle(candidates)
+        return candidates
 
-        return candidates[:target_rows]
+    def _select_cartesian_indexes(
+        self,
+        *,
+        candidate_count: int,
+        target_rows: int,
+    ) -> list[int]:
+        """Select unique Cartesian-product positions deterministically."""
+
+        if target_rows >= candidate_count:
+            return list(range(candidate_count))
+
+        return self._random.sample(
+            range(candidate_count),
+            target_rows,
+        )
 
     @staticmethod
     def _local_identity_values(
