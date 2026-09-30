@@ -191,7 +191,7 @@ class GenerationExecutor:
                     )
 
             try:
-                generator.generate(
+                generated_rows = generator.generate(
                     entity=entity,
                     foreign_keys=foreign_keys_by_child.get(
                         entity_name,
@@ -207,12 +207,6 @@ class GenerationExecutor:
                     flush=True,
                 )
                 raise
-
-            entity_rows = context.get_rows(
-                entity_name=entity_name,
-            )
-
-            generated_rows = len(entity_rows)
 
             artifact_writer.consolidate_entity(
                 job_id=job_id,

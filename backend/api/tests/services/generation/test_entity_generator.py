@@ -441,7 +441,7 @@ def test_generate_allocates_identity_per_execution_chunk() -> None:
 
     generator = EntityGenerator(seed=42)
 
-    rows = generator.generate(
+    generated_rows = generator.generate(
         entity=entity,
         foreign_keys=[],
         context=context,
@@ -449,13 +449,17 @@ def test_generate_allocates_identity_per_execution_chunk() -> None:
         on_chunk_completed=on_chunk_completed,
     )
 
-    assert len(rows) == 125
+    assert generated_rows == 125
 
     assert completed_chunks == [
         (1, 3, 50),
         (2, 3, 50),
         (3, 3, 25),
     ]
+
+    rows = context.get_rows(
+        entity_name="TEST_ENTITY",
+    )
 
     assert [row["ID"] for row in rows] == list(
         range(1, 126)

@@ -39,7 +39,7 @@ class EntityGenerator:
         context: GenerationContext,
         chunk_size: int = 50,
         on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> int:
         """Generate the configured population in bounded execution chunks."""
 
         entity_name = entity["name"]
@@ -68,7 +68,7 @@ class EntityGenerator:
             else 0
         )
 
-        rows: list[dict[str, Any]] = []
+        generated_rows = 0
 
         for chunk_number, chunk_start in enumerate(
             range(0, target_rows, chunk_size),
@@ -105,7 +105,7 @@ class EntityGenerator:
 
                 chunk_rows.append(row)
 
-            rows.extend(chunk_rows)
+            generated_rows += len(chunk_rows)
 
             context.add_rows(
                 entity_name=entity_name,
@@ -118,17 +118,11 @@ class EntityGenerator:
                     entity_name,
                     chunk_number,
                     total_chunks,
-                    len(rows),
+                    generated_rows,
                     chunk_rows,
                 )
 
-        self._validate_identity_uniqueness(
-            entity_name=entity_name,
-            rows=rows,
-            identity_fields=identity_fields,
-        )
-
-        return rows
+        return generated_rows
 
     @staticmethod
     def _identity_fields(
