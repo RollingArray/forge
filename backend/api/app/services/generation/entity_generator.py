@@ -25,6 +25,7 @@ class EntityGenerator:
         *,
         seed: int,
     ) -> None:
+        self._seed = seed
         self._random = random.Random(seed)
         self._row_generator = RowGenerator(
             seed=seed,
@@ -357,7 +358,14 @@ class EntityGenerator:
             )
 
         multiplier = self._permutation_multiplier(candidate_count)
-        offset = self._random.randrange(candidate_count)
+
+        # Derive one stable offset for this generation seed and candidate
+        # space. Chunk boundaries must only select windows into the same
+        # deterministic permutation, never create a new permutation.
+        permutation_random = random.Random(
+            self._seed ^ candidate_count
+        )
+        offset = permutation_random.randrange(candidate_count)
 
         return [
             (offset + multiplier * row_index) % candidate_count

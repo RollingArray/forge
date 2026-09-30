@@ -300,6 +300,65 @@ def test_identity_allocation_is_deterministic_for_same_seed() -> None:
     assert first == second
 
 
+def test_chunked_cartesian_identity_allocation_matches_full_allocation() -> None:
+    fields = [
+        _sequential_identity_field(),
+        {
+            "name": "CODE",
+            "type": "STRING",
+            "generation": {
+                "strategy": "RANDOM",
+                "distribution": "CATEGORICAL",
+                "parameters": {
+                    "values": ["A", "B", "C", "D"],
+                },
+            },
+        },
+    ]
+
+    full = _allocate(
+        seed=42,
+        target_rows=12,
+        fields=fields,
+        identity_fields=("ID", "CODE"),
+    )
+
+    chunks = [
+        _allocate_chunk(
+            seed=42,
+            target_rows=12,
+            row_start=0,
+            row_count=4,
+            fields=fields,
+            identity_fields=("ID", "CODE"),
+        ),
+        _allocate_chunk(
+            seed=42,
+            target_rows=12,
+            row_start=4,
+            row_count=4,
+            fields=fields,
+            identity_fields=("ID", "CODE"),
+        ),
+        _allocate_chunk(
+            seed=42,
+            target_rows=12,
+            row_start=8,
+            row_count=4,
+            fields=fields,
+            identity_fields=("ID", "CODE"),
+        ),
+    ]
+
+    chunked = [row for chunk in chunks for row in chunk]
+
+    assert chunked == full
+    assert len({
+        (row["ID"], row["CODE"])
+        for row in chunked
+    }) == 12
+
+
 def test_identity_allocation_is_unique() -> None:
     fields = [
         _sequential_identity_field(),
