@@ -1,0 +1,148 @@
+{
+  "benchmark_id": "FORGE-STRESS-V1B-3M",
+  "benchmark_type": "specification_stress",
+  "experiment": "026_specification_stress_testing",
+  "scenario": "Stress V1-B",
+  "status": "COMPLETED",
+  "success": true,
+  "timestamp_utc": "2026-09-30T13:01:22.427541+00:00",
+  "seed": 20260919,
+  "platform": "macOS-26.7-arm64-arm-64bit",
+  "memory_metric": "process_high_water_rss",
+  "memory_unit": "MB",
+  "specification": {
+    "path": "/Users/e10936535/forge/experiments/026_specification_stress_testing/specifications/stress/stress_v1b_3m.json",
+    "target_total_rows": 3000000,
+    "entities": 21,
+    "relationships": 26,
+    "foreign_keys": 30,
+    "constraints": 6
+  },
+  "planning_seconds": 0.0,
+  "generation_seconds": 182.749,
+  "throughput_rows_per_sec": 16416,
+  "generated_rows": 3000000,
+  "rss_before_mb": 36.2,
+  "peak_rss_mb": 359.3,
+  "rss_increase_mb": 323.1,
+  "per_entity": [
+    {
+      "entity": "CUSTOMER",
+      "target_rows": 2200,
+      "generated_rows": 2200
+    },
+    {
+      "entity": "PRODUCT",
+      "target_rows": 100000,
+      "generated_rows": 100000
+    },
+    {
+      "entity": "SALES_ORG",
+      "target_rows": 4000,
+      "generated_rows": 4000
+    },
+    {
+      "entity": "PLANT",
+      "target_rows": 20000,
+      "generated_rows": 20000
+    },
+    {
+      "entity": "CARRIER",
+      "target_rows": 100000,
+      "generated_rows": 100000
+    },
+    {
+      "entity": "CUSTOMER_ADDRESS",
+      "target_rows": 3400,
+      "generated_rows": 3400
+    },
+    {
+      "entity": "STORAGE_LOCATION",
+      "target_rows": 100000,
+      "generated_rows": 100000
+    },
+    {
+      "entity": "PRODUCT_PLANT",
+      "target_rows": 400000,
+      "generated_rows": 400000
+    },
+    {
+      "entity": "SALES_ORDER",
+      "target_rows": 5600,
+      "generated_rows": 5600
+    },
+    {
+      "entity": "INVENTORY",
+      "target_rows": 2000000,
+      "generated_rows": 2000000
+    },
+    {
+      "entity": "SALES_ITEM",
+      "target_rows": 22200,
+      "generated_rows": 22200
+    },
+    {
+      "entity": "ORDER_PARTNER",
+      "target_rows": 16600,
+      "generated_rows": 16600
+    },
+    {
+      "entity": "ORDER_STATUS",
+      "target_rows": 5600,
+      "generated_rows": 5600
+    },
+    {
+      "entity": "DELIVERY",
+      "target_rows": 6600,
+      "generated_rows": 6600
+    },
+    {
+      "entity": "INVOICE",
+      "target_rows": 6600,
+      "generated_rows": 6600
+    },
+    {
+      "entity": "DELIVERY_ITEM",
+      "target_rows": 26600,
+      "generated_rows": 26600
+    },
+    {
+      "entity": "SHIPMENT",
+      "target_rows": 7800,
+      "generated_rows": 7800
+    },
+    {
+      "entity": "INVOICE_ITEM",
+      "target_rows": 26600,
+      "generated_rows": 26600
+    },
+    {
+      "entity": "PAYMENT",
+      "target_rows": 8800,
+      "generated_rows": 8800
+    },
+    {
+      "entity": "DELIVERY_EVENT",
+      "target_rows": 110800,
+      "generated_rows": 110800
+    },
+    {
+      "entity": "SHIPMENT_ITEM",
+      "target_rows": 26600,
+      "generated_rows": 26600
+    }
+  ],
+  "error": {
+    "type": "AttributeError",
+    "message": "'GenerationEntityRun' object has no attribute 'status'"
+  },
+  "completed_at_utc": "2026-09-30T13:04:25.188843+00:00",
+  "target_rows": 3000000,
+  "measurement_note": "Generation completed successfully for all 21 entities. The original benchmark process raised an AttributeError only after generation completed because the benchmark harness attempted to access a nonexistent GenerationEntityRun.status attribute. The recorded generation measurements are therefore retained.",
+  "harness_error": {
+    "type": "AttributeError",
+    "message": "'GenerationEntityRun' object has no attribute 'status'",
+    "impact": "Benchmark reporting only; generation completed successfully."
+  },
+  "repaired_at_utc": "2026-09-30T13:06:53.142476+00:00"
+}
