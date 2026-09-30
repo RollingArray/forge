@@ -36,6 +36,7 @@ class GenerationService:
         generation_planner: GenerationPlanner | None = None,
         generation_run_service: GenerationRunService | None = None,
         ai_service: AIService | None = None,
+        checkpoint_store: GenerationCheckpointStore | None = None,
     ) -> None:
         self._specification_service = (
             specification_service
@@ -50,7 +51,11 @@ class GenerationService:
         self._generation_run_service = generation_run_service
         self._ai_service = ai_service
         self._job_store = GenerationJobStore()
-        self._checkpoint_store = GenerationCheckpointStore()
+        self._checkpoint_store = (
+            checkpoint_store
+            if checkpoint_store is not None
+            else GenerationCheckpointStore()
+        )
         self._jobs: dict[str, GenerationJobResponse] = {}
 
     def get_readiness(
@@ -280,9 +285,33 @@ class GenerationService:
                 generated_rows: int,
                 _chunk_rows: list[dict[str, object]],
             ) -> None:
+                existing_checkpoint = self._checkpoint_store.get(
+                    job.job_id,
+                ) or {}
+
+                existing_entity = (
+                    existing_checkpoint.get("entities", {})
+                    .get(entity_name, {})
+                )
+
+                previously_committed_rows = existing_entity.get(
+                    "committed_rows",
+                    0,
+                )
+
+                if not isinstance(previously_committed_rows, int):
+                    previously_committed_rows = 0
+
+                durable_generated_rows = (
+                    previously_committed_rows
+                    + generated_rows
+                )
+
                 for entity_progress in job.entities:
                     if entity_progress.entity_name == entity_name:
-                        entity_progress.generated_rows = generated_rows
+                        entity_progress.generated_rows = (
+                            durable_generated_rows
+                        )
                         entity_progress.completed_chunks = chunk_number
                         entity_progress.total_chunks = total_chunks
                         entity_progress.status = (

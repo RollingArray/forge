@@ -38,6 +38,7 @@ class EntityGenerator:
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
         chunk_size: int = 50,
+        start_chunk: int = 1,
         on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
     ) -> int:
         """Generate the configured population in bounded execution chunks."""
@@ -56,6 +57,11 @@ class EntityGenerator:
                 "Generation chunk size must be greater than zero."
             )
 
+        if start_chunk <= 0:
+            raise EntityGenerationError(
+                "Generation start chunk must be greater than zero."
+            )
+
         fields = entity.get("fields") or []
         identity_fields = self._identity_fields(
             entity=entity,
@@ -70,9 +76,15 @@ class EntityGenerator:
 
         generated_rows = 0
 
+        first_chunk_index = (start_chunk - 1) * chunk_size
+
         for chunk_number, chunk_start in enumerate(
-            range(0, target_rows, chunk_size),
-            start=1,
+            range(
+                first_chunk_index,
+                target_rows,
+                chunk_size,
+            ),
+            start=start_chunk,
         ):
             chunk_end = min(
                 chunk_start + chunk_size,

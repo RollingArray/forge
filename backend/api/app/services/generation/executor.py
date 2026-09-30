@@ -20,6 +20,8 @@ from app.constants.generation import SEMANTIC_VOCABULARY_SIZE
 from app.services.ai_service import AIService
 from app.services.generation_semantic_store import GenerationSemanticStore
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
+from app.services.generation.artifact_reader import GenerationArtifactReader
+from app.services.generation.value_conversion import convert_value
 
 
 class GenerationExecutionError(RuntimeError):
@@ -36,6 +38,8 @@ class GenerationExecutor:
         ai_service: AIService | None = None,
         semantic_store: GenerationSemanticStore | None = None,
         checkpoint_store: GenerationCheckpointStore | None = None,
+        artifact_reader: GenerationArtifactReader | None = None,
+        artifact_writer: GenerationArtifactWriter | None = None,
     ) -> None:
         self._seed = seed
         self._ai_service = ai_service
@@ -49,6 +53,16 @@ class GenerationExecutor:
             if checkpoint_store is not None
             else GenerationCheckpointStore()
         )
+        self._artifact_reader = (
+            artifact_reader
+            if artifact_reader is not None
+            else GenerationArtifactReader()
+        )
+        self._artifact_writer = (
+            artifact_writer
+            if artifact_writer is not None
+            else GenerationArtifactWriter()
+        )
 
     def has_existing_checkpoint(
         self,
@@ -56,6 +70,158 @@ class GenerationExecutor:
     ) -> bool:
         """Return whether durable execution state already exists."""
         return self._checkpoint_store.get(job_id) is not None
+
+    def _get_start_chunk(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        checkpoint = self._checkpoint_store.get(job_id)
+
+        if checkpoint is None:
+            return 1
+
+        entity_state = (
+            checkpoint.get("entities", {})
+            .get(entity_name, {})
+        )
+
+        committed_chunks = entity_state.get(
+            "committed_chunks",
+            [],
+        )
+
+        if not committed_chunks:
+            return 1
+
+        committed_chunk_set = {
+            int(chunk)
+            for chunk in committed_chunks
+        }
+
+        next_chunk = 1
+
+        while next_chunk in committed_chunk_set:
+            next_chunk += 1
+
+        return next_chunk
+
+    def _get_committed_rows(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        checkpoint = self._checkpoint_store.get(job_id)
+
+        if checkpoint is None:
+            return 0
+
+        entity_state = (
+            checkpoint.get("entities", {})
+            .get(entity_name, {})
+        )
+
+        committed_rows = entity_state.get(
+            "committed_rows",
+            0,
+        )
+
+        if not isinstance(committed_rows, int):
+            return 0
+
+        return max(committed_rows, 0)
+
+    def _get_durable_generated_rows(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        generated_rows: int,
+    ) -> int:
+        committed_rows = self._get_committed_rows(
+            job_id=job_id,
+            entity_name=entity_name,
+        )
+
+        return committed_rows + max(generated_rows, 0)
+
+    def _is_entity_fully_committed(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        total_chunks: int,
+    ) -> bool:
+        if total_chunks <= 0:
+            return True
+
+        checkpoint = self._checkpoint_store.get(job_id)
+
+        if checkpoint is None:
+            return False
+
+        entity_state = (
+            checkpoint.get("entities", {})
+            .get(entity_name, {})
+        )
+
+        committed_chunks = entity_state.get(
+            "committed_chunks",
+            [],
+        )
+
+        committed_chunk_set = {
+            int(chunk)
+            for chunk in committed_chunks
+        }
+
+        return all(
+            chunk_number in committed_chunk_set
+            for chunk_number in range(1, total_chunks + 1)
+        )
+
+    def _restore_entity_key_space(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        identity_fields: tuple[str, ...],
+        field_types: dict[str, Any],
+        context: GenerationContext,
+    ) -> None:
+        if not identity_fields:
+            return
+
+        key_space = self._artifact_reader.get_entity_key_space(
+            job_id=job_id,
+            entity_name=entity_name,
+            identity_fields=identity_fields,
+        )
+
+        if not key_space:
+            return
+
+        typed_key_space = {
+            tuple(
+                convert_value(
+                    value,
+                    field_types.get(field_name),
+                )
+                for field_name, value in zip(
+                    identity_fields,
+                    key,
+                )
+            )
+            for key in key_space
+        }
+
+        context.restore_key_space(
+            entity_name=entity_name,
+            identity_fields=identity_fields,
+            key_space=typed_key_space,
+        )
 
     def execute(
         self,
@@ -72,8 +238,7 @@ class GenerationExecutor:
         context = GenerationContext()
         entity_runs: list[GenerationEntityRun] = []
 
-        artifact_writer = GenerationArtifactWriter()
-        artifact_writer.initialize_job(job_id)
+        self._artifact_writer.initialize_job(job_id)
 
         entities_by_name = {
             entity["name"]: entity
@@ -121,6 +286,57 @@ class GenerationExecutor:
                 entity.get("population") or {}
             ).get("count", 0)
 
+            total_chunks = (
+                (target_rows + 50 - 1) // 50
+                if target_rows > 0
+                else 0
+            )
+
+            if self._is_entity_fully_committed(
+                job_id=job_id,
+                entity_name=entity_name,
+                total_chunks=total_chunks,
+            ):
+                identity_fields = tuple(
+                    (entity.get("identity") or {}).get(
+                        "fields",
+                        [],
+                    )
+                )
+
+                field_types = {
+                    field["name"]: field.get("type")
+                    for field in entity.get("fields", [])
+                }
+
+                self._restore_entity_key_space(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    identity_fields=identity_fields,
+                    field_types=field_types,
+                    context=context,
+                )
+
+                print(
+                    f"[{index:02d}/{total_entities:02d}] "
+                    f"{entity_name:<20} "
+                    f"SKIPPED ({target_rows:,} rows already committed)",
+                    flush=True,
+                )
+
+                entity_run = GenerationEntityRun(
+                    entity_name=entity_name,
+                    target_rows=target_rows,
+                    generated_rows=target_rows,
+                )
+
+                entity_runs.append(entity_run)
+
+                if on_entity_completed is not None:
+                    on_entity_completed(entity_run)
+
+                continue
+
             print(
                 f"[{index:02d}/{total_entities:02d}] "
                 f"Generating {entity_name:<20} "
@@ -128,8 +344,14 @@ class GenerationExecutor:
                 flush=True,
             )
 
-            if self._ai_service is not None:
-                for field in entity.get("fields", []):
+            start_chunk = self._get_start_chunk(
+                job_id=job_id,
+                entity_name=entity_name,
+            )
+
+            is_resuming = start_chunk > 1
+
+            for field in entity.get("fields", []):
                     generation = field.get("generation") or {}
 
                     if generation.get("generator") != "SEMANTIC":
@@ -164,33 +386,90 @@ class GenerationExecutor:
                             f"{entity_name}.{field['name']}."
                         )
 
-                    semantic_values = self._ai_service.generate_semantic_values(
-                        description=description,
-                        mode=normalized_mode,
-                        count=requested_count,
-                    )
-
-                    if len(semantic_values) != requested_count:
-                        raise GenerationExecutionError(
-                            f"Semantic generation for "
-                            f"{entity_name}.{field['name']} returned "
-                            f"{len(semantic_values)} values; "
-                            f"expected {requested_count}."
+                    if is_resuming:
+                        persisted = self._semantic_store.get(
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field["name"],
                         )
 
-                    self._semantic_store.save(
-                        job_id=job_id,
-                        entity_name=entity_name,
-                        field_name=field["name"],
-                        mode=normalized_mode,
-                        values=semantic_values,
-                    )
+                        if persisted is None:
+                            raise GenerationExecutionError(
+                                f"Persisted semantic state is missing for "
+                                f"resumed field "
+                                f"{entity_name}.{field['name']}."
+                            )
+
+                        semantic_values = persisted.get(
+                            "values",
+                            [],
+                        )
+
+                        if (
+                            persisted.get("mode") != normalized_mode
+                            or len(semantic_values) != requested_count
+                        ):
+                            raise GenerationExecutionError(
+                                f"Persisted semantic state is invalid for "
+                                f"{entity_name}.{field['name']}."
+                            )
+                    else:
+                        if self._ai_service is None:
+                            raise GenerationExecutionError(
+                                f"Semantic generation requires an AI service "
+                                f"for {entity_name}.{field['name']}."
+                            )
+
+                        semantic_values = (
+                            self._ai_service.generate_semantic_values(
+                                description=description,
+                                mode=normalized_mode,
+                                count=requested_count,
+                            )
+                        )
+
+                        if len(semantic_values) != requested_count:
+                            raise GenerationExecutionError(
+                                f"Semantic generation for "
+                                f"{entity_name}.{field['name']} returned "
+                                f"{len(semantic_values)} values; "
+                                f"expected {requested_count}."
+                            )
+
+                        self._semantic_store.save(
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field["name"],
+                            mode=normalized_mode,
+                            values=semantic_values,
+                        )
 
                     context.add_semantic_values(
                         entity_name=entity_name,
                         field_name=field["name"],
                         values=semantic_values,
                     )
+
+            if is_resuming:
+                identity_fields = tuple(
+                    (entity.get("identity") or {}).get(
+                        "fields",
+                        [],
+                    )
+                )
+
+                field_types = {
+                    field["name"]: field.get("type")
+                    for field in entity.get("fields", [])
+                }
+
+                self._restore_entity_key_space(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    identity_fields=identity_fields,
+                    field_types=field_types,
+                    context=context,
+                )
 
             generator = EntityGenerator(
                 seed=self._seed,
@@ -203,7 +482,7 @@ class GenerationExecutor:
                 generated_rows: int,
                 chunk_rows: list[dict[str, Any]],
             ) -> None:
-                artifact_writer.write_chunk(
+                self._artifact_writer.write_chunk(
                     job_id=job_id,
                     entity_name=completed_entity_name,
                     chunk_number=chunk_number,
@@ -227,6 +506,7 @@ class GenerationExecutor:
                         [],
                     ),
                     context=context,
+                    start_chunk=start_chunk,
                     on_chunk_completed=handle_chunk_completed,
                 )
             except Exception as exc:
@@ -237,7 +517,7 @@ class GenerationExecutor:
                 )
                 raise
 
-            artifact_writer.consolidate_entity(
+            self._artifact_writer.consolidate_entity(
                 job_id=job_id,
                 entity_name=entity_name,
             )
@@ -249,10 +529,16 @@ class GenerationExecutor:
                 flush=True,
             )
 
+            durable_generated_rows = self._get_durable_generated_rows(
+                job_id=job_id,
+                entity_name=entity_name,
+                generated_rows=generated_rows,
+            )
+
             entity_run = GenerationEntityRun(
                 entity_name=entity_name,
                 target_rows=target_rows,
-                generated_rows=generated_rows,
+                generated_rows=durable_generated_rows,
             )
 
             entity_runs.append(entity_run)

@@ -41,11 +41,17 @@ class ForeignKeyGenerator:
             fields=parent_fields,
         )
 
+        indexed_parent_keys = context.get_indexed_key_space(
+            entity_name=parent_entity,
+            fields=parent_fields,
+        )
+
         self.assign(
             row=row,
             source_fields=child_fields,
             target_fields=parent_fields,
             parent_keys=parent_keys,
+            indexed_parent_keys=indexed_parent_keys,
         )
 
     def assign(
@@ -55,6 +61,7 @@ class ForeignKeyGenerator:
         source_fields: tuple[str, ...],
         target_fields: tuple[str, ...],
         parent_keys: set[tuple[Any, ...]],
+        indexed_parent_keys: tuple[tuple[Any, ...], ...] | None = None,
     ) -> None:
         """Assign one foreign-key relationship."""
 
@@ -73,8 +80,14 @@ class ForeignKeyGenerator:
                 "Parent key space is empty."
             )
 
+        selection_space = (
+            indexed_parent_keys
+            if indexed_parent_keys
+            else tuple(parent_keys)
+        )
+
         selected_key = self._random.choice(
-            tuple(parent_keys)
+            selection_space
         )
 
         for source_field, value in zip(

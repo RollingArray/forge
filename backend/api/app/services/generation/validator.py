@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.services.generation.artifact_reader import GenerationArtifactReader
+from app.services.generation.value_conversion import convert_value
 
 
 class GenerationValidationError(ValueError):
@@ -392,33 +393,4 @@ class GenerationValidator:
         value: Any,
         field_type: Any,
     ) -> Any:
-        if value is None:
-            return None
-
-        if not isinstance(value, str):
-            return value
-
-        normalized_type = str(
-            field_type or "STRING"
-        ).strip().upper()
-
-        if normalized_type == "INTEGER":
-            return int(value)
-
-        if normalized_type == "DECIMAL":
-            return float(value)
-
-        if normalized_type == "BOOLEAN":
-            normalized_value = value.strip().lower()
-
-            if normalized_value == "true":
-                return True
-
-            if normalized_value == "false":
-                return False
-
-            raise ValueError(
-                f"Invalid BOOLEAN value {value!r}."
-            )
-
-        return value
+        return convert_value(value, field_type)
