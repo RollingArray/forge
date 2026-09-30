@@ -58,6 +58,34 @@ class GenerationCheckpointStore:
 
         temporary_path.replace(path)
 
+    def get_committed_rows(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        """Return the durably committed row count for an entity."""
+        checkpoint = self.get(job_id)
+
+        if checkpoint is None:
+            return 0
+
+        entity = (
+            checkpoint.get("entities", {})
+            .get(entity_name, {})
+        )
+
+        committed_rows = entity.get(
+            "committed_rows",
+            0,
+        )
+
+        return (
+            committed_rows
+            if isinstance(committed_rows, int) and committed_rows >= 0
+            else 0
+        )
+
     def is_chunk_committed(
         self,
         *,

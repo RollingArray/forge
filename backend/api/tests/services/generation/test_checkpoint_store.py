@@ -138,3 +138,40 @@ def test_is_chunk_committed_returns_false_when_checkpoint_is_missing(
         entity_name="PRODUCT",
         chunk_number=1,
     )
+
+
+def test_get_committed_rows_returns_durable_entity_progress(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    store = GenerationCheckpointStore()
+
+    monkeypatch.setattr(
+        store,
+        "_root",
+        tmp_path,
+    )
+
+    store.save(
+        job_id="FORGE-TEST",
+        seed=42,
+        entities={
+            "PRODUCT": {
+                "target_rows": 1000,
+                "chunk_size": 50,
+                "total_chunks": 20,
+                "committed_chunks": [1, 2, 3, 4, 5, 6],
+                "committed_rows": 300,
+            },
+        },
+    )
+
+    assert store.get_committed_rows(
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+    ) == 300
+
+    assert store.get_committed_rows(
+        job_id="FORGE-TEST",
+        entity_name="CUSTOMER",
+    ) == 0
