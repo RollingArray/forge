@@ -38,17 +38,31 @@ class GenerationContext:
         default_factory=dict,
     )
 
+    semantic_values_by_chunk: dict[
+        tuple[str, str, int],
+        list[str],
+    ] = field(
+        default_factory=dict,
+    )
+
     def add_semantic_values(
         self,
         *,
         entity_name: str,
         field_name: str,
         values: list[str],
+        chunk_number: int | None = None,
     ) -> None:
         """Register semantic values prepared for a field."""
 
-        self.semantic_values_by_field[
-            (entity_name, field_name)
+        if chunk_number is None:
+            self.semantic_values_by_field[
+                (entity_name, field_name)
+            ] = list(values)
+            return
+
+        self.semantic_values_by_chunk[
+            (entity_name, field_name, chunk_number)
         ] = list(values)
 
     def get_semantic_values(
@@ -56,11 +70,18 @@ class GenerationContext:
         *,
         entity_name: str,
         field_name: str,
+        chunk_number: int | None = None,
     ) -> list[str]:
         """Return semantic values prepared for a field."""
 
-        return self.semantic_values_by_field.get(
-            (entity_name, field_name),
+        if chunk_number is None:
+            return self.semantic_values_by_field.get(
+                (entity_name, field_name),
+                [],
+            )
+
+        return self.semantic_values_by_chunk.get(
+            (entity_name, field_name, chunk_number),
             [],
         )
 

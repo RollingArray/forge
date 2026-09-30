@@ -39,6 +39,7 @@ class EntityGenerator:
         context: GenerationContext,
         chunk_size: int = 50,
         start_chunk: int = 1,
+        on_chunk_start: Callable[[str, int, int, int], None] | None = None,
         on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
     ) -> int:
         """Generate the configured population in bounded execution chunks."""
@@ -91,6 +92,14 @@ class EntityGenerator:
                 target_rows,
             )
 
+            if on_chunk_start is not None:
+                on_chunk_start(
+                    entity_name,
+                    chunk_number,
+                    chunk_start,
+                    chunk_end,
+                )
+
             identity_rows = self._allocate_fk_identity(
                 target_rows=target_rows,
                 row_start=chunk_start,
@@ -99,6 +108,15 @@ class EntityGenerator:
                 foreign_keys=foreign_keys,
                 context=context,
                 fields=fields,
+            )
+
+            self._prepare_chunk_semantic_values(
+                entity_name=entity_name,
+                fields=fields,
+                context=context,
+                chunk_number=chunk_number,
+                chunk_start=chunk_start,
+                chunk_end=chunk_end,
             )
 
             chunk_rows: list[dict[str, Any]] = []
@@ -112,6 +130,7 @@ class EntityGenerator:
                     foreign_keys=foreign_keys,
                     context=context,
                     row_number=row_index + 1,
+                    chunk_number=chunk_number,
                     initial_values=identity_rows[local_index],
                 )
 
@@ -135,6 +154,49 @@ class EntityGenerator:
                 )
 
         return generated_rows
+
+    @staticmethod
+    def _prepare_chunk_semantic_values(
+        *,
+        entity_name: str,
+        fields: list[dict[str, Any]],
+        context: GenerationContext,
+        chunk_number: int,
+        chunk_start: int,
+        chunk_end: int,
+    ) -> None:
+        """Prepare the semantic values needed by the current chunk."""
+
+        for field in fields:
+            generation = field.get("generation") or {}
+
+            if generation.get("generator") != "SEMANTIC":
+                continue
+
+            parameters = generation.get("parameters") or {}
+            mode = str(
+                parameters.get("mode", "")
+            ).strip().upper()
+
+            if mode != "UNIQUE":
+                continue
+
+            values = context.get_semantic_values(
+                entity_name=entity_name,
+                field_name=field["name"],
+            )
+
+            if not values:
+                continue
+
+            chunk_values = values[chunk_start:chunk_end]
+
+            context.add_semantic_values(
+                entity_name=entity_name,
+                field_name=field["name"],
+                values=chunk_values,
+                chunk_number=chunk_number,
+            )
 
     @staticmethod
     def _identity_fields(

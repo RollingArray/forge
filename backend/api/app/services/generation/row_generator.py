@@ -35,6 +35,7 @@ class RowGenerator:
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
         row_number: int,
+        chunk_number: int | None = None,
         initial_values: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -100,6 +101,11 @@ class RowGenerator:
                     semantic_values = context.get_semantic_values(
                         entity_name=entity_name,
                         field_name=field_name,
+                        chunk_number=(
+                            chunk_number
+                            if mode == "UNIQUE"
+                            else None
+                        ),
                     )
 
                     if not semantic_values:
@@ -109,7 +115,13 @@ class RowGenerator:
                         )
 
                     if mode == "UNIQUE":
-                        value_index = row_number - 1
+                        if chunk_number is not None:
+                            value_index = (
+                                (row_number - 1)
+                                % len(semantic_values)
+                            )
+                        else:
+                            value_index = row_number - 1
 
                         if value_index >= len(semantic_values):
                             raise RowGenerationError(

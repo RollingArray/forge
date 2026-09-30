@@ -54,6 +54,27 @@ class FakeSemanticStore:
             (entity_name, field_name)
         )
 
+    def append_unique(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        field_name: str,
+        values: list[str],
+    ) -> None:
+        current = self.persisted.get((entity_name, field_name))
+
+        if current is None:
+            self.persisted[(entity_name, field_name)] = {
+                "entity_name": entity_name,
+                "field_name": field_name,
+                "mode": "UNIQUE",
+                "values": list(values),
+            }
+            return
+
+        current["values"].extend(values)
+
     def save(
         self,
         *,
@@ -140,15 +161,12 @@ def test_executor_persists_ai_generated_semantic_values(
         job_id="FORGE-SEMANTIC-TEST",
     )
 
-    assert semantic_store.saved == [
-        {
-            "job_id": "FORGE-SEMANTIC-TEST",
-            "entity_name": "PRODUCT",
-            "field_name": "PRODUCT_NAME",
-            "mode": "UNIQUE",
-            "values": semantic_values,
-        },
-    ]
+    assert semantic_store.persisted[("PRODUCT", "PRODUCT_NAME")] == {
+        "entity_name": "PRODUCT",
+        "field_name": "PRODUCT_NAME",
+        "mode": "UNIQUE",
+        "values": semantic_values,
+    }
 
 
 class FakeCheckpointStore:
@@ -714,7 +732,8 @@ def test_executor_resumes_partial_entity_from_checkpoint() -> None:
     assert result.context.get_semantic_values(
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
-    ) == semantic_values
+        chunk_number=3,
+    ) == semantic_values[100:125]
 
 
 def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):

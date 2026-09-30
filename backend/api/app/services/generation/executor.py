@@ -351,104 +351,95 @@ class GenerationExecutor:
 
             is_resuming = start_chunk > 1
 
+            # VOCABULARY semantic values are prepared once per entity.
+            # UNIQUE values are prepared per generation chunk below.
             for field in entity.get("fields", []):
-                    generation = field.get("generation") or {}
+                generation = field.get("generation") or {}
 
-                    if generation.get("generator") != "SEMANTIC":
-                        continue
+                if generation.get("generator") != "SEMANTIC":
+                    continue
 
-                    parameters = generation.get("parameters") or {}
-                    description = parameters.get("description")
-                    mode = parameters.get("mode")
+                parameters = generation.get("parameters") or {}
+                description = parameters.get("description")
+                mode = parameters.get("mode")
 
-                    if not isinstance(description, str) or not description.strip():
+                if not isinstance(description, str) or not description.strip():
+                    raise GenerationExecutionError(
+                        f"Semantic field {entity_name}.{field['name']} "
+                        "is missing a valid description."
+                    )
+
+                if not isinstance(mode, str) or not mode.strip():
+                    raise GenerationExecutionError(
+                        f"Semantic field {entity_name}.{field['name']} "
+                        "is missing a valid mode."
+                    )
+
+                normalized_mode = mode.strip().upper()
+
+                if normalized_mode == "UNIQUE":
+                    continue
+
+                if normalized_mode != "VOCABULARY":
+                    raise GenerationExecutionError(
+                        f"Unsupported semantic generation mode "
+                        f"{mode!r} for "
+                        f"{entity_name}.{field['name']}."
+                    )
+
+                persisted = self._semantic_store.get(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    field_name=field["name"],
+                )
+
+                if persisted is not None:
+                    semantic_values = persisted.get("values", [])
+
+                    if (
+                        persisted.get("mode") != normalized_mode
+                        or len(semantic_values) != SEMANTIC_VOCABULARY_SIZE
+                    ):
                         raise GenerationExecutionError(
-                            f"Semantic field {entity_name}.{field['name']} "
-                            "is missing a valid description."
-                        )
-
-                    if not isinstance(mode, str) or not mode.strip():
-                        raise GenerationExecutionError(
-                            f"Semantic field {entity_name}.{field['name']} "
-                            "is missing a valid mode."
-                        )
-
-                    normalized_mode = mode.strip().upper()
-
-                    if normalized_mode == "UNIQUE":
-                        requested_count = target_rows
-                    elif normalized_mode == "VOCABULARY":
-                        requested_count = SEMANTIC_VOCABULARY_SIZE
-                    else:
-                        raise GenerationExecutionError(
-                            f"Unsupported semantic generation mode "
-                            f"{mode!r} for "
+                            f"Persisted semantic state is invalid for "
                             f"{entity_name}.{field['name']}."
                         )
-
-                    if is_resuming:
-                        persisted = self._semantic_store.get(
-                            job_id=job_id,
-                            entity_name=entity_name,
-                            field_name=field["name"],
+                else:
+                    if self._ai_service is None:
+                        raise GenerationExecutionError(
+                            f"Semantic generation requires an AI service "
+                            f"for {entity_name}.{field['name']}."
                         )
 
-                        if persisted is None:
-                            raise GenerationExecutionError(
-                                f"Persisted semantic state is missing for "
-                                f"resumed field "
-                                f"{entity_name}.{field['name']}."
-                            )
-
-                        semantic_values = persisted.get(
-                            "values",
-                            [],
-                        )
-
-                        if (
-                            persisted.get("mode") != normalized_mode
-                            or len(semantic_values) != requested_count
-                        ):
-                            raise GenerationExecutionError(
-                                f"Persisted semantic state is invalid for "
-                                f"{entity_name}.{field['name']}."
-                            )
-                    else:
-                        if self._ai_service is None:
-                            raise GenerationExecutionError(
-                                f"Semantic generation requires an AI service "
-                                f"for {entity_name}.{field['name']}."
-                            )
-
-                        semantic_values = (
-                            self._ai_service.generate_semantic_values(
-                                description=description,
-                                mode=normalized_mode,
-                                count=requested_count,
-                            )
-                        )
-
-                        if len(semantic_values) != requested_count:
-                            raise GenerationExecutionError(
-                                f"Semantic generation for "
-                                f"{entity_name}.{field['name']} returned "
-                                f"{len(semantic_values)} values; "
-                                f"expected {requested_count}."
-                            )
-
-                        self._semantic_store.save(
-                            job_id=job_id,
-                            entity_name=entity_name,
-                            field_name=field["name"],
+                    semantic_values = (
+                        self._ai_service.generate_semantic_values(
+                            description=description,
                             mode=normalized_mode,
-                            values=semantic_values,
+                            count=SEMANTIC_VOCABULARY_SIZE,
+                        )
+                    )
+
+                    if len(semantic_values) != SEMANTIC_VOCABULARY_SIZE:
+                        raise GenerationExecutionError(
+                            f"Semantic generation for "
+                            f"{entity_name}.{field['name']} returned "
+                            f"{len(semantic_values)} values; "
+                            f"expected {SEMANTIC_VOCABULARY_SIZE}."
                         )
 
-                    context.add_semantic_values(
+                    self._semantic_store.save(
+                        job_id=job_id,
                         entity_name=entity_name,
                         field_name=field["name"],
+                        mode=normalized_mode,
                         values=semantic_values,
                     )
+
+                context.add_semantic_values(
+                    entity_name=entity_name,
+                    field_name=field["name"],
+                    values=semantic_values,
+                )
 
             if is_resuming:
                 identity_fields = tuple(
@@ -474,6 +465,109 @@ class GenerationExecutor:
             generator = EntityGenerator(
                 seed=self._seed,
             )
+
+            def handle_chunk_start(
+                completed_entity_name: str,
+                chunk_number: int,
+                chunk_start: int,
+                chunk_end: int,
+            ) -> None:
+                for field in entity.get("fields", []):
+                    generation = field.get("generation") or {}
+
+                    if generation.get("generator") != "SEMANTIC":
+                        continue
+
+                    parameters = generation.get("parameters") or {}
+                    mode = str(
+                        parameters.get("mode", "")
+                    ).strip().upper()
+
+                    if mode != "UNIQUE":
+                        continue
+
+                    field_name = field["name"]
+                    description = parameters.get("description")
+
+                    if (
+                        not isinstance(description, str)
+                        or not description.strip()
+                    ):
+                        raise GenerationExecutionError(
+                            f"Semantic field {entity_name}.{field_name} "
+                            "is missing a valid description."
+                        )
+
+                    required_end = chunk_end
+                    persisted = self._semantic_store.get(
+                        job_id=job_id,
+                        entity_name=entity_name,
+                        field_name=field_name,
+                    )
+
+                    persisted_values = (
+                        persisted.get("values", [])
+                        if persisted is not None
+                        else []
+                    )
+
+                    if persisted is not None and persisted.get("mode") != "UNIQUE":
+                        raise GenerationExecutionError(
+                            f"Persisted semantic state is invalid for "
+                            f"{entity_name}.{field_name}."
+                        )
+
+                    if len(persisted_values) < required_end:
+                        missing_count = required_end - len(persisted_values)
+
+                        if self._ai_service is None:
+                            raise GenerationExecutionError(
+                                f"Semantic generation requires an AI service "
+                                f"for {entity_name}.{field_name}."
+                            )
+
+                        semantic_batch = (
+                            self._ai_service.generate_semantic_values(
+                                description=description,
+                                mode="UNIQUE",
+                                count=missing_count,
+                            )
+                        )
+
+                        if len(semantic_batch) != missing_count:
+                            raise GenerationExecutionError(
+                                f"Semantic generation for "
+                                f"{entity_name}.{field_name} returned "
+                                f"{len(semantic_batch)} values; "
+                                f"expected {missing_count}."
+                            )
+
+                        self._semantic_store.append_unique(
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field_name,
+                            values=semantic_batch,
+                        )
+
+                        persisted_values = [
+                            *persisted_values,
+                            *semantic_batch,
+                        ]
+
+                    chunk_values = persisted_values[chunk_start:chunk_end]
+
+                    if len(chunk_values) != chunk_end - chunk_start:
+                        raise GenerationExecutionError(
+                            f"Semantic state is incomplete for "
+                            f"{entity_name}.{field_name}."
+                        )
+
+                    context.add_semantic_values(
+                        entity_name=entity_name,
+                        field_name=field_name,
+                        values=chunk_values,
+                        chunk_number=chunk_number,
+                    )
 
             def handle_chunk_completed(
                 completed_entity_name: str,
@@ -507,6 +601,7 @@ class GenerationExecutor:
                     ),
                     context=context,
                     start_chunk=start_chunk,
+                    on_chunk_start=handle_chunk_start,
                     on_chunk_completed=handle_chunk_completed,
                 )
             except Exception as exc:
@@ -529,10 +624,14 @@ class GenerationExecutor:
                 flush=True,
             )
 
-            durable_generated_rows = self._get_durable_generated_rows(
-                job_id=job_id,
-                entity_name=entity_name,
-                generated_rows=generated_rows,
+            durable_generated_rows = (
+                self._get_durable_generated_rows(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    generated_rows=generated_rows,
+                )
+                if is_resuming
+                else generated_rows
             )
 
             entity_run = GenerationEntityRun(
