@@ -1247,116 +1247,123 @@ class OllamaAIProvider(AIProvider):
                 "Semantic generation count must be greater than zero.",
             )
 
-        request_payload = {
-            "model": self._model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": SEMANTIC_GENERATION_SYSTEM_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Mode: {normalized_mode}\n"
-                        f"Count: {count}\n"
-                        f"Description: {normalized_description}"
-                    ),
-                },
-            ],
-            "stream": False,
-            "format": {
-                "type": "object",
-                "properties": {
-                    "values": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
+        collected_values: list[str] = []
+        collected_set: set[str] = set()
+
+        while len(collected_values) < count:
+            remaining = count - len(collected_values)
+
+            request_payload = {
+                "model": self._model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": SEMANTIC_GENERATION_SYSTEM_PROMPT,
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Mode: {normalized_mode}\\n"
+                            f"Count: {remaining}\\n"
+                            f"Description: {normalized_description}"
+                        ),
+                    },
+                ],
+                "stream": False,
+                "format": {
+                    "type": "object",
+                    "properties": {
+                        "values": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                            },
                         },
                     },
+                    "required": ["values"],
                 },
-                "required": ["values"],
-            },
-        }
+            }
 
-        request = Request(
-            f"{self._base_url}/api/chat",
-            data=json.dumps(request_payload).encode("utf-8"),
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
+            request = Request(
+                f"{self._base_url}/api/chat",
+                data=json.dumps(request_payload).encode("utf-8"),
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
 
-        try:
-            with urlopen(
-                request,
-                timeout=self._generation_timeout_seconds,
-            ) as response:
-                payload = json.loads(
-                    response.read().decode("utf-8"),
+            try:
+                with urlopen(
+                    request,
+                    timeout=self._generation_timeout_seconds,
+                ) as response:
+                    payload = json.loads(
+                        response.read().decode("utf-8"),
+                    )
+            except (OSError, URLError) as exc:
+                raise RuntimeError(
+                    "FORGE AI could not reach the configured Ollama provider.",
+                ) from exc
+
+            message = payload.get("message")
+
+            if not isinstance(message, dict):
+                raise RuntimeError(
+                    "FORGE AI returned an invalid chat response.",
                 )
-        except (OSError, URLError) as exc:
-            raise RuntimeError(
-                "FORGE AI could not reach the configured Ollama provider.",
-            ) from exc
 
-        message = payload.get("message")
+            raw_response = message.get("content")
 
-        if not isinstance(message, dict):
-            raise RuntimeError(
-                "FORGE AI returned an invalid chat response.",
-            )
+            if not isinstance(raw_response, str) or not raw_response.strip():
+                raise RuntimeError(
+                    "FORGE AI returned an empty semantic generation response.",
+                )
 
-        raw_response = message.get("content")
+            try:
+                result = json.loads(raw_response)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    "FORGE AI returned invalid semantic generation JSON.",
+                ) from exc
 
-        if not isinstance(raw_response, str) or not raw_response.strip():
-            raise RuntimeError(
-                "FORGE AI returned an empty semantic generation response.",
-            )
+            if not isinstance(result, dict):
+                raise RuntimeError(
+                    "FORGE AI returned an invalid semantic generation structure.",
+                )
 
-        try:
-            result = json.loads(raw_response)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                "FORGE AI returned invalid semantic generation JSON.",
-            ) from exc
+            values = result.get("values")
 
-        if not isinstance(result, dict):
-            raise RuntimeError(
-                "FORGE AI returned an invalid semantic generation structure.",
-            )
+            if not isinstance(values, list):
+                raise RuntimeError(
+                    "FORGE AI semantic generation did not return a values list.",
+                )
 
-        values = result.get("values")
+            if not all(
+                isinstance(value, str) and value.strip()
+                for value in values
+            ):
+                raise RuntimeError(
+                    "FORGE AI semantic generation returned invalid STRING values.",
+                )
 
-        if not isinstance(values, list):
-            raise RuntimeError(
-                "FORGE AI semantic generation did not return a values list.",
-            )
+            for value in values:
+                normalized_value = value.strip()
 
-        if not all(
-            isinstance(value, str) and value.strip()
-            for value in values
-        ):
-            raise RuntimeError(
-                "FORGE AI semantic generation returned invalid STRING values.",
-            )
+                if normalized_value not in collected_set:
+                    collected_set.add(normalized_value)
+                    collected_values.append(normalized_value)
 
-        normalized_values = [
-            value.strip()
-            for value in values
-        ]
+                    if len(collected_values) == count:
+                        break
 
-        if len(normalized_values) != count:
-            raise RuntimeError(
-                "FORGE AI semantic generation returned "
-                f"{len(normalized_values)} values; expected {count}.",
-            )
+            if not values:
+                raise RuntimeError(
+                    "FORGE AI semantic generation returned no usable values.",
+                )
 
-        if len(set(normalized_values)) != len(normalized_values):
-            raise RuntimeError(
-                "FORGE AI semantic generation returned duplicate values.",
-            )
+        normalized_values = collected_values[:count]
 
         return normalized_values
 

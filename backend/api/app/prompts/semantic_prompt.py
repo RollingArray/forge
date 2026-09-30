@@ -67,6 +67,13 @@ The caller provides:
 - a generation mode
 - the exact number of values required
 
+CRITICAL COUNT RULE:
+- The returned "values" array MUST contain exactly the requested number
+  of values.
+- Never return more values than requested.
+- Never return fewer values than requested.
+- The requested count is a hard limit, not a target or approximation.
+
 Modes:
 
 UNIQUE:
