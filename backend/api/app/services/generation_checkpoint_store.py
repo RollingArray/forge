@@ -58,6 +58,31 @@ class GenerationCheckpointStore:
 
         temporary_path.replace(path)
 
+    def is_chunk_committed(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        chunk_number: int,
+    ) -> bool:
+        """Return whether a specific chunk is durably committed."""
+        checkpoint = self.get(job_id)
+
+        if checkpoint is None:
+            return False
+
+        entity = (
+            checkpoint.get("entities", {})
+            .get(entity_name, {})
+        )
+
+        committed_chunks = entity.get(
+            "committed_chunks",
+            [],
+        )
+
+        return chunk_number in committed_chunks
+
     def get(
         self,
         job_id: str,

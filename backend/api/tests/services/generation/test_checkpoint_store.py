@@ -74,3 +74,67 @@ def test_checkpoint_preserves_non_contiguous_committed_chunks(
     assert checkpoint["entities"]["CUSTOMER"][
         "committed_chunks"
     ] == [1, 2, 5]
+
+
+def test_is_chunk_committed_uses_durable_chunk_identity(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    store = GenerationCheckpointStore()
+
+    monkeypatch.setattr(
+        store,
+        "_root",
+        tmp_path,
+    )
+
+    store.save(
+        job_id="FORGE-TEST",
+        seed=42,
+        entities={
+            "PRODUCT": {
+                "target_rows": 250,
+                "chunk_size": 50,
+                "total_chunks": 5,
+                "committed_chunks": [1, 2, 4],
+                "committed_rows": 150,
+            },
+        },
+    )
+
+    assert store.is_chunk_committed(
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        chunk_number=1,
+    )
+
+    assert not store.is_chunk_committed(
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        chunk_number=3,
+    )
+
+    assert store.is_chunk_committed(
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        chunk_number=4,
+    )
+
+
+def test_is_chunk_committed_returns_false_when_checkpoint_is_missing(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    store = GenerationCheckpointStore()
+
+    monkeypatch.setattr(
+        store,
+        "_root",
+        tmp_path,
+    )
+
+    assert not store.is_chunk_committed(
+        job_id="FORGE-MISSING",
+        entity_name="PRODUCT",
+        chunk_number=1,
+    )
