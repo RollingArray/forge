@@ -61,14 +61,6 @@ class EntityGenerator:
             fields=fields,
         )
 
-        identity_rows = self._allocate_fk_identity(
-            target_rows=target_rows,
-            identity_fields=identity_fields,
-            foreign_keys=foreign_keys,
-            context=context,
-            fields=fields,
-        )
-
         total_chunks = (
             (target_rows + chunk_size - 1) // chunk_size
             if target_rows > 0
@@ -86,16 +78,28 @@ class EntityGenerator:
                 target_rows,
             )
 
+            identity_rows = self._allocate_fk_identity(
+                target_rows=target_rows,
+                row_start=chunk_start,
+                row_count=chunk_end - chunk_start,
+                identity_fields=identity_fields,
+                foreign_keys=foreign_keys,
+                context=context,
+                fields=fields,
+            )
+
             chunk_rows: list[dict[str, Any]] = []
 
-            for row_index in range(chunk_start, chunk_end):
+            for local_index, row_index in enumerate(
+                range(chunk_start, chunk_end)
+            ):
                 row = self._row_generator.generate_row(
                     entity_name=entity_name,
                     fields=fields,
                     foreign_keys=foreign_keys,
                     context=context,
                     row_number=row_index + 1,
-                    initial_values=identity_rows[row_index],
+                    initial_values=identity_rows[local_index],
                 )
 
                 chunk_rows.append(row)
@@ -148,15 +152,17 @@ class EntityGenerator:
         self,
         *,
         target_rows: int,
+        row_start: int,
+        row_count: int,
         identity_fields: tuple[str, ...],
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
         fields: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
-        """Allocate unique identity values without materializing the full Cartesian product."""
+        """Allocate only the identity values required for one generation chunk."""
 
-        if target_rows == 0 or not identity_fields:
-            return [{} for _ in range(target_rows)]
+        if row_count == 0 or not identity_fields:
+            return [{} for _ in range(row_count)]
 
         fields_by_name = {
             field["name"]: field
@@ -253,10 +259,7 @@ class EntityGenerator:
             )
 
             components.append(
-                ((field_name,), [
-                    (value,)
-                    for value in values
-                ])
+                ((field_name,), values)
             )
 
             covered_fields.add(field_name)
@@ -287,10 +290,10 @@ class EntityGenerator:
         if not components:
             return [{} for _ in range(target_rows)]
 
-        # Select unique positions in the Cartesian product without
-        # materializing the complete product.
         selected_indexes = self._select_cartesian_indexes(
             candidate_count=candidate_count,
+            row_start=row_start,
+            row_count=row_count,
             target_rows=target_rows,
         )
 
@@ -313,9 +316,17 @@ class EntityGenerator:
 
                 key = values[value_index]
 
+                if len(component_fields) == 1 and not isinstance(
+                    key,
+                    tuple,
+                ):
+                    key_values = (key,)
+                else:
+                    key_values = key
+
                 for field, value in zip(
                     component_fields,
-                    key,
+                    key_values,
                     strict=True,
                 ):
                     row[field] = value
@@ -328,17 +339,49 @@ class EntityGenerator:
         self,
         *,
         candidate_count: int,
+        row_start: int,
+        row_count: int,
         target_rows: int,
     ) -> list[int]:
-        """Select unique Cartesian-product positions deterministically."""
+        """Select unique Cartesian positions for the requested chunk."""
+
+        if row_count == 0:
+            return []
 
         if target_rows >= candidate_count:
-            return list(range(candidate_count))
+            return list(
+                range(
+                    row_start,
+                    row_start + row_count,
+                )
+            )
 
-        return self._random.sample(
-            range(candidate_count),
-            target_rows,
-        )
+        multiplier = self._permutation_multiplier(candidate_count)
+        offset = self._random.randrange(candidate_count)
+
+        return [
+            (offset + multiplier * row_index) % candidate_count
+            for row_index in range(
+                row_start,
+                row_start + row_count,
+            )
+        ]
+
+    @staticmethod
+    def _permutation_multiplier(candidate_count: int) -> int:
+        """Return a multiplier coprime with the candidate-space size."""
+
+        if candidate_count <= 1:
+            return 1
+
+        from math import gcd
+
+        multiplier = candidate_count - 1
+
+        while gcd(multiplier, candidate_count) != 1:
+            multiplier -= 1
+
+        return multiplier
 
     @staticmethod
     def _local_identity_values(
@@ -359,7 +402,7 @@ class EntityGenerator:
             field.get("type") == "IDENTIFIER"
             and identity_strategy == "SEQUENTIAL_ID"
         ):
-            return list(range(1, target_rows + 1))
+            return range(1, target_rows + 1)
 
         if (
             generation_strategy == "RANDOM"
