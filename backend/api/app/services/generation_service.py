@@ -20,6 +20,10 @@ from app.services.generation_planner import GenerationPlanner
 from app.services.generation.executor import GenerationExecutor
 from app.services.generation.validator import GenerationValidator
 from app.services.generation.run_service import GenerationRunService
+from app.services.generation_checkpoint_store import (
+    GenerationCheckpointStore,
+)
+from app.services.generation_job_store import GenerationJobStore
 from app.services.specification_service import SpecificationService
 
 
@@ -45,6 +49,8 @@ class GenerationService:
         )
         self._generation_run_service = generation_run_service
         self._ai_service = ai_service
+        self._job_store = GenerationJobStore()
+        self._checkpoint_store = GenerationCheckpointStore()
         self._jobs: dict[str, GenerationJobResponse] = {}
 
     def get_readiness(
@@ -161,6 +167,7 @@ class GenerationService:
         )
 
         self._jobs[job_id] = job
+        self._job_store.save(job)
 
         return job
 
@@ -194,12 +201,29 @@ class GenerationService:
 
         job.status = GenerationJobStatus.PLANNING
         job.started_at = datetime.now(timezone.utc)
+        self._job_store.save(job)
 
         plan = self._generation_planner.build(
             specification=specification,
         )
 
         job.status = GenerationJobStatus.RUNNING
+        self._job_store.save(job)
+
+        self._checkpoint_store.save(
+            job_id=job.job_id,
+            seed=specification.get("generation", {}).get("seed", 42),
+            entities={
+                entity.entity_name: {
+                    "target_rows": entity.target_rows,
+                    "chunk_size": entity.chunk_size,
+                    "total_chunks": entity.total_chunks,
+                    "committed_chunks": [],
+                    "committed_rows": 0,
+                }
+                for entity in job.entities
+            },
+        )
 
         return job
 
@@ -229,6 +253,7 @@ class GenerationService:
             job.status = GenerationJobStatus.FAILED
             job.error = "Data model not found."
             job.completed_at = datetime.now(timezone.utc)
+            self._job_store.save(job)
             return
 
         try:
@@ -249,7 +274,7 @@ class GenerationService:
 
             def on_chunk_completed(
                 entity_name: str,
-                completed_chunks: int,
+                chunk_number: int,
                 total_chunks: int,
                 generated_rows: int,
                 _chunk_rows: list[dict[str, object]],
@@ -257,7 +282,7 @@ class GenerationService:
                 for entity_progress in job.entities:
                     if entity_progress.entity_name == entity_name:
                         entity_progress.generated_rows = generated_rows
-                        entity_progress.completed_chunks = completed_chunks
+                        entity_progress.completed_chunks = chunk_number
                         entity_progress.total_chunks = total_chunks
                         entity_progress.status = (
                             GenerationEntityStatus.RUNNING
@@ -273,6 +298,60 @@ class GenerationService:
                     job.total_generated_rows / job.total_target_rows
                     if job.total_target_rows > 0
                     else 1.0
+                )
+                self._job_store.save(job)
+
+                existing_checkpoint = self._checkpoint_store.get(
+                    job.job_id,
+                ) or {}
+
+                existing_entities = (
+                    existing_checkpoint.get("entities") or {}
+                )
+
+                entities = {}
+
+                for entity in job.entities:
+                    existing_entity = (
+                        existing_entities.get(
+                            entity.entity_name,
+                        ) or {}
+                    )
+
+                    committed_chunks = list(
+                        existing_entity.get(
+                            "committed_chunks",
+                            [],
+                        )
+                    )
+
+                    if (
+                        entity.entity_name == entity_name
+                        and chunk_number not in committed_chunks
+                    ):
+                        committed_chunks.append(chunk_number)
+
+                    committed_chunks.sort()
+
+                    entities[entity.entity_name] = {
+                        "target_rows": entity.target_rows,
+                        "chunk_size": entity.chunk_size,
+                        "total_chunks": entity.total_chunks,
+                        "committed_chunks": committed_chunks,
+                        "committed_rows": (
+                            entity.generated_rows
+                            if entity.entity_name == entity_name
+                            else existing_entity.get(
+                                "committed_rows",
+                                0,
+                            )
+                        ),
+                    }
+
+                self._checkpoint_store.save(
+                    job_id=job.job_id,
+                    seed=seed,
+                    entities=entities,
                 )
 
             def on_entity_completed(entity_run) -> None:
@@ -296,6 +375,7 @@ class GenerationService:
                     if job.total_target_rows > 0
                     else 1.0
                 )
+                self._job_store.save(job)
 
             result = run_service.run(
                 specification=specification,
@@ -346,15 +426,28 @@ class GenerationService:
                     else "Generation validation failed."
                 )
 
+            self._job_store.save(job)
+
         except Exception as exc:
             job.status = GenerationJobStatus.FAILED
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)
+            self._job_store.save(job)
 
     def get_job(
         self,
         job_id: str,
     ) -> GenerationJobResponse | None:
-        """Return a generation job created by this service."""
+        """Return a generation job from memory or persistent storage."""
 
-        return self._jobs.get(job_id)
+        job = self._jobs.get(job_id)
+
+        if job is not None:
+            return job
+
+        job = self._job_store.get(job_id)
+
+        if job is not None:
+            self._jobs[job_id] = job
+
+        return job
