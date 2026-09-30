@@ -1,0 +1,59 @@
+"""
+File: artifact_reader.py
+Purpose: Production-owned FORGE generation artifact reader.
+"""
+
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+from typing import Any, Iterator
+
+
+class GenerationArtifactReader:
+    """Stream committed FORGE generation chunks."""
+
+    def __init__(self) -> None:
+        self._data_directory = (
+            Path(__file__).resolve().parents[3] / "data"
+        )
+
+    def iter_entity_chunks(
+        self,
+        job_id: str,
+        entity_name: str,
+    ) -> Iterator[dict[str, Any]]:
+        """Yield rows from committed entity chunks one row at a time."""
+
+        if not entity_name or "/" in entity_name or "\\" in entity_name:
+            raise ValueError("Invalid entity name.")
+
+        chunks_directory = (
+            self._job_directory(job_id)
+            / "generated"
+            / entity_name
+            / "chunks"
+        )
+
+        for chunk_path in sorted(
+            chunks_directory.glob("chunk_*.csv"),
+        ):
+            with chunk_path.open(
+                "r",
+                newline="",
+                encoding="utf-8",
+            ) as chunk_file:
+                reader = csv.DictReader(chunk_file)
+
+                if reader.fieldnames is None:
+                    raise ValueError(
+                        f"Chunk file has no header: {chunk_path}"
+                    )
+
+                for row in reader:
+                    yield row
+
+    def _job_directory(self, job_id: str) -> Path:
+        """Return the root artifact directory for a generation job."""
+
+        return self._data_directory / "generation" / job_id
