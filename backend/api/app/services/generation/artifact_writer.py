@@ -24,65 +24,6 @@ class GenerationArtifactWriter:
         job_directory.mkdir(parents=True, exist_ok=True)
         return job_directory
 
-    def write_entity(
-        self,
-        job_id: str,
-        entity_name: str,
-        rows: Sequence[dict[str, Any]],
-        chunk_size: int = 50,
-    ) -> int:
-        """Write an entity's rows as chunks and a consolidated CSV file."""
-        if chunk_size <= 0:
-            raise ValueError("chunk_size must be greater than zero.")
-
-        entity_directory = (
-            self._job_directory(job_id)
-            / "generated"
-            / entity_name
-        )
-        chunks_directory = entity_directory / "chunks"
-
-        chunks_directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        if not rows:
-            return 0
-
-        fieldnames = list(rows[0].keys())
-
-        for chunk_number, start in enumerate(
-            range(0, len(rows), chunk_size),
-            start=1,
-        ):
-            chunk_rows = rows[start : start + chunk_size]
-
-            chunk_path = (
-                chunks_directory
-                / f"chunk_{chunk_number:06d}.csv"
-            )
-
-            self._write_csv(
-                chunk_path,
-                fieldnames,
-                chunk_rows,
-            )
-
-        consolidated_path = (
-            self._job_directory(job_id)
-            / "generated"
-            / f"{entity_name}.csv"
-        )
-
-        self._write_csv(
-            consolidated_path,
-            fieldnames,
-            rows,
-        )
-
-        return len(rows)
-
     def write_chunk(
         self,
         job_id: str,
@@ -120,6 +61,78 @@ class GenerationArtifactWriter:
         )
 
         return len(rows)
+
+    def consolidate_entity(
+        self,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        """Build the consolidated entity CSV by streaming committed chunks."""
+        chunks_directory = (
+            self._job_directory(job_id)
+            / "generated"
+            / entity_name
+            / "chunks"
+        )
+
+        chunk_paths = sorted(chunks_directory.glob("chunk_*.csv"))
+
+        consolidated_path = (
+            self._job_directory(job_id)
+            / "generated"
+            / f"{entity_name}.csv"
+        )
+
+        if not chunk_paths:
+            return 0
+
+        total_rows = 0
+        fieldnames: list[str] | None = None
+
+        consolidated_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        with consolidated_path.open(
+            "w",
+            newline="",
+            encoding="utf-8",
+        ) as output_file:
+            writer: csv.DictWriter | None = None
+
+            for chunk_path in chunk_paths:
+                with chunk_path.open(
+                    "r",
+                    newline="",
+                    encoding="utf-8",
+                ) as chunk_file:
+                    reader = csv.DictReader(chunk_file)
+
+                    if reader.fieldnames is None:
+                        raise ValueError(
+                            f"Chunk file has no header: {chunk_path}"
+                        )
+
+                    if fieldnames is None:
+                        fieldnames = list(reader.fieldnames)
+
+                        writer = csv.DictWriter(
+                            output_file,
+                            fieldnames=fieldnames,
+                        )
+                        writer.writeheader()
+                    elif list(reader.fieldnames) != fieldnames:
+                        raise ValueError(
+                            "Chunk schema mismatch while consolidating "
+                            f"{entity_name}: {chunk_path}"
+                        )
+
+                    for row in reader:
+                        writer.writerow(row)
+                        total_rows += 1
+
+        return total_rows
 
     def get_entity_csv_path(
         self,

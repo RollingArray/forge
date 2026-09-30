@@ -214,10 +214,9 @@ class GenerationExecutor:
 
             generated_rows = len(entity_rows)
 
-            artifact_writer.write_entity(
+            artifact_writer.consolidate_entity(
                 job_id=job_id,
                 entity_name=entity_name,
-                rows=entity_rows,
             )
 
             print(
