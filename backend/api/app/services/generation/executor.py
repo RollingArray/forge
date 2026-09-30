@@ -19,6 +19,7 @@ from app.services.generation_planner import GenerationPlan
 from app.constants.generation import SEMANTIC_VOCABULARY_SIZE
 from app.services.ai_service import AIService
 from app.services.generation_semantic_store import GenerationSemanticStore
+from app.services.generation_checkpoint_store import GenerationCheckpointStore
 
 
 class GenerationExecutionError(RuntimeError):
@@ -34,6 +35,7 @@ class GenerationExecutor:
         seed: int,
         ai_service: AIService | None = None,
         semantic_store: GenerationSemanticStore | None = None,
+        checkpoint_store: GenerationCheckpointStore | None = None,
     ) -> None:
         self._seed = seed
         self._ai_service = ai_service
@@ -42,6 +44,18 @@ class GenerationExecutor:
             if semantic_store is not None
             else GenerationSemanticStore()
         )
+        self._checkpoint_store = (
+            checkpoint_store
+            if checkpoint_store is not None
+            else GenerationCheckpointStore()
+        )
+
+    def has_existing_checkpoint(
+        self,
+        job_id: str,
+    ) -> bool:
+        """Return whether durable execution state already exists."""
+        return self._checkpoint_store.get(job_id) is not None
 
     def execute(
         self,

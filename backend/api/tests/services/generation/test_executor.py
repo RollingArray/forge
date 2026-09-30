@@ -125,3 +125,38 @@ def test_executor_persists_ai_generated_semantic_values(
             "values": semantic_values,
         },
     ]
+
+
+class FakeCheckpointStore:
+    def __init__(self, checkpoint=None) -> None:
+        self.checkpoint = checkpoint
+
+    def get(self, job_id: str):
+        return self.checkpoint
+
+
+def test_executor_detects_existing_checkpoint() -> None:
+    executor = GenerationExecutor(
+        seed=42,
+        checkpoint_store=FakeCheckpointStore(
+            checkpoint={
+                "job_id": "FORGE-TEST",
+                "entities": {},
+            },
+        ),
+    )
+
+    assert executor.has_existing_checkpoint(
+        "FORGE-TEST",
+    )
+
+
+def test_executor_detects_missing_checkpoint() -> None:
+    executor = GenerationExecutor(
+        seed=42,
+        checkpoint_store=FakeCheckpointStore(),
+    )
+
+    assert not executor.has_existing_checkpoint(
+        "FORGE-TEST",
+    )

@@ -268,6 +268,7 @@ class GenerationService:
                 executor=GenerationExecutor(
                     seed=seed,
                     ai_service=self._ai_service,
+                    checkpoint_store=self._checkpoint_store,
                 ),
                 validator=GenerationValidator(),
             )
