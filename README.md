@@ -122,6 +122,37 @@ The framework is being built incrementally with an emphasis on:
 * independent validation
 * reproducibility
 
+For the **production backend API**, from `/Users/e10936535/forge/backend/api`:
+
+```bash
+cd /Users/e10936535/forge/backend/api && python -m uvicorn app.main:app --reload
+```
+
+Then the API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Swagger UI:
+
+```text
+http://localhost:8000/docs
+```
+
+And the FORGE frontend can run separately with:
+
+```bash
+cd /Users/e10936535/forge/frontend && npm start
+```
+
+Then open:
+
+```text
+http://localhost:4200
+```
+
+
 ## License
 
 MIT

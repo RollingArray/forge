@@ -69,6 +69,72 @@ class GenerationSemanticStore:
 
         temporary_path.replace(path)
 
+    def append_unique(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        field_name: str,
+        values: list[str],
+    ) -> None:
+        """Append a UNIQUE semantic batch to existing semantic state."""
+
+        existing = self.get_all(job_id)
+        fields = existing.get("fields", {})
+        key = f"{entity_name}.{field_name}"
+
+        current = fields.get(key)
+
+        if current is None:
+            self.save(
+                job_id=job_id,
+                entity_name=entity_name,
+                field_name=field_name,
+                mode="UNIQUE",
+                values=values,
+            )
+            return
+
+        if current.get("mode") != "UNIQUE":
+            raise ValueError(
+                f"Cannot append UNIQUE values to semantic field {key!r} "
+                f"with mode {current.get('mode')!r}."
+            )
+
+        current_values = current.get("values", [])
+
+        if not isinstance(current_values, list):
+            raise ValueError(
+                f"Persisted semantic values are invalid for {key!r}."
+            )
+
+        fields[key] = {
+            **current,
+            "values": [
+                *current_values,
+                *values,
+            ],
+        }
+
+        path = self._semantic_path(job_id)
+        path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        document = {
+            "schema_version": "1.0",
+            "job_id": job_id,
+            "fields": fields,
+        }
+
+        temporary_path = path.with_suffix(".tmp")
+        temporary_path.write_text(
+            json.dumps(document, indent=2),
+            encoding="utf-8",
+        )
+        temporary_path.replace(path)
+
     def get(
         self,
         *,

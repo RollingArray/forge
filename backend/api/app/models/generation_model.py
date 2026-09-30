@@ -84,6 +84,7 @@ class GenerationJobResponse(BaseModel):
     total_target_rows: int = Field(ge=0)
     total_generated_rows: int = Field(default=0, ge=0)
     progress: float = Field(default=0.0, ge=0.0, le=1.0)
+    elapsed_seconds: float | None = Field(default=None, ge=0)
 
     entities: list[GenerationEntityProgress] = Field(
         default_factory=list,
@@ -101,14 +102,10 @@ class GenerationJobResponse(BaseModel):
         ):
             return None
 
-        elapsed_seconds = (
-            self.completed_at - self.started_at
-        ).total_seconds()
-
-        if elapsed_seconds <= 0:
+        if self.elapsed_seconds is None or self.elapsed_seconds <= 0:
             return None
 
-        return self.total_generated_rows / elapsed_seconds
+        return self.total_generated_rows / self.elapsed_seconds
 
 class GenerationArtifactResponse(BaseModel):
     """One generated CSV artifact."""
