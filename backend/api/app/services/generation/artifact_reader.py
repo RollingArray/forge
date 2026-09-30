@@ -53,6 +53,32 @@ class GenerationArtifactReader:
                 for row in reader:
                     yield row
 
+    def get_entity_key_space(
+        self,
+        job_id: str,
+        entity_name: str,
+        identity_fields: tuple[str, ...],
+    ) -> set[tuple[Any, ...]]:
+        """Build an entity identity key space from committed artifacts."""
+
+        if not identity_fields:
+            return set()
+
+        key_space: set[tuple[Any, ...]] = set()
+
+        for row in self.iter_entity_chunks(
+            job_id,
+            entity_name,
+        ):
+            key_space.add(
+                tuple(
+                    row[field]
+                    for field in identity_fields
+                )
+            )
+
+        return key_space
+
     def _job_directory(self, job_id: str) -> Path:
         """Return the root artifact directory for a generation job."""
 

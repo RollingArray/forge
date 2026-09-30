@@ -124,3 +124,51 @@ def test_iter_entity_chunks_rejects_invalid_entity_name(
                 entity_name=entity_name,
             )
         )
+
+
+def test_get_entity_key_space_reconstructs_identity_keys_from_chunks(
+    tmp_path: Path,
+) -> None:
+    reader = GenerationArtifactReader()
+
+    reader._data_directory = tmp_path
+
+    _write_chunk(
+        root=tmp_path / "generation" / "JOB-1",
+        entity_name="CUSTOMER",
+        chunk_number=1,
+        rows=[
+            {
+                "CUSTOMER_ID": "C001",
+                "NAME": "Alice",
+            },
+            {
+                "CUSTOMER_ID": "C002",
+                "NAME": "Bob",
+            },
+        ],
+    )
+
+    _write_chunk(
+        root=tmp_path / "generation" / "JOB-1",
+        entity_name="CUSTOMER",
+        chunk_number=2,
+        rows=[
+            {
+                "CUSTOMER_ID": "C003",
+                "NAME": "Carol",
+            },
+        ],
+    )
+
+    key_space = reader.get_entity_key_space(
+        job_id="JOB-1",
+        entity_name="CUSTOMER",
+        identity_fields=("CUSTOMER_ID",),
+    )
+
+    assert key_space == {
+        ("C001",),
+        ("C002",),
+        ("C003",),
+    }
