@@ -18,6 +18,7 @@ from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.generation_planner import GenerationPlan
 from app.constants.generation import SEMANTIC_VOCABULARY_SIZE
 from app.services.ai_service import AIService
+from app.services.generation_semantic_store import GenerationSemanticStore
 
 
 class GenerationExecutionError(RuntimeError):
@@ -32,9 +33,15 @@ class GenerationExecutor:
         *,
         seed: int,
         ai_service: AIService | None = None,
+        semantic_store: GenerationSemanticStore | None = None,
     ) -> None:
         self._seed = seed
         self._ai_service = ai_service
+        self._semantic_store = (
+            semantic_store
+            if semantic_store is not None
+            else GenerationSemanticStore()
+        )
 
     def execute(
         self,
@@ -156,6 +163,14 @@ class GenerationExecutor:
                             f"{len(semantic_values)} values; "
                             f"expected {requested_count}."
                         )
+
+                    self._semantic_store.save(
+                        job_id=job_id,
+                        entity_name=entity_name,
+                        field_name=field["name"],
+                        mode=normalized_mode,
+                        values=semantic_values,
+                    )
 
                     context.add_semantic_values(
                         entity_name=entity_name,
