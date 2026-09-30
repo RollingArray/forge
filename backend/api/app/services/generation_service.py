@@ -304,7 +304,7 @@ class GenerationService:
 
                 durable_generated_rows = (
                     previously_committed_rows
-                    + generated_rows
+                    + len(_chunk_rows)
                 )
 
                 for entity_progress in job.entities:
@@ -418,6 +418,7 @@ class GenerationService:
 
             job.status = result.status
             job.total_generated_rows = result.generated_rows
+            job.elapsed_seconds = result.elapsed_seconds
             job.progress = (
                 result.generated_rows / result.requested_rows
                 if result.requested_rows > 0
