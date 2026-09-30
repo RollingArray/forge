@@ -50,7 +50,7 @@ class GenerationRunService:
 
         validation = self._validator.validate(
             specification=specification,
-            context=run.context,
+            job_id=job_id,
         )
 
         entities = [

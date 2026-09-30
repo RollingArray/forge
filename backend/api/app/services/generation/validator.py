@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.services.generation.context import GenerationContext
+from app.services.generation.artifact_reader import GenerationArtifactReader
 
 
 class GenerationValidationError(ValueError):
@@ -56,13 +56,24 @@ class GenerationValidationResult:
 
 
 class GenerationValidator:
-    """Validate generated data against the production specification."""
+    """Validate committed generated artifacts against the specification."""
+
+    def __init__(
+        self,
+        *,
+        artifact_reader: GenerationArtifactReader | None = None,
+    ) -> None:
+        self._artifact_reader = (
+            artifact_reader
+            if artifact_reader is not None
+            else GenerationArtifactReader()
+        )
 
     def validate(
         self,
         *,
         specification: dict[str, Any],
-        context: GenerationContext,
+        job_id: str,
     ) -> GenerationValidationResult:
         errors: list[str] = []
         warnings: list[str] = []
@@ -80,6 +91,14 @@ class GenerationValidator:
             for entity in entities
         }
 
+        field_types = {
+            entity["name"]: {
+                field["name"]: field.get("type")
+                for field in entity.get("fields", [])
+            }
+            for entity in entities
+        }
+
         # ------------------------------------------------------------
         # 1. Population counts
         # ------------------------------------------------------------
@@ -90,10 +109,9 @@ class GenerationValidator:
                 entity.get("population") or {}
             ).get("count", 0)
 
-            actual = len(
-                context.get_rows(
-                    entity_name=entity_name,
-                )
+            actual = self._count_rows(
+                job_id=job_id,
+                entity_name=entity_name,
             )
 
             difference = actual - expected
@@ -148,14 +166,14 @@ class GenerationValidator:
             if not identity_fields:
                 continue
 
-            rows = context.get_rows(
-                entity_name=entity_name,
-            )
-
             seen: set[tuple[Any, ...]] = set()
 
             for row_number, row in enumerate(
-                rows,
+                self._iter_typed_rows(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    field_types=field_types[entity_name],
+                ),
                 start=1,
             ):
                 try:
@@ -209,12 +227,17 @@ class GenerationValidator:
                 )
                 continue
 
-            rows = context.get_rows(
-                entity_name=entity_name,
-            )
+            field_type = field_types.get(
+                entity_name,
+                {},
+            ).get(field_name)
 
             for row_number, row in enumerate(
-                rows,
+                self._iter_typed_rows(
+                    job_id=job_id,
+                    entity_name=entity_name,
+                    field_types=field_types.get(entity_name, {}),
+                ),
                 start=1,
             ):
                 if field_name not in row:
@@ -228,8 +251,15 @@ class GenerationValidator:
                 actual = row[field_name]
 
                 try:
-                    satisfied = predicate(actual, expected)
-                except TypeError as exc:
+                    typed_expected = self._convert_value(
+                        expected,
+                        field_type,
+                    )
+                    satisfied = predicate(
+                        actual,
+                        typed_expected,
+                    )
+                except (TypeError, ValueError) as exc:
                     errors.append(
                         f"{entity_name}.{field_name}: "
                         f"constraint comparison failed at row "
@@ -242,7 +272,8 @@ class GenerationValidator:
                         f"{entity_name}.{field_name}: "
                         f"constraint violated at row "
                         f"{row_number}: "
-                        f"{actual!r} {operator} {expected!r}."
+                        f"{actual!r} {operator} "
+                        f"{typed_expected!r}."
                     )
                     break
 
@@ -260,21 +291,34 @@ class GenerationValidator:
             parent_entity = target["entity"]
             parent_fields = tuple(target["fields"])
 
-            parent_rows = context.get_rows(
-                entity_name=parent_entity,
+            parent_field_types = field_types.get(
+                parent_entity,
+                {},
             )
 
             parent_keys = {
-                tuple(row[field] for field in parent_fields)
-                for row in parent_rows
+                tuple(
+                    row[field]
+                    for field in parent_fields
+                )
+                for row in self._iter_typed_rows(
+                    job_id=job_id,
+                    entity_name=parent_entity,
+                    field_types=parent_field_types,
+                )
             }
 
-            child_rows = context.get_rows(
-                entity_name=child_entity,
+            child_field_types = field_types.get(
+                child_entity,
+                {},
             )
 
             for row_number, row in enumerate(
-                child_rows,
+                self._iter_typed_rows(
+                    job_id=job_id,
+                    entity_name=child_entity,
+                    field_types=child_field_types,
+                ),
                 start=1,
             ):
                 try:
@@ -309,3 +353,72 @@ class GenerationValidator:
             warnings=warnings,
             evidence=evidence,
         )
+
+    def _count_rows(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        return sum(
+            1
+            for _ in self._artifact_reader.iter_entity_chunks(
+                job_id=job_id,
+                entity_name=entity_name,
+            )
+        )
+
+    def _iter_typed_rows(
+        self,
+        *,
+        job_id: str,
+        entity_name: str,
+        field_types: dict[str, Any],
+    ):
+        for row in self._artifact_reader.iter_entity_chunks(
+            job_id=job_id,
+            entity_name=entity_name,
+        ):
+            yield {
+                field_name: self._convert_value(
+                    value,
+                    field_types.get(field_name),
+                )
+                for field_name, value in row.items()
+            }
+
+    @staticmethod
+    def _convert_value(
+        value: Any,
+        field_type: Any,
+    ) -> Any:
+        if value is None:
+            return None
+
+        if not isinstance(value, str):
+            return value
+
+        normalized_type = str(
+            field_type or "STRING"
+        ).strip().upper()
+
+        if normalized_type == "INTEGER":
+            return int(value)
+
+        if normalized_type == "DECIMAL":
+            return float(value)
+
+        if normalized_type == "BOOLEAN":
+            normalized_value = value.strip().lower()
+
+            if normalized_value == "true":
+                return True
+
+            if normalized_value == "false":
+                return False
+
+            raise ValueError(
+                f"Invalid BOOLEAN value {value!r}."
+            )
+
+        return value
