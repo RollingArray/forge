@@ -24,10 +24,13 @@ from app.services.generation_planner import GenerationPlanner
 from app.services.generation.executor import GenerationExecutor
 from app.services.generation.validator import GenerationValidator
 from app.services.generation.run_service import GenerationRunService
+from app.services.generation.quality import GenerationQualityService
+from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation_checkpoint_store import (
     GenerationCheckpointStore,
 )
 from app.services.generation_job_store import GenerationJobStore
+from app.services.generation_quality_store import GenerationQualityStore
 from app.services.specification_service import SpecificationService
 
 
@@ -55,6 +58,7 @@ class GenerationService:
         self._generation_run_service = generation_run_service
         self._ai_service = ai_service
         self._job_store = GenerationJobStore()
+        self._quality_store = GenerationQualityStore()
         self._checkpoint_store = (
             checkpoint_store
             if checkpoint_store is not None
@@ -281,6 +285,9 @@ class GenerationService:
                     checkpoint_store=self._checkpoint_store,
                 ),
                 validator=GenerationValidator(),
+                quality_service=GenerationQualityService(
+                    artifact_reader=GenerationArtifactReader(),
+                ),
             )
 
             def on_chunk_completed(
@@ -465,6 +472,13 @@ class GenerationService:
                 peak_memory_bytes,
                 process.memory_info().rss,
             )
+
+            if result.quality is not None:
+                self._quality_store.save(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    quality=result.quality.model_dump(),
+                )
 
             job.status = result.status
             job.total_generated_rows = result.generated_rows

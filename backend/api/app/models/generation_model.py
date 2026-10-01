@@ -186,6 +186,18 @@ class GenerationValidationSummary(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class GenerationQualityProfile(BaseModel):
+    """Measured quality profile for a completed generation."""
+
+    population_fidelity: dict[str, Any] = Field(default_factory=dict)
+    distribution_fidelity: dict[str, Any] = Field(default_factory=dict)
+    relationship_fidelity: dict[str, Any] = Field(default_factory=dict)
+    identity_space_utilization: dict[str, Any] = Field(default_factory=dict)
+    statistical_fidelity: dict[str, Any] = Field(default_factory=dict)
+    performance: dict[str, Any] = Field(default_factory=dict)
+    validation: dict[str, Any] = Field(default_factory=dict)
+
+
 class GenerationResult(BaseModel):
     data_model_id: str
     job_id: str
@@ -197,4 +209,5 @@ class GenerationResult(BaseModel):
     elapsed_seconds: float = Field(ge=0)
     entities: list[GenerationEntityResult] = Field(default_factory=list)
     validation: GenerationValidationSummary
+    quality: GenerationQualityProfile | None = None
 

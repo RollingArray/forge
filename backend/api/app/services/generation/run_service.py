@@ -7,6 +7,7 @@ from app.models.generation_model import (
     GenerationChunkProgress,
     GenerationEntityResult,
     GenerationJobStatus,
+    GenerationQualityProfile,
     GenerationResult,
     GenerationValidationSummary,
 )
@@ -23,9 +24,11 @@ class GenerationRunService:
         *,
         executor: GenerationExecutor,
         validator: GenerationValidator,
+        quality_service: GenerationQualityService,
     ) -> None:
         self._executor = executor
         self._validator = validator
+        self._quality_service = quality_service
 
     def run(
         self,
@@ -117,6 +120,16 @@ class GenerationRunService:
             else GenerationJobStatus.FAILED
         )
 
+        quality = self._quality_service.build_quality_profile(
+            specification=specification,
+            plan=plan,
+            data_model_id=data_model_id,
+            job_id=job_id,
+            total_generated_rows=run.generated_rows,
+            elapsed_seconds=run.elapsed_seconds,
+            validation=validation_summary.model_dump(),
+        )
+
         return GenerationResult(
             data_model_id=data_model_id,
             job_id=job_id,
@@ -128,4 +141,5 @@ class GenerationRunService:
             elapsed_seconds=run.elapsed_seconds,
             entities=entities,
             validation=validation_summary,
+            quality=GenerationQualityProfile.model_validate(quality),
         )
