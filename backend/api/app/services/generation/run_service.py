@@ -112,6 +112,7 @@ class GenerationRunService:
             error_count=validation.error_count,
             errors=validation.errors,
             warnings=validation.warnings,
+            evidence=validation.evidence.to_dict(),
         )
 
         status = (

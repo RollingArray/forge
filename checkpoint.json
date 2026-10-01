@@ -1,0 +1,159 @@
+{
+  "chunk_size": 50,
+  "entities": {
+    "CUSTOMER": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_rows": 190
+    },
+    "PRODUCT": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "target_rows": 500
+    },
+    "PRODUCT_WAREHOUSE": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_rows": 200
+    },
+    "REGION": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 7
+    },
+    "SALES_CHANNEL": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 5
+    },
+    "SALES_ORDER": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "target_rows": 948
+    },
+    "SALES_ORDER_LINE": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "target_rows": 2276
+    },
+    "SHIPMENT": {
+      "completed_chunks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "target_rows": 854
+    },
+    "WAREHOUSE": {
+      "completed_chunks": [
+        1
+      ],
+      "target_rows": 20
+    }
+  },
+  "job_id": "D6FD172F110B435D80ED1ECA97B62593",
+  "schema_version": 1,
+  "seed": 20260928,
+  "specification_hash": "78216c5eac2621088ee6204399f5e2bab993a011ee7a2f1bdc5e67856fb65755",
+  "updated_at": "2026-10-01T16:21:25.493790+00:00"
+}

@@ -31,6 +31,7 @@ from app.services.generation_checkpoint_store import (
 )
 from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_quality_store import GenerationQualityStore
+from app.services.generation_validation_store import GenerationValidationStore
 from app.services.specification_service import SpecificationService
 
 
@@ -59,6 +60,7 @@ class GenerationService:
         self._ai_service = ai_service
         self._job_store = GenerationJobStore()
         self._quality_store = GenerationQualityStore()
+        self._validation_store = GenerationValidationStore()
         self._checkpoint_store = (
             checkpoint_store
             if checkpoint_store is not None
@@ -471,6 +473,21 @@ class GenerationService:
             peak_memory_bytes = max(
                 peak_memory_bytes,
                 process.memory_info().rss,
+            )
+
+            self._validation_store.save(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                validation={
+                    "valid": result.validation.valid,
+                    "entity_count": result.validation.entity_count,
+                    "expected_rows": result.validation.expected_rows,
+                    "generated_rows": result.validation.generated_rows,
+                    "error_count": result.validation.error_count,
+                    "errors": result.validation.errors,
+                    "warnings": result.validation.warnings,
+                    "evidence": result.validation.evidence,
+                },
             )
 
             if result.quality is not None:

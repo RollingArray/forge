@@ -184,6 +184,7 @@ class GenerationValidationSummary(BaseModel):
     error_count: int = Field(ge=0)
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    evidence: dict[str, Any] = Field(default_factory=dict)
 
 
 class GenerationQualityProfile(BaseModel):
