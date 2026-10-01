@@ -91,13 +91,11 @@ def test_is_chunk_committed_uses_durable_chunk_identity(
     store.save(
         job_id="FORGE-TEST",
         seed=42,
+        chunk_size=50,
         entities={
             "PRODUCT": {
                 "target_rows": 250,
-                "chunk_size": 50,
-                "total_chunks": 5,
-                "committed_chunks": [1, 2, 4],
-                "committed_rows": 150,
+                "completed_chunks": [1, 2, 4],
             },
         },
     )
@@ -155,13 +153,11 @@ def test_get_committed_rows_returns_durable_entity_progress(
     store.save(
         job_id="FORGE-TEST",
         seed=42,
+        chunk_size=50,
         entities={
             "PRODUCT": {
                 "target_rows": 1000,
-                "chunk_size": 50,
-                "total_chunks": 20,
-                "committed_chunks": [1, 2, 3, 4, 5, 6],
-                "committed_rows": 300,
+                "completed_chunks": [1, 2, 3, 4, 5, 6],
             },
         },
     )
