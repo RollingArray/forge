@@ -204,19 +204,30 @@ class GenerationService:
         job.status = GenerationJobStatus.RUNNING
         self._job_store.save(job)
 
-        self._checkpoint_store.save(
+        seed = specification.get("generation", {}).get("seed", 42)
+        chunk_size = (
+            job.entities[0].chunk_size
+            if job.entities
+            else 50
+        )
+
+        checkpoint = self._checkpoint_store.create_checkpoint(
             job_id=job.job_id,
-            seed=specification.get("generation", {}).get("seed", 42),
-            entities={
-                entity.entity_name: {
-                    "target_rows": entity.target_rows,
-                    "chunk_size": entity.chunk_size,
-                    "total_chunks": entity.total_chunks,
-                    "committed_chunks": [],
-                    "committed_rows": 0,
-                }
+            specification=specification,
+            seed=seed,
+            chunk_size=chunk_size,
+            entity_targets={
+                entity.entity_name: entity.target_rows
                 for entity in job.entities
             },
+        )
+
+        self._checkpoint_store.save(
+            job_id=job.job_id,
+            seed=checkpoint["seed"],
+            entities=checkpoint["entities"],
+            specification_hash=checkpoint["specification_hash"],
+            chunk_size=checkpoint["chunk_size"],
         )
 
         return job
