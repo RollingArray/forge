@@ -18,6 +18,7 @@ class FakeAIService:
         description: str,
         mode: str,
         count: int,
+        on_call_completed=None,
     ) -> list[str]:
         assert description == "Realistic aerospace product name."
         assert mode == "UNIQUE"

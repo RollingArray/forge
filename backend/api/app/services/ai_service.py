@@ -12,6 +12,8 @@ Email: ranjoy.sen@collins.com
 ============================================================================
 """
 
+from typing import Callable
+
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
     AIConstraintProposal,
@@ -49,6 +51,7 @@ class AIService:
         description: str,
         mode: str,
         count: int,
+        on_call_completed: Callable[[int, int, float, bool], None] | None = None,
     ) -> list[str]:
         """Generate semantic values for production data generation."""
 
@@ -56,6 +59,7 @@ class AIService:
             description=description,
             mode=mode,
             count=count,
+            on_call_completed=on_call_completed,
         )
 
 

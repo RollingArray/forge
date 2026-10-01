@@ -58,6 +58,32 @@ class GenerationEntityStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
+class GenerationSemanticCallProgress(BaseModel):
+    """Telemetry for one semantic Ollama call."""
+
+    field: str
+    call_number: int = Field(ge=1)
+    requested_count: int = Field(ge=1)
+    returned_count: int = Field(default=0, ge=0)
+    elapsed_seconds: float | None = Field(default=None, ge=0)
+    refill: bool = False
+
+
+class GenerationChunkProgress(BaseModel):
+    """Execution telemetry for one generation chunk."""
+
+    chunk_number: int = Field(ge=1)
+    target_rows: int = Field(ge=0)
+    generated_rows: int = Field(default=0, ge=0)
+    status: GenerationEntityStatus = GenerationEntityStatus.NOT_STARTED
+    elapsed_seconds: float | None = Field(default=None, ge=0)
+    peak_memory_mb: float | None = Field(default=None, ge=0)
+    throughput_rows_per_second: float | None = Field(default=None, ge=0)
+    unique_semantic_calls: list[GenerationSemanticCallProgress] = Field(
+        default_factory=list,
+    )
+
+
 class GenerationEntityProgress(BaseModel):
     """Execution progress for one entity."""
 
@@ -68,6 +94,15 @@ class GenerationEntityProgress(BaseModel):
     completed_chunks: int = Field(default=0, ge=0)
     total_chunks: int = Field(default=0, ge=0)
     status: GenerationEntityStatus = GenerationEntityStatus.NOT_STARTED
+    elapsed_seconds: float | None = Field(default=None, ge=0)
+    peak_memory_mb: float | None = Field(default=None, ge=0)
+    throughput_rows_per_second: float | None = Field(default=None, ge=0)
+    vocabulary_semantic_calls: list[GenerationSemanticCallProgress] = Field(
+        default_factory=list,
+    )
+    chunks: list[GenerationChunkProgress] = Field(
+        default_factory=list,
+    )
 
 
 class GenerationJobResponse(BaseModel):
@@ -85,6 +120,7 @@ class GenerationJobResponse(BaseModel):
     total_generated_rows: int = Field(default=0, ge=0)
     progress: float = Field(default=0.0, ge=0.0, le=1.0)
     elapsed_seconds: float | None = Field(default=None, ge=0)
+    peak_memory_mb: float | None = Field(default=None, ge=0)
 
     entities: list[GenerationEntityProgress] = Field(
         default_factory=list,
@@ -131,6 +167,13 @@ class GenerationEntityResult(BaseModel):
     entity_name: str
     target_rows: int = Field(ge=0)
     generated_rows: int = Field(ge=0)
+    elapsed_seconds: float | None = Field(default=None, ge=0)
+    peak_memory_mb: float | None = Field(default=None, ge=0)
+    throughput_rows_per_second: float | None = Field(default=None, ge=0)
+    vocabulary_semantic_calls: list[GenerationSemanticCallProgress] = Field(
+        default_factory=list,
+    )
+    chunks: list[GenerationChunkProgress] = Field(default_factory=list)
 
 
 class GenerationValidationSummary(BaseModel):

@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from app.models.generation_model import (
+    GenerationSemanticCallProgress,
+    GenerationChunkProgress,
     GenerationEntityResult,
     GenerationJobStatus,
     GenerationResult,
@@ -33,7 +35,10 @@ class GenerationRunService:
         data_model_id: str,
         job_id: str,
         on_entity_completed: Callable[[Any], None] | None = None,
-        on_chunk_completed: Callable[[str, int, int, int], None] | None = None,
+        on_chunk_completed: Callable[
+            [str, int, int, int, list[dict[str, Any]], float, float],
+            None,
+        ] | None = None,
     ) -> GenerationResult:
         generation = specification.get("generation") or {}
 
@@ -58,6 +63,38 @@ class GenerationRunService:
                 entity_name=entity.entity_name,
                 target_rows=entity.target_rows,
                 generated_rows=entity.generated_rows,
+                elapsed_seconds=entity.elapsed_seconds,
+                peak_memory_mb=entity.peak_memory_mb,
+                throughput_rows_per_second=(
+                    entity.generated_rows / entity.elapsed_seconds
+                    if entity.elapsed_seconds
+                    and entity.elapsed_seconds > 0
+                    else None
+                ),
+                vocabulary_semantic_calls=list(entity.vocabulary_semantic_calls),
+                chunks=[
+                    GenerationChunkProgress(
+                        chunk_number=chunk.chunk_number,
+                        target_rows=chunk.target_rows,
+                        generated_rows=chunk.generated_rows,
+                        status=GenerationJobStatus.COMPLETED,
+                        elapsed_seconds=chunk.elapsed_seconds,
+                        peak_memory_mb=chunk.peak_memory_mb,
+                        throughput_rows_per_second=(
+                            chunk.generated_rows / chunk.elapsed_seconds
+                            if chunk.elapsed_seconds
+                            and chunk.elapsed_seconds > 0
+                            else None
+                        ),
+                        unique_semantic_calls=[
+                            GenerationSemanticCallProgress.model_validate(
+                                call
+                            )
+                            for call in chunk.unique_semantic_calls
+                        ],
+                    )
+                    for chunk in entity.chunks
+                ],
             )
             for entity in run.entities
         ]

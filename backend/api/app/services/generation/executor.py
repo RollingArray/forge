@@ -8,8 +8,12 @@ from __future__ import annotations
 from time import perf_counter
 from typing import Any, Callable
 
+import psutil
+
+from app.models.generation_model import GenerationSemanticCallProgress
 from app.services.generation.context import GenerationContext
 from app.services.generation.run import (
+    GenerationChunkRun,
     GenerationEntityRun,
     GenerationRun,
 )
@@ -44,9 +48,7 @@ class GenerationExecutor:
         self._seed = seed
         self._ai_service = ai_service
         self._semantic_store = (
-            semantic_store
-            if semantic_store is not None
-            else GenerationSemanticStore()
+            semantic_store if semantic_store is not None else GenerationSemanticStore()
         )
         self._checkpoint_store = (
             checkpoint_store
@@ -82,10 +84,7 @@ class GenerationExecutor:
         if checkpoint is None:
             return 1
 
-        entity_state = (
-            checkpoint.get("entities", {})
-            .get(entity_name, {})
-        )
+        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
 
         committed_chunks = entity_state.get(
             "committed_chunks",
@@ -95,10 +94,7 @@ class GenerationExecutor:
         if not committed_chunks:
             return 1
 
-        committed_chunk_set = {
-            int(chunk)
-            for chunk in committed_chunks
-        }
+        committed_chunk_set = {int(chunk) for chunk in committed_chunks}
 
         next_chunk = 1
 
@@ -118,10 +114,7 @@ class GenerationExecutor:
         if checkpoint is None:
             return 0
 
-        entity_state = (
-            checkpoint.get("entities", {})
-            .get(entity_name, {})
-        )
+        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
 
         committed_rows = entity_state.get(
             "committed_rows",
@@ -162,20 +155,14 @@ class GenerationExecutor:
         if checkpoint is None:
             return False
 
-        entity_state = (
-            checkpoint.get("entities", {})
-            .get(entity_name, {})
-        )
+        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
 
         committed_chunks = entity_state.get(
             "committed_chunks",
             [],
         )
 
-        committed_chunk_set = {
-            int(chunk)
-            for chunk in committed_chunks
-        }
+        committed_chunk_set = {int(chunk) for chunk in committed_chunks}
 
         return all(
             chunk_number in committed_chunk_set
@@ -230,7 +217,23 @@ class GenerationExecutor:
         plan: GenerationPlan,
         job_id: str,
         on_entity_completed: Callable[[GenerationEntityRun], None] | None = None,
-        on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
+        on_chunk_completed: (
+            Callable[
+                [
+                    str,
+                    int,
+                    int,
+                    int,
+                    list[dict[str, Any]],
+                    float,
+                    float,
+                    list[dict[str, Any]],
+                    list[dict[str, object]],
+                ],
+                None,
+            ]
+            | None
+        ) = None,
     ) -> GenerationRun:
         """Generate every entity in the supplied generation plan."""
 
@@ -241,8 +244,7 @@ class GenerationExecutor:
         self._artifact_writer.initialize_job(job_id)
 
         entities_by_name = {
-            entity["name"]: entity
-            for entity in specification.get("entities", [])
+            entity["name"]: entity for entity in specification.get("entities", [])
         }
 
         foreign_keys_by_child: dict[
@@ -278,19 +280,12 @@ class GenerationExecutor:
 
             if entity is None:
                 raise GenerationExecutionError(
-                    f"Entity {entity_name!r} is missing "
-                    "from the specification."
+                    f"Entity {entity_name!r} is missing " "from the specification."
                 )
 
-            target_rows = (
-                entity.get("population") or {}
-            ).get("count", 0)
+            target_rows = (entity.get("population") or {}).get("count", 0)
 
-            total_chunks = (
-                (target_rows + 50 - 1) // 50
-                if target_rows > 0
-                else 0
-            )
+            total_chunks = (target_rows + 50 - 1) // 50 if target_rows > 0 else 0
 
             if self._is_entity_fully_committed(
                 job_id=job_id,
@@ -336,6 +331,18 @@ class GenerationExecutor:
                     on_entity_completed(entity_run)
 
                 continue
+
+            entity_started_at = perf_counter()
+            process = psutil.Process()
+            entity_peak_memory_bytes = process.memory_info().rss
+            chunk_runs: list[GenerationChunkRun] = []
+            chunk_started_at: dict[int, float] = {}
+            chunk_peak_memory_bytes: dict[int, int] = {}
+            entity_semantic_calls: list[dict[str, object]] = []
+            chunk_semantic_calls: dict[
+                int,
+                list[dict[str, object]],
+            ] = {}
 
             print(
                 f"[{index:02d}/{total_entities:02d}] "
@@ -411,12 +418,28 @@ class GenerationExecutor:
                             f"for {entity_name}.{field['name']}."
                         )
 
-                    semantic_values = (
-                        self._ai_service.generate_semantic_values(
-                            description=description,
-                            mode=normalized_mode,
-                            count=SEMANTIC_VOCABULARY_SIZE,
+                    def record_entity_semantic_call(
+                        requested_count: int,
+                        returned_count: int,
+                        elapsed_seconds: float,
+                        refill: bool,
+                    ) -> None:
+                        entity_semantic_calls.append(
+                            {
+                                "field": field["name"],
+                                "call_number": len(entity_semantic_calls) + 1,
+                                "requested_count": requested_count,
+                                "returned_count": returned_count,
+                                "elapsed_seconds": elapsed_seconds,
+                                "refill": refill,
+                            }
                         )
+
+                    semantic_values = self._ai_service.generate_semantic_values(
+                        description=description,
+                        mode=normalized_mode,
+                        count=SEMANTIC_VOCABULARY_SIZE,
+                        on_call_completed=record_entity_semantic_call,
                     )
 
                     if len(semantic_values) != SEMANTIC_VOCABULARY_SIZE:
@@ -472,6 +495,10 @@ class GenerationExecutor:
                 chunk_start: int,
                 chunk_end: int,
             ) -> None:
+                chunk_started_at[chunk_number] = perf_counter()
+                chunk_peak_memory_bytes[chunk_number] = process.memory_info().rss
+                chunk_semantic_calls[chunk_number] = []
+
                 for field in entity.get("fields", []):
                     generation = field.get("generation") or {}
 
@@ -479,9 +506,7 @@ class GenerationExecutor:
                         continue
 
                     parameters = generation.get("parameters") or {}
-                    mode = str(
-                        parameters.get("mode", "")
-                    ).strip().upper()
+                    mode = str(parameters.get("mode", "")).strip().upper()
 
                     if mode != "UNIQUE":
                         continue
@@ -489,10 +514,7 @@ class GenerationExecutor:
                     field_name = field["name"]
                     description = parameters.get("description")
 
-                    if (
-                        not isinstance(description, str)
-                        or not description.strip()
-                    ):
+                    if not isinstance(description, str) or not description.strip():
                         raise GenerationExecutionError(
                             f"Semantic field {entity_name}.{field_name} "
                             "is missing a valid description."
@@ -506,9 +528,7 @@ class GenerationExecutor:
                     )
 
                     persisted_values = (
-                        persisted.get("values", [])
-                        if persisted is not None
-                        else []
+                        persisted.get("values", []) if persisted is not None else []
                     )
 
                     if persisted is not None and persisted.get("mode") != "UNIQUE":
@@ -526,12 +546,60 @@ class GenerationExecutor:
                                 f"for {entity_name}.{field_name}."
                             )
 
-                        semantic_batch = (
-                            self._ai_service.generate_semantic_values(
-                                description=description,
-                                mode="UNIQUE",
-                                count=missing_count,
+                        semantic_call_number = 0
+
+                        def record_semantic_call(
+                            requested_count: int,
+                            returned_count: int,
+                            elapsed_seconds: float,
+                            refill: bool,
+                        ) -> None:
+                            nonlocal semantic_call_number
+
+                            semantic_call_number += 1
+
+                            print(
+                                f"[SEMANTIC-CALL] "
+                                f"{entity_name}.{field_name} "
+                                f"chunk={chunk_number} "
+                                f"call={semantic_call_number} "
+                                f"requested={requested_count} "
+                                f"returned={returned_count} "
+                                f"elapsed={elapsed_seconds:.3f}s "
+                                f"refill={refill}",
+                                flush=True,
                             )
+
+                            chunk_semantic_calls[chunk_number].append(
+                                {
+                                    "field": field_name,
+                                    "call_number": semantic_call_number,
+                                    "requested_count": requested_count,
+                                    "returned_count": returned_count,
+                                    "elapsed_seconds": elapsed_seconds,
+                                    "refill": refill,
+                                }
+                            )
+
+                        semantic_started_at = perf_counter()
+
+                        semantic_batch = self._ai_service.generate_semantic_values(
+                            description=description,
+                            mode="UNIQUE",
+                            count=missing_count,
+                            on_call_completed=record_semantic_call,
+                        )
+
+                        semantic_elapsed_seconds = perf_counter() - semantic_started_at
+
+                        print(
+                            f"[SEMANTIC] "
+                            f"{entity_name}.{field_name} "
+                            f"chunk={chunk_number} "
+                            f"requested={missing_count} "
+                            f"returned={len(semantic_batch)} "
+                            f"time={semantic_elapsed_seconds:.3f}s",
+                            flush=True,
                         )
 
                         if len(semantic_batch) != missing_count:
@@ -583,6 +651,37 @@ class GenerationExecutor:
                     rows=chunk_rows,
                 )
 
+                chunk_peak_memory_bytes[chunk_number] = max(
+                    chunk_peak_memory_bytes.get(
+                        chunk_number,
+                        process.memory_info().rss,
+                    ),
+                    process.memory_info().rss,
+                )
+
+                chunk_elapsed_seconds = perf_counter() - chunk_started_at.get(
+                    chunk_number,
+                    perf_counter(),
+                )
+
+                chunk_runs.append(
+                    GenerationChunkRun(
+                        chunk_number=chunk_number,
+                        target_rows=len(chunk_rows),
+                        generated_rows=len(chunk_rows),
+                        elapsed_seconds=chunk_elapsed_seconds,
+                        peak_memory_mb=(
+                            chunk_peak_memory_bytes[chunk_number] / (1024 * 1024)
+                        ),
+                        unique_semantic_calls=tuple(
+                            chunk_semantic_calls.get(
+                                chunk_number,
+                                [],
+                            )
+                        ),
+                    )
+                )
+
                 if on_chunk_completed is not None:
                     on_chunk_completed(
                         completed_entity_name,
@@ -590,6 +689,15 @@ class GenerationExecutor:
                         total_chunks,
                         generated_rows,
                         chunk_rows,
+                        chunk_elapsed_seconds,
+                        (chunk_peak_memory_bytes[chunk_number] / (1024 * 1024)),
+                        list(
+                            chunk_semantic_calls.get(
+                                chunk_number,
+                                [],
+                            )
+                        ),
+                        list(entity_semantic_calls),
                     )
 
             try:
@@ -617,6 +725,12 @@ class GenerationExecutor:
                 entity_name=entity_name,
             )
 
+            entity_peak_memory_bytes = max(
+                entity_peak_memory_bytes,
+                process.memory_info().rss,
+            )
+            entity_elapsed_seconds = perf_counter() - entity_started_at
+
             print(
                 f"[{index:02d}/{total_entities:02d}] "
                 f"{entity_name:<20} "
@@ -638,6 +752,13 @@ class GenerationExecutor:
                 entity_name=entity_name,
                 target_rows=target_rows,
                 generated_rows=durable_generated_rows,
+                elapsed_seconds=entity_elapsed_seconds,
+                peak_memory_mb=(entity_peak_memory_bytes / (1024 * 1024)),
+                vocabulary_semantic_calls=tuple(
+                    GenerationSemanticCallProgress.model_validate(call)
+                    for call in entity_semantic_calls
+                ),
+                chunks=tuple(chunk_runs),
             )
 
             entity_runs.append(entity_run)

@@ -15,6 +15,7 @@ Email: ranjoy.sen@collins.com
 from __future__ import annotations
 
 import json
+from time import perf_counter
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -1226,6 +1227,7 @@ class OllamaAIProvider(AIProvider):
         description: str,
         mode: str,
         count: int,
+        on_call_completed: callable | None = None,
     ) -> list[str]:
         """Generate semantic STRING values for production generation."""
 
@@ -1295,12 +1297,42 @@ class OllamaAIProvider(AIProvider):
             )
 
             try:
+                ollama_started_at = perf_counter()
+
                 with urlopen(
                     request,
                     timeout=self._generation_timeout_seconds,
                 ) as response:
                     payload = json.loads(
                         response.read().decode("utf-8"),
+                    )
+
+                ollama_elapsed_seconds = perf_counter() - ollama_started_at
+
+                response_message = payload.get("message")
+                response_content = (
+                    response_message.get("content")
+                    if isinstance(response_message, dict)
+                    else None
+                )
+
+                returned_count = 0
+
+                if isinstance(response_content, str):
+                    try:
+                        response_data = json.loads(response_content)
+                        values = response_data.get("values")
+                        if isinstance(values, list):
+                            returned_count = len(values)
+                    except json.JSONDecodeError:
+                        pass
+
+                if on_call_completed is not None:
+                    on_call_completed(
+                        remaining,
+                        returned_count,
+                        ollama_elapsed_seconds,
+                        len(collected_values) > 0,
                     )
             except (OSError, URLError) as exc:
                 raise RuntimeError(

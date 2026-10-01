@@ -2,4 +2,4 @@
 FORGE generation constants.
 """
 
-SEMANTIC_VOCABULARY_SIZE = 20
+SEMANTIC_VOCABULARY_SIZE = 50
