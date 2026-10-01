@@ -68,18 +68,20 @@ class GenerationExecutor:
 
     def has_existing_checkpoint(
         self,
+        data_model_id: str,
         job_id: str,
     ) -> bool:
         """Return whether durable execution state already exists."""
-        return self._checkpoint_store.get(job_id) is not None
+        return self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id) is not None
 
     def _get_start_chunk(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> int:
-        checkpoint = self._checkpoint_store.get(job_id)
+        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
 
         if checkpoint is None:
             return 1
@@ -106,10 +108,11 @@ class GenerationExecutor:
     def _get_committed_rows(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> int:
-        checkpoint = self._checkpoint_store.get(job_id)
+        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
 
         if checkpoint is None:
             return 0
@@ -129,11 +132,13 @@ class GenerationExecutor:
     def _get_durable_generated_rows(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         generated_rows: int,
     ) -> int:
         committed_rows = self._get_committed_rows(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         )
@@ -143,6 +148,7 @@ class GenerationExecutor:
     def _is_entity_fully_committed(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         total_chunks: int,
@@ -150,7 +156,7 @@ class GenerationExecutor:
         if total_chunks <= 0:
             return True
 
-        checkpoint = self._checkpoint_store.get(job_id)
+        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
 
         if checkpoint is None:
             return False
@@ -172,6 +178,7 @@ class GenerationExecutor:
     def _restore_entity_key_space(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         identity_fields: tuple[str, ...],
@@ -182,6 +189,7 @@ class GenerationExecutor:
             return
 
         key_space = self._artifact_reader.get_entity_key_space(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
             identity_fields=identity_fields,
@@ -215,6 +223,7 @@ class GenerationExecutor:
         *,
         specification: dict[str, Any],
         plan: GenerationPlan,
+        data_model_id: str,
         job_id: str,
         on_entity_completed: Callable[[GenerationEntityRun], None] | None = None,
         on_chunk_completed: (
@@ -241,7 +250,7 @@ class GenerationExecutor:
         context = GenerationContext()
         entity_runs: list[GenerationEntityRun] = []
 
-        self._artifact_writer.initialize_job(job_id)
+        self._artifact_writer.initialize_job(data_model_id, job_id)
 
         entities_by_name = {
             entity["name"]: entity for entity in specification.get("entities", [])
@@ -288,6 +297,7 @@ class GenerationExecutor:
             total_chunks = (target_rows + 50 - 1) // 50 if target_rows > 0 else 0
 
             if self._is_entity_fully_committed(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
                 total_chunks=total_chunks,
@@ -305,6 +315,7 @@ class GenerationExecutor:
                 }
 
                 self._restore_entity_key_space(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     identity_fields=identity_fields,
@@ -352,6 +363,7 @@ class GenerationExecutor:
             )
 
             start_chunk = self._get_start_chunk(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
             )
@@ -395,6 +407,7 @@ class GenerationExecutor:
                     )
 
                 persisted = self._semantic_store.get(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     field_name=field["name"],
@@ -451,6 +464,7 @@ class GenerationExecutor:
                         )
 
                     self._semantic_store.save(
+                        data_model_id=data_model_id,
                         job_id=job_id,
                         entity_name=entity_name,
                         field_name=field["name"],
@@ -478,6 +492,7 @@ class GenerationExecutor:
                 }
 
                 self._restore_entity_key_space(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     identity_fields=identity_fields,
@@ -522,6 +537,7 @@ class GenerationExecutor:
 
                     required_end = chunk_end
                     persisted = self._semantic_store.get(
+                        data_model_id=data_model_id,
                         job_id=job_id,
                         entity_name=entity_name,
                         field_name=field_name,
@@ -611,6 +627,7 @@ class GenerationExecutor:
                             )
 
                         self._semantic_store.append_unique(
+                            data_model_id=data_model_id,
                             job_id=job_id,
                             entity_name=entity_name,
                             field_name=field_name,
@@ -645,6 +662,7 @@ class GenerationExecutor:
                 chunk_rows: list[dict[str, Any]],
             ) -> None:
                 self._artifact_writer.write_chunk(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=completed_entity_name,
                     chunk_number=chunk_number,
@@ -721,6 +739,7 @@ class GenerationExecutor:
                 raise
 
             self._artifact_writer.consolidate_entity(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
             )
@@ -740,6 +759,7 @@ class GenerationExecutor:
 
             durable_generated_rows = (
                 self._get_durable_generated_rows(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     generated_rows=generated_rows,

@@ -18,14 +18,19 @@ class GenerationArtifactWriter:
             Path(__file__).resolve().parents[3] / "data"
         )
 
-    def initialize_job(self, job_id: str) -> Path:
+    def initialize_job(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> Path:
         """Create and return the generated-artifact directory for a job."""
-        job_directory = self._job_directory(job_id)
+        job_directory = self._job_directory(data_model_id, job_id)
         job_directory.mkdir(parents=True, exist_ok=True)
         return job_directory
 
     def write_chunk(
         self,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         chunk_number: int,
@@ -36,7 +41,7 @@ class GenerationArtifactWriter:
             return 0
 
         chunks_directory = (
-            self._job_directory(job_id)
+            self._job_directory(data_model_id, job_id)
             / "generated"
             / entity_name
             / "chunks"
@@ -64,12 +69,13 @@ class GenerationArtifactWriter:
 
     def consolidate_entity(
         self,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> int:
         """Build the consolidated entity CSV by streaming committed chunks."""
         chunks_directory = (
-            self._job_directory(job_id)
+            self._job_directory(data_model_id, job_id)
             / "generated"
             / entity_name
             / "chunks"
@@ -78,7 +84,7 @@ class GenerationArtifactWriter:
         chunk_paths = sorted(chunks_directory.glob("chunk_*.csv"))
 
         consolidated_path = (
-            self._job_directory(job_id)
+            self._job_directory(data_model_id, job_id)
             / "generated"
             / f"{entity_name}.csv"
         )
@@ -136,6 +142,7 @@ class GenerationArtifactWriter:
 
     def get_entity_csv_path(
         self,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> Path:
@@ -144,14 +151,24 @@ class GenerationArtifactWriter:
             raise ValueError("Invalid entity name.")
 
         return (
-            self._job_directory(job_id)
+            self._job_directory(data_model_id, job_id)
             / "generated"
             / f"{entity_name}.csv"
         )
 
-    def _job_directory(self, job_id: str) -> Path:
+    def _job_directory(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> Path:
         """Return the root artifact directory for a generation job."""
-        return self._data_directory / "generation" / job_id
+        return (
+            self._data_directory
+            / "data_model"
+            / data_model_id
+            / "generation"
+            / job_id
+        )
 
     @staticmethod
     def _write_csv(

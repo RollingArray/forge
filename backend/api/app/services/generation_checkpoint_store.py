@@ -43,15 +43,26 @@ class GenerationCheckpointStore:
         self._root = (
             Path(__file__).resolve().parents[2]
             / "data"
-            / "generation"
+            / "data_model"
         )
 
-    def _checkpoint_path(self, job_id: str) -> Path:
-        return self._root / job_id / "checkpoint.json"
+    def _checkpoint_path(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> Path:
+        return (
+            self._root
+            / data_model_id
+            / "generation"
+            / job_id
+            / "checkpoint.json"
+        )
 
     def create_checkpoint(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         specification: dict[str, Any],
         seed: int,
@@ -98,6 +109,7 @@ class GenerationCheckpointStore:
     def save(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         seed: int,
         entities: dict[str, Any],
@@ -106,10 +118,13 @@ class GenerationCheckpointStore:
     ) -> None:
         """Persist checkpoint state atomically."""
 
-        path = self._checkpoint_path(job_id)
+        path = self._checkpoint_path(data_model_id, job_id)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        existing = self.get(job_id) or {}
+        existing = self.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        ) or {}
 
         checkpoint = {
             "schema_version": CHECKPOINT_SCHEMA_VERSION,
@@ -162,8 +177,12 @@ class GenerationCheckpointStore:
             temporary_path.unlink(missing_ok=True)
             raise
 
-    def get(self, job_id: str) -> dict[str, Any] | None:
-        path = self._checkpoint_path(job_id)
+    def get(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> dict[str, Any] | None:
+        path = self._checkpoint_path(data_model_id, job_id)
 
         if not path.exists():
             return None
@@ -183,6 +202,7 @@ class GenerationCheckpointStore:
     def get_committed_rows(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> int:
@@ -192,7 +212,10 @@ class GenerationCheckpointStore:
         The checkpoint stores completed chunk identity, not telemetry.
         """
 
-        checkpoint = self.get(job_id)
+        checkpoint = self.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if checkpoint is None:
             return 0
@@ -221,11 +244,15 @@ class GenerationCheckpointStore:
     def is_chunk_committed(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         chunk_number: int,
     ) -> bool:
-        checkpoint = self.get(job_id)
+        checkpoint = self.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if checkpoint is None:
             return False
@@ -245,6 +272,7 @@ class GenerationCheckpointStore:
     def validate_identity(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         specification_hash: str,
         seed: int,
@@ -252,7 +280,10 @@ class GenerationCheckpointStore:
     ) -> None:
         """Validate checkpoint identity before resume."""
 
-        checkpoint = self.get(job_id)
+        checkpoint = self.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if checkpoint is None:
             raise ValueError(

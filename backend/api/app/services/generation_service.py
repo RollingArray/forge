@@ -131,7 +131,7 @@ class GenerationService:
         }
 
         now = datetime.now(timezone.utc)
-        job_id = f"FORGE-{uuid4().hex.upper()}"
+        job_id = uuid4().hex.upper()
 
         chunk_size = 50
 
@@ -212,6 +212,7 @@ class GenerationService:
         )
 
         checkpoint = self._checkpoint_store.create_checkpoint(
+            data_model_id=job.data_model_id,
             job_id=job.job_id,
             specification=specification,
             seed=seed,
@@ -223,6 +224,7 @@ class GenerationService:
         )
 
         self._checkpoint_store.save(
+            data_model_id=job.data_model_id,
             job_id=job.job_id,
             seed=checkpoint["seed"],
             entities=checkpoint["entities"],
@@ -294,7 +296,8 @@ class GenerationService:
             ) -> None:
                 existing_checkpoint = (
                     self._checkpoint_store.get(
-                        job.job_id,
+                        data_model_id=job.data_model_id,
+                        job_id=job.job_id,
                     )
                     or {}
                 )
@@ -402,6 +405,7 @@ class GenerationService:
                     }
 
                 self._checkpoint_store.save(
+                    data_model_id=job.data_model_id,
                     job_id=job.job_id,
                     seed=existing_checkpoint.get(
                         "seed",
@@ -523,6 +527,7 @@ class GenerationService:
 
     def get_job(
         self,
+        data_model_id: str,
         job_id: str,
     ) -> GenerationJobResponse | None:
         """Return a generation job from memory or persistent storage."""
@@ -532,7 +537,7 @@ class GenerationService:
         if job is not None:
             return job
 
-        job = self._job_store.get(job_id)
+        job = self._job_store.get(data_model_id=data_model_id, job_id=job_id)
 
         if job is not None:
             self._jobs[job_id] = job

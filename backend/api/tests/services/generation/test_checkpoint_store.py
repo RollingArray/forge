@@ -18,6 +18,7 @@ def test_checkpoint_persists_committed_chunk_identity(
     )
 
     store.save(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         seed=42,
         entities={
@@ -31,7 +32,10 @@ def test_checkpoint_persists_committed_chunk_identity(
         },
     )
 
-    checkpoint = store.get("FORGE-TEST")
+    checkpoint = store.get(
+        data_model_id="MODEL-TEST",
+        job_id="FORGE-TEST",
+    )
 
     assert checkpoint is not None
     assert checkpoint["entities"]["CUSTOMER"][
@@ -55,6 +59,7 @@ def test_checkpoint_preserves_non_contiguous_committed_chunks(
     )
 
     store.save(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         seed=42,
         entities={
@@ -68,7 +73,10 @@ def test_checkpoint_preserves_non_contiguous_committed_chunks(
         },
     )
 
-    checkpoint = store.get("FORGE-TEST")
+    checkpoint = store.get(
+        data_model_id="MODEL-TEST",
+        job_id="FORGE-TEST",
+    )
 
     assert checkpoint is not None
     assert checkpoint["entities"]["CUSTOMER"][
@@ -89,6 +97,7 @@ def test_is_chunk_committed_uses_durable_chunk_identity(
     )
 
     store.save(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         seed=42,
         chunk_size=50,
@@ -101,18 +110,21 @@ def test_is_chunk_committed_uses_durable_chunk_identity(
     )
 
     assert store.is_chunk_committed(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         chunk_number=1,
     )
 
     assert not store.is_chunk_committed(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         chunk_number=3,
     )
 
     assert store.is_chunk_committed(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         chunk_number=4,
@@ -132,6 +144,7 @@ def test_is_chunk_committed_returns_false_when_checkpoint_is_missing(
     )
 
     assert not store.is_chunk_committed(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-MISSING",
         entity_name="PRODUCT",
         chunk_number=1,
@@ -151,6 +164,7 @@ def test_get_committed_rows_returns_durable_entity_progress(
     )
 
     store.save(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         seed=42,
         chunk_size=50,
@@ -163,11 +177,13 @@ def test_get_committed_rows_returns_durable_entity_progress(
     )
 
     assert store.get_committed_rows(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
     ) == 300
 
     assert store.get_committed_rows(
+        data_model_id="MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="CUSTOMER",
     ) == 0

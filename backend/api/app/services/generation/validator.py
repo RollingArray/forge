@@ -74,6 +74,7 @@ class GenerationValidator:
         self,
         *,
         specification: dict[str, Any],
+        data_model_id: str,
         job_id: str,
     ) -> GenerationValidationResult:
         errors: list[str] = []
@@ -111,6 +112,7 @@ class GenerationValidator:
             ).get("count", 0)
 
             actual = self._count_rows(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
             )
@@ -171,6 +173,7 @@ class GenerationValidator:
 
             for row_number, row in enumerate(
                 self._iter_typed_rows(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     field_types=field_types[entity_name],
@@ -235,6 +238,7 @@ class GenerationValidator:
 
             for row_number, row in enumerate(
                 self._iter_typed_rows(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
                     field_types=field_types.get(entity_name, {}),
@@ -303,6 +307,7 @@ class GenerationValidator:
                     for field in parent_fields
                 )
                 for row in self._iter_typed_rows(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=parent_entity,
                     field_types=parent_field_types,
@@ -316,6 +321,7 @@ class GenerationValidator:
 
             for row_number, row in enumerate(
                 self._iter_typed_rows(
+                    data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=child_entity,
                     field_types=child_field_types,
@@ -358,12 +364,14 @@ class GenerationValidator:
     def _count_rows(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> int:
         return sum(
             1
             for _ in self._artifact_reader.iter_entity_chunks(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
             )
@@ -372,11 +380,13 @@ class GenerationValidator:
     def _iter_typed_rows(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         field_types: dict[str, Any],
     ):
         for row in self._artifact_reader.iter_entity_chunks(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         ):

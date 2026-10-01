@@ -78,7 +78,8 @@ class JsonSpecificationRepository:
 
         return (
             self._data_directory
-            / f"forge_{data_model_id}_data_model"
+            / "data_model"
+            / data_model_id
             / "specification.json"
         )
 

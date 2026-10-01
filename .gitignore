@@ -67,7 +67,7 @@ backend/api/data/data_model_access.json
 backend/api/data/users.json
 
 # FORGE runtime Data Model specifications
-backend/api/data/forge_*_data_model/
+backend/api/data/data_model/
 
 
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.

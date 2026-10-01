@@ -142,7 +142,7 @@ async def get_generation_job(
             detail="Data model not found.",
         )
 
-    job = generation_service.get_job(job_id)
+    job = generation_service.get_job(data_model_id=data_model_id, job_id=job_id)
 
     if job is None or job.data_model_id != data_model_id:
         raise HTTPException(
@@ -174,7 +174,7 @@ async def list_generation_artifacts(
             detail="Data model not found.",
         )
 
-    job = generation_service.get_job(job_id)
+    job = generation_service.get_job(data_model_id=data_model_id, job_id=job_id)
 
     if job is None or job.data_model_id != data_model_id:
         raise HTTPException(
@@ -186,6 +186,7 @@ async def list_generation_artifacts(
 
     for entity in job.entities:
         path = artifact_writer.get_entity_csv_path(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity.entity_name,
         )
@@ -227,7 +228,7 @@ async def preview_generation_artifact(
             detail="Data model not found.",
         )
 
-    job = generation_service.get_job(job_id)
+    job = generation_service.get_job(data_model_id=data_model_id, job_id=job_id)
 
     if job is None or job.data_model_id != data_model_id:
         raise HTTPException(
@@ -237,6 +238,7 @@ async def preview_generation_artifact(
 
     try:
         path = artifact_writer.get_entity_csv_path(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         )
@@ -302,7 +304,7 @@ async def download_generation_artifact(
             detail="Data model not found.",
         )
 
-    job = generation_service.get_job(job_id)
+    job = generation_service.get_job(data_model_id=data_model_id, job_id=job_id)
 
     if job is None or job.data_model_id != data_model_id:
         raise HTTPException(
@@ -312,6 +314,7 @@ async def download_generation_artifact(
 
     try:
         path = artifact_writer.get_entity_csv_path(
+            data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         )

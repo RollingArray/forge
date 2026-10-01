@@ -48,6 +48,7 @@ class GenerationRunService:
         run = self._executor.execute(
             specification=specification,
             plan=plan,
+            data_model_id=data_model_id,
             job_id=job_id,
             on_entity_completed=on_entity_completed,
             on_chunk_completed=on_chunk_completed,
@@ -55,6 +56,7 @@ class GenerationRunService:
 
         validation = self._validator.validate(
             specification=specification,
+            data_model_id=data_model_id,
             job_id=job_id,
         )
 

@@ -17,15 +17,26 @@ class GenerationSemanticStore:
         self._root = (
             Path(__file__).resolve().parents[2]
             / "data"
-            / "generation"
+            / "data_model"
         )
 
-    def _semantic_path(self, job_id: str) -> Path:
-        return self._root / job_id / "semantic.json"
+    def _semantic_path(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> Path:
+        return (
+            self._root
+            / data_model_id
+            / "generation"
+            / job_id
+            / "semantic.json"
+        )
 
     def save(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         field_name: str,
@@ -34,13 +45,13 @@ class GenerationSemanticStore:
     ) -> None:
         """Persist semantic values for one generated field."""
 
-        path = self._semantic_path(job_id)
+        path = self._semantic_path(data_model_id, job_id)
         path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-        existing = self.get_all(job_id)
+        existing = self.get_all(data_model_id, job_id)
 
         fields = existing.get("fields", {})
 
@@ -72,6 +83,7 @@ class GenerationSemanticStore:
     def append_unique(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         field_name: str,
@@ -79,7 +91,7 @@ class GenerationSemanticStore:
     ) -> None:
         """Append a UNIQUE semantic batch to existing semantic state."""
 
-        existing = self.get_all(job_id)
+        existing = self.get_all(data_model_id, job_id)
         fields = existing.get("fields", {})
         key = f"{entity_name}.{field_name}"
 
@@ -87,6 +99,7 @@ class GenerationSemanticStore:
 
         if current is None:
             self.save(
+                data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
                 field_name=field_name,
@@ -116,7 +129,7 @@ class GenerationSemanticStore:
             ],
         }
 
-        path = self._semantic_path(job_id)
+        path = self._semantic_path(data_model_id, job_id)
         path.parent.mkdir(
             parents=True,
             exist_ok=True,
@@ -138,13 +151,14 @@ class GenerationSemanticStore:
     def get(
         self,
         *,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         field_name: str,
     ) -> dict[str, Any] | None:
         """Return persisted semantic state for one field."""
 
-        document = self.get_all(job_id)
+        document = self.get_all(data_model_id, job_id)
 
         return (
             document.get("fields", {})
@@ -153,11 +167,12 @@ class GenerationSemanticStore:
 
     def get_all(
         self,
+        data_model_id: str,
         job_id: str,
     ) -> dict[str, Any]:
         """Return all persisted semantic state for a generation job."""
 
-        path = self._semantic_path(job_id)
+        path = self._semantic_path(data_model_id, job_id)
 
         if not path.is_file():
             return {}

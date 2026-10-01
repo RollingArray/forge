@@ -20,6 +20,7 @@ class GenerationArtifactReader:
 
     def iter_entity_chunks(
         self,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
     ) -> Iterator[dict[str, Any]]:
@@ -29,7 +30,7 @@ class GenerationArtifactReader:
             raise ValueError("Invalid entity name.")
 
         chunks_directory = (
-            self._job_directory(job_id)
+            self._job_directory(data_model_id, job_id)
             / "generated"
             / entity_name
             / "chunks"
@@ -55,6 +56,7 @@ class GenerationArtifactReader:
 
     def get_entity_key_space(
         self,
+        data_model_id: str,
         job_id: str,
         entity_name: str,
         identity_fields: tuple[str, ...],
@@ -67,6 +69,7 @@ class GenerationArtifactReader:
         key_space: set[tuple[Any, ...]] = set()
 
         for row in self.iter_entity_chunks(
+            data_model_id,
             job_id,
             entity_name,
         ):
@@ -79,7 +82,17 @@ class GenerationArtifactReader:
 
         return key_space
 
-    def _job_directory(self, job_id: str) -> Path:
+    def _job_directory(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> Path:
         """Return the root artifact directory for a generation job."""
 
-        return self._data_directory / "generation" / job_id
+        return (
+            self._data_directory
+            / "data_model"
+            / data_model_id
+            / "generation"
+            / job_id
+        )

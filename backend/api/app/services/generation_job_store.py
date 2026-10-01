@@ -16,16 +16,22 @@ class GenerationJobStore:
         self._root = (
             Path(__file__).resolve().parents[2]
             / "data"
-            / "generation"
+            / "data_model"
         )
 
-    def _job_path(self, job_id: str) -> Path:
-        return self._root / job_id / "job.json"
+    def _job_path(self, data_model_id: str, job_id: str) -> Path:
+        return (
+            self._root
+            / data_model_id
+            / "generation"
+            / job_id
+            / "job.json"
+        )
 
     def save(self, job: GenerationJobResponse) -> None:
         """Persist one generation job atomically."""
 
-        path = self._job_path(job.job_id)
+        path = self._job_path(job.data_model_id, job.job_id)
         path.parent.mkdir(parents=True, exist_ok=True)
 
         temporary_path = path.with_suffix(".tmp")
@@ -35,10 +41,14 @@ class GenerationJobStore:
         )
         temporary_path.replace(path)
 
-    def get(self, job_id: str) -> GenerationJobResponse | None:
+    def get(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse | None:
         """Load a generation job from persistent storage."""
 
-        path = self._job_path(job_id)
+        path = self._job_path(data_model_id, job_id)
 
         if not path.is_file():
             return None
