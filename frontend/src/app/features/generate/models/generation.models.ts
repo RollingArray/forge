@@ -68,6 +68,24 @@ export interface GenerationChunkCommittedEvent {
   progress: number;
 }
 
+export interface GenerationEntityCompletedEvent {
+  entity_name: string;
+  target_rows: number;
+  generated_rows: number;
+  status: 'COMPLETED';
+  progress: number;
+}
+
+export interface GenerationCompletedEvent {
+  job_id: string;
+  status: GenerationJobStatus;
+  generated_rows: number;
+  expected_rows: number;
+  valid: boolean;
+  error_count: number;
+  progress: number;
+}
+
 export type GenerationSseEvent =
   | {
       type: 'JOB_SNAPSHOT';
@@ -76,4 +94,12 @@ export type GenerationSseEvent =
   | {
       type: 'CHUNK_COMMITTED';
       data: GenerationChunkCommittedEvent;
+    }
+  | {
+      type: 'ENTITY_COMPLETED';
+      data: GenerationEntityCompletedEvent;
+    }
+  | {
+      type: 'GENERATION_COMPLETED';
+      data: GenerationCompletedEvent;
     };
