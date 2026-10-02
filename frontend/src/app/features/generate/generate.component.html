@@ -222,11 +222,21 @@
 
             <div>
               <strong>{{ node.entityName }}</strong>
+
               <span>
+                {{ node.generatedRows | number }}
+                /
                 {{ node.targetRows | number }} rows
-                <ng-container *ngIf="node.dependencies.length">
-                  · depends on {{ node.dependencies.join(', ') }}
-                </ng-container>
+              </span>
+
+              <span>
+                {{ node.status }}
+                ·
+                {{ (node.progress * 100) | number:'1.0-0' }}%
+              </span>
+
+              <span *ngIf="node.dependencies.length">
+                depends on {{ node.dependencies.join(', ') }}
               </span>
             </div>
           </article>
