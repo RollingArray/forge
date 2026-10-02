@@ -12,6 +12,8 @@ import {
 import { environment } from '../../../../environments/environment';
 import {
   GenerationChunkCommittedEvent,
+  GenerationCompletedEvent,
+  GenerationEntityCompletedEvent,
   GenerationJobResponse,
   GenerationReadiness,
   GenerationSseEvent,
@@ -86,6 +88,24 @@ export class GenerationService {
               data: JSON.parse(
                 event.data,
               ) as GenerationChunkCommittedEvent,
+            };
+          }
+
+          if (event.type === 'ENTITY_COMPLETED') {
+            return {
+              type: 'ENTITY_COMPLETED',
+              data: JSON.parse(
+                event.data,
+              ) as GenerationEntityCompletedEvent,
+            };
+          }
+
+          if (event.type === 'GENERATION_COMPLETED') {
+            return {
+              type: 'GENERATION_COMPLETED',
+              data: JSON.parse(
+                event.data,
+              ) as GenerationCompletedEvent,
             };
           }
 
