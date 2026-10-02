@@ -200,6 +200,23 @@
   box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
 }
 
+.pipeline-stage-running {
+  border-color: #84aaff;
+  box-shadow: 0 0 0 1px rgba(84, 139, 255, 0.12);
+}
+
+.pipeline-stage-completed {
+  border-color: #86d3a3;
+}
+
+.pipeline-stage-failed {
+  border-color: #f3a6a6;
+}
+
+.pipeline-stage-waiting {
+  opacity: 0.75;
+}
+
 .pipeline-number {
   display: grid;
   width: 28px;
