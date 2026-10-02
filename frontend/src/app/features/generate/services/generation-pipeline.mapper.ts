@@ -6,6 +6,8 @@ import {
 } from '../models/generation.models';
 
 import {
+  GenerationPipelineEdge,
+  GenerationPipelineGraph,
   GenerationPipelineNode,
 } from '../models/generation-pipeline.models';
 
@@ -51,4 +53,26 @@ export class GenerationPipelineMapper {
       };
     });
   }
+
+  toGraph(
+    nodes: GenerationPipelineNode[],
+  ): GenerationPipelineGraph {
+
+    const edges: GenerationPipelineEdge[] = [];
+
+    for (const node of nodes) {
+      for (const dependency of node.dependencies) {
+        edges.push({
+          source: dependency,
+          target: node.id,
+        });
+      }
+    }
+
+    return {
+      nodes,
+      edges,
+    };
+  }
+
 }

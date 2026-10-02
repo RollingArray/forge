@@ -14,3 +14,9 @@ export interface GenerationPipelineEdge {
   source: string;
   target: string;
 }
+
+
+export interface GenerationPipelineGraph {
+  nodes: GenerationPipelineNode[];
+  edges: GenerationPipelineEdge[];
+}
