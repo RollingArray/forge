@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -9,6 +9,7 @@ import {
 } from '../../shared/components/workflow-stepper/workflow-stepper.component';
 import { GenerationService } from './services/generation.service';
 import { GenerationExecutionStore } from './services/generation-execution.store';
+import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
 import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
@@ -24,6 +25,7 @@ export class GenerateComponent {
   private readonly router = inject(Router);
   private readonly generationService = inject(GenerationService);
   private readonly executionStore = inject(GenerationExecutionStore);
+  private readonly pipelineMapper = inject(GenerationPipelineMapper);
 
   readonly dataModelId = this.route.snapshot.paramMap.get('dataModelId') ?? '';
 
@@ -64,6 +66,13 @@ export class GenerateComponent {
   readonly generationLoading = signal(true);
   readonly generationError = signal<string | null>(null);
   readonly generationJob = this.executionStore.generationJob;
+
+  readonly pipelineNodes = computed(() =>
+    this.pipelineMapper.fromReadiness(
+      this.generationReadiness(),
+      this.generationJob(),
+    ),
+  );
 
   selectStep(step: WorkflowStep): void {
     if (!this.dataModelId) {

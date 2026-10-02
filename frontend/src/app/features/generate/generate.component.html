@@ -209,17 +209,17 @@
       <div class="pipeline">
 
         <ng-container
-          *ngFor="let entity of generationReadiness()?.entities; let i = index"
+          *ngFor="let node of pipelineNodes(); let i = index"
         >
           <article class="pipeline-stage">
             <span class="pipeline-number">{{ i + 1 }}</span>
 
             <div>
-              <strong>{{ entity.entity_name }}</strong>
+              <strong>{{ node.entityName }}</strong>
               <span>
-                {{ entity.target_rows | number }} rows
-                <ng-container *ngIf="entity.dependencies.length">
-                  · depends on {{ entity.dependencies.join(', ') }}
+                {{ node.targetRows | number }} rows
+                <ng-container *ngIf="node.dependencies.length">
+                  · depends on {{ node.dependencies.join(', ') }}
                 </ng-container>
               </span>
             </div>
@@ -227,7 +227,7 @@
 
           <span
             class="pipeline-arrow material-symbols-outlined"
-            *ngIf="i < (generationReadiness()?.entities?.length ?? 0) - 1"
+            *ngIf="i < (pipelineNodes().length) - 1"
           >
             arrow_forward
           </span>
@@ -235,7 +235,7 @@
 
         <div
           class="empty-state"
-          *ngIf="!generationLoading() && !generationReadiness()?.entities?.length"
+          *ngIf="!generationLoading() && !pipelineNodes().length"
         >
           <span class="material-symbols-outlined">
             account_tree
@@ -327,7 +327,7 @@
               <span>
                 {{ entity.generated_rows | number }}
                 /
-                {{ entity.target_rows | number }} rows
+                {{ entity.generated_rows | number }} / {{ entity.target_rows | number }} rows
                 · Chunks {{ entity.completed_chunks }}
                 /
                 {{ entity.total_chunks }}
