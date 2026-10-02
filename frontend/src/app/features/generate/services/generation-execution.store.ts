@@ -54,6 +54,8 @@ export class GenerationExecutionStore {
   handleEvent(
     event: GenerationSseEvent,
   ): void {
+    console.log('GENERATION EVENT', event);
+
     this.lastEvent.set(event);
 
     switch (event.type) {
