@@ -59,3 +59,20 @@ export interface GenerationJobResponse {
   error: string | null;
   throughput_rows_per_second: number | null;
 }
+
+export type GenerationSseEventType =
+  | 'JOB_SNAPSHOT'
+  | 'CHUNK_COMMITTED';
+
+export interface GenerationSseEvent {
+  type: GenerationSseEventType;
+  data: GenerationJobResponse | GenerationChunkCommittedEvent;
+}
+
+export interface GenerationChunkCommittedEvent {
+  entity_name: string;
+  chunk_number: number;
+  total_chunks: number;
+  generated_rows: number;
+  progress: number;
+}
