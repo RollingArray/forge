@@ -9,7 +9,7 @@ import {
   GenerationPipelineEdge,
   GenerationPipelineGraph,
   GenerationPipelineNode,
-} from '../models/generation-pipeline.models';
+} from '../../../shared/models/generation-pipeline.models';
 
 
 @Injectable({

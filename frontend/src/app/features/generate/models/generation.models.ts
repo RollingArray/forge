@@ -43,6 +43,11 @@ export interface GenerationEntityProgress {
   completed_chunks: number;
   total_chunks: number;
   status: GenerationEntityStatus;
+
+  // Runtime telemetry returned by the generation backend.
+  throughput_rows_per_second?: number | null;
+  elapsed_seconds?: number | null;
+  peak_memory_mb?: number | null;
 }
 
 export interface GenerationJobResponse {
@@ -76,6 +81,9 @@ export interface GenerationEntityCompletedEvent {
   target_rows: number;
   generated_rows: number;
   status: 'COMPLETED';
+  elapsed_seconds: number | null;
+  throughput_rows_per_second: number | null;
+  peak_memory_mb: number | null;
   progress: number;
 }
 

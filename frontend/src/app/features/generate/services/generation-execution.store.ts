@@ -134,6 +134,10 @@ export class GenerationExecutionStore {
               target_rows: event.target_rows,
               generated_rows: event.generated_rows,
               status: event.status,
+              elapsed_seconds: event.elapsed_seconds,
+              throughput_rows_per_second:
+                event.throughput_rows_per_second,
+              peak_memory_mb: event.peak_memory_mb,
             }
           : entity,
       ),

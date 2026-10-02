@@ -1,4 +1,4 @@
-import { GenerationEntityStatus } from './generation.models';
+import { GenerationEntityStatus } from '../../features/generate/models/generation.models';
 
 export interface GenerationPipelineNode {
   id: string;
