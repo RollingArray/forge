@@ -14,6 +14,8 @@ import { GenerationJobCardComponent } from '../../shared/components/generation-j
 import { GenerationTargetCardComponent } from '../../shared/components/generation-target-card/generation-target-card.component';
 import { GenerationEntitiesCardComponent } from '../../shared/components/generation-entities-card/generation-entities-card.component';
 import { GenerationThroughputCardComponent } from '../../shared/components/generation-throughput-card/generation-throughput-card.component';
+import { GenerationPipelineComponent } from '../../shared/components/generation-pipeline/generation-pipeline.component';
+import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
 import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
@@ -26,6 +28,8 @@ import { GenerationJobResponse, GenerationReadiness } from './models/generation.
     GenerationTargetCardComponent,
     GenerationEntitiesCardComponent,
     GenerationThroughputCardComponent,
+  GenerationPipelineComponent,
+    EntityGenerationProgressComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',

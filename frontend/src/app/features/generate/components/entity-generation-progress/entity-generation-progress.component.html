@@ -1,0 +1,278 @@
+<section class="workspace-section forge-card">
+
+  <div class="section-heading">
+    <div>
+      <span class="section-eyebrow">Entities</span>
+      <h2>Entity Generation Progress</h2>
+
+      <span class="section-summary">
+        {{ entities().length }}
+        {{ entities().length === 1 ? 'entity' : 'entities' }}
+        <span>•</span>
+        {{ totalGeneratedRows() | number }}
+        rows
+        <span>•</span>
+        <strong>
+          {{
+            totalTargetRows() > 0
+              ? ((totalGeneratedRows() / totalTargetRows()) * 100 | number:'1.0-0')
+              : 0
+          }}% complete
+        </strong>
+      </span>
+    </div>
+
+    <span class="section-state">
+      {{
+        entities().length
+          ? (totalGeneratedRows() | number)
+            + ' / '
+            + (totalTargetRows() | number)
+            + ' rows'
+          : 'Awaiting execution'
+      }}
+    </span>
+  </div>
+
+  <div
+    class="entity-progress-table"
+    *ngIf="entities().length; else noEntityExecution"
+  >
+
+    <!-- Table header -->
+    <div class="entity-table-header">
+      <span>Entity</span>
+      <span>Throughput</span>
+      <span>Time</span>
+      <span>Peak Memory</span>
+      <span>Chunk Activity</span>
+    </div>
+
+    <div class="entity-progress-list">
+
+      <article
+        class="entity-progress-item"
+        *ngFor="
+          let entity of entities();
+          let i = index;
+          trackBy: trackEntity
+        "
+        [class.is-running]="entity.status === 'RUNNING'"
+        [class.is-completed]="entity.status === 'COMPLETED'"
+        [class.is-failed]="entity.status === 'FAILED'"
+      >
+
+        <!-- Entity -->
+        <div class="entity-identity">
+
+          <div
+            class="entity-icon"
+            [class.is-running]="entity.status === 'RUNNING'"
+            [class.is-completed]="entity.status === 'COMPLETED'"
+            [class.is-failed]="entity.status === 'FAILED'"
+          >
+            @if (entity.status === 'RUNNING') {
+              <span class="material-symbols-outlined spinner">
+                progress_activity
+              </span>
+            } @else if (entity.status === 'COMPLETED') {
+              <span class="material-symbols-outlined">
+                check
+              </span>
+            } @else if (entity.status === 'FAILED') {
+              <span class="material-symbols-outlined">
+                error
+              </span>
+            } @else {
+              <span class="material-symbols-outlined">
+                {{ entityIcon(entity.entity_name) }}
+              </span>
+            }
+          </div>
+
+          <div class="entity-name-block">
+
+            <div class="entity-name-row">
+
+              <strong [title]="entity.entity_name">
+                {{ entity.entity_name }}
+              </strong>
+
+              <span
+                class="status-badge"
+                [class.is-running]="entity.status === 'RUNNING'"
+                [class.is-completed]="entity.status === 'COMPLETED'"
+                [class.is-failed]="entity.status === 'FAILED'"
+              >
+                {{ statusLabel(entity) }}
+              </span>
+
+            </div>
+
+            <span class="entity-row-count">
+              {{ entity.generated_rows | number }}
+              /
+              {{ entity.target_rows | number }}
+              rows
+            </span>
+
+          </div>
+
+        </div>
+
+        <!-- Throughput -->
+        <div class="data-column">
+
+          <strong>
+            {{
+              entity.throughput_rows_per_second != null
+                ? (entity.throughput_rows_per_second | number:'1.0-0')
+                : '—'
+            }}
+          </strong>
+
+          <span>
+            rows/sec
+          </span>
+
+        </div>
+
+        <!-- Time -->
+        <div class="data-column">
+
+          <strong>
+            {{
+              entity.elapsed_seconds != null
+                ? (entity.elapsed_seconds | number:'1.2-2') + 's'
+                : '—'
+            }}
+          </strong>
+
+        </div>
+
+        <!-- Peak Memory -->
+        <div class="data-column">
+
+          <strong>
+            {{
+              entity.peak_memory_mb != null
+                ? (entity.peak_memory_mb | number:'1.1-1') + ' MB'
+                : '—'
+            }}
+          </strong>
+
+        </div>
+
+        <!-- Chunk Activity -->
+        <div class="chunk-activity">
+
+          <div class="chunk-heading">
+
+            <strong>
+              {{ entity.completed_chunks }}
+              /
+              {{ entity.total_chunks }}
+            </strong>
+
+            <span>
+              chunks
+            </span>
+
+          </div>
+
+          <div class="chunk-list">
+
+            <ng-container
+              *ngFor="
+                let chunkNumber of chunkNumbers(entity);
+                let chunkIndex = index
+              "
+            >
+
+              @if (
+                chunkIndex === 5 &&
+                entity.total_chunks > 6
+              ) {
+                <span class="chunk-more">
+                  …
+                </span>
+              }
+
+              <span
+                class="chunk-dot"
+                [class.is-completed]="
+                  isChunkCompleted(entity, chunkNumber)
+                "
+                [class.is-running]="
+                  isChunkRunning(entity, chunkNumber)
+                "
+                [class.is-pending]="
+                  !isChunkCompleted(entity, chunkNumber) &&
+                  !isChunkRunning(entity, chunkNumber)
+                "
+              >
+
+                @if (isChunkCompleted(entity, chunkNumber)) {
+                  <span class="material-symbols-outlined">
+                    check
+                  </span>
+                } @else {
+                  {{ chunkNumber }}
+                }
+
+              </span>
+
+            </ng-container>
+
+          </div>
+
+        </div>
+
+
+      <div class="entity-full-progress">
+
+        <div class="progress-track">
+          <div
+            class="progress-fill"
+            [class.is-running]="entity.status === 'RUNNING'"
+            [class.is-failed]="entity.status === 'FAILED'"
+            [style.width.%]="progress(entity)"
+          ></div>
+        </div>
+
+        <strong class="progress-percentage">
+          {{ progress(entity) | number:'1.0-0' }}%
+        </strong>
+
+      </div>
+
+      </article>
+
+    </div>
+
+  </div>
+
+  <ng-template #noEntityExecution>
+
+    <div class="empty-table">
+
+      <div class="empty-table-icon">
+        <span class="material-symbols-outlined">
+          table_rows
+        </span>
+      </div>
+
+      <strong>
+        No entity execution data yet
+      </strong>
+
+      <span>
+        Planned and generated row counts will appear here after
+        generation begins.
+      </span>
+
+    </div>
+
+  </ng-template>
+
+</section>

@@ -1,5 +1,6 @@
 .generate-shell {
   min-height: 360px;
+  padding-bottom: 16px;
 }
 
 .generation-status-card {
@@ -513,78 +514,6 @@
   flex-shrink: 0;
 }
 
-/* Entity generation progress */
-.entity-progress-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.entity-progress-item {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) auto;
-  align-items: center;
-  gap: 20px;
-  min-height: 58px;
-  padding: 12px 16px;
-  border: 1px solid #e7e9f0;
-  border-radius: 12px;
-  background: #ffffff;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
-}
-
-.entity-progress-item:hover {
-  border-color: #d7d9e8;
-  background: #fcfcff;
-  box-shadow: 0 3px 12px rgba(35, 35, 60, 0.05);
-}
-
-.entity-progress-item > * {
-  min-width: 0;
-}
-
-.entity-progress-item strong {
-  color: #171b2d;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.entity-progress-item span {
-  color: #667085;
-  font-size: 12px;
-}
-
-.entity-progress-item .progress-bar,
-.entity-progress-item [class*="progress-bar"] {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #eceef5;
-}
-
-.entity-progress-item .progress-fill,
-.entity-progress-item [class*="progress-fill"] {
-  height: 100%;
-  border-radius: inherit;
-  transition: width 300ms ease;
-}
-
-/* Keep the progress area visually quiet */
-.entity-progress-item p {
-  margin: 0;
-}
-
-.entity-progress-item small {
-  color: #98a2b3;
-  font-size: 11px;
-}
-
 /* Overall progress badge */
 .section-heading > span,
 .section-heading > .badge {
@@ -627,4 +556,48 @@
   font-size: 24px;
   line-height: 1.2;
   box-sizing: border-box;
+}
+
+
+/* Generation execution workspace */
+
+.generation-execution-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.35fr) minmax(420px, 0.65fr);
+  gap: 16px;
+  height: calc(clamp(420px, 58vh, 620px) - 16px);
+  min-height: 404px;
+  margin: 20px 0 16px;
+  min-width: 0;
+}
+
+.generation-execution-workspace > app-generation-pipeline,
+.generation-execution-workspace > app-entity-generation-progress {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+@media (max-width: 1000px) {
+  .generation-execution-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .generation-execution-workspace > app-generation-pipeline,
+  .generation-execution-workspace > app-entity-generation-progress {
+    height: 500px;
+  }
+}
+
+@media (max-width: 620px) {
+  .generation-execution-workspace {
+    gap: 12px;
+  }
+
+  .generation-execution-workspace > app-generation-pipeline,
+  .generation-execution-workspace > app-entity-generation-progress {
+    height: 460px;
+  }
 }
