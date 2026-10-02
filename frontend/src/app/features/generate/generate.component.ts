@@ -74,6 +74,12 @@ export class GenerateComponent {
     ),
   );
 
+  readonly pipelineGraph = computed(() =>
+    this.pipelineMapper.toGraph(
+      this.pipelineNodes(),
+    ),
+  );
+
   selectStep(step: WorkflowStep): void {
     if (!this.dataModelId) {
       return;
