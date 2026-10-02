@@ -583,6 +583,21 @@ class GenerationService:
 
             self._job_store.save(job)
 
+            self._event_broker.publish(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                event_type="GENERATION_COMPLETED",
+                data={
+                    "job_id": job.job_id,
+                    "status": job.status.value,
+                    "generated_rows": job.total_generated_rows,
+                    "expected_rows": job.total_target_rows,
+                    "valid": result.validation.valid,
+                    "error_count": result.validation.error_count,
+                    "progress": job.progress,
+                },
+            )
+
         except Exception as exc:
             job.status = GenerationJobStatus.FAILED
             job.error = str(exc)
