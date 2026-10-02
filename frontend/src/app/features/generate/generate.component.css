@@ -176,34 +176,48 @@
 .pipeline {
   display: flex;
   align-items: stretch;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
-  padding-bottom: 3px;
+  padding: 4px 2px 8px;
 }
 
 .pipeline-stage {
+  position: relative;
   display: flex;
-  min-width: 150px;
+  min-width: 170px;
   flex: 1 1 0;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  padding: 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #fafafa;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pipeline-stage:hover {
+  border-color: #cfd5df;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
 }
 
 .pipeline-number {
   display: grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   place-items: center;
   border-radius: 50%;
   background: #eef0f4;
   color: #667085;
   font-size: 11px;
   font-weight: 700;
+}
+
+.pipeline-arrow {
+  align-self: center;
+  flex: 0 0 auto;
+  color: #98a2b3;
+  font-size: 18px;
 }
 
 .pipeline-stage div {
