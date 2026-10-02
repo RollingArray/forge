@@ -136,61 +136,32 @@
     </section>
 
     <section class="summary-grid">
+      <app-generation-job-card
+        [jobId]="generationJob()?.job_id ?? null"
+        [exists]="generationJob() !== null"
+      />
 
-      <article class="summary-card">
-        <span class="summary-label">Job ID</span>
-        <strong class="summary-value summary-job-id" [title]="generationJob()?.job_id ?? '—'">
-          {{ generationJob()?.job_id ?? '—' }}
-        </strong>
-        <span class="summary-detail">
-          {{ generationJob() ? 'Generation job created' : 'Assigned when generation starts' }}
-        </span>
-      </article>
+      <app-generation-target-card
+        [totalTargetRows]="
+          generationJob()?.total_target_rows
+            ?? generationReadiness()?.total_target_rows
+            ?? 0
+        "
+      />
 
-      <article class="summary-card">
-        <span class="summary-label">Total Target Rows</span>
-        <strong class="summary-value">
-          {{
-            generationJob()?.total_target_rows
-              ?? generationReadiness()?.total_target_rows
-              ?? 0
-              | number
-          }}
-        </strong>
-        <span class="summary-detail">
-          Rows planned for generation
-        </span>
-      </article>
+      <app-generation-entities-card
+        [entityCount]="
+          generationJob()?.entities?.length
+            ?? generationReadiness()?.entity_count
+            ?? null
+        "
+      />
 
-      <article class="summary-card">
-        <span class="summary-label">Entities</span>
-        <strong class="summary-value">
-          {{ generationJob()?.entities?.length ?? generationReadiness()?.entity_count ?? '—' }}
-        </strong>
-        <span class="summary-detail">
-          Entities in generation plan
-        </span>
-      </article>
-
-      <article class="summary-card">
-        <span class="summary-label">Throughput</span>
-        <strong class="summary-value">
-          {{
-            generationJob()?.throughput_rows_per_second !== null
-              ? (generationJob()?.throughput_rows_per_second | number:'1.0-0')
-              : '—'
-          }}
-          <span *ngIf="generationJob()?.throughput_rows_per_second !== null">rows/sec</span>
-        </strong>
-        <span class="summary-detail">
-          {{
-            generationJob()?.throughput_rows_per_second !== null
-              ? 'Measured generation throughput'
-              : 'Available after execution completes'
-          }}
-        </span>
-      </article>
-
+      <app-generation-throughput-card
+        [throughputRowsPerSecond]="
+          generationJob()?.throughput_rows_per_second ?? null
+        "
+      />
     </section>
 
     <section class="workspace-section forge-card">

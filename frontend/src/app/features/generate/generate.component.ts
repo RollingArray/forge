@@ -10,12 +10,23 @@ import {
 import { GenerationService } from './services/generation.service';
 import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
+import { GenerationJobCardComponent } from '../../shared/components/generation-job-card/generation-job-card.component';
+import { GenerationTargetCardComponent } from '../../shared/components/generation-target-card/generation-target-card.component';
+import { GenerationEntitiesCardComponent } from '../../shared/components/generation-entities-card/generation-entities-card.component';
+import { GenerationThroughputCardComponent } from '../../shared/components/generation-throughput-card/generation-throughput-card.component';
 import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
   selector: 'app-generate',
   standalone: true,
-  imports: [CommonModule, WorkflowPageComponent],
+  imports: [
+    CommonModule,
+    WorkflowPageComponent,
+    GenerationJobCardComponent,
+    GenerationTargetCardComponent,
+    GenerationEntitiesCardComponent,
+    GenerationThroughputCardComponent,
+  ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,22 @@
+<article class="summary-card">
+  <span class="summary-label">Throughput</span>
+
+  <strong class="summary-value">
+    {{
+      throughputRowsPerSecond() !== null
+        ? (throughputRowsPerSecond() | number:'1.0-0')
+        : '—'
+    }}
+    @if (throughputRowsPerSecond() !== null) {
+      <span>rows/sec</span>
+    }
+  </strong>
+
+  <span class="summary-detail">
+    {{
+      throughputRowsPerSecond() !== null
+        ? 'Measured generation throughput'
+        : 'Available after execution completes'
+    }}
+  </span>
+</article>

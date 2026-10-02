@@ -1,0 +1,14 @@
+<article class="summary-card">
+  <span class="summary-label">Job ID</span>
+
+  <strong
+    class="summary-value summary-job-id"
+    [title]="jobId() ?? '—'"
+  >
+    {{ jobId() ?? '—' }}
+  </strong>
+
+  <span class="summary-detail">
+    {{ exists() ? 'Generation job created' : 'Assigned when generation starts' }}
+  </span>
+</article>
