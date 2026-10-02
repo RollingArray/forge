@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import {
@@ -9,6 +8,7 @@ import {
   WorkflowStepItem,
 } from '../../shared/components/workflow-stepper/workflow-stepper.component';
 import { GenerationService } from './services/generation.service';
+import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
@@ -23,6 +23,7 @@ export class GenerateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly generationService = inject(GenerationService);
+  private readonly executionStore = inject(GenerationExecutionStore);
 
   readonly dataModelId = this.route.snapshot.paramMap.get('dataModelId') ?? '';
 
@@ -35,8 +36,6 @@ export class GenerateComponent {
   ];
 
   readonly activeStep: WorkflowStep = 'generate';
-
-  private generationEventsSubscription: Subscription | null = null;
 
   constructor() {
     this.loadGenerationReadiness();
@@ -64,7 +63,7 @@ export class GenerateComponent {
   readonly generationReadiness = signal<GenerationReadiness | null>(null);
   readonly generationLoading = signal(true);
   readonly generationError = signal<string | null>(null);
-  readonly generationJob = signal<GenerationJobResponse | null>(null);
+  readonly generationJob = this.executionStore.generationJob;
 
   selectStep(step: WorkflowStep): void {
     if (!this.dataModelId) {
@@ -129,13 +128,16 @@ export class GenerateComponent {
 
     this.generationService.createGenerationJob(this.dataModelId).subscribe({
       next: (job) => {
-        this.generationJob.set(job);
+        this.executionStore.setJob(job);
 
         this.generationService.startGenerationJob(this.dataModelId, job.job_id).subscribe({
           next: (startedJob) => {
             this.generationError.set(null);
-            this.generationJob.set(startedJob);
-            this.startGenerationEvents();
+            this.executionStore.setJob(startedJob);
+            this.executionStore.connect(
+              this.dataModelId,
+              startedJob.job_id,
+            );
           },
           error: (error) => {
             const message =
@@ -152,60 +154,6 @@ export class GenerateComponent {
         this.generationError.set(message);
       },
     });
-  }
-
-  private startGenerationEvents(): void {
-    if (!this.dataModelId) {
-      return;
-    }
-
-    const job = this.generationJob();
-
-    if (!job || this.isTerminalGenerationStatus(job.status)) {
-      return;
-    }
-
-    this.generationEventsSubscription?.unsubscribe();
-
-    this.generationEventsSubscription =
-      this.generationService
-        .connectToGenerationEvents(
-          this.dataModelId,
-          job.job_id,
-        )
-        .subscribe({
-          next: (event) => {
-            if (event.type === 'JOB_SNAPSHOT') {
-              this.generationJob.set(event.data);
-              return;
-            }
-
-            if (event.type === 'CHUNK_COMMITTED') {
-              const currentJob = this.generationJob();
-
-              if (!currentJob) {
-                return;
-              }
-
-              this.generationJob.set({
-                ...currentJob,
-                total_generated_rows: event.data.generated_rows,
-                progress: event.data.progress,
-              });
-            }
-          },
-          error: (error) => {
-            const message =
-              error?.message ??
-              'Generation progress connection could not be maintained.';
-
-            this.generationError.set(message);
-            this.generationEventsSubscription = null;
-          },
-          complete: () => {
-            this.generationEventsSubscription = null;
-          },
-        });
   }
 
   private isTerminalGenerationStatus(status: GenerationJobResponse['status']): boolean {

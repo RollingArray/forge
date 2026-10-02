@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 
 import {
   GenerationEntityCompletedEvent,
@@ -6,11 +6,18 @@ import {
   GenerationSseEvent,
 } from '../models/generation.models';
 
+import { GenerationService } from './generation.service';
+import { Subscription } from 'rxjs';
+
 
 @Injectable({
   providedIn: 'root',
 })
 export class GenerationExecutionStore {
+
+  private readonly generationService = inject(GenerationService);
+
+  private executionSubscription: Subscription | null = null;
 
   readonly generationJob = signal<GenerationJobResponse | null>(null);
 
@@ -22,6 +29,26 @@ export class GenerationExecutionStore {
   ): void {
     this.generationJob.set(job);
   }
+
+  connect(
+    dataModelId: string,
+    jobId: string,
+  ): void {
+
+    this.executionSubscription?.unsubscribe();
+
+    this.executionSubscription = this.generationService
+      .connectToGenerationEvents(
+        dataModelId,
+        jobId,
+      )
+      .subscribe({
+        next: (event) => {
+          this.handleEvent(event);
+        },
+      });
+  }
+
 
 
   handleEvent(
