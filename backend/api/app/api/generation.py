@@ -3,11 +3,14 @@ File: generation.py
 Purpose: FORGE generation API endpoints.
 """
 
+import asyncio
+import json
 from csv import DictReader
 from pathlib import Path
+from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
@@ -21,6 +24,7 @@ from app.core.ai_settings import load_ai_configuration
 from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.generation_service import GenerationService
+from app.services.generation_event_broker import GenerationEventBroker
 from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
 
@@ -36,8 +40,11 @@ ai_service = AIService(
     ),
 )
 
+generation_event_broker = GenerationEventBroker()
+
 generation_service = GenerationService(
     ai_service=ai_service,
+    event_broker=generation_event_broker,
 )
 
 data_model_access_service = DataModelAccessService()
@@ -151,6 +158,97 @@ async def get_generation_job(
         )
 
     return job
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/events",
+    status_code=status.HTTP_200_OK,
+)
+async def stream_generation_events(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> StreamingResponse:
+    """Stream live generation events for one generation job."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    async def event_stream() -> AsyncIterator[str]:
+        """Yield the current snapshot followed by live events."""
+
+        yield (
+            "event: JOB_SNAPSHOT\n"
+            f"data: {job.model_dump_json()}\n\n"
+        )
+
+        if job.status in {
+            "COMPLETED",
+            "FAILED",
+            "CANCELLED",
+        }:
+            return
+
+        queue = generation_event_broker.subscribe(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(
+                        queue.get(),
+                        timeout=15.0,
+                    )
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+
+                yield (
+                    f"event: {event.event_type}\n"
+                    f"data: {json.dumps(event.data)}\n\n"
+                )
+
+                if event.event_type in {
+                    "GENERATION_COMPLETED",
+                    "GENERATION_FAILED",
+                    "GENERATION_CANCELLED",
+                }:
+                    return
+        finally:
+            generation_event_broker.unsubscribe(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                queue=queue,
+            )
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get(

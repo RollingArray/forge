@@ -32,6 +32,7 @@ from app.services.generation_checkpoint_store import (
 from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_quality_store import GenerationQualityStore
 from app.services.generation_validation_store import GenerationValidationStore
+from app.services.generation_event_broker import GenerationEventBroker
 from app.services.specification_service import SpecificationService
 
 
@@ -45,6 +46,7 @@ class GenerationService:
         generation_run_service: GenerationRunService | None = None,
         ai_service: AIService | None = None,
         checkpoint_store: GenerationCheckpointStore | None = None,
+        event_broker: GenerationEventBroker | None = None,
     ) -> None:
         self._specification_service = (
             specification_service
@@ -65,6 +67,11 @@ class GenerationService:
             checkpoint_store
             if checkpoint_store is not None
             else GenerationCheckpointStore()
+        )
+        self._event_broker = (
+            event_broker
+            if event_broker is not None
+            else GenerationEventBroker()
         )
         self._jobs: dict[str, GenerationJobResponse] = {}
 
@@ -431,6 +438,19 @@ class GenerationService:
                         if job.entities
                         else 1,
                     ),
+                )
+
+                self._event_broker.publish(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                    event_type="CHUNK_COMMITTED",
+                    data={
+                        "entity_name": entity_name,
+                        "chunk_number": chunk_number,
+                        "total_chunks": total_chunks,
+                        "generated_rows": job.total_generated_rows,
+                        "progress": job.progress,
+                    },
                 )
 
             def on_entity_completed(entity_run) -> None:
