@@ -65,6 +65,9 @@ export interface GenerationChunkCommittedEvent {
   chunk_number: number;
   total_chunks: number;
   generated_rows: number;
+  entity_generated_rows: number;
+  entity_target_rows: number;
+  entity_progress: number;
   progress: number;
 }
 

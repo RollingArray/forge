@@ -97,6 +97,17 @@ export class GenerationExecutionStore {
       ...current,
       total_generated_rows: event.generated_rows,
       progress: event.progress,
+      entities: current.entities.map(entity =>
+        entity.entity_name === event.entity_name
+          ? {
+              ...entity,
+              generated_rows: event.entity_generated_rows,
+              completed_chunks: event.chunk_number,
+              total_chunks: event.total_chunks,
+              status: 'RUNNING',
+            }
+          : entity,
+      ),
     });
   }
 
