@@ -481,6 +481,19 @@ class GenerationService:
 
                 self._job_store.save(job)
 
+                self._event_broker.publish(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                    event_type="ENTITY_COMPLETED",
+                    data={
+                        "entity_name": entity_run.entity_name,
+                        "target_rows": entity_run.target_rows,
+                        "generated_rows": entity_run.generated_rows,
+                        "status": GenerationEntityStatus.COMPLETED.value,
+                        "progress": job.progress,
+                    },
+                )
+
             result = run_service.run(
                 specification=specification,
                 plan=plan,
