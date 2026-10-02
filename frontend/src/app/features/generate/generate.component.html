@@ -211,7 +211,13 @@
         <ng-container
           *ngFor="let node of pipelineNodes(); let i = index"
         >
-          <article class="pipeline-stage">
+          <article
+            class="pipeline-stage"
+            [class.pipeline-stage-running]="node.status === 'RUNNING'"
+            [class.pipeline-stage-completed]="node.status === 'COMPLETED'"
+            [class.pipeline-stage-failed]="node.status === 'FAILED'"
+            [class.pipeline-stage-waiting]="node.status === 'NOT_STARTED'"
+          >
             <span class="pipeline-number">{{ i + 1 }}</span>
 
             <div>
