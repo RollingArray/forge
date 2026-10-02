@@ -440,6 +440,26 @@ class GenerationService:
                     ),
                 )
 
+                entity_progress = next(
+                    (
+                        item
+                        for item in job.entities
+                        if item.entity_name == entity_name
+                    ),
+                    None,
+                )
+
+                entity_generated_rows = (
+                    entity_progress.generated_rows
+                    if entity_progress
+                    else 0
+                )
+                entity_target_rows = (
+                    entity_progress.target_rows
+                    if entity_progress
+                    else 0
+                )
+
                 self._event_broker.publish(
                     data_model_id=job.data_model_id,
                     job_id=job.job_id,
@@ -449,6 +469,13 @@ class GenerationService:
                         "chunk_number": chunk_number,
                         "total_chunks": total_chunks,
                         "generated_rows": job.total_generated_rows,
+                        "entity_generated_rows": entity_generated_rows,
+                        "entity_target_rows": entity_target_rows,
+                        "entity_progress": (
+                            entity_generated_rows / entity_target_rows
+                            if entity_target_rows > 0
+                            else 0
+                        ),
                         "progress": job.progress,
                     },
                 )
@@ -490,6 +517,11 @@ class GenerationService:
                         "target_rows": entity_run.target_rows,
                         "generated_rows": entity_run.generated_rows,
                         "status": GenerationEntityStatus.COMPLETED.value,
+                        "elapsed_seconds": entity_progress.elapsed_seconds,
+                        "throughput_rows_per_second": (
+                            entity_progress.throughput_rows_per_second
+                        ),
+                        "peak_memory_mb": entity_progress.peak_memory_mb,
                         "progress": job.progress,
                     },
                 )
