@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import {
@@ -36,7 +36,7 @@ export class GenerateComponent {
 
   readonly activeStep: WorkflowStep = 'generate';
 
-  private generationPollingSubscription: Subscription | null = null;
+  private generationEventsSubscription: Subscription | null = null;
 
   constructor() {
     this.loadGenerationReadiness();
@@ -135,7 +135,7 @@ export class GenerateComponent {
           next: (startedJob) => {
             this.generationError.set(null);
             this.generationJob.set(startedJob);
-            this.startGenerationPolling();
+            this.startGenerationEvents();
           },
           error: (error) => {
             const message =
@@ -154,7 +154,7 @@ export class GenerateComponent {
     });
   }
 
-  private startGenerationPolling(): void {
+  private startGenerationEvents(): void {
     if (!this.dataModelId) {
       return;
     }
@@ -165,31 +165,47 @@ export class GenerateComponent {
       return;
     }
 
-    this.generationPollingSubscription?.unsubscribe();
+    this.generationEventsSubscription?.unsubscribe();
 
-    this.generationPollingSubscription = interval(10000).subscribe(() => {
-      const currentJob = this.generationJob();
+    this.generationEventsSubscription =
+      this.generationService
+        .connectToGenerationEvents(
+          this.dataModelId,
+          job.job_id,
+        )
+        .subscribe({
+          next: (event) => {
+            if (event.type === 'JOB_SNAPSHOT') {
+              this.generationJob.set(event.data);
+              return;
+            }
 
-      if (!currentJob) {
-        return;
-      }
+            if (event.type === 'CHUNK_COMMITTED') {
+              const currentJob = this.generationJob();
 
-      this.generationService.getGenerationJob(this.dataModelId, currentJob.job_id).subscribe({
-        next: (updatedJob) => {
-          this.generationJob.set(updatedJob);
+              if (!currentJob) {
+                return;
+              }
 
-          if (this.isTerminalGenerationStatus(updatedJob.status)) {
-            this.generationPollingSubscription?.unsubscribe();
-            this.generationPollingSubscription = null;
-          }
-        },
-        error: (error) => {
-          const message =
-            error?.error?.detail ?? error?.message ?? 'Generation status could not be updated.';
-          this.generationError.set(message);
-        },
-      });
-    });
+              this.generationJob.set({
+                ...currentJob,
+                total_generated_rows: event.data.generated_rows,
+                progress: event.data.progress,
+              });
+            }
+          },
+          error: (error) => {
+            const message =
+              error?.message ??
+              'Generation progress connection could not be maintained.';
+
+            this.generationError.set(message);
+            this.generationEventsSubscription = null;
+          },
+          complete: () => {
+            this.generationEventsSubscription = null;
+          },
+        });
   }
 
   private isTerminalGenerationStatus(status: GenerationJobResponse['status']): boolean {

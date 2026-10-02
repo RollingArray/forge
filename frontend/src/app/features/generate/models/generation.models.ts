@@ -60,15 +60,6 @@ export interface GenerationJobResponse {
   throughput_rows_per_second: number | null;
 }
 
-export type GenerationSseEventType =
-  | 'JOB_SNAPSHOT'
-  | 'CHUNK_COMMITTED';
-
-export interface GenerationSseEvent {
-  type: GenerationSseEventType;
-  data: GenerationJobResponse | GenerationChunkCommittedEvent;
-}
-
 export interface GenerationChunkCommittedEvent {
   entity_name: string;
   chunk_number: number;
@@ -76,3 +67,13 @@ export interface GenerationChunkCommittedEvent {
   generated_rows: number;
   progress: number;
 }
+
+export type GenerationSseEvent =
+  | {
+      type: 'JOB_SNAPSHOT';
+      data: GenerationJobResponse;
+    }
+  | {
+      type: 'CHUNK_COMMITTED';
+      data: GenerationChunkCommittedEvent;
+    };

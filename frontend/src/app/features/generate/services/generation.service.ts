@@ -15,7 +15,6 @@ import {
   GenerationJobResponse,
   GenerationReadiness,
   GenerationSseEvent,
-  GenerationSseEventType,
 } from '../models/generation.models';
 
 @Injectable({
@@ -76,14 +75,14 @@ export class GenerationService {
         map((event) => {
           if (event.type === 'JOB_SNAPSHOT') {
             return {
-              type: 'JOB_SNAPSHOT' as GenerationSseEventType,
+              type: 'JOB_SNAPSHOT',
               data: JSON.parse(event.data) as GenerationJobResponse,
             };
           }
 
           if (event.type === 'CHUNK_COMMITTED') {
             return {
-              type: 'CHUNK_COMMITTED' as GenerationSseEventType,
+              type: 'CHUNK_COMMITTED',
               data: JSON.parse(
                 event.data,
               ) as GenerationChunkCommittedEvent,
