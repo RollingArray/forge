@@ -220,6 +220,13 @@ class GenerationService:
         if specification is None:
             return None
 
+        self._generation_log_store.append(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            stage="PREPARING",
+            status="STARTED",
+        )
+
         job.status = GenerationJobStatus.PLANNING
         job.started_at = datetime.now(timezone.utc)
         self._job_store.save(job)
@@ -257,6 +264,13 @@ class GenerationService:
             entities=checkpoint["entities"],
             specification_hash=checkpoint["specification_hash"],
             chunk_size=checkpoint["chunk_size"],
+        )
+
+        self._generation_log_store.append(
+            data_model_id=job.data_model_id,
+            job_id=job.job_id,
+            stage="PREPARING",
+            status="COMPLETED",
         )
 
         return job
@@ -630,6 +644,21 @@ class GenerationService:
 
             self._job_store.save(job)
 
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                stage="COMPLETED",
+                status="COMPLETED",
+                generated_rows=job.total_generated_rows,
+                elapsed_seconds=job.elapsed_seconds,
+                throughput_rows_per_second=(
+                    job.total_generated_rows / job.elapsed_seconds
+                    if job.elapsed_seconds and job.elapsed_seconds > 0
+                    else None
+                ),
+                peak_memory_mb=job.peak_memory_mb,
+            )
+
             self._event_broker.publish(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
@@ -650,6 +679,13 @@ class GenerationService:
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)
             self._job_store.save(job)
+
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                stage="FAILED",
+                status="FAILED",
+            )
 
     def get_job(
         self,
