@@ -37,7 +37,6 @@
       <span>Throughput</span>
       <span>Time</span>
       <span>Peak Memory</span>
-      <span>Chunk Activity</span>
     </div>
 
     <div class="entity-progress-list">
@@ -70,20 +69,18 @@
           </div>
 
           <div class="entity-name-block">
-            <div class="entity-name-row">
-              <strong [title]="entity.entity_name">
-                {{ entity.entity_name }}
-              </strong>
+            <strong [title]="entity.entity_name">
+              {{ entity.entity_name }}
+            </strong>
 
-              <span
-                class="status-badge"
-                [class.is-running]="entity.status === 'RUNNING'"
-                [class.is-completed]="entity.status === 'COMPLETED'"
-                [class.is-failed]="entity.status === 'FAILED'"
-              >
-                {{ statusLabel(entity) }}
-              </span>
-            </div>
+            <span
+              class="status-badge"
+              [class.is-running]="entity.status === 'RUNNING'"
+              [class.is-completed]="entity.status === 'COMPLETED'"
+              [class.is-failed]="entity.status === 'FAILED'"
+            >
+              {{ statusLabel(entity) }}
+            </span>
 
             <span class="entity-row-count">
               {{ entity.generated_rows | number }}
@@ -91,21 +88,6 @@
               {{ entity.target_rows | number }}
               rows
             </span>
-
-            @if (isSemanticActive(entity)) {
-              <div class="semantic-activity">
-                <span class="material-symbols-outlined semantic-activity-icon">
-                  auto_awesome
-                </span>
-
-                <span class="semantic-activity-label">
-                  Creating {{ semanticFieldLabel(entity) }}
-                  ·
-                  {{ semanticRequestedCount(entity) | number }}
-                  values…
-                </span>
-              </div>
-            }
           </div>
         </div>
 
@@ -156,9 +138,19 @@
             <span> chunks </span>
           </div>
 
-          <div class="chunk-list">
-            <ng-container *ngFor="let chunkNumber of chunkNumbers(entity); let chunkIndex = index">
-              @if (chunkIndex === 5 && entity.total_chunks > 6) {
+          <div class="chunk-list" #chunkList>
+            <ng-container
+              *ngFor="
+                let chunkNumber of chunkNumbers(entity, i);
+                let chunkIndex = index;
+              "
+            >
+              @if (
+                hasChunkGap(
+                  chunkNumbers(entity, i),
+                  chunkIndex
+                )
+              ) {
                 <span class="chunk-more"> … </span>
               }
 
@@ -167,7 +159,8 @@
                 [class.is-completed]="isChunkCompleted(entity, chunkNumber)"
                 [class.is-running]="isChunkRunning(entity, chunkNumber)"
                 [class.is-pending]="
-                  !isChunkCompleted(entity, chunkNumber) && !isChunkRunning(entity, chunkNumber)
+                  !isChunkCompleted(entity, chunkNumber) &&
+                  !isChunkRunning(entity, chunkNumber)
                 "
               >
                 @if (isChunkCompleted(entity, chunkNumber)) {

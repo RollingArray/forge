@@ -455,6 +455,7 @@ class GenerationService:
                     entities[entity.entity_name] = {
                         "target_rows": entity.target_rows,
                         "completed_chunks": completed_chunks,
+                        "committed_rows": entity.generated_rows,
                     }
 
                 self._checkpoint_store.save(

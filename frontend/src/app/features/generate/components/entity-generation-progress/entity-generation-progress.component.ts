@@ -1,7 +1,13 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  OnDestroy,
+  QueryList,
+  ViewChildren,
   input,
+  signal,
 } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 
@@ -18,7 +24,13 @@ import {
   styleUrl: './entity-generation-progress.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EntityGenerationProgressComponent {
+export class EntityGenerationProgressComponent
+  implements AfterViewInit, OnDestroy {
+  @ViewChildren('chunkList', { read: ElementRef })
+  private readonly chunkLists!: QueryList<ElementRef<HTMLElement>>;
+
+  private readonly chunkListWidths = signal<number[]>([]);
+  private readonly resizeObservers = new Map<Element, ResizeObserver>();
   readonly entities = input<GenerationEntityProgress[]>([]);
   readonly totalGeneratedRows = input(0);
   readonly totalTargetRows = input(0);
@@ -125,23 +137,168 @@ export class EntityGenerationProgressComponent {
     return 'table_rows';
   }
 
-  chunkNumbers(entity: GenerationEntityProgress): number[] {
+  chunkNumbers(
+    entity: GenerationEntityProgress,
+    entityIndex: number,
+  ): number[] {
     const total = Math.max(entity.total_chunks, 0);
 
-    if (total <= 6) {
-      return Array.from({ length: total }, (_, index) => index + 1);
+    if (total <= 0) {
+      return [];
+    }
+
+    const width = this.chunkListWidths()[entityIndex] ?? 0;
+
+    if (width <= 0) {
+      return [1];
+    }
+
+    const indicatorWidth = 18;
+    const gap = 8;
+    const ellipsisWidth = 14;
+
+    const maxIndicators = Math.max(
+      3,
+      Math.floor((width + gap) / (indicatorWidth + gap)),
+    );
+
+    if (total <= maxIndicators) {
+      return Array.from(
+        { length: total },
+        (_, index) => index + 1,
+      );
     }
 
     const currentChunk = Math.min(
-      entity.completed_chunks + 1,
+      Math.max(entity.completed_chunks + 1, 1),
       total,
     );
 
-    if (currentChunk <= 5) {
-      return [1, 2, 3, 4, 5, total];
+    const availableForIndicators =
+      width - (ellipsisWidth * 2) - (gap * 2);
+
+    const visibleIndicatorCount = Math.max(
+      3,
+      Math.floor(
+        (availableForIndicators + gap) /
+        (indicatorWidth + gap),
+      ),
+    );
+
+    const chunks = new Set<number>();
+
+    const addRange = (start: number, end: number): void => {
+      for (let chunk = start; chunk <= end; chunk += 1) {
+        chunks.add(chunk);
+      }
+    };
+
+    /*
+     * Always preserve:
+     *   - the beginning of the sequence
+     *   - the currently running chunk
+     *   - the final chunk
+     */
+    chunks.add(1);
+    chunks.add(currentChunk);
+    chunks.add(total);
+
+    let remaining = visibleIndicatorCount - chunks.size;
+
+    /*
+     * Fill from the beginning first so the sequence remains
+     * recognizable, while never consuming the active/final slots.
+     */
+    for (let chunk = 2; chunk < currentChunk && remaining > 0; chunk += 1) {
+      if (!chunks.has(chunk)) {
+        chunks.add(chunk);
+        remaining -= 1;
+      }
     }
 
-    return [1, 2, 3, 4, 5, currentChunk];
+    /*
+     * If there is still room, fill backwards from the end so
+     * the final section of the sequence remains visible too.
+     */
+    for (
+      let chunk = total - 1;
+      chunk > currentChunk && remaining > 0;
+      chunk -= 1
+    ) {
+      if (!chunks.has(chunk)) {
+        chunks.add(chunk);
+        remaining -= 1;
+      }
+    }
+
+    return [...chunks].sort((a, b) => a - b);
+  }
+
+  hasChunkGap(
+    chunks: number[],
+    index: number,
+  ): boolean {
+    if (index === 0) {
+      return false;
+    }
+
+    return chunks[index] > chunks[index - 1] + 1;
+  }
+
+  ngAfterViewInit(): void {
+    this.observeChunkLists();
+
+    this.chunkLists.changes.subscribe(() => {
+      this.observeChunkLists();
+    });
+  }
+
+  ngOnDestroy(): void {
+    for (const observer of this.resizeObservers.values()) {
+      observer.disconnect();
+    }
+
+    this.resizeObservers.clear();
+  }
+
+  private observeChunkLists(): void {
+    const widths = this.chunkLists
+      .toArray()
+      .map((elementRef) => elementRef.nativeElement.clientWidth);
+
+    this.chunkListWidths.set(widths);
+
+    for (const observer of this.resizeObservers.values()) {
+      observer.disconnect();
+    }
+
+    this.resizeObservers.clear();
+
+    this.chunkLists.forEach((elementRef, index) => {
+      const element = elementRef.nativeElement;
+
+      const observer = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect.width;
+
+        if (width == null) {
+          return;
+        }
+
+        this.chunkListWidths.update((current) => {
+          const next = [...current];
+
+          while (next.length <= index) {
+            next.push(0);
+          }
+
+          next[index] = width;
+          return next;
+        });
+      });
+
+      observer.observe(element);
+      this.resizeObservers.set(element, observer);
+    });
   }
 
   isChunkCompleted(
