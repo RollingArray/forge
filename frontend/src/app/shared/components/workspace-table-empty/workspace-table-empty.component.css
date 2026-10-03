@@ -1,0 +1,26 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-table-empty {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 12px 16px;
+
+  border-bottom: 1px solid var(--forge-border-subtle);
+
+  color: var(--forge-text-muted);
+  background: var(--forge-surface);
+  font-size: 11px;
+  text-align: center;
+}
+
+.workspace-table-empty .material-symbols-outlined {
+  font-size: 17px;
+}

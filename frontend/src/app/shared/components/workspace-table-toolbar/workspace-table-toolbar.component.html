@@ -1,0 +1,44 @@
+<div class="workspace-table-toolbar">
+  <div class="toolbar-summary">
+    @if (summaryIcon()) {
+      <span class="material-symbols-outlined">
+        {{ summaryIcon() }}
+      </span>
+    }
+
+    @if (summary()) {
+      <span>{{ summary() }}</span>
+    }
+  </div>
+
+  <div class="toolbar-actions">
+    @if (showSearch()) {
+      <label class="toolbar-search">
+        <span class="material-symbols-outlined">
+          search
+        </span>
+
+        <input
+          type="search"
+          [placeholder]="searchPlaceholder()"
+          [value]="searchValue()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </label>
+    }
+
+    @if (showDownload()) {
+      <button
+        type="button"
+        class="toolbar-action"
+        aria-label="Download"
+        title="Download"
+        (click)="onDownload()"
+      >
+        <span class="material-symbols-outlined">
+          download
+        </span>
+      </button>
+    }
+  </div>
+</div>

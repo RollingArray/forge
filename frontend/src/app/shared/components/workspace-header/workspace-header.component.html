@@ -1,0 +1,27 @@
+<div class="section-heading">
+  <div>
+    @if (eyebrow()) {
+      <span class="section-eyebrow">
+        {{ eyebrow() }}
+      </span>
+    }
+
+    @if (title()) {
+      <h2>
+        {{ title() }}
+      </h2>
+    }
+
+    @if (summary()) {
+      <div class="section-summary">
+        {{ summary() }}
+      </div>
+    }
+  </div>
+
+  @if (state()) {
+    <span class="section-state">
+      {{ state() }}
+    </span>
+  }
+</div>
