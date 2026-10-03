@@ -33,6 +33,7 @@ from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_quality_store import GenerationQualityStore
 from app.services.generation_validation_store import GenerationValidationStore
 from app.services.generation_event_broker import GenerationEventBroker
+from app.services.generation_log_store import GenerationLogStore
 from app.services.specification_service import SpecificationService
 
 
@@ -47,6 +48,7 @@ class GenerationService:
         ai_service: AIService | None = None,
         checkpoint_store: GenerationCheckpointStore | None = None,
         event_broker: GenerationEventBroker | None = None,
+        generation_log_store: GenerationLogStore | None = None,
     ) -> None:
         self._specification_service = (
             specification_service
@@ -72,6 +74,11 @@ class GenerationService:
             event_broker
             if event_broker is not None
             else GenerationEventBroker()
+        )
+        self._generation_log_store = (
+            generation_log_store
+            if generation_log_store is not None
+            else GenerationLogStore()
         )
         self._jobs: dict[str, GenerationJobResponse] = {}
 
@@ -125,6 +132,7 @@ class GenerationService:
     def create_job(
         self,
         data_model_id: str,
+        user_id: str,
     ) -> GenerationJobResponse | None:
         """Create a generation job without executing it."""
 
@@ -175,6 +183,12 @@ class GenerationService:
 
         self._jobs[job_id] = job
         self._job_store.save(job)
+
+        self._generation_log_store.create(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            user_id=user_id,
+        )
 
         return job
 

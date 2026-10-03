@@ -68,13 +68,17 @@ class GenerationLogStore:
         job_id: str,
         user_id: str | None = None,
     ) -> GenerationLogDocument:
-        return GenerationLogDocument(
+        document = GenerationLogDocument(
             schema_version=GENERATION_LOG_SCHEMA_VERSION,
             data_model_id=data_model_id,
             job_id=job_id,
             user_id=user_id,
             entries=[],
         )
+
+        self.save(document)
+
+        return document
 
     def save(
         self,
