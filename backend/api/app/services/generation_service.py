@@ -328,6 +328,7 @@ class GenerationService:
                     ai_service=self._ai_service,
                     checkpoint_store=self._checkpoint_store,
                     event_broker=self._event_broker,
+                    generation_log_store=self._generation_log_store,
                 ),
                 validator=GenerationValidator(),
                 quality_service=GenerationQualityService(

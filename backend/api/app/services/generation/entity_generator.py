@@ -41,6 +41,7 @@ class EntityGenerator:
         start_chunk: int = 1,
         on_chunk_start: Callable[[str, int, int, int], None] | None = None,
         on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
+        on_field_activity: Callable[[str, int, str, str], None] | None = None,
     ) -> int:
         """Generate the configured population in bounded execution chunks."""
 
@@ -121,6 +122,15 @@ class EntityGenerator:
 
             chunk_rows: list[dict[str, Any]] = []
 
+            if on_field_activity is not None:
+                for field in fields:
+                    on_field_activity(
+                        entity_name,
+                        chunk_number,
+                        field["name"],
+                        "STARTED",
+                    )
+
             for local_index, row_index in enumerate(
                 range(chunk_start, chunk_end)
             ):
@@ -135,6 +145,15 @@ class EntityGenerator:
                 )
 
                 chunk_rows.append(row)
+
+            if on_field_activity is not None:
+                for field in fields:
+                    on_field_activity(
+                        entity_name,
+                        chunk_number,
+                        field["name"],
+                        "COMPLETED",
+                    )
 
             generated_rows += len(chunk_rows)
 

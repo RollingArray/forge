@@ -11,6 +11,7 @@ from typing import Any, Callable
 import psutil
 
 from app.models.generation_model import GenerationSemanticCallProgress
+from app.models.generation_log_model import GenerationLogEntry
 from app.services.generation.context import GenerationContext
 from app.services.generation.run import (
     GenerationChunkRun,
@@ -25,6 +26,7 @@ from app.services.ai_service import AIService
 from app.services.generation_semantic_store import GenerationSemanticStore
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
 from app.services.generation_event_broker import GenerationEventBroker
+from app.services.generation_log_store import GenerationLogStore
 from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation.value_conversion import convert_value
 
@@ -44,6 +46,7 @@ class GenerationExecutor:
         semantic_store: GenerationSemanticStore | None = None,
         checkpoint_store: GenerationCheckpointStore | None = None,
         event_broker: GenerationEventBroker | None = None,
+        generation_log_store: GenerationLogStore | None = None,
         artifact_reader: GenerationArtifactReader | None = None,
         artifact_writer: GenerationArtifactWriter | None = None,
     ) -> None:
@@ -58,6 +61,11 @@ class GenerationExecutor:
             else GenerationCheckpointStore()
         )
         self._event_broker = event_broker
+        self._generation_log_store = (
+            generation_log_store
+            if generation_log_store is not None
+            else GenerationLogStore()
+        )
         self._artifact_reader = (
             artifact_reader
             if artifact_reader is not None
@@ -346,6 +354,28 @@ class GenerationExecutor:
 
                 continue
 
+            activity = self._generation_log_store.append(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    entity_name=entity_name,
+                    stage="ENTITY_GENERATION",
+                    status="STARTED",
+                ),
+            )
+
+            if self._event_broker is not None:
+                self._event_broker.publish(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    event_type="GENERATION_ACTIVITY",
+                    data=activity.model_dump(
+                        mode="json",
+                        exclude_none=True,
+                    ),
+                )
+
             entity_started_at = perf_counter()
             process = psutil.Process()
             entity_peak_memory_bytes = process.memory_info().rss
@@ -517,6 +547,29 @@ class GenerationExecutor:
                 chunk_peak_memory_bytes[chunk_number] = process.memory_info().rss
                 chunk_semantic_calls[chunk_number] = []
 
+                activity = self._generation_log_store.append(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    entry=GenerationLogEntry(
+                        sequence=0,
+                        entity_name=entity_name,
+                        stage="CHUNK_GENERATION",
+                        status="STARTED",
+                        chunk_number=chunk_number,
+                    ),
+                )
+
+                if self._event_broker is not None:
+                    self._event_broker.publish(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                        event_type="GENERATION_ACTIVITY",
+                        data=activity.model_dump(
+                            mode="json",
+                            exclude_none=True,
+                        ),
+                    )
+
                 for field in entity.get("fields", []):
                     generation = field.get("generation") or {}
 
@@ -614,6 +667,31 @@ class GenerationExecutor:
                                 },
                             )
 
+                        semantic_activity = self._generation_log_store.append(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entry=GenerationLogEntry(
+                                sequence=0,
+                                entity_name=entity_name,
+                                stage="SEMANTIC_GENERATION",
+                                status="STARTED",
+                                field_name=field_name,
+                                chunk_number=chunk_number,
+                                requested_count=missing_count,
+                            ),
+                        )
+
+                        if self._event_broker is not None:
+                            self._event_broker.publish(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                event_type="GENERATION_ACTIVITY",
+                                data=semantic_activity.model_dump(
+                                    mode="json",
+                                    exclude_none=True,
+                                ),
+                            )
+
                         semantic_started_at = perf_counter()
 
                         semantic_batch = self._ai_service.generate_semantic_values(
@@ -643,6 +721,32 @@ class GenerationExecutor:
                                 f"expected {missing_count}."
                             )
 
+                        semantic_activity = self._generation_log_store.append(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entry=GenerationLogEntry(
+                                sequence=0,
+                                entity_name=entity_name,
+                                stage="SEMANTIC_GENERATION",
+                                status="COMPLETED",
+                                field_name=field_name,
+                                chunk_number=chunk_number,
+                                requested_count=missing_count,
+                                elapsed_seconds=semantic_elapsed_seconds,
+                            ),
+                        )
+
+                        if self._event_broker is not None:
+                            self._event_broker.publish(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                event_type="GENERATION_ACTIVITY",
+                                data=semantic_activity.model_dump(
+                                    mode="json",
+                                    exclude_none=True,
+                                ),
+                            )
+
                         self._semantic_store.append_unique(
                             data_model_id=data_model_id,
                             job_id=job_id,
@@ -669,6 +773,36 @@ class GenerationExecutor:
                         field_name=field_name,
                         values=chunk_values,
                         chunk_number=chunk_number,
+                    )
+
+            def handle_field_activity(
+                completed_entity_name: str,
+                chunk_number: int,
+                field_name: str,
+                status: str,
+            ) -> None:
+                activity = self._generation_log_store.append(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    entry=GenerationLogEntry(
+                        sequence=0,
+                        entity_name=completed_entity_name,
+                        stage="FIELD_GENERATION",
+                        status=status,
+                        field_name=field_name,
+                        chunk_number=chunk_number,
+                    ),
+                )
+
+                if self._event_broker is not None:
+                    self._event_broker.publish(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                        event_type="GENERATION_ACTIVITY",
+                        data=activity.model_dump(
+                            mode="json",
+                            exclude_none=True,
+                        ),
                     )
 
             def handle_chunk_completed(
@@ -746,6 +880,7 @@ class GenerationExecutor:
                     start_chunk=start_chunk,
                     on_chunk_start=handle_chunk_start,
                     on_chunk_completed=handle_chunk_completed,
+                    on_field_activity=handle_field_activity,
                 )
             except Exception as exc:
                 print(
@@ -797,6 +932,38 @@ class GenerationExecutor:
                 ),
                 chunks=tuple(chunk_runs),
             )
+
+            activity = self._generation_log_store.append(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    entity_name=entity_name,
+                    stage="ENTITY_GENERATION",
+                    status="COMPLETED",
+                    generated_rows=durable_generated_rows,
+                    elapsed_seconds=entity_elapsed_seconds,
+                    throughput_rows_per_second=(
+                        durable_generated_rows / entity_elapsed_seconds
+                        if entity_elapsed_seconds > 0
+                        else None
+                    ),
+                    peak_memory_mb=(
+                        entity_peak_memory_bytes / (1024 * 1024)
+                    ),
+                ),
+            )
+
+            if self._event_broker is not None:
+                self._event_broker.publish(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    event_type="GENERATION_ACTIVITY",
+                    data=activity.model_dump(
+                        mode="json",
+                        exclude_none=True,
+                    ),
+                )
 
             entity_runs.append(entity_run)
 
