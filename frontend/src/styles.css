@@ -4,9 +4,12 @@
    ========================================================================== */
 
 .forge-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid rgba(226, 215, 208, 0.92);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.8);
   box-shadow:
     0 1px 2px rgba(74, 58, 48, 0.04),
     0 8px 22px rgba(105, 77, 60, 0.07),
@@ -22,6 +25,45 @@
  * ============================================================================ */
 
 :root {
+  /* FORGE — Color System */
+
+  /* Primary */
+  --forge-primary: #5149d1;
+  --forge-primary-soft: #f0efff;
+  --forge-primary-strong: #4038a8;
+
+  /* Text */
+  --forge-text: #344054;
+  --forge-text-secondary: #667085;
+  --forge-text-muted: #98a2b3;
+
+  /* Surfaces */
+  --forge-surface: #ffffff;
+  --forge-surface-subtle: #f8fafc;
+
+  /* Borders */
+  --forge-border: #e5e7eb;
+  --forge-border-subtle: #eef0f3;
+
+  /* Status */
+  --forge-success: #12b76a;
+  --forge-warning: #f79009;
+  --forge-error: #f04438;
+
+  /* UI */
+  --forge-text-heading: #111827;
+  --forge-text-eyebrow: #6b7280;
+  --forge-text-subtle: #475467;
+
+  --forge-surface-muted: #f1f3f6;
+  --forge-surface-active: #f7f6ff;
+  --forge-surface-active-end: #fbfaff;
+
+  --forge-border-active: #dedcf8;
+  --forge-border-row: #f1f2f4;
+  --forge-spinner-track: #d9d6f2;
+
+
   --forge-font-family:
     Calibri,
     "Segoe UI",

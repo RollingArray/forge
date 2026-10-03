@@ -1,0 +1,66 @@
+<section class="activity-card">
+  <div class="activity-header">
+    <div>
+      <span class="section-eyebrow">Execution</span>
+      <h2>Live Generation Activity</h2>
+    </div>
+
+    @if (visibleActivities().length > 0) {
+      <span class="activity-count">
+        {{ visibleActivities().length }} activities
+      </span>
+    }
+  </div>
+
+  @if (isGenerating()) {
+    <div class="activity-live-indicator">
+
+      <span class="activity-live-spinner"></span>
+      <div>
+        <strong>Generation in progress</strong>
+        <span>FORGE is actively generating your dataset</span>
+      </div>
+    </div>
+  }
+
+  @if (visibleActivities().length === 0) {
+    <div class="activity-empty">
+      <span class="material-symbols-outlined">pending</span>
+      <div>
+        <strong>Waiting for generation activity</strong>
+        <span>Execution details will appear here as generation progresses.</span>
+      </div>
+    </div>
+  } @else {
+    <div class="activity-list">
+      @for (activity of visibleActivities(); track activity.sequence) {
+        <div
+          class="activity-item"
+          [class.activity-item-active]="isActive(activity)"
+        >
+          <div class="entity-icon activity-icon">
+            <span class="material-symbols-outlined">
+              {{ activityIcon(activity) }}
+            </span>
+          </div>
+
+          <div class="activity-content">
+            <strong>
+              {{ activityMessage(activity) }}
+            </strong>
+
+            @if (activityDetail(activity)) {
+              <span class="activity-detail">
+                {{ activityDetail(activity) }}
+              </span>
+            }
+
+            <span class="activity-time">
+              {{ relativeTime(activity) }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

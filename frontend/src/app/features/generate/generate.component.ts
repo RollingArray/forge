@@ -18,6 +18,7 @@ import { GenerationThroughputCardComponent } from '../../shared/components/gener
 import { GenerationPipelineComponent } from '../../shared/components/generation-pipeline/generation-pipeline.component';
 import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
 import { GenerationCheckpointComponent } from '../../shared/components/generation-checkpoint/generation-checkpoint.component';
+import { GenerationActivityComponent } from '../../shared/components/generation-activity/generation-activity.component';
 import {
   GenerationJobResponse,
   GenerationReadiness,
@@ -36,6 +37,7 @@ import {
   GenerationPipelineComponent,
     EntityGenerationProgressComponent,
     GenerationCheckpointComponent,
+    GenerationActivityComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
@@ -100,6 +102,8 @@ export class GenerateComponent {
   readonly generationError = signal<string | null>(null);
   readonly generationJob = this.executionStore.generationJob;
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
+  readonly generationActivities = this.executionStore.generationActivities;
+  readonly isGenerating = this.executionStore.isGenerating;
   readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);
@@ -182,15 +186,16 @@ export class GenerateComponent {
       next: (job) => {
         this.executionStore.setJob(job);
 
+        this.executionStore.connect(
+          this.dataModelId,
+          job.job_id,
+        );
+
         this.generationService.startGenerationJob(this.dataModelId, job.job_id).subscribe({
           next: (startedJob) => {
             this.generationError.set(null);
             this.executionStore.setJob(startedJob);
             this.loadGenerationCheckpoint(startedJob.job_id);
-            this.executionStore.connect(
-              this.dataModelId,
-              startedJob.job_id,
-            );
           },
           error: (error) => {
             const message =
