@@ -586,7 +586,6 @@
   z-index: 40;
   width: 350px;
   min-width: 350px;
-  overflow: hidden;
   border-left: 1px solid #e5e7eb;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
@@ -625,7 +624,7 @@
   height: 100%;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1400px) {
   .generation-execution-workspace {
     grid-template-columns: minmax(0, 1fr);
     height: auto;

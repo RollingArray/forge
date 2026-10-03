@@ -1,5 +1,4 @@
 <section class="workspace-section forge-card">
-
   <div class="section-heading">
     <div>
       <span class="section-eyebrow">Execution</span>
@@ -15,19 +14,12 @@
       [class.section-state-loading]="loading()"
     >
       <span class="status-dot"></span>
-      {{ loading() ? 'Loading' : (ready() ? 'Ready' : 'Not ready') }}
+      {{ loading() ? 'Loading' : ready() ? 'Ready' : 'Not ready' }}
     </span>
   </div>
 
-  <div
-    class="pipeline"
-    *ngIf="nodes().length"
-  >
-
-    <ng-container
-      *ngFor="let node of nodes(); let i = index"
-    >
-
+  <div class="pipeline" *ngIf="nodes().length">
+    <ng-container *ngFor="let node of nodes(); let i = index">
       <article
         class="pipeline-stage"
         [class.pipeline-stage-running]="node.status === 'RUNNING'"
@@ -36,105 +28,60 @@
         [class.pipeline-stage-waiting]="node.status === 'NOT_STARTED'"
         [class.pipeline-stage-queued]="node.status === 'QUEUED'"
       >
-
         <div class="pipeline-entity-header">
-
           <div class="pipeline-entity-identity">
-
             <span class="pipeline-entity-icon">
-              <span class="material-symbols-outlined">
-                database
-              </span>
+              <span class="material-symbols-outlined"> database </span>
             </span>
 
-            <strong
-              class="pipeline-entity-name"
-              [title]="node.entityName"
-            >
+            <strong class="pipeline-entity-name" [title]="node.entityName">
               {{ node.entityName }}
             </strong>
-
           </div>
 
           <span class="pipeline-status">
-
             <span class="status-indicator"></span>
 
-            {{
-              node.status === 'NOT_STARTED'
-                ? 'Waiting'
-                : node.status
-            }}
-
+            {{ node.status === 'NOT_STARTED' ? 'Waiting' : node.status }}
           </span>
-
         </div>
 
         <div class="pipeline-entity-body">
-
-          <div
-            class="pipeline-dependency-block"
-            *ngIf="node.dependencies.length"
-          >
-
+          <div class="pipeline-dependency-block" *ngIf="node.dependencies.length">
             <div class="pipeline-dependency-heading">
+              <span class="material-symbols-outlined"> account_tree </span>
 
-              <span class="material-symbols-outlined">
-                account_tree
-              </span>
-
-              <span>
-                Depends on
-              </span>
+              <span> Depends on </span>
 
               <strong>
                 {{ node.dependencies.length }}
               </strong>
-
             </div>
 
             <div class="pipeline-dependencies">
-
-              <div
-                class="pipeline-dependency"
-                *ngFor="let dependency of node.dependencies"
-              >
-
+              <div class="pipeline-dependency" *ngFor="let dependency of node.dependencies">
                 <span
                   class="pipeline-dependency-status"
-                  [class.is-completed]="
-                    dependencyNode(dependency)?.status === 'COMPLETED'
-                  "
-                  [class.is-running]="
-                    dependencyNode(dependency)?.status === 'RUNNING'
-                  "
-                  [class.is-failed]="
-                    dependencyNode(dependency)?.status === 'FAILED'
-                  "
+                  [class.is-completed]="dependencyNode(dependency)?.status === 'COMPLETED'"
+                  [class.is-running]="dependencyNode(dependency)?.status === 'RUNNING'"
+                  [class.is-failed]="dependencyNode(dependency)?.status === 'FAILED'"
                 >
-
                   <span
-                    *ngIf="
-                      dependencyNode(dependency)?.status === 'COMPLETED'
-                    "
+                    *ngIf="dependencyNode(dependency)?.status === 'COMPLETED'"
                     class="material-symbols-outlined"
                   >
                     check
                   </span>
 
                   <span
-                    *ngIf="
-                      dependencyNode(dependency)?.status === 'RUNNING'
-                    "
+                    *ngIf="dependencyNode(dependency)?.status === 'RUNNING'"
                     class="material-symbols-outlined"
                   >
                     sync
                   </span>
 
                   <span
-                    *ngIf="
-                      dependencyNode(dependency)?.status === 'FAILED'
-                    "
+                    *ngIf="dependencyNode(dependency)?.status === 'FAILED'"
                     class="material-symbols-outlined"
                   >
                     close
@@ -150,67 +97,37 @@
                   >
                     schedule
                   </span>
-
                 </span>
 
-                <strong
-                  class="pipeline-dependency-name"
-                  [title]="dependency"
-                >
+                <strong class="pipeline-dependency-name" [title]="dependency">
                   {{ dependency }}
                 </strong>
 
                 <span class="pipeline-dependency-state">
                   {{ dependencyStatusLabel(dependency) }}
                 </span>
-
               </div>
-
             </div>
-
           </div>
 
-          <div
-            class="pipeline-independent"
-            *ngIf="!node.dependencies.length"
-          >
+          <div class="pipeline-independent" *ngIf="!node.dependencies.length">
+            <span class="material-symbols-outlined"> play_circle </span>
 
-            <span class="material-symbols-outlined">
-              play_circle
-            </span>
-
-            <span>
-              Independent entity
-            </span>
-
+            <span> Independent entity </span>
           </div>
-
         </div>
-
       </article>
 
-      <div
-        class="pipeline-connector"
-        *ngIf="i < nodes().length - 1"
-      >
+      <div class="pipeline-connector" *ngIf="i < nodes().length - 1">
         <span></span>
 
-        <span class="material-symbols-outlined">
-          arrow_downward
-        </span>
+        <span class="material-symbols-outlined"> arrow_downward </span>
       </div>
-
     </ng-container>
-
   </div>
 
-  <div
-    class="execution-summary"
-    *ngIf="nodes().length"
-  >
-
+  <div class="execution-summary" *ngIf="nodes().length">
     <div class="execution-summary-main">
-
       <span class="execution-summary-icon">
         <span class="material-symbols-outlined">
           {{ runningIndex() >= 0 ? 'sync' : 'check_circle' }}
@@ -218,7 +135,6 @@
       </span>
 
       <div class="execution-summary-copy">
-
         <strong>
           {{ executionSummary() }}
         </strong>
@@ -226,26 +142,15 @@
         <span>
           {{ executionDetail() }}
         </span>
-
       </div>
-
     </div>
-
   </div>
 
-  <div
-    class="empty-state"
-    *ngIf="!loading() && !nodes().length"
-  >
-    <span class="material-symbols-outlined">
-      account_tree
-    </span>
+  <div class="empty-state" *ngIf="!loading() && !nodes().length">
+    <span class="material-symbols-outlined"> account_tree </span>
 
     <strong>No generation plan available</strong>
 
-    <span>
-      A generation plan is required before execution can begin.
-    </span>
+    <span> A generation plan is required before execution can begin. </span>
   </div>
-
 </section>
