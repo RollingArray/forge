@@ -115,6 +115,7 @@ async def create_generation_job(
     try:
         job = generation_service.create_job(
             data_model_id=data_model_id,
+            user_id=user.user_id,
         )
     except ValueError as exc:
         raise HTTPException(
