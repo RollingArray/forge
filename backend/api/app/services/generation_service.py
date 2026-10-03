@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import psutil
 
+from app.models.generation_log_model import GenerationLogEntry
 from app.models.generation_model import (
     GenerationChunkProgress,
     GenerationEntityProgress,
@@ -223,8 +224,11 @@ class GenerationService:
         self._generation_log_store.append(
             data_model_id=data_model_id,
             job_id=job_id,
-            stage="PREPARING",
-            status="STARTED",
+            entry=GenerationLogEntry(
+                sequence=0,
+                stage="PREPARING",
+                status="STARTED",
+            ),
         )
 
         job.status = GenerationJobStatus.PLANNING
@@ -269,8 +273,11 @@ class GenerationService:
         self._generation_log_store.append(
             data_model_id=job.data_model_id,
             job_id=job.job_id,
-            stage="PREPARING",
-            status="COMPLETED",
+            entry=GenerationLogEntry(
+                sequence=0,
+                stage="PREPARING",
+                status="COMPLETED",
+            ),
         )
 
         return job
@@ -647,16 +654,19 @@ class GenerationService:
             self._generation_log_store.append(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
-                stage="COMPLETED",
-                status="COMPLETED",
-                generated_rows=job.total_generated_rows,
-                elapsed_seconds=job.elapsed_seconds,
-                throughput_rows_per_second=(
-                    job.total_generated_rows / job.elapsed_seconds
-                    if job.elapsed_seconds and job.elapsed_seconds > 0
-                    else None
-                ),
-                peak_memory_mb=job.peak_memory_mb,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="COMPLETED",
+                    status="COMPLETED",
+                    generated_rows=job.total_generated_rows,
+                    elapsed_seconds=job.elapsed_seconds,
+                    throughput_rows_per_second=(
+                        job.total_generated_rows / job.elapsed_seconds
+                        if job.elapsed_seconds and job.elapsed_seconds > 0
+                        else None
+                    ),
+                    peak_memory_mb=job.peak_memory_mb,
+                )
             )
 
             self._event_broker.publish(
@@ -683,8 +693,11 @@ class GenerationService:
             self._generation_log_store.append(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
-                stage="FAILED",
-                status="FAILED",
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="FAILED",
+                    status="FAILED",
+                )
             )
 
     def get_job(

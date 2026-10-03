@@ -34,10 +34,6 @@ class GenerationLogEntry(BaseModel):
     sequence: int
     timestamp: str | None = None
 
-    user_id: str | None = None
-    data_model_id: str
-    job_id: str
-
     entity_name: str | None = None
     stage: GenerationLogStage
     status: GenerationLogStatus

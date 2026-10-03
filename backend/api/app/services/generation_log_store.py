@@ -91,7 +91,7 @@ class GenerationLogStore:
 
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        payload = document.model_dump(mode="json")
+        payload = document.model_dump(mode="json", exclude_none=True)
 
         file_descriptor, temporary_path = tempfile.mkstemp(
             dir=path.parent,
@@ -148,18 +148,20 @@ class GenerationLogStore:
 
     def append(
         self,
+        *,
+        data_model_id: str,
+        job_id: str,
         entry: GenerationLogEntry,
     ) -> GenerationLogEntry:
         document = self.get(
-            data_model_id=entry.data_model_id,
-            job_id=entry.job_id,
+            data_model_id=data_model_id,
+            job_id=job_id,
         )
 
         if document is None:
             document = self.create(
-                data_model_id=entry.data_model_id,
-                job_id=entry.job_id,
-                user_id=entry.user_id,
+                data_model_id=data_model_id,
+                job_id=job_id,
             )
 
         next_sequence = (
