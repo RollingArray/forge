@@ -13,6 +13,7 @@ import {
 import { environment } from '../../../../environments/environment';
 import {
   GenerationChunkCommittedEvent,
+  GenerationActivityEvent,
   GenerationCompletedEvent,
   GenerationEntityCompletedEvent,
   GenerationSemanticCallStartedEvent,
@@ -99,6 +100,15 @@ export class GenerationService {
               data: JSON.parse(
                 event.data,
               ) as GenerationSemanticCallStartedEvent,
+            };
+          }
+
+          if (event.type === 'GENERATION_ACTIVITY') {
+            return {
+              type: 'GENERATION_ACTIVITY',
+              data: JSON.parse(
+                event.data,
+              ) as GenerationActivityEvent,
             };
           }
 

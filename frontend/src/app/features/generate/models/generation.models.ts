@@ -98,6 +98,22 @@ export interface GenerationCompletedEvent {
   progress: number;
 }
 
+export interface GenerationActivityEvent {
+  sequence: number;
+  timestamp: string;
+  entity_name?: string;
+  stage: string;
+  status: string;
+  field_name?: string;
+  chunk_number?: number;
+  call_number?: number;
+  requested_count?: number;
+  generated_rows?: number;
+  elapsed_seconds?: number;
+  throughput_rows_per_second?: number;
+  peak_memory_mb?: number;
+}
+
 export interface GenerationSemanticCallStartedEvent {
   entity_name: string;
   field_name: string;
@@ -118,6 +134,10 @@ export type GenerationSseEvent =
   | {
       type: 'SEMANTIC_CALL_STARTED';
       data: GenerationSemanticCallStartedEvent;
+    }
+  | {
+      type: 'GENERATION_ACTIVITY';
+      data: GenerationActivityEvent;
     }
   | {
       type: 'ENTITY_COMPLETED';

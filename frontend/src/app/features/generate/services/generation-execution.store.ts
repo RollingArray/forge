@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 
 import {
+  GenerationActivityEvent,
   GenerationEntityCompletedEvent,
   GenerationJobResponse,
   GenerationSseEvent,
@@ -22,6 +23,9 @@ export class GenerationExecutionStore {
   readonly generationJob = signal<GenerationJobResponse | null>(null);
 
   readonly lastEvent = signal<GenerationSseEvent | null>(null);
+
+  readonly generationActivities = signal<GenerationActivityEvent[]>([]);
+  readonly isGenerating = signal(false);
 
   readonly activeSemanticCall = signal<
     Extract<
@@ -69,8 +73,15 @@ export class GenerationExecutionStore {
 
       case 'JOB_SNAPSHOT':
         this.generationJob.set(event.data);
+        this.isGenerating.set(
+          event.data.status === 'QUEUED' || event.data.status === 'RUNNING',
+        );
         break;
 
+      case 'GENERATION_ACTIVITY':
+        this.isGenerating.set(true);
+        this.appendGenerationActivity(event.data);
+        break;
 
       case 'SEMANTIC_CALL_STARTED':
         this.activeSemanticCall.set(event.data);
@@ -88,12 +99,22 @@ export class GenerationExecutionStore {
 
 
       case 'GENERATION_COMPLETED':
+        this.isGenerating.set(false);
         this.activeSemanticCall.set(null);
         this.applyGenerationCompleted(event.data);
         break;
     }
   }
 
+
+  private appendGenerationActivity(
+    activity: GenerationActivityEvent,
+  ): void {
+    this.generationActivities.update((activities) => [
+      ...activities,
+      activity,
+    ]);
+  }
 
   private applyChunkProgress(
     event: Extract<
