@@ -22,6 +22,8 @@
     [dataModelName]="dataModelName()"
   />
 
+  <app-results-validation [validation]="generationJob()?.validation ?? null" />
+
   <div class="results-content-grid">
     <app-generated-files
       [artifacts]="filteredArtifacts()"

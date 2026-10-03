@@ -13,3 +13,14 @@ export interface GenerationArtifactPreview {
   total_rows: number;
   preview_rows: number;
 }
+
+export interface GenerationValidationSummary {
+  valid: boolean;
+  entity_count: number;
+  expected_rows: number;
+  generated_rows: number;
+  error_count: number;
+  errors: string[];
+  warnings: string[];
+  evidence: Record<string, unknown>;
+}

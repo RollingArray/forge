@@ -601,6 +601,7 @@ class GenerationService:
                 )
 
             job.status = result.status
+            job.validation = result.validation
             job.total_generated_rows = result.generated_rows
             job.elapsed_seconds = result.elapsed_seconds
             job.peak_memory_mb = peak_memory_bytes / (1024 * 1024)
@@ -711,12 +712,23 @@ class GenerationService:
 
         job = self._jobs.get(job_id)
 
-        if job is not None:
-            return job
+        if job is None:
+            job = self._job_store.get(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
 
-        job = self._job_store.get(data_model_id=data_model_id, job_id=job_id)
+        if job is None:
+            return None
 
-        if job is not None:
-            self._jobs[job_id] = job
+        validation = self._validation_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+
+        if validation is not None:
+            job.validation = validation
+
+        self._jobs[job_id] = job
 
         return job

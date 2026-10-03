@@ -66,6 +66,7 @@ export interface GenerationJobResponse {
   entities: GenerationEntityProgress[];
   error: string | null;
   throughput_rows_per_second: number | null;
+  validation?: import('../../results/results.models').GenerationValidationSummary | null;
 }
 
 export interface GenerationChunkCommittedEvent {

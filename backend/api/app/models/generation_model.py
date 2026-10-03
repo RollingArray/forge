@@ -105,6 +105,17 @@ class GenerationEntityProgress(BaseModel):
     )
 
 
+class GenerationValidationSummary(BaseModel):
+    valid: bool
+    entity_count: int = Field(ge=0)
+    expected_rows: int = Field(ge=0)
+    generated_rows: int = Field(ge=0)
+    error_count: int = Field(ge=0)
+    errors: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    evidence: dict[str, Any] = Field(default_factory=dict)
+
+
 class GenerationJobResponse(BaseModel):
     """Production API representation of a generation job."""
 
@@ -125,6 +136,7 @@ class GenerationJobResponse(BaseModel):
     entities: list[GenerationEntityProgress] = Field(
         default_factory=list,
     )
+    validation: GenerationValidationSummary | None = None
 
     error: str | None = None
 
@@ -174,17 +186,6 @@ class GenerationEntityResult(BaseModel):
         default_factory=list,
     )
     chunks: list[GenerationChunkProgress] = Field(default_factory=list)
-
-
-class GenerationValidationSummary(BaseModel):
-    valid: bool
-    entity_count: int = Field(ge=0)
-    expected_rows: int = Field(ge=0)
-    generated_rows: int = Field(ge=0)
-    error_count: int = Field(ge=0)
-    errors: list[str] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
-    evidence: dict[str, Any] = Field(default_factory=dict)
 
 
 class GenerationQualityProfile(BaseModel):

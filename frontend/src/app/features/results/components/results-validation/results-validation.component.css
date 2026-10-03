@@ -1,0 +1,109 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+}
+
+app-workspace-section {
+  height: auto;
+}
+
+app-workspace-section .forge-card {
+  height: auto;
+}
+
+.validation-overview {
+  flex: 0 0 auto;
+  margin-bottom: 16px;
+}
+
+.validation-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 16px;
+}
+
+.validation-status .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--forge-success);
+}
+
+.validation-status strong {
+  display: block;
+
+  color: var(--forge-text-heading);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.validation-status span {
+  display: block;
+  margin-top: 3px;
+
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+}
+
+.validation-placeholder {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px dashed var(--forge-border);
+  border-radius: 10px;
+
+  color: var(--forge-text-muted);
+  background: var(--forge-surface-subtle);
+
+  font-size: 11px;
+  text-align: center;
+}
+
+
+.validation-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.validation-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.validation-metric .material-symbols-outlined {
+  color: var(--forge-text-muted);
+  font-size: 18px;
+}
+
+.validation-metric strong {
+  color: var(--forge-text-heading);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.validation-metric span:last-child {
+  color: var(--forge-text-secondary);
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .validation-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .validation-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
