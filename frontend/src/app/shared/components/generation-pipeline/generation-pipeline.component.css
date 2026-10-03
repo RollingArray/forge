@@ -4,12 +4,6 @@
   width: 100%;
   min-width: 0;
   overflow: hidden;
-  margin: 20px 0 0;
-  padding: 22px;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
 }
 
 .section-heading {
@@ -22,7 +16,7 @@
 
 .section-eyebrow {
   display: block;
-  color: #667085;
+  color: var(--forge-text-secondary);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -31,7 +25,7 @@
 
 .section-heading h2 {
   margin: 5px 0 0;
-  color: #101828;
+  color: var(--forge-text-heading);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
@@ -39,7 +33,7 @@
 
 .section-description {
   margin: 5px 0 0;
-  color: #667085;
+  color: var(--forge-text-secondary);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -50,10 +44,10 @@
   align-items: center;
   gap: 7px;
   padding: 6px 10px;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--forge-border);
   border-radius: 999px;
-  color: #667085;
-  background: #f8f9fb;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-subtle);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.05em;
@@ -61,25 +55,25 @@
 }
 
 .section-state-ready {
-  border-color: #b7e3c8;
-  color: #087443;
-  background: #f1fbf5;
+  border-color: var(--forge-border-subtle);
+  color: var(--forge-success);
+  background: var(--forge-surface-subtle);
 }
 
 .section-state-loading {
-  color: #475467;
-  background: #f2f4f7;
+  color: var(--forge-text-subtle);
+  background: var(--forge-surface-muted);
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #98a2b3;
+  background: var(--forge-text-muted);
 }
 
 .section-state-ready .status-dot {
-  background: #12b76a;
+  background: var(--forge-success);
 }
 
 /* Execution rail */
@@ -105,10 +99,9 @@
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--forge-border);
   border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgb(16 24 40 / 4%);
+  background: var(--forge-surface);
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -117,7 +110,6 @@
 
 .pipeline-stage:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgb(16 24 40 / 7%);
 }
 
 .pipeline-entity-header {
@@ -127,8 +119,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 11px 12px;
-  border-bottom: 1px solid #eaecf0;
-  background: #fafbfc;
+  border-bottom: 1px solid var(--forge-border-subtle);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-entity-identity {
@@ -146,8 +138,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: #667085;
-  background: #eaecf0;
+  color: var(--forge-text-secondary);
+  background: var(--forge-border-subtle);
 }
 
 .pipeline-entity-icon .material-symbols-outlined {
@@ -158,7 +150,7 @@
   display: block;
   min-width: 0;
   overflow: hidden;
-  color: #101828;
+  color: var(--forge-text-heading);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -171,7 +163,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 5px;
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -182,7 +174,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #98a2b3;
+  background: var(--forge-text-muted);
 }
 
 .pipeline-entity-body {
@@ -199,7 +191,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #667085;
+  color: var(--forge-text-secondary);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -207,7 +199,7 @@
 }
 
 .pipeline-dependency-heading .material-symbols-outlined {
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 14px;
 }
 
@@ -219,8 +211,8 @@
   justify-content: center;
   margin-left: 2px;
   border-radius: 50%;
-  color: #475467;
-  background: #eaecf0;
+  color: var(--forge-text-subtle);
+  background: var(--forge-border-subtle);
   font-size: 8px;
 }
 
@@ -247,8 +239,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: #667085;
-  background: #f2f4f7;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-muted);
 }
 
 .pipeline-dependency-status .material-symbols-outlined {
@@ -256,25 +248,25 @@
 }
 
 .pipeline-dependency-status.is-completed {
-  color: #087443;
-  background: #eaf8f0;
+  color: var(--forge-success);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-dependency-status.is-running {
-  color: #175cd3;
-  background: #eaf2ff;
+  color: var(--forge-primary-strong);
+  background: var(--forge-primary-soft);
 }
 
 .pipeline-dependency-status.is-failed {
-  color: #b42318;
-  background: #fef0f0;
+  color: var(--forge-error);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-dependency-name {
   min-width: 0;
   overflow: hidden;
   flex: 1;
-  color: #1d2939;
+  color: var(--forge-text);
   font-size: 10px;
   font-weight: 750;
   text-overflow: ellipsis;
@@ -283,131 +275,131 @@
 
 .pipeline-dependency-state {
   flex: 0 0 auto;
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 8px;
   font-weight: 650;
   white-space: nowrap;
 }
 
 .pipeline-dependency-status.is-completed + .pipeline-dependency-name {
-  color: #344054;
+  color: var(--forge-text);
 }
 
 .pipeline-dependency-status.is-completed ~ .pipeline-dependency-state {
-  color: #087443;
+  color: var(--forge-success);
 }
 
 .pipeline-dependency-status.is-running ~ .pipeline-dependency-state {
-  color: #175cd3;
+  color: var(--forge-primary-strong);
 }
 
 .pipeline-dependency-status.is-failed ~ .pipeline-dependency-state {
-  color: #b42318;
+  color: var(--forge-error);
 }
 
 .pipeline-independent {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #667085;
+  color: var(--forge-text-secondary);
   font-size: 10px;
   font-weight: 650;
 }
 
 .pipeline-independent .material-symbols-outlined {
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 16px;
 }
 
 /* Active entity */
 
 .pipeline-stage-running {
-  border-color: #9bbcff;
-  background: #fbfdff;
-  box-shadow: 0 0 0 2px rgb(59 130 246 / 7%);
+  border-color: var(--forge-border-active);
+  background: var(--forge-surface-subtle);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--forge-primary) 7%, transparent);
 }
 
 .pipeline-stage-running .pipeline-entity-header {
-  border-bottom-color: #dbe8ff;
-  background: #f4f8ff;
+  border-bottom-color: var(--forge-border-active);
+  background: var(--forge-primary-soft);
 }
 
 .pipeline-stage-running .pipeline-entity-icon {
-  color: #ffffff;
-  background: #3b82f6;
+  color: var(--forge-surface);
+  background: var(--forge-primary);
 }
 
 .pipeline-stage-running .pipeline-status {
-  color: #175cd3;
+  color: var(--forge-primary-strong);
 }
 
 .pipeline-stage-running .status-indicator {
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 10%);
+  background: var(--forge-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--forge-primary) 10%, transparent);
   animation: pipeline-pulse 1.6s ease-in-out infinite;
 }
 
 /* Completed entity */
 
 .pipeline-stage-completed {
-  border-color: #a6dfbd;
-  background: #fbfefc;
+  border-color: var(--forge-border-subtle);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-completed .pipeline-entity-header {
-  border-bottom-color: #e3f4e9;
-  background: #f4fcf7;
+  border-bottom-color: var(--forge-border-subtle);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-completed .pipeline-entity-icon {
-  color: #ffffff;
-  background: #12b76a;
+  color: var(--forge-surface);
+  background: var(--forge-success);
 }
 
 .pipeline-stage-completed .pipeline-status {
-  color: #087443;
+  color: var(--forge-success);
 }
 
 .pipeline-stage-completed .status-indicator {
-  background: #12b76a;
+  background: var(--forge-success);
 }
 
 /* Failed entity */
 
 .pipeline-stage-failed {
-  border-color: #f1b7b5;
-  background: #fffafa;
+  border-color: var(--forge-border-subtle);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-failed .pipeline-entity-header {
-  border-bottom-color: #fbe4e3;
-  background: #fff5f5;
+  border-bottom-color: var(--forge-border-subtle);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-failed .pipeline-entity-icon {
-  color: #ffffff;
-  background: #d92d20;
+  color: var(--forge-surface);
+  background: var(--forge-error);
 }
 
 .pipeline-stage-failed .pipeline-status {
-  color: #b42318;
+  color: var(--forge-error);
 }
 
 .pipeline-stage-failed .status-indicator {
-  background: #d92d20;
+  background: var(--forge-error);
 }
 
 /* Waiting / queued */
 
 .pipeline-stage-waiting,
 .pipeline-stage-queued {
-  background: #fcfcfd;
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-waiting .pipeline-entity-icon,
 .pipeline-stage-queued .pipeline-entity-icon {
-  color: #667085;
-  background: #eaecf0;
+  color: var(--forge-text-secondary);
+  background: var(--forge-border-subtle);
 }
 
 /* Connectors */
@@ -420,7 +412,7 @@
   flex: 0 0 28px;
   align-items: center;
   justify-content: center;
-  color: #98a2b3;
+  color: var(--forge-text-muted);
 }
 
 .pipeline-connector > span:first-child {
@@ -430,7 +422,7 @@
   left: 50%;
   width: 1px;
   height: auto;
-  background: #d0d5dd;
+  background: var(--forge-border);
 }
 
 .pipeline-connector .material-symbols-outlined {
@@ -438,167 +430,49 @@
   z-index: 1;
   padding: 3px;
   border-radius: 50%;
-  color: #667085;
-  background: #ffffff;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface);
   font-size: 18px;
 }
 
 /* Completed */
 
-.pipeline-stage-completed {
-  border-color: #a6dfbd;
-  background: #fbfefc;
-}
-
-.pipeline-stage-completed .pipeline-stage-header {
-  border-bottom-color: #e3f4e9;
-  background: #f4fcf7;
-}
-
-.pipeline-stage-completed .pipeline-number {
-  color: #ffffff;
-  background: #12b76a;
-}
-
-.pipeline-stage-completed .pipeline-status {
-  color: #087443;
-}
-
-.pipeline-stage-completed .status-indicator {
-  background: #12b76a;
-}
-
-.pipeline-stage-completed .pipeline-progress-fill {
-  background: #12b76a;
-}
-
 /* Running */
-
-.pipeline-stage-running {
-  border-color: #9bbcff;
-  background: #fbfdff;
-  box-shadow: 0 0 0 2px rgb(59 130 246 / 8%);
-}
-
-.pipeline-stage-running .pipeline-stage-header {
-  border-bottom-color: #dbe8ff;
-  background: #f4f8ff;
-}
-
-.pipeline-stage-running .pipeline-number {
-  color: #ffffff;
-  background: #3b82f6;
-}
-
-.pipeline-stage-running .pipeline-status {
-  color: #175cd3;
-}
-
-.pipeline-stage-running .status-indicator {
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 12%);
-  animation: pipeline-pulse 1.6s ease-in-out infinite;
-}
-
-.pipeline-stage-running .pipeline-progress-fill {
-  background: #3b82f6;
-}
 
 /*
  * The running card communicates activity without inventing
  * intra-chunk percentage progress.
  */
-.pipeline-stage-running .pipeline-progress {
-  background: #dbe8ff;
-}
 
-.pipeline-stage-running .pipeline-progress-fill {
-  animation: pipeline-activity 1.5s ease-in-out infinite;
-}
+
+
 
 /* Queued */
 
 .pipeline-stage-queued {
-  border-color: #d0d5dd;
-  background: #fcfcfd;
+  border-color: var(--forge-border);
+  background: var(--forge-surface-subtle);
 }
 
 .pipeline-stage-queued .pipeline-status {
-  color: #667085;
+  color: var(--forge-text-secondary);
 }
 
 .pipeline-stage-queued .status-indicator {
-  background: #667085;
+  background: var(--forge-text-secondary);
 }
 
 /* Failed */
 
-.pipeline-stage-failed {
-  border-color: #f1b7b5;
-  background: #fffafa;
-}
-
-.pipeline-stage-failed .pipeline-stage-header {
-  border-bottom-color: #fbe4e3;
-  background: #fff5f5;
-}
-
-.pipeline-stage-failed .pipeline-number {
-  color: #ffffff;
-  background: #d92d20;
-}
-
-.pipeline-stage-failed .pipeline-status {
-  color: #b42318;
-}
-
-.pipeline-stage-failed .status-indicator {
-  background: #d92d20;
-}
-
-.pipeline-stage-failed .pipeline-progress-fill {
-  background: #d92d20;
-}
-
 /* Waiting */
 
 .pipeline-stage-waiting {
-  background: #fcfcfd;
+  background: var(--forge-surface-subtle);
 }
 
-.pipeline-stage-waiting .pipeline-progress-fill {
-  background: #d0d5dd;
-}
+
 
 /* Connectors */
-
-.pipeline-connector {
-  display: flex;
-  flex: 0 0 42px;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  color: #98a2b3;
-}
-
-.pipeline-connector > span:first-child {
-  position: absolute;
-  top: 50%;
-  left: 2px;
-  right: 2px;
-  height: 1px;
-  background: #d0d5dd;
-}
-
-.pipeline-connector .material-symbols-outlined {
-  position: relative;
-  z-index: 1;
-  padding: 3px;
-  border-radius: 50%;
-  color: #667085;
-  background: #ffffff;
-  font-size: 18px;
-}
 
 /* Empty state */
 
@@ -610,24 +484,24 @@
   justify-content: center;
   gap: 6px;
   padding: 24px;
-  border: 1px dashed #d8dce5;
+  border: 1px dashed var(--forge-border);
   border-radius: 14px;
-  background: #fafbfc;
+  background: var(--forge-surface-subtle);
   text-align: center;
 }
 
 .empty-state .material-symbols-outlined {
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 28px;
 }
 
 .empty-state strong {
-  color: #475467;
+  color: var(--forge-text-subtle);
   font-size: 12px;
 }
 
 .empty-state span:last-child {
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 11px;
 }
 
@@ -668,9 +542,9 @@
   align-items: center;
   margin-top: 8px;
   padding: 9px 12px;
-  border: 1px solid #eaecf0;
+  border: 1px solid var(--forge-border-subtle);
   border-radius: 12px;
-  background: #fafbfc;
+  background: var(--forge-surface-subtle);
 }
 
 .execution-summary-main {
@@ -688,8 +562,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: #175cd3;
-  background: #eaf2ff;
+  color: var(--forge-primary-strong);
+  background: var(--forge-primary-soft);
 }
 
 .execution-summary-icon .material-symbols-outlined {
@@ -704,161 +578,29 @@
 }
 
 .execution-summary-copy strong {
-  color: #344054;
+  color: var(--forge-text);
   font-size: 10px;
   font-weight: 750;
 }
 
 .execution-summary-copy span {
-  color: #98a2b3;
+  color: var(--forge-text-muted);
   font-size: 9px;
 }
 
 /* Motion */
 
-@keyframes pipeline-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(0.9);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* Completed */
-
-.pipeline-stage-completed {
-  border-color: #a6dfbd;
-  background: #fbfefc;
-}
-
-.pipeline-stage-completed .pipeline-stage-header {
-  border-bottom-color: #e3f4e9;
-  background: #f4fcf7;
-}
-
-.pipeline-stage-completed .pipeline-number {
-  color: #ffffff;
-  background: #12b76a;
-}
-
-.pipeline-stage-completed .pipeline-status {
-  color: #087443;
-}
-
-.pipeline-stage-completed .status-indicator {
-  background: #12b76a;
-}
 
 /* Running */
 
-.pipeline-stage-running {
-  border-color: #9bbcff;
-  background: #fbfdff;
-  box-shadow: 0 0 0 2px rgb(59 130 246 / 8%);
-}
-
-.pipeline-stage-running .pipeline-stage-header {
-  border-bottom-color: #dbe8ff;
-  background: #f4f8ff;
-}
-
-.pipeline-stage-running .pipeline-number {
-  color: #ffffff;
-  background: #3b82f6;
-}
-
-.pipeline-stage-running .pipeline-status {
-  color: #175cd3;
-}
-
-.pipeline-stage-running .status-indicator {
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 12%);
-  animation: pipeline-pulse 1.6s ease-in-out infinite;
-}
-
 /* Queued */
-
-.pipeline-stage-queued {
-  border-color: #d0d5dd;
-  background: #fcfcfd;
-}
-
-.pipeline-stage-queued .pipeline-status {
-  color: #667085;
-}
-
-.pipeline-stage-queued .status-indicator {
-  background: #667085;
-}
 
 /* Failed */
 
-.pipeline-stage-failed {
-  border-color: #f1b7b5;
-  background: #fffafa;
-}
-
-.pipeline-stage-failed .pipeline-stage-header {
-  border-bottom-color: #fbe4e3;
-  background: #fff5f5;
-}
-
-.pipeline-stage-failed .pipeline-number {
-  color: #ffffff;
-  background: #d92d20;
-}
-
-.pipeline-stage-failed .pipeline-status {
-  color: #b42318;
-}
-
-.pipeline-stage-failed .status-indicator {
-  background: #d92d20;
-}
-
 /* Waiting */
 
-.pipeline-stage-waiting {
-  background: #fcfcfd;
-}
-
 /* Empty state */
-
-.empty-state {
-  display: flex;
-  min-height: 150px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 24px;
-  border: 1px dashed #d8dce5;
-  border-radius: 14px;
-  background: #fafbfc;
-  text-align: center;
-}
-
-.empty-state .material-symbols-outlined {
-  color: #98a2b3;
-  font-size: 28px;
-}
-
-.empty-state strong {
-  color: #475467;
-  font-size: 12px;
-}
-
-.empty-state span:last-child {
-  color: #98a2b3;
-  font-size: 11px;
-}
-
 
 /* Bounded execution workspace */
 
