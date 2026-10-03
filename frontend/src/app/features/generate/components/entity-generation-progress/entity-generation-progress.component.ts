@@ -16,10 +16,18 @@ import {
   GenerationSemanticCallStartedEvent,
 } from '../../models/generation.models';
 
+import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
+import { WorkspaceTableComponent } from '../../../../shared/components/workspace-table/workspace-table.component';
+
 @Component({
   selector: 'app-entity-generation-progress',
   standalone: true,
-  imports: [CommonModule, DecimalPipe],
+  imports: [
+    CommonModule,
+    DecimalPipe,
+    WorkspaceHeaderComponent,
+    WorkspaceTableComponent,
+  ],
   templateUrl: './entity-generation-progress.component.html',
   styleUrl: './entity-generation-progress.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

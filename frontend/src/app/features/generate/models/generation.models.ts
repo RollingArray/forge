@@ -61,6 +61,8 @@ export interface GenerationJobResponse {
   total_target_rows: number;
   total_generated_rows: number;
   progress: number;
+  elapsed_seconds: number | null;
+  peak_memory_mb: number | null;
   entities: GenerationEntityProgress[];
   error: string | null;
   throughput_rows_per_second: number | null;
