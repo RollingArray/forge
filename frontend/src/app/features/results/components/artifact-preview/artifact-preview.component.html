@@ -1,0 +1,72 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="File Preview"
+    [title]="artifact()?.filename || 'Generated File'"
+    [summary]="
+      artifact()
+        ? (artifact()!.rows | number) + ' rows · ' +
+          (artifact()!.size_bytes / 1024 | number:'1.0-1') + ' KB'
+        : 'Select a generated file to preview its contents.'
+    "
+    [state]="loading() ? 'Loading' : artifact() ? 'Ready' : 'Waiting'"
+  />
+
+  <app-workspace-table-toolbar
+    summaryIcon="table_view"
+    [summary]="
+      preview()
+        ? (
+            searchTerm()
+              ? filteredRows().length + ' of ' + preview()!.rows.length + ' preview rows'
+              : preview()!.rows.length + ' preview rows'
+          )
+        : 'No preview loaded'
+    "
+    [showSearch]="true"
+    searchPlaceholder="Search preview..."
+    [searchValue]="searchTerm()"
+    (searchValueChange)="updateSearchTerm($event)"
+  />
+
+  <div *ngIf="error()" class="preview-state preview-state-error">
+    {{ error() }}
+  </div>
+
+  <div
+    *ngIf="!loading() && !error() && !artifact()"
+    class="preview-state"
+  >
+    Select a generated file to preview its contents.
+  </div>
+
+  <app-workspace-table
+    *ngIf="!loading() && !error() && preview() && filteredRows().length > 0"
+  >
+    <div
+      table-header
+      class="preview-table-header"
+      [style.gridTemplateColumns]="'repeat(' + preview()!.columns.length + ', minmax(120px, max-content))'"
+    >
+      <span *ngFor="let column of preview()!.columns">
+        {{ column }}
+      </span>
+    </div>
+
+    <div table-body>
+      <div
+        *ngFor="let row of filteredRows()"
+        class="preview-table-row"
+        [style.gridTemplateColumns]="'repeat(' + preview()!.columns.length + ', minmax(120px, max-content))'"
+      >
+        <span *ngFor="let column of preview()!.columns">
+          {{ row[column] }}
+        </span>
+      </div>
+    </div>
+  </app-workspace-table>
+
+  <app-workspace-table-empty
+    *ngIf="!loading() && !error() && preview() && filteredRows().length === 0"
+    message="No preview rows match your search."
+  />
+</app-workspace-section>

@@ -1,0 +1,84 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="Generated Data"
+    title="Generated Files"
+    summary="Generated datasets are available for review and download."
+    [state]="loading() ? 'Loading' : error() ? 'Unavailable' : 'Ready'"
+  />
+
+  <app-workspace-table-toolbar
+    summaryIcon="description"
+    [summary]="
+      allArtifactsCount() +
+      (allArtifactsCount() === 1 ? ' file' : ' files')
+    "
+    [showSearch]="true"
+    searchPlaceholder="Search files..."
+    [searchValue]="searchTerm()"
+    (searchValueChange)="updateSearchTerm($event)"
+  />
+
+  <div
+    *ngIf="error()"
+    class="results-state results-state-error"
+  >
+    {{ error() }}
+  </div>
+
+  <app-workspace-table-empty
+    *ngIf="!loading() && !error() && artifacts().length === 0"
+    message="No generated files match your search."
+  />
+
+  <app-workspace-table
+    *ngIf="!loading() && !error() && artifacts().length > 0"
+  >
+    <div table-header class="results-file-header">
+      <span>#</span>
+      <span>File Name</span>
+      <span>Rows</span>
+      <span>Size</span>
+      <span>Actions</span>
+    </div>
+
+    <div table-body>
+      <article
+        *ngFor="let artifact of artifacts(); let i = index"
+        class="results-file-row"
+        [class.results-file-row-selected]="isSelected(artifact)"
+        (click)="selectArtifact(artifact)"
+      >
+        <span class="file-index">
+          {{ i + 1 }}
+        </span>
+
+        <div class="results-file-name">
+          <span class="file-type">CSV</span>
+
+          <strong [title]="artifact.filename">
+            {{ artifact.filename }}
+          </strong>
+        </div>
+
+        <span class="file-metric">
+          {{ artifact.rows | number }}
+        </span>
+
+        <span class="file-metric">
+          {{ artifact.size_bytes / 1024 | number:'1.0-1' }} KB
+        </span>
+
+        <button
+          type="button"
+          class="file-download"
+          (click)="downloadArtifact($event, artifact)"
+          aria-label="Download generated file"
+        >
+          <span class="material-symbols-outlined">
+            download
+          </span>
+        </button>
+      </article>
+    </div>
+  </app-workspace-table>
+</app-workspace-section>
