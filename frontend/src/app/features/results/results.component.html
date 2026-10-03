@@ -16,273 +16,31 @@
   (stepSelected)="selectStep($event)"
   (secondaryAction)="backToGenerate()"
 >
+  <app-results-execution-summary
+    [generationJob]="generationJob()"
+    [jobId]="jobId"
+    [dataModelName]="dataModelName()"
+  />
 
-  <div class="results-workspace">
+  <div class="results-content-grid">
+    <app-generated-files
+      [artifacts]="filteredArtifacts()"
+      [allArtifactsCount]="artifacts().length"
+      [loading]="artifactsLoading()"
+      [error]="artifactsError()"
+      [selectedArtifact]="selectedArtifact()"
+      [searchTerm]="searchTerm()"
+      (searchTermChange)="updateSearchTerm($event)"
+      (artifactSelected)="selectArtifact($event)"
+      (downloadRequested)="downloadArtifact($event)"
+    />
 
-    <section class="results-summary-grid">
-
-      <article class="results-summary-card">
-        <div>
-          <span class="results-summary-label">Generation Status</span>
-
-          <strong class="results-summary-value">
-            {{ generationJob()?.status ?? 'Completed' }}
-          </strong>
-
-          <span class="results-summary-detail">
-            Generation finished successfully
-          </span>
-        </div>
-
-        <span class="results-summary-icon success">
-          <span class="material-symbols-outlined">check</span>
-        </span>
-      </article>
-
-      <article class="results-summary-card">
-        <div>
-          <span class="results-summary-label">Job ID</span>
-
-          <strong
-            class="results-summary-value results-job-id"
-            [title]="generationJob()?.job_id ?? jobId"
-          >
-            {{ generationJob()?.job_id ?? jobId }}
-          </strong>
-
-          <span class="results-summary-detail">
-            Generation job identifier
-          </span>
-        </div>
-
-        <span class="results-summary-icon neutral">
-          <span class="material-symbols-outlined">content_copy</span>
-        </span>
-      </article>
-
-      <article class="results-summary-card">
-        <div>
-          <span class="results-summary-label">Total Generated Rows</span>
-
-          <strong class="results-summary-value">
-            {{ generationJob()?.total_generated_rows ?? 0 | number }}
-          </strong>
-
-          <span class="results-summary-detail">
-            Across {{ generationJob()?.entities?.length ?? 0 }} entities
-          </span>
-        </div>
-
-        <span class="results-summary-icon peach">
-          <span class="material-symbols-outlined">database</span>
-        </span>
-      </article>
-
-      <article class="results-summary-card">
-        <div>
-          <span class="results-summary-label">Throughput</span>
-
-          <strong class="results-summary-value">
-            {{
-              generationJob()?.throughput_rows_per_second !== null
-                ? (generationJob()?.throughput_rows_per_second | number:'1.0-0')
-                : '—'
-            }}
-          </strong>
-
-          <span class="results-summary-detail">
-            Rows per second
-          </span>
-        </div>
-
-        <span class="results-summary-icon purple">
-          <span class="material-symbols-outlined">bolt</span>
-        </span>
-      </article>
-
-    </section>
-
-    <section class="results-content-grid">
-
-      <section class="results-panel">
-
-        <div class="results-panel-header">
-
-          <div>
-            <span class="section-eyebrow">Generated Data</span>
-            <h2>Generated Files</h2>
-
-            <p>
-              {{ artifacts().length }} files generated successfully.
-              Select a file to preview its contents.
-            </p>
-          </div>
-
-          <label class="results-search">
-            <span class="material-symbols-outlined">search</span>
-
-            <input
-              type="search"
-              placeholder="Search files..."
-              [value]="searchTerm()"
-              (input)="updateSearchTerm($any($event.target).value)"
-            />
-          </label>
-
-        </div>
-
-        <div
-          *ngIf="artifactsLoading()"
-          class="results-state"
-        >
-          Loading generated files...
-        </div>
-
-        <div
-          *ngIf="artifactsError()"
-          class="results-state results-state-error"
-        >
-          {{ artifactsError() }}
-        </div>
-
-        <div
-          *ngIf="
-            !artifactsLoading()
-            && !artifactsError()
-            && filteredArtifacts().length === 0
-          "
-          class="results-state"
-        >
-          No generated files match your search.
-        </div>
-
-        <div
-          *ngIf="!artifactsLoading() && filteredArtifacts().length > 0"
-          class="results-file-table"
-        >
-
-          <div class="results-file-header">
-            <span>#</span>
-            <span>File Name</span>
-            <span>Rows</span>
-            <span>Size</span>
-            <span>Actions</span>
-          </div>
-
-          <article
-            *ngFor="let artifact of filteredArtifacts(); let i = index"
-            class="results-file-row"
-            [class.results-file-row-selected]="
-              selectedArtifact()?.entity_name === artifact.entity_name
-            "
-            (click)="selectArtifact(artifact)"
-          >
-
-            <span class="file-index">
-              {{ i + 1 }}
-            </span>
-
-            <div class="results-file-name">
-              <span class="file-type">CSV</span>
-              <strong>{{ artifact.filename }}</strong>
-            </div>
-
-            <span class="file-metric">
-              {{ artifact.rows | number }}
-            </span>
-
-            <span class="file-metric">
-              {{ artifact.size_bytes / 1024 | number:'1.0-1' }} KB
-            </span>
-
-            <button
-              type="button"
-              class="file-download"
-              (click)="$event.stopPropagation(); downloadArtifact(artifact)"
-              aria-label="Download generated file"
-            >
-              <span class="material-symbols-outlined">
-                download
-              </span>
-            </button>
-
-          </article>
-
-        </div>
-
-      </section>
-
-      <section class="results-panel preview-panel">
-
-        <div
-          *ngIf="selectedArtifact()"
-          class="preview-header"
-        >
-          <div>
-            <span class="section-eyebrow">File Preview</span>
-
-            <h2>{{ selectedArtifact()?.filename }}</h2>
-
-            <span class="preview-file-meta">
-              {{ selectedArtifact()?.rows | number }} rows
-              ·
-              {{ selectedArtifact()!.size_bytes / 1024 | number:'1.0-1' }} KB
-            </span>
-          </div>
-
-          <button
-            type="button"
-            class="preview-download"
-            (click)="downloadArtifact(selectedArtifact()!)"
-          >
-            <span class="material-symbols-outlined">
-              download
-            </span>
-            Download File
-          </button>
-        </div>
-
-        <div
-          *ngIf="previewLoading()"
-          class="results-state"
-        >
-          Loading preview...
-        </div>
-
-        <div
-          *ngIf="previewError()"
-          class="results-state results-state-error"
-        >
-          {{ previewError() }}
-        </div>
-
-        <div
-          *ngIf="preview()"
-          class="preview-table-wrapper"
-        >
-          <table class="preview-table">
-            <thead>
-              <tr>
-                <th *ngFor="let column of preview()!.columns">
-                  {{ column }}
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr *ngFor="let row of preview()!.rows">
-                <td *ngFor="let column of preview()!.columns">
-                  {{ row[column] }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-      </section>
-
-    </section>
-
+    <app-artifact-preview
+      [artifact]="selectedArtifact()"
+      [preview]="preview()"
+      [loading]="previewLoading()"
+      [error]="previewError()"
+      (downloadRequested)="downloadArtifact($event)"
+    />
   </div>
-
 </app-workflow-page>

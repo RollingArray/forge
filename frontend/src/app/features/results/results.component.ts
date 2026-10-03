@@ -15,16 +15,27 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { GenerationService } from '../generate/services/generation.service';
+import { WorkspaceService } from '../../core/services/workspace.service';
 import { GenerationJobResponse } from '../generate/models/generation.models';
 import {
   GenerationArtifact,
   GenerationArtifactPreview,
 } from './results.models';
 
+import { ResultsExecutionSummaryComponent } from './components/results-execution-summary/results-execution-summary.component';
+import { GeneratedFilesComponent } from './components/generated-files/generated-files.component';
+import { ArtifactPreviewComponent } from './components/artifact-preview/artifact-preview.component';
+
 @Component({
   selector: 'app-results',
   standalone: true,
-  imports: [CommonModule, WorkflowPageComponent],
+  imports: [
+    CommonModule,
+    WorkflowPageComponent,
+    ResultsExecutionSummaryComponent,
+    GeneratedFilesComponent,
+    ArtifactPreviewComponent,
+  ],
   templateUrl: './results.component.html',
   styleUrl: './results.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +44,7 @@ export class ResultsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly generationService = inject(GenerationService);
+  private readonly workspaceService = inject(WorkspaceService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly dataModelId =
@@ -52,6 +64,7 @@ export class ResultsComponent {
   readonly activeStep: WorkflowStep = 'results';
 
   readonly generationJob = signal<GenerationJobResponse | null>(null);
+  readonly dataModelName = signal('');
 
   readonly artifacts = signal<GenerationArtifact[]>([]);
   readonly filteredArtifacts = signal<GenerationArtifact[]>([]);
@@ -67,6 +80,7 @@ export class ResultsComponent {
 
   constructor() {
     this.loadGenerationJob();
+    this.loadDataModel();
     this.loadArtifacts();
   }
 
@@ -201,6 +215,25 @@ export class ResultsComponent {
       .subscribe({
         next: (job) => {
           this.generationJob.set(job);
+        },
+      });
+  }
+
+  private loadDataModel(): void {
+    if (!this.dataModelId) {
+      return;
+    }
+
+    this.workspaceService
+      .getDataModels()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dataModels) => {
+          const dataModel = dataModels.find(
+            (model) => model.dataModelId === this.dataModelId,
+          );
+
+          this.dataModelName.set(dataModel?.name ?? '');
         },
       });
   }

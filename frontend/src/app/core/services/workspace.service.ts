@@ -41,6 +41,20 @@ export class WorkspaceService {
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
 
+  getDataModels(): Observable<DataModel[]> {
+    return this.http
+      .get<DataModelListItemResponse[]>(
+        `${this.apiBaseUrl}/data-models`,
+      )
+      .pipe(
+        map((dataModels) =>
+          dataModels.map((dataModel) =>
+            this.mapDataModel(dataModel),
+          ),
+        ),
+      );
+  }
+
   loadWorkspace(): Observable<WorkspaceData> {
     return forkJoin({
       metrics: this.http.get<WorkspaceMetricsResponse>(
