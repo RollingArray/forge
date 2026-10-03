@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -8,6 +8,7 @@ import {
   WorkflowStepItem,
 } from '../../shared/components/workflow-stepper/workflow-stepper.component';
 import { GenerationService } from './services/generation.service';
+import { GenerationCheckpoint } from '../../shared/models/generation-checkpoint.models';
 import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
 import { GenerationJobCardComponent } from '../../shared/components/generation-job-card/generation-job-card.component';
@@ -16,7 +17,11 @@ import { GenerationEntitiesCardComponent } from '../../shared/components/generat
 import { GenerationThroughputCardComponent } from '../../shared/components/generation-throughput-card/generation-throughput-card.component';
 import { GenerationPipelineComponent } from '../../shared/components/generation-pipeline/generation-pipeline.component';
 import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
-import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
+import { GenerationCheckpointComponent } from '../../shared/components/generation-checkpoint/generation-checkpoint.component';
+import {
+  GenerationJobResponse,
+  GenerationReadiness,
+} from './models/generation.models';
 
 @Component({
   selector: 'app-generate',
@@ -30,6 +35,7 @@ import { GenerationJobResponse, GenerationReadiness } from './models/generation.
     GenerationThroughputCardComponent,
   GenerationPipelineComponent,
     EntityGenerationProgressComponent,
+    GenerationCheckpointComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
@@ -56,6 +62,18 @@ export class GenerateComponent {
 
   constructor() {
     this.loadGenerationReadiness();
+
+    effect(() => {
+      const event = this.executionStore.lastEvent();
+
+      if (event?.type === 'GENERATION_COMPLETED') {
+        const job = this.executionStore.generationJob();
+
+        if (job) {
+          this.loadGenerationCheckpoint(job.job_id);
+        }
+      }
+    });
   }
 
   private loadGenerationReadiness(): void {
@@ -81,6 +99,9 @@ export class GenerateComponent {
   readonly generationLoading = signal(true);
   readonly generationError = signal<string | null>(null);
   readonly generationJob = this.executionStore.generationJob;
+  readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
+  readonly generationCheckpointLoading = signal(false);
+  readonly generationCheckpointError = signal<string | null>(null);
 
   readonly pipelineNodes = computed(() =>
     this.pipelineMapper.fromReadiness(
@@ -164,6 +185,7 @@ export class GenerateComponent {
           next: (startedJob) => {
             this.generationError.set(null);
             this.executionStore.setJob(startedJob);
+            this.loadGenerationCheckpoint(startedJob.job_id);
             this.executionStore.connect(
               this.dataModelId,
               startedJob.job_id,
@@ -184,6 +206,39 @@ export class GenerateComponent {
         this.generationError.set(message);
       },
     });
+  }
+
+  private loadGenerationCheckpoint(jobId: string): void {
+    if (!this.dataModelId || !jobId) {
+      return;
+    }
+
+    this.generationCheckpointLoading.set(true);
+    this.generationCheckpointError.set(null);
+
+    this.generationService
+      .getGenerationCheckpoint(this.dataModelId, jobId)
+      .subscribe({
+        next: (checkpoint) => {
+          this.generationCheckpoint.set(checkpoint);
+          this.generationCheckpointLoading.set(false);
+        },
+        error: (error) => {
+          this.generationCheckpointLoading.set(false);
+
+          if (error?.status === 404) {
+            this.generationCheckpoint.set(null);
+            this.generationCheckpointError.set(null);
+            return;
+          }
+
+          this.generationCheckpointError.set(
+            error?.error?.detail ??
+              error?.message ??
+              'Generation checkpoint could not be loaded.',
+          );
+        },
+      });
   }
 
   private isTerminalGenerationStatus(status: GenerationJobResponse['status']): boolean {

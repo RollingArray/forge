@@ -1,3 +1,4 @@
+
 export interface GenerationEntityReadiness {
   entity_name: string;
   target_rows: number;

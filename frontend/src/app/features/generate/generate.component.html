@@ -47,22 +47,23 @@
   "
   [primaryIcon]="'arrow_forward'"
   [primaryDisabled]="
-    generationLoading()
-      || (
-        generationJob() !== null
-        && generationJob()?.status !== 'COMPLETED'
-      )
+    generationLoading() || (generationJob() !== null && generationJob()?.status !== 'COMPLETED')
   "
   (stepSelected)="selectStep($event)"
   (secondaryAction)="backToPopulation()"
   (primaryAction)="handlePrimaryAction()"
 >
   <section class="generate-shell">
-
     <section class="generation-status-card">
       <div class="status-icon">
         <span class="material-symbols-outlined">
-          {{ generationLoading() ? 'hourglass_top' : (generationReadiness()?.ready ? 'check_circle' : 'error') }}
+          {{
+            generationLoading()
+              ? 'hourglass_top'
+              : generationReadiness()?.ready
+                ? 'check_circle'
+                : 'error'
+          }}
         </span>
       </div>
 
@@ -93,14 +94,14 @@
             {{
               generationLoading()
                 ? 'LOADING'
-                : generationJob()?.status ?? (generationReadiness()?.ready ? 'READY' : 'NOT READY')
+                : (generationJob()?.status ??
+                  (generationReadiness()?.ready ? 'READY' : 'NOT READY'))
             }}
           </span>
         </div>
 
         <p *ngIf="generationLoading()">
-          The backend is loading the canonical specification and generation
-          plan.
+          The backend is loading the canonical specification and generation plan.
         </p>
 
         <p *ngIf="generationError()">
@@ -143,29 +144,22 @@
 
       <app-generation-target-card
         [totalTargetRows]="
-          generationJob()?.total_target_rows
-            ?? generationReadiness()?.total_target_rows
-            ?? 0
+          generationJob()?.total_target_rows ?? generationReadiness()?.total_target_rows ?? 0
         "
       />
 
       <app-generation-entities-card
         [entityCount]="
-          generationJob()?.entities?.length
-            ?? generationReadiness()?.entity_count
-            ?? null
+          generationJob()?.entities?.length ?? generationReadiness()?.entity_count ?? null
         "
       />
 
       <app-generation-throughput-card
-        [throughputRowsPerSecond]="
-          generationJob()?.throughput_rows_per_second ?? null
-        "
+        [throughputRowsPerSecond]="generationJob()?.throughput_rows_per_second ?? null"
       />
     </section>
 
     <section class="generation-execution-workspace">
-
       <app-generation-pipeline
         [nodes]="pipelineNodes()"
         [loading]="generationLoading()"
@@ -177,11 +171,9 @@
         [totalGeneratedRows]="generationJob()?.total_generated_rows ?? 0"
         [totalTargetRows]="generationJob()?.total_target_rows ?? 0"
       />
-
     </section>
 
     <section class="two-column-grid">
-
       <section class="workspace-section generate-deferred-section">
         <div class="section-heading">
           <div>
@@ -232,80 +224,21 @@
         </div>
 
         <div class="validation-state">
-          <span class="material-symbols-outlined">
-            fact_check
-          </span>
+          <span class="material-symbols-outlined"> fact_check </span>
 
           <div>
             <strong>Validation pending</strong>
             <span>
-              Validation results will be available after generated data
-              has been produced.
+              Validation results will be available after generated data has been produced.
             </span>
           </div>
         </div>
       </section>
-
     </section>
 
-    <section class="workspace-section generate-deferred-section">
-
-      <div class="section-heading">
-        <div>
-          <span class="section-eyebrow">Recovery</span>
-          <h2>Checkpoints &amp; Recovery</h2>
-        </div>
-      </div>
-
-      <div class="checkpoint-state">
-
-        <div class="checkpoint-item">
-          <span class="material-symbols-outlined">
-            save
-          </span>
-
-          <div>
-            <span>Last checkpoint</span>
-            <strong>—</strong>
-          </div>
-        </div>
-
-        <div class="checkpoint-item">
-          <span class="material-symbols-outlined">
-            schedule
-          </span>
-
-          <div>
-            <span>Checkpoint timestamp</span>
-            <strong>—</strong>
-          </div>
-        </div>
-
-        <div class="checkpoint-item">
-          <span class="material-symbols-outlined">
-            layers
-          </span>
-
-          <div>
-            <span>Chunks committed</span>
-            <strong>—</strong>
-          </div>
-        </div>
-
-        <div class="checkpoint-item">
-          <span class="material-symbols-outlined">
-            fingerprint
-          </span>
-
-          <div>
-            <span>Specification hash</span>
-            <strong>—</strong>
-          </div>
-        </div>
-
-      </div>
-
-    </section>
-
+    <app-generation-checkpoint
+      [checkpoint]="generationCheckpoint()"
+      [loading]="generationCheckpointLoading()"
+    />
   </section>
 </app-workflow-page>

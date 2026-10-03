@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import { SseService } from '../../../core/services/sse.service';
+import { GenerationCheckpoint } from '../../../shared/models/generation-checkpoint.models';
 
 import {
   GenerationArtifact,
@@ -114,6 +115,15 @@ export class GenerationService {
           );
         }),
       );
+  }
+
+  getGenerationCheckpoint(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationCheckpoint> {
+    return this.http.get<GenerationCheckpoint>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/checkpoint`,
+    );
   }
 
   getGenerationArtifacts(

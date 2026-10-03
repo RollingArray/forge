@@ -25,6 +25,7 @@ from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.generation_service import GenerationService
 from app.services.generation_event_broker import GenerationEventBroker
+from app.services.generation_checkpoint_store import GenerationCheckpointStore
 from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
 
@@ -49,6 +50,7 @@ generation_service = GenerationService(
 
 data_model_access_service = DataModelAccessService()
 artifact_writer = GenerationArtifactWriter()
+checkpoint_store = GenerationCheckpointStore()
 
 
 @router.get(
@@ -158,6 +160,51 @@ async def get_generation_job(
         )
 
     return job
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/checkpoint",
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_checkpoint(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Return the durable checkpoint for a generation job."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    checkpoint = checkpoint_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if checkpoint is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation checkpoint not found.",
+        )
+
+    return checkpoint
 
 
 @router.get(
