@@ -98,6 +98,14 @@ export interface GenerationCompletedEvent {
   progress: number;
 }
 
+export interface GenerationSemanticCallStartedEvent {
+  entity_name: string;
+  field_name: string;
+  chunk_number: number;
+  call_number: number;
+  requested_count: number;
+}
+
 export type GenerationSseEvent =
   | {
       type: 'JOB_SNAPSHOT';
@@ -106,6 +114,10 @@ export type GenerationSseEvent =
   | {
       type: 'CHUNK_COMMITTED';
       data: GenerationChunkCommittedEvent;
+    }
+  | {
+      type: 'SEMANTIC_CALL_STARTED';
+      data: GenerationSemanticCallStartedEvent;
     }
   | {
       type: 'ENTITY_COMPLETED';

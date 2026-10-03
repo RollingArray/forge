@@ -292,6 +292,7 @@ class GenerationService:
                     seed=seed,
                     ai_service=self._ai_service,
                     checkpoint_store=self._checkpoint_store,
+                    event_broker=self._event_broker,
                 ),
                 validator=GenerationValidator(),
                 quality_service=GenerationQualityService(

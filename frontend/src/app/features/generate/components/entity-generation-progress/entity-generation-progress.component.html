@@ -91,6 +91,21 @@
               {{ entity.target_rows | number }}
               rows
             </span>
+
+            @if (isSemanticActive(entity)) {
+              <div class="semantic-activity">
+                <span class="material-symbols-outlined semantic-activity-icon">
+                  auto_awesome
+                </span>
+
+                <span class="semantic-activity-label">
+                  Creating {{ semanticFieldLabel(entity) }}
+                  ·
+                  {{ semanticRequestedCount(entity) | number }}
+                  values…
+                </span>
+              </div>
+            }
           </div>
         </div>
 

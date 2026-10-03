@@ -99,6 +99,7 @@ export class GenerateComponent {
   readonly generationLoading = signal(true);
   readonly generationError = signal<string | null>(null);
   readonly generationJob = this.executionStore.generationJob;
+  readonly activeSemanticCall = this.executionStore.activeSemanticCall;
   readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);

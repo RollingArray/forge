@@ -23,6 +23,13 @@ export class GenerationExecutionStore {
 
   readonly lastEvent = signal<GenerationSseEvent | null>(null);
 
+  readonly activeSemanticCall = signal<
+    Extract<
+      GenerationSseEvent,
+      { type: 'SEMANTIC_CALL_STARTED' }
+    >['data'] | null
+  >(null);
+
 
   setJob(
     job: GenerationJobResponse,
@@ -65,7 +72,12 @@ export class GenerationExecutionStore {
         break;
 
 
+      case 'SEMANTIC_CALL_STARTED':
+        this.activeSemanticCall.set(event.data);
+        break;
+
       case 'CHUNK_COMMITTED':
+        this.activeSemanticCall.set(null);
         this.applyChunkProgress(event.data);
         break;
 
@@ -76,6 +88,7 @@ export class GenerationExecutionStore {
 
 
       case 'GENERATION_COMPLETED':
+        this.activeSemanticCall.set(null);
         this.applyGenerationCompleted(event.data);
         break;
     }

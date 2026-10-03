@@ -170,6 +170,7 @@
         [entities]="generationJob()?.entities ?? []"
         [totalGeneratedRows]="generationJob()?.total_generated_rows ?? 0"
         [totalTargetRows]="generationJob()?.total_target_rows ?? 0"
+        [activeSemanticCall]="activeSemanticCall()"
       />
     </section>
 

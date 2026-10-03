@@ -5,7 +5,10 @@ import {
 } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 
-import { GenerationEntityProgress } from '../../models/generation.models';
+import {
+  GenerationEntityProgress,
+  GenerationSemanticCallStartedEvent,
+} from '../../models/generation.models';
 
 @Component({
   selector: 'app-entity-generation-progress',
@@ -19,6 +22,37 @@ export class EntityGenerationProgressComponent {
   readonly entities = input<GenerationEntityProgress[]>([]);
   readonly totalGeneratedRows = input(0);
   readonly totalTargetRows = input(0);
+  readonly activeSemanticCall = input<GenerationSemanticCallStartedEvent | null>(null);
+
+  isSemanticActive(entity: GenerationEntityProgress): boolean {
+    const call = this.activeSemanticCall();
+
+    return call?.entity_name === entity.entity_name;
+  }
+
+  semanticFieldLabel(entity: GenerationEntityProgress): string | null {
+    const call = this.activeSemanticCall();
+
+    if (call?.entity_name !== entity.entity_name) {
+      return null;
+    }
+
+    return call.field_name
+      .toLowerCase()
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  semanticRequestedCount(entity: GenerationEntityProgress): number | null {
+    const call = this.activeSemanticCall();
+
+    if (call?.entity_name !== entity.entity_name) {
+      return null;
+    }
+
+    return call.requested_count;
+  }
 
   progress(entity: GenerationEntityProgress): number {
     if (entity.total_chunks <= 0) {

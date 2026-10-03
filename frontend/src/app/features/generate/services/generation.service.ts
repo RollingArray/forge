@@ -15,6 +15,7 @@ import {
   GenerationChunkCommittedEvent,
   GenerationCompletedEvent,
   GenerationEntityCompletedEvent,
+  GenerationSemanticCallStartedEvent,
   GenerationJobResponse,
   GenerationReadiness,
   GenerationSseEvent,
@@ -89,6 +90,15 @@ export class GenerationService {
               data: JSON.parse(
                 event.data,
               ) as GenerationChunkCommittedEvent,
+            };
+          }
+
+          if (event.type === 'SEMANTIC_CALL_STARTED') {
+            return {
+              type: 'SEMANTIC_CALL_STARTED',
+              data: JSON.parse(
+                event.data,
+              ) as GenerationSemanticCallStartedEvent,
             };
           }
 

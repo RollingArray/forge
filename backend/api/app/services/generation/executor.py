@@ -24,6 +24,7 @@ from app.constants.generation import SEMANTIC_VOCABULARY_SIZE
 from app.services.ai_service import AIService
 from app.services.generation_semantic_store import GenerationSemanticStore
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
+from app.services.generation_event_broker import GenerationEventBroker
 from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation.value_conversion import convert_value
 
@@ -42,6 +43,7 @@ class GenerationExecutor:
         ai_service: AIService | None = None,
         semantic_store: GenerationSemanticStore | None = None,
         checkpoint_store: GenerationCheckpointStore | None = None,
+        event_broker: GenerationEventBroker | None = None,
         artifact_reader: GenerationArtifactReader | None = None,
         artifact_writer: GenerationArtifactWriter | None = None,
     ) -> None:
@@ -55,6 +57,7 @@ class GenerationExecutor:
             if checkpoint_store is not None
             else GenerationCheckpointStore()
         )
+        self._event_broker = event_broker
         self._artifact_reader = (
             artifact_reader
             if artifact_reader is not None
@@ -595,6 +598,20 @@ class GenerationExecutor:
                                     "elapsed_seconds": elapsed_seconds,
                                     "refill": refill,
                                 }
+                            )
+
+                        if self._event_broker is not None:
+                            self._event_broker.publish(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                event_type="SEMANTIC_CALL_STARTED",
+                                data={
+                                    "entity_name": entity_name,
+                                    "field_name": field_name,
+                                    "chunk_number": chunk_number,
+                                    "call_number": semantic_call_number + 1,
+                                    "requested_count": missing_count,
+                                },
                             )
 
                         semantic_started_at = perf_counter()
