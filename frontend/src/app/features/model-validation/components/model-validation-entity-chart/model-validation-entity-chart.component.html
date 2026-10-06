@@ -1,0 +1,17 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="ENTITY DISTRIBUTION"
+    title="Validation by entity"
+    description="See how passed checks, warnings, and errors are distributed across each entity."
+  />
+
+  <app-workspace-scroll-area>
+    <app-chart
+      type="bar"
+      [labels]="chartLabels()"
+      [datasets]="chartDatasets()"
+      [options]="chartOptions"
+      [style.height]="chartHeight()"
+    />
+  </app-workspace-scroll-area>
+</app-workspace-section>
