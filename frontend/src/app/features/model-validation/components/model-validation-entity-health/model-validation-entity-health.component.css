@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.entity-health-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 4fr);
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  min-height: 520px;
+  height: 520px;
+}
+
+app-model-validation-entity-chart,
+app-model-validation-status-chart,
+app-model-validation-entity-table {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .entity-health-grid {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 0;
+  }
+
+  app-model-validation-entity-chart,
+  app-model-validation-status-chart,
+  app-model-validation-entity-table {
+    height: 320px;
+    min-height: 320px;
+  }
+}
