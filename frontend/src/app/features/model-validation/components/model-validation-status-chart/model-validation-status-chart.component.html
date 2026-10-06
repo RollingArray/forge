@@ -1,0 +1,14 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="OVERALL STATUS"
+    title="Validation health"
+    summary="Overall distribution of passed checks, warnings, and errors across the model."
+  />
+
+  <app-chart
+    type="doughnut"
+    [labels]="chartLabels"
+    [datasets]="chartDatasets()"
+    [options]="chartOptions"
+  />
+</app-workspace-section>
