@@ -12,11 +12,36 @@
   </div>
 
   <div class="toolbar-actions">
+    @for (toolbarFilter of filters(); track toolbarFilter.id) {
+      <button
+        type="button"
+        class="toolbar-filter forge-card"
+        [class.toolbar-filter-active]="toolbarFilter.active"
+        [class.toolbar-filter-primary]="toolbarFilter.variant === 'primary'"
+        [class.toolbar-filter-success]="toolbarFilter.variant === 'success'"
+        [class.toolbar-filter-warning]="toolbarFilter.variant === 'warning'"
+        [class.toolbar-filter-danger]="toolbarFilter.variant === 'danger'"
+        (click)="onFilterChange(toolbarFilter)"
+      >
+        @if (toolbarFilter.icon) {
+          <span class="material-symbols-outlined">
+            {{ toolbarFilter.icon }}
+          </span>
+        }
+
+        <span>{{ toolbarFilter.label }}</span>
+
+        @if (toolbarFilter.count !== undefined) {
+          <span class="toolbar-filter-count">
+            {{ toolbarFilter.count }}
+          </span>
+        }
+      </button>
+    }
+
     @if (showSearch()) {
       <label class="toolbar-search">
-        <span class="material-symbols-outlined">
-          search
-        </span>
+        <span class="material-symbols-outlined"> search </span>
 
         <input
           type="search"
@@ -27,17 +52,25 @@
       </label>
     }
 
-    @if (showDownload()) {
+    @for (toolbarAction of actions(); track toolbarAction.id) {
       <button
         type="button"
-        class="toolbar-action"
-        aria-label="Download"
-        title="Download"
-        (click)="onDownload()"
+        class="forge-card toolbar-action"
+        [class.toolbar-action-primary]="toolbarAction.variant === 'primary'"
+        [class.toolbar-action-danger]="toolbarAction.variant === 'danger'"
+        [class.toolbar-action-with-label]="toolbarAction.label"
+        [disabled]="toolbarAction.disabled"
+        [attr.aria-label]="toolbarAction.label || toolbarAction.tooltip || toolbarAction.id"
+        [attr.title]="toolbarAction.tooltip || toolbarAction.label || toolbarAction.id"
+        (click)="onAction(toolbarAction)"
       >
         <span class="material-symbols-outlined">
-          download
+          {{ toolbarAction.icon }}
         </span>
+
+        @if (toolbarAction.label) {
+          <span>{{ toolbarAction.label }}</span>
+        }
       </button>
     }
   </div>

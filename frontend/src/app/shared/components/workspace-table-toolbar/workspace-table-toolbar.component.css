@@ -41,6 +41,98 @@
   gap: 8px;
 }
 
+.toolbar-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  height: 34px;
+
+  padding: 0 10px;
+
+  border: 1px solid var(--forge-border);
+  border-radius: 8px;
+
+  background: var(--forge-surface);
+  color: var(--forge-text-secondary);
+
+  cursor: pointer;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.toolbar-filter .material-symbols-outlined {
+  color: var(--forge-text-muted);
+  font-size: 16px;
+}
+
+.toolbar-filter:hover {
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text);
+}
+
+.toolbar-filter:hover .material-symbols-outlined {
+  color: var(--forge-text-secondary);
+}
+
+.toolbar-filter-active {
+  background: var(--forge-surface);
+}
+
+.toolbar-filter-primary.toolbar-filter-active {
+  border-color: var(--forge-primary);
+  color: var(--forge-primary);
+}
+
+.toolbar-filter-success.toolbar-filter-active {
+  border-color: var(--forge-success);
+  color: var(--forge-success-strong);
+}
+
+.toolbar-filter-warning.toolbar-filter-active {
+  border-color: var(--forge-warning);
+  color: var(--forge-warning-strong);
+}
+
+.toolbar-filter-danger.toolbar-filter-active {
+  border-color: var(--forge-error);
+  color: var(--forge-error-strong);
+}
+
+.toolbar-filter-primary.toolbar-filter-active .material-symbols-outlined {
+  color: var(--forge-primary);
+}
+
+.toolbar-filter-success.toolbar-filter-active .material-symbols-outlined {
+  color: var(--forge-success-strong);
+}
+
+.toolbar-filter-warning.toolbar-filter-active .material-symbols-outlined {
+  color: var(--forge-warning-strong);
+}
+
+.toolbar-filter-danger.toolbar-filter-active .material-symbols-outlined {
+  color: var(--forge-error-strong);
+}
+
+.toolbar-filter-count {
+  min-width: 18px;
+  padding: 2px 10px;
+
+  border-radius: 999px;
+
+  background: var(--forge-surface-muted);
+  color: var(--forge-text-secondary);
+
+  font-size: 10px;
+}
+
+.toolbar-filter-active .toolbar-filter-count {
+  background: var(--forge-primary-strong);
+  color: var(--forge-surface);
+}
+
 .toolbar-search {
   display: flex;
   width: 220px;
@@ -81,11 +173,15 @@
 }
 
 .toolbar-action {
-  display: grid;
+  display: inline-flex;
   width: 34px;
   height: 34px;
   flex: 0 0 34px;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 0 9px;
 
   border: 1px solid var(--forge-border);
   border-radius: 8px;
@@ -94,11 +190,47 @@
   color: var(--forge-text-secondary);
 
   cursor: pointer;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
 }
 
-.toolbar-action:hover {
+.toolbar-action-with-label {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.toolbar-action:hover:not(:disabled) {
   background: var(--forge-surface-subtle);
   color: var(--forge-primary);
+}
+
+.toolbar-action-primary {
+  border-color: var(--forge-primary);
+  background: var(--forge-primary);
+  color: var(--forge-surface);
+}
+
+.toolbar-action-primary:hover:not(:disabled) {
+  background: var(--forge-primary-strong);
+  color: var(--forge-surface);
+}
+
+.toolbar-action-danger {
+  border-color: var(--forge-error);
+  background: var(--forge-surface);
+  color: var(--forge-error);
+}
+
+.toolbar-action-danger:hover:not(:disabled) {
+  background: var(--forge-surface-subtle);
+  color: var(--forge-error);
+}
+
+.toolbar-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .toolbar-action .material-symbols-outlined {
@@ -113,5 +245,6 @@
 
   .toolbar-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
