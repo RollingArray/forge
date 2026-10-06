@@ -1,0 +1,13 @@
+<div
+  class="metric-grid"
+  [style.--metric-grid-columns]="columns()"
+>
+  @for (metric of metrics(); track metric.label) {
+    <app-metric-card
+      [label]="metric.label"
+      [value]="metric.value"
+      [description]="metric.description"
+      [icon]="metric.icon"
+    />
+  }
+</div>

@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--metric-grid-columns),
+    minmax(0, 1fr)
+  );
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .metric-grid {
+    grid-template-columns: repeat(
+      min(3, var(--metric-grid-columns)),
+      minmax(0, 1fr)
+    );
+  }
+}
+
+@media (max-width: 760px) {
+  .metric-grid {
+    grid-template-columns: repeat(
+      min(2, var(--metric-grid-columns)),
+      minmax(0, 1fr)
+    );
+  }
+}
+
+@media (max-width: 520px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
