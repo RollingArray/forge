@@ -58,7 +58,7 @@ export const routes: Routes = [
         component: GenerateComponent,
       },
       {
-        path: 'workspace/:dataModelId/data-model/results',
+        path: 'workspace/:dataModelId/data-model/results/:jobId',
         component: ResultsComponent,
       },
     ],

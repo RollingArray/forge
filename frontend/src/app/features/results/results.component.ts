@@ -55,7 +55,7 @@ export class ResultsComponent {
     this.route.snapshot.paramMap.get('dataModelId') ?? '';
 
   readonly jobId =
-    this.route.snapshot.queryParamMap.get('jobId') ?? '';
+    this.route.snapshot.paramMap.get('jobId') ?? '';
 
   readonly steps: readonly WorkflowStepItem[] = [
     { id: 'model', number: 1, label: 'Model' },

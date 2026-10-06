@@ -151,8 +151,7 @@ export class GenerateComponent {
         }
 
         this.router.navigate(
-          ['/workspace', this.dataModelId, 'data-model', 'results'],
-          { queryParams: { jobId } },
+          ['/workspace', this.dataModelId, 'data-model', 'results', jobId],
         );
         break;
       }
@@ -263,8 +262,13 @@ export class GenerateComponent {
     }
 
     this.router.navigate(
-      ['/workspace', this.dataModelId, 'data-model', 'results'],
-      { queryParams: { jobId: this.generationJob()!.job_id } },
+      [
+        '/workspace',
+        this.dataModelId,
+        'data-model',
+        'results',
+        this.generationJob()!.job_id,
+      ],
     );
   }
 }
