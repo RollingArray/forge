@@ -14,6 +14,17 @@ export interface GenerationArtifactPreview {
   preview_rows: number;
 }
 
+
+export interface GenerationQualityProfile {
+  population_fidelity: Record<string, unknown>;
+  distribution_fidelity: Record<string, unknown>;
+  relationship_fidelity: Record<string, unknown>;
+  identity_space_utilization: Record<string, unknown>;
+  statistical_fidelity: Record<string, unknown>;
+  performance: Record<string, unknown>;
+  validation: Record<string, unknown>;
+}
+
 export interface GenerationValidationSummary {
   valid: boolean;
   entity_count: number;

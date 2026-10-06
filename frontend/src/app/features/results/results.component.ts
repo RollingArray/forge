@@ -26,6 +26,7 @@ import { ResultsExecutionSummaryComponent } from './components/results-execution
 import { GeneratedFilesComponent } from './components/generated-files/generated-files.component';
 import { ArtifactPreviewComponent } from './components/artifact-preview/artifact-preview.component';
 import { ResultsValidationComponent } from './components/results-validation/results-validation.component';
+import { ResultsQualitySummaryComponent } from './components/results-quality-summary/results-quality-summary.component';
 
 @Component({
   selector: 'app-results',
@@ -37,6 +38,7 @@ import { ResultsValidationComponent } from './components/results-validation/resu
     GeneratedFilesComponent,
     ArtifactPreviewComponent,
     ResultsValidationComponent,
+    ResultsQualitySummaryComponent,
   ],
   templateUrl: './results.component.html',
   styleUrl: './results.component.css',
@@ -191,6 +193,27 @@ export class ResultsComponent {
           URL.revokeObjectURL(url);
         },
       });
+  }
+
+  viewQualityDetails(): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    this.router.navigate(
+      [
+        '/workspace',
+        this.dataModelId,
+        'data-model',
+        'results',
+        'quality',
+      ],
+      {
+        queryParams: {
+          jobId: this.jobId,
+        },
+      },
+    );
   }
 
   backToGenerate(): void {

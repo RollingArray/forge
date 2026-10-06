@@ -729,6 +729,14 @@ class GenerationService:
         if validation is not None:
             job.validation = validation
 
+        quality = self._quality_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+
+        if quality is not None:
+            job.quality = quality
+
         self._jobs[job_id] = job
 
         return job

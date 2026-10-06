@@ -23,6 +23,10 @@
   />
 
   <app-results-validation [validation]="generationJob()?.validation ?? null" />
+  <app-results-quality-summary
+    [quality]="generationJob()?.quality ?? null"
+    (viewDetails)="viewQualityDetails()"
+  />
 
   <div class="results-content-grid">
     <app-generated-files

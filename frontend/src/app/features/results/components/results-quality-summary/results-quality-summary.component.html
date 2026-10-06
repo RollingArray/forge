@@ -1,0 +1,56 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="Quality"
+    title="Generation Quality"
+    summary="How closely the generated dataset matches the intended model and data characteristics."
+    [state]="quality() ? 'High Fidelity' : 'Unavailable'"
+  />
+
+  <div class="quality-summary-grid">
+    <div class="quality-summary-card quality-summary-card-primary">
+      <span class="material-symbols-outlined">verified</span>
+      <strong>{{ populationFidelity() | number: '1.0-1' }}%</strong>
+      <span>Population fidelity</span>
+    </div>
+
+    <div class="quality-summary-card">
+      <span class="material-symbols-outlined">account_tree</span>
+      <strong>{{ relationshipCount() | number }}</strong>
+      <span>Relationships analyzed</span>
+    </div>
+
+    <div class="quality-summary-card">
+      <span class="material-symbols-outlined">pie_chart</span>
+      <strong>{{ distributionCount() | number }}</strong>
+      <span>Distributions analyzed</span>
+    </div>
+
+    <div class="quality-summary-card">
+      <span class="material-symbols-outlined">query_stats</span>
+      <strong>{{ statisticalCount() | number }}</strong>
+      <span>Numeric fields analyzed</span>
+    </div>
+
+    <div class="quality-summary-card">
+      <span class="material-symbols-outlined">speed</span>
+      <strong>{{ performance() | number: '1.0-0' }}</strong>
+      <span>Rows / second</span>
+    </div>
+
+    <div class="quality-summary-card">
+      <span class="material-symbols-outlined">key</span>
+      <strong>{{ identityCount() | number }}</strong>
+      <span>Identity spaces analyzed</span>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="quality-details-button"
+    disabled
+    title="Detailed quality analysis will be available here."
+  >
+    <span>Detailed quality analysis</span>
+    <span class="coming-soon">Coming soon</span>
+  </button>
+</app-workspace-section>

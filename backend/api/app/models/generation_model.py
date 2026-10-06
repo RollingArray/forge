@@ -116,6 +116,18 @@ class GenerationValidationSummary(BaseModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
 
 
+class GenerationQualityProfile(BaseModel):
+    """Measured quality profile for a completed generation."""
+
+    population_fidelity: dict[str, Any] = Field(default_factory=dict)
+    distribution_fidelity: dict[str, Any] = Field(default_factory=dict)
+    relationship_fidelity: dict[str, Any] = Field(default_factory=dict)
+    identity_space_utilization: dict[str, Any] = Field(default_factory=dict)
+    statistical_fidelity: dict[str, Any] = Field(default_factory=dict)
+    performance: dict[str, Any] = Field(default_factory=dict)
+    validation: dict[str, Any] = Field(default_factory=dict)
+
+
 class GenerationJobResponse(BaseModel):
     """Production API representation of a generation job."""
 
@@ -137,6 +149,7 @@ class GenerationJobResponse(BaseModel):
         default_factory=list,
     )
     validation: GenerationValidationSummary | None = None
+    quality: GenerationQualityProfile | None = None
 
     error: str | None = None
 
@@ -186,18 +199,6 @@ class GenerationEntityResult(BaseModel):
         default_factory=list,
     )
     chunks: list[GenerationChunkProgress] = Field(default_factory=list)
-
-
-class GenerationQualityProfile(BaseModel):
-    """Measured quality profile for a completed generation."""
-
-    population_fidelity: dict[str, Any] = Field(default_factory=dict)
-    distribution_fidelity: dict[str, Any] = Field(default_factory=dict)
-    relationship_fidelity: dict[str, Any] = Field(default_factory=dict)
-    identity_space_utilization: dict[str, Any] = Field(default_factory=dict)
-    statistical_fidelity: dict[str, Any] = Field(default_factory=dict)
-    performance: dict[str, Any] = Field(default_factory=dict)
-    validation: dict[str, Any] = Field(default_factory=dict)
 
 
 class GenerationResult(BaseModel):

@@ -67,6 +67,7 @@ export interface GenerationJobResponse {
   error: string | null;
   throughput_rows_per_second: number | null;
   validation?: import('../../results/results.models').GenerationValidationSummary | null;
+  quality?: import('../../results/results.models').GenerationQualityProfile | null;
 }
 
 export interface GenerationChunkCommittedEvent {
