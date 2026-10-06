@@ -1,0 +1,172 @@
+:host {
+  display: flex;
+  flex: 1 1 auto;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+}
+
+.workspace-simple-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+}
+
+.simple-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  border: 1px solid var(--forge-border);
+  border-radius: 12px;
+}
+
+.simple-table-header,
+.simple-table-row {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--workspace-simple-table-column-count),
+    minmax(0, 1fr)
+  );
+  align-items: center;
+  column-gap: 10px;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.simple-table-header {
+  flex: 0 0 auto;
+
+  min-height: 38px;
+
+  border-bottom: 1px solid var(--forge-border);
+  background: var(--forge-surface-subtle);
+
+  color: var(--forge-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.simple-table-body {
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--forge-border) transparent;
+}
+
+.simple-table-row {
+  min-height: 44px;
+
+  border-bottom: 1px solid var(--forge-border-subtle);
+
+  color: var(--forge-text);
+  font-size: 11px;
+}
+
+.simple-table-row:last-child {
+  border-bottom: 0;
+}
+
+.simple-table-row > span {
+  min-width: 0;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.value-error {
+  color: var(--forge-error);
+  font-weight: 600;
+}
+
+.value-warning {
+  color: var(--forge-warning);
+  font-weight: 600;
+}
+
+.status-chip {
+  display: inline-flex;
+
+  width: fit-content;
+
+  align-items: center;
+  gap: 6px;
+
+  padding: 4px 8px;
+
+  border: 1px solid var(--forge-border-subtle);
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status-chip i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+
+  background: var(--forge-text-muted);
+}
+
+.status-valid {
+  border-color: var(--forge-success);
+  color: var(--forge-success);
+}
+
+.status-valid i {
+  background: var(--forge-success);
+}
+
+.status-warning {
+  border-color: var(--forge-warning);
+  color: var(--forge-warning);
+}
+
+.status-warning i {
+  background: var(--forge-warning);
+}
+
+.status-error {
+  border-color: var(--forge-error);
+  color: var(--forge-error);
+}
+
+.status-error i {
+  background: var(--forge-error);
+}
+
+@media (max-width: 760px) {
+  .simple-table-header,
+  .simple-table-row {
+    min-width: 560px;
+  }
+}

@@ -1,0 +1,64 @@
+<div class="workspace-simple-table">
+  @if (showSearch()) {
+    <app-workspace-table-toolbar
+      [summary]="rows().length + (rows().length === 1 ? ' item' : ' items')"
+      [showSearch]="true"
+      [searchPlaceholder]="searchPlaceholder()"
+      [searchValue]="searchValue()"
+      (searchValueChange)="updateSearchValue($event)"
+    />
+  }
+
+  @if (rows().length === 0) {
+    <app-workspace-table-empty [message]="emptyMessage()" />
+  } @else {
+    <div class="simple-table" [style.--workspace-simple-table-column-count]="columns().length">
+      <div class="simple-table-header">
+        @for (column of columns(); track column.label) {
+          <span>{{ column.label }}</span>
+        }
+      </div>
+
+      <div class="simple-table-body">
+        @for (row of rows(); track getRowKey(row)) {
+          <article class="simple-table-row">
+            @for (column of columns(); track column.label) {
+              @if (isStatus(column)) {
+                <span class="status-chip" [class]="statusClass(getCellValue(row, column))">
+                  <i></i>
+                  {{ statusLabel(getCellValue(row, column)) }}
+                </span>
+              } @else {
+                <span
+                  [class.value-error]="isErrorCount(column, row)"
+                  [class.value-warning]="isWarningCount(column, row)"
+                  [title]="displayValue(getCellValue(row, column))"
+                >
+                  {{ getCellValue(row, column) }}
+                </span>
+              }
+            }
+          </article>
+          <article class="simple-table-row">
+            @for (column of columns(); track column.label) {
+              @if (isStatus(column)) {
+                <span class="status-chip" [class]="statusClass(getCellValue(row, column))">
+                  <i></i>
+                  {{ statusLabel(getCellValue(row, column)) }}
+                </span>
+              } @else {
+                <span
+                  [class.value-error]="isErrorCount(column, row)"
+                  [class.value-warning]="isWarningCount(column, row)"
+                  [title]="displayValue(getCellValue(row, column))"
+                >
+                  {{ getCellValue(row, column) }}
+                </span>
+              }
+            }
+          </article>
+        }
+      </div>
+    </div>
+  }
+</div>
