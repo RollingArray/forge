@@ -171,6 +171,12 @@ export class SpecificationService {
         entities: SpecificationValidationResult['entities'];
       }>(
         `${this.apiBaseUrl}/data-models/${dataModelId}/specification/validation`,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.ValidatingDataModel,
+          ),
+        },
       )
       .pipe(
         map((response) => ({
