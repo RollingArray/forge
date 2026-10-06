@@ -96,6 +96,30 @@ app-workspace-section .forge-card {
   font-size: 10px;
 }
 
+.validaiton-details-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid var(--forge-border);
+  border-radius: 9px;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-subtle);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.validaiton-details-button .coming-soon {
+  color: var(--forge-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   .validation-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
