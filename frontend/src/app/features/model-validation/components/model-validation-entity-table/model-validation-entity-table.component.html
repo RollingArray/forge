@@ -1,0 +1,18 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="ENTITY HEALTH"
+    title="Entity validation"
+    summary="Review validation checks and findings for each entity."
+  />
+
+  <app-workspace-simple-table
+    [columns]="columns"
+    [rows]="filteredEntities()"
+    rowKey="name"
+    [showSearch]="true"
+    searchPlaceholder="Search entities..."
+    [searchValue]="searchTerm()"
+    emptyMessage="No entities match your search."
+    (searchValueChange)="updateSearchTerm($event)"
+  />
+</app-workspace-section>
