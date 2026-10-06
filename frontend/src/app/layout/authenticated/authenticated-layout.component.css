@@ -44,7 +44,6 @@
 }
 
 .application-content {
-  display: flex;
   flex: 1 1 auto;
 
   width: 100%;
@@ -72,7 +71,7 @@
     overflow: visible;
   }
 
-  .application-content {
+ .application-content {
     overflow: visible;
   }
 }
