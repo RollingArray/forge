@@ -23,7 +23,7 @@ import { LoginRequest } from '../interfaces/login-request.interface';
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly sessionStorageKey = 'forge.auth.session';
+  private readonly localStorageKey = 'forge.auth.session';
 
   private readonly session = signal<AuthSession | null>(
     this.loadStoredSession(),
@@ -53,7 +53,7 @@ export class AuthService {
       }
     } finally {
       this.session.set(null);
-      sessionStorage.removeItem(this.sessionStorageKey);
+      localStorage.removeItem(this.localStorageKey);
     }
   }
 
@@ -66,15 +66,15 @@ export class AuthService {
   }
 
   private storeSession(session: AuthSession): void {
-    sessionStorage.setItem(
-      this.sessionStorageKey,
+    localStorage.setItem(
+      this.localStorageKey,
       JSON.stringify(session),
     );
   }
 
   private loadStoredSession(): AuthSession | null {
-    const storedSession = sessionStorage.getItem(
-      this.sessionStorageKey,
+    const storedSession = localStorage.getItem(
+      this.localStorageKey,
     );
 
     if (!storedSession) {
@@ -84,7 +84,7 @@ export class AuthService {
     try {
       return JSON.parse(storedSession) as AuthSession;
     } catch {
-      sessionStorage.removeItem(this.sessionStorageKey);
+      localStorage.removeItem(this.localStorageKey);
       return null;
     }
   }
