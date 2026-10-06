@@ -1,0 +1,22 @@
+.validation-summary-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.4fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.validation-summary-content {
+  display: block;
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .validation-summary-header {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+
+
+

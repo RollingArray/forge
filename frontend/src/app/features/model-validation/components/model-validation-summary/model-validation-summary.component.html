@@ -1,0 +1,24 @@
+<app-workspace-section>
+  <div class="validation-summary-header">
+    <app-workspace-header
+      eyebrow="DATA MODEL"
+      [title]="model().model.name"
+      [summary]="model().model.description ?? ''"
+    />
+
+    <app-status-card
+      label="VALIDATION STATUS"
+      [title]="validation().canContinue ? 'Ready for Population' : 'Requires Attention'"
+      [description]="
+        validation().canContinue
+          ? 'Specification is ready for population planning.'
+          : 'Specification requires attention before continuing.'
+      "
+      [status]="validation().canContinue ? 'success' : 'error'"
+    />
+  </div>
+
+  <div class="validation-summary-content">
+    <app-metric-grid [columns]="6" [metrics]="metrics()" />
+  </div>
+</app-workspace-section>
