@@ -1,0 +1,24 @@
+<div
+  class="forge-card status-card"
+  [class.status-success]="status() === 'success'"
+  [class.status-warning]="status() === 'warning'"
+  [class.status-error]="status() === 'error'"
+  [class.status-info]="status() === 'info'"
+  [class.status-neutral]="status() === 'neutral'"
+>
+  <span class="status-dot"></span>
+
+  <div class="status-content">
+    <span class="status-label">
+      {{ label() }}
+    </span>
+
+    <strong class="status-title" [title]="title()">
+      {{ title() }}
+    </strong>
+
+    <small class="status-description" [title]="description()">
+      {{ description() }}
+    </small>
+  </div>
+</div>
