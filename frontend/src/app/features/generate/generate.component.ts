@@ -66,6 +66,10 @@ export class GenerateComponent {
   constructor() {
     this.loadGenerationReadiness();
 
+    if (this.jobId) {
+      this.loadExistingGenerationJob(this.jobId);
+    }
+
     effect(() => {
       const event = this.executionStore.lastEvent();
 
@@ -77,6 +81,36 @@ export class GenerateComponent {
         }
       }
     });
+  }
+
+  private loadExistingGenerationJob(jobId: string): void {
+    if (!this.dataModelId || !jobId) {
+      return;
+    }
+
+    this.generationService
+      .getGenerationJob(this.dataModelId, jobId)
+      .subscribe({
+        next: (job) => {
+          this.executionStore.setJob(job);
+
+          if (job.status === 'QUEUED' || job.status === 'RUNNING') {
+            this.executionStore.connect(
+              this.dataModelId,
+              job.job_id,
+            );
+          }
+
+          this.loadGenerationCheckpoint(job.job_id);
+        },
+        error: (error) => {
+          this.generationError.set(
+            error?.error?.detail ??
+              error?.message ??
+              'Generation job could not be loaded.',
+          );
+        },
+      });
   }
 
   private loadGenerationReadiness(): void {
