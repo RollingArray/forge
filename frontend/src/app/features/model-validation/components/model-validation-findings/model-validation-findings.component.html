@@ -1,0 +1,75 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="DETAILED FINDINGS"
+    title="Validation results"
+    description="Review every deterministic check performed against the specification."
+  />
+
+  <app-workspace-table-toolbar
+    summaryIcon="fact_check"
+    summary="Validation results"
+    [filters]="toolbarFilters()"
+    [showSearch]="true"
+    searchPlaceholder="Search validation results..."
+    [searchValue]="searchQuery()"
+    (searchValueChange)="searchQuery.set($event)"
+    (filterChange)="setFilter($event)"
+  />
+
+  <app-workspace-scroll-area>
+    <div class="findings-list">
+      @for (finding of filteredFindings(); track finding.id) {
+        <article
+          class="finding-row"
+          [class.finding-error]="finding.severity === 'error'"
+          [class.finding-warning]="finding.severity === 'warning'"
+          [class.finding-passed]="finding.severity === 'passed'"
+        >
+          <div class="finding-icon" [attr.data-severity]="finding.severity">
+            @if (finding.severity === 'error') {
+              !
+            } @else if (finding.severity === 'warning') {
+              !
+            } @else {
+              ✓
+            }
+          </div>
+
+          <div class="finding-main">
+            <div class="finding-title-row">
+              <strong>{{ finding.title }}</strong>
+
+              <span class="category-chip">
+                {{ finding.category }}
+              </span>
+            </div>
+
+            <p>{{ finding.details }}</p>
+
+            @if (finding.entity || finding.field) {
+              <div class="finding-context">
+                @if (finding.entity) {
+                  <span>{{ finding.entity }}</span>
+                }
+
+                @if (finding.field) {
+                  <span>{{ finding.field }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <span class="severity-label" [attr.data-severity]="finding.severity">
+            {{ finding.severity }}
+          </span>
+        </article>
+      } @empty {
+        <div class="empty-findings">
+          <div class="empty-icon">⌕</div>
+          <strong>No validation results found</strong>
+          <span>Try a different search term or filter.</span>
+        </div>
+      }
+    </div>
+  </app-workspace-scroll-area>
+</app-workspace-section>
