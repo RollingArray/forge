@@ -47,8 +47,22 @@
 
   /* Status */
   --forge-success: #12b76a;
+  --forge-success-soft: #ecfdf3;
+  --forge-success-strong: #067647;
+  --forge-success-soft: #ecfdf3;
+  --forge-success-strong: #067647;
+
   --forge-warning: #f79009;
+  --forge-warning-soft: #fffaeb;
+  --forge-warning-strong: #dc6803;
+  --forge-warning-soft: #fffaeb;
+  --forge-warning-strong: #dc6803;
+
   --forge-error: #f04438;
+  --forge-error-soft: #fef3f2;
+  --forge-error-strong: #d92d20;
+  --forge-error-soft: #fef3f2;
+  --forge-error-strong: #d92d20;
 
   /* UI */
   --forge-text-heading: #111827;
