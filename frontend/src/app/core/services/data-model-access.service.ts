@@ -6,15 +6,17 @@
  * Email: ranjoy.sen@collins.com
  */
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import {
   DataModelAccess,
   DataModelAccessRole,
 } from '../interfaces/data-model-access.interface';
+import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
 
 interface DataModelAccessResponse {
   data_model_id: string;
@@ -33,7 +35,6 @@ interface GrantDataModelAccessRequest {
 interface UpdateDataModelAccessRequest {
   role: 'CONTRIBUTOR' | 'VIEWER';
 }
-
 
 @Injectable({
   providedIn: 'root',
@@ -56,6 +57,12 @@ export class DataModelAccessService {
       .post<DataModelAccessResponse>(
         `${this.apiBaseUrl}/data-models/${dataModelId}/access`,
         request,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.GrantingDataModelAccess,
+          ),
+        },
       )
       .pipe(
         map((access) => this.mapAccess(access)),
@@ -68,6 +75,12 @@ export class DataModelAccessService {
     return this.http
       .get<DataModelAccessResponse[]>(
         `${this.apiBaseUrl}/data-models/${dataModelId}/access`,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.LoadingDataModelAccess,
+          ),
+        },
       )
       .pipe(
         map((accessRecords) =>
@@ -102,6 +115,12 @@ export class DataModelAccessService {
       .put<DataModelAccessResponse>(
         `${this.apiBaseUrl}/data-models/${dataModelId}/access/${userId}`,
         request,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.UpdatingDataModelAccess,
+          ),
+        },
       )
       .pipe(map((access) => this.mapAccess(access)));
   }
@@ -114,6 +133,12 @@ export class DataModelAccessService {
   ): Observable<void> {
     return this.http.delete<void>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/access/${userId}`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.RevokingDataModelAccess,
+        ),
+      },
     );
   }
 

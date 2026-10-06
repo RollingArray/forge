@@ -25,11 +25,9 @@ export class ApiLoadingService {
 
   readonly isLoading = this.activeRequestCount.asReadonly();
 
-  readonly message = signal<ApiLoadingMessage>(
-    ApiLoadingMessage.Loading,
-  );
+  readonly message = signal<ApiLoadingMessage | null>(null);
 
-  start(message: ApiLoadingMessage = ApiLoadingMessage.Loading): void {
+  start(message: ApiLoadingMessage): void {
     this.activeRequestCount.update((count) => count + 1);
 
     console.log(
@@ -42,7 +40,7 @@ export class ApiLoadingService {
     this.message.set(message);
   }
 
-  stop(message: ApiLoadingMessage = ApiLoadingMessage.Loading): void {
+  stop(message: ApiLoadingMessage): void {
     this.activeRequestCount.update((count) => Math.max(0, count - 1));
 
     console.log(
@@ -64,8 +62,6 @@ export class ApiLoadingService {
 
     const remainingMessages = this.activeMessages();
 
-    this.message.set(
-      remainingMessages.at(-1) ?? ApiLoadingMessage.Loading,
-    );
+    this.message.set(remainingMessages.at(-1) ?? null);
   }
 }

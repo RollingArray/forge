@@ -16,6 +16,4 @@ import { HttpContextToken } from '@angular/common/http';
 
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 
-export const API_LOADING_MESSAGE = new HttpContextToken<ApiLoadingMessage>(
-  () => ApiLoadingMessage.Loading,
-);
+export const API_LOADING_MESSAGE = new HttpContextToken<ApiLoadingMessage | null>(() => null);

@@ -45,6 +45,12 @@ export class WorkspaceService {
     return this.http
       .get<DataModelListItemResponse[]>(
         `${this.apiBaseUrl}/data-models`,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.LoadingDataModels,
+          ),
+        },
       )
       .pipe(
         map((dataModels) =>

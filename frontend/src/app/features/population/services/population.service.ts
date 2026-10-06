@@ -1,8 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
+import { API_LOADING_MESSAGE } from '../../../core/tokens/api-loading-message.token';
 import {
   PopulationCandidatePlan,
   PopulationPlan,
@@ -18,6 +20,12 @@ export class PopulationService {
   getPopulationPlan(dataModelId: string): Observable<PopulationPlan> {
     return this.http.get<PopulationPlan>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/population-plan`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingPopulationPlan,
+        ),
+      },
     );
   }
 
@@ -29,6 +37,12 @@ export class PopulationService {
       `${this.apiBaseUrl}/data-models/${dataModelId}/population-plan/accept`,
       {
         populations,
+      },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.SavingPopulationPlan,
+        ),
       },
     );
   }
@@ -43,6 +57,12 @@ export class PopulationService {
       {
         target,
         driver,
+      },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.BuildingCandidatePopulationPlan,
+        ),
       },
     );
   }

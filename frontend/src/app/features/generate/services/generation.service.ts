@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import { SseService } from '../../../core/services/sse.service';
@@ -11,6 +11,8 @@ import {
 } from '../../results/results.models';
 
 import { environment } from '../../../../environments/environment';
+import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
+import { API_LOADING_MESSAGE } from '../../../core/tokens/api-loading-message.token';
 import {
   GenerationChunkCommittedEvent,
   GenerationActivityEvent,
@@ -35,6 +37,12 @@ export class GenerationService {
   ): Observable<GenerationReadiness> {
     return this.http.get<GenerationReadiness>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/readiness`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationReadiness,
+        ),
+      },
     );
   }
 
@@ -44,6 +52,12 @@ export class GenerationService {
     return this.http.post<GenerationJobResponse>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation`,
       {},
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.CreatingGenerationJob,
+        ),
+      },
     );
   }
 
@@ -55,6 +69,12 @@ export class GenerationService {
     return this.http.post<GenerationJobResponse>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/start`,
       {},
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.StartingGeneration,
+        ),
+      },
     );
   }
 
@@ -65,6 +85,12 @@ export class GenerationService {
   ): Observable<GenerationJobResponse> {
     return this.http.get<GenerationJobResponse>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationJob,
+        ),
+      },
     );
   }
 
@@ -143,6 +169,12 @@ export class GenerationService {
   ): Observable<GenerationCheckpoint> {
     return this.http.get<GenerationCheckpoint>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/checkpoint`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationCheckpoint,
+        ),
+      },
     );
   }
 
@@ -152,6 +184,12 @@ export class GenerationService {
   ): Observable<GenerationArtifact[]> {
     return this.http.get<GenerationArtifact[]>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGeneratedFiles,
+        ),
+      },
     );
   }
 
@@ -162,6 +200,12 @@ export class GenerationService {
   ): Observable<GenerationArtifactPreview> {
     return this.http.get<GenerationArtifactPreview>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts/${encodeURIComponent(entityName)}/preview`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingArtifactPreview,
+        ),
+      },
     );
   }
 
@@ -172,7 +216,13 @@ export class GenerationService {
   ): Observable<Blob> {
     return this.http.get(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts/${encodeURIComponent(entityName)}/download`,
-      { responseType: 'blob' },
+      {
+        responseType: 'blob',
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.DownloadingGeneratedFile,
+        ),
+      },
     );
   }
 

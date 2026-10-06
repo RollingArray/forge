@@ -13,7 +13,6 @@
  */
 
 export enum ApiLoadingMessage {
-  Loading = 'Loading...',
   LoadingWorkspace = 'Loading workspace...',
   CreatingDataModel = 'Creating Data Model...',
   GeneratingDataModelWithAI = 'Generating Data Model with FORGE AI...',
@@ -25,6 +24,24 @@ export enum ApiLoadingMessage {
   GeneratingConstraintProposalWithAI = 'Generating constraint proposal with FORGE AI...',
   UpdatingDataModel = 'Updating Data Model...',
   DeletingDataModel = 'Deleting Data Model...',
+  LoadingDataModel = 'Loading Data Model...',
+  LoadingDataModels = 'Loading Data Models...',
+  LoadingPopulationPlan = 'Loading population plan...',
+  BuildingCandidatePopulationPlan = 'Building candidate population plan...',
+  SavingPopulationPlan = 'Saving population plan...',
+  DownloadingGeneratedFile = 'Downloading generated file...',
+  GrantingDataModelAccess = 'Granting data model access...',
+  LoadingDataModelAccess = 'Loading data model access...',
+  UpdatingDataModelAccess = 'Updating data model access...',
+  RevokingDataModelAccess = 'Revoking data model access...',
+
+  LoadingGenerationReadiness = 'Loading generation readiness...',
+  CreatingGenerationJob = 'Creating generation job...',
+  StartingGeneration = 'Starting generation...',
+  LoadingGenerationJob = 'Loading generation job...',
+  LoadingGenerationCheckpoint = 'Loading generation checkpoint...',
+  LoadingGeneratedFiles = 'Loading generated files...',
+  LoadingArtifactPreview = 'Loading artifact preview...',
   LoadingSpecification = 'Loading Data Model specification...',
   CreatingEntity = 'Adding entity to Data Model...',
   CreatingField = 'Adding field to Data Model...',

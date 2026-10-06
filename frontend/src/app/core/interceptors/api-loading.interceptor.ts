@@ -10,7 +10,6 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { finalize } from 'rxjs';
 
-import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
 import { API_LOADING_SKIP } from '../tokens/api-loading-skip.token';
 import { ApiLoadingService } from '../services/api-loading.service';
@@ -25,9 +24,13 @@ export const apiLoadingInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  const loadingMessage =
-    request.context.get(API_LOADING_MESSAGE) ??
-    ApiLoadingMessage.Loading;
+  const loadingMessage = request.context.get(API_LOADING_MESSAGE);
+
+  if (!loadingMessage) {
+    throw new Error(
+      `Missing API loading message for request: ${request.method} ${request.url}`,
+    );
+  }
 
   apiLoadingService.start(loadingMessage);
 
