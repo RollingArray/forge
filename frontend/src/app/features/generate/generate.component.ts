@@ -51,6 +51,7 @@ export class GenerateComponent {
   private readonly pipelineMapper = inject(GenerationPipelineMapper);
 
   readonly dataModelId = this.route.snapshot.paramMap.get('dataModelId') ?? '';
+  readonly jobId = this.route.snapshot.paramMap.get('jobId') ?? '';
 
   readonly steps: readonly WorkflowStepItem[] = [
     { id: 'model', number: 1, label: 'Model' },
@@ -185,6 +186,11 @@ export class GenerateComponent {
     this.generationService.createGenerationJob(this.dataModelId).subscribe({
       next: (job) => {
         this.executionStore.setJob(job);
+
+        void this.router.navigate(
+          ['/workspace', this.dataModelId, 'data-model', 'generate', job.job_id],
+          { replaceUrl: true },
+        );
 
         this.executionStore.connect(
           this.dataModelId,
