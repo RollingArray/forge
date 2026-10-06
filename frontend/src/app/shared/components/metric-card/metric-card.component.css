@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.metric-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.metric-label {
+  min-width: 0;
+  padding-bottom: 6px;
+  overflow: hidden;
+  color: var(--forge-text-heading);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.metric-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  gap: 16px;
+}
+
+.metric-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    var(--forge-primary),
+    var(--forge-primary-strong)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.metric-icon {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: var(--forge-primary-soft);
+  color: var(--forge-primary);
+  font-size: 23px;
+}
+
+.metric-description {
+  min-width: 0;
+  padding-top: 10px;
+  overflow: hidden;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 520px) {
+  .metric-card {
+    padding: 14px;
+  }
+
+  .metric-value {
+    font-size: 26px;
+  }
+
+  .metric-icon {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    font-size: 21px;
+  }
+}

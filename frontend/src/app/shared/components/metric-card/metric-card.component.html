@@ -1,0 +1,28 @@
+<div class="forge-card metric-card">
+  <div class="metric-label">
+    {{ label() }}
+  </div>
+
+  <div class="metric-main">
+    <strong
+      class="metric-value"
+      [title]="value().toString()"
+    >
+      {{ value() }}
+    </strong>
+
+    <span
+      class="metric-icon material-symbols-outlined"
+      aria-hidden="true"
+    >
+      {{ icon() }}
+    </span>
+  </div>
+
+  <div
+    class="metric-description"
+    [title]="description()"
+  >
+    {{ description() }}
+  </div>
+</div>
