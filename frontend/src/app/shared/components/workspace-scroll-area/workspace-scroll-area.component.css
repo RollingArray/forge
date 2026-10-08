@@ -13,5 +13,7 @@
   flex: 1 1 auto;
   overflow-x: auto;
   overflow-y: auto;
+
   scrollbar-width: thin;
+  scrollbar-color: var(--forge-border) transparent;
 }
