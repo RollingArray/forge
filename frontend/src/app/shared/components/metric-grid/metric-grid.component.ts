@@ -17,5 +17,5 @@ import { MetricCardData } from './metric-card-data';
 })
 export class MetricGridComponent {
   readonly columns = input.required<number>();
-  readonly metrics = input.required<MetricCardData[]>();
+  readonly metrics = input.required<readonly MetricCardData[]>();
 }
