@@ -17,6 +17,10 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceSimpleTableComponent } from '../../../../shared/components/workspace-simple-table/workspace-simple-table.component';
 import {
+  WorkspaceTableLegendComponent,
+  WorkspaceTableLegendItem,
+} from '../../../../shared/components/workspace-table-legend/workspace-table-legend.component';
+import {
   WorkspaceSimpleTableCellContext,
   WorkspaceSimpleTableColumn,
 } from '../../../../shared/components/workspace-simple-table/workspace-simple-table.models';
@@ -41,6 +45,7 @@ interface PopulationTableRow {
     WorkspaceHeaderComponent,
     WorkspaceSectionComponent,
     WorkspaceSimpleTableComponent,
+    WorkspaceTableLegendComponent,
   ],
   templateUrl: './entity-population-table.component.html',
   styleUrl: './entity-population-table.component.css',
@@ -50,6 +55,72 @@ export class EntityPopulationTableComponent {
   readonly plan = input.required<PopulationPlan>();
   readonly originalPlan = input.required<PopulationPlan>();
 
+  readonly tableLegend: readonly WorkspaceTableLegendItem[] = [
+    {
+      label: 'SCALABLE',
+      description: 'FORGE may adjust this population',
+      icon: 'tune',
+      variant: 'primary',
+    },
+    {
+      label: 'FIXED',
+      description: 'FORGE keeps this population unchanged',
+      icon: 'lock',
+      variant: 'neutral',
+    },
+    {
+      label: 'CURRENT',
+      description: 'Population before target distribution',
+      icon: 'database',
+    },
+    {
+      label: 'PROPOSED',
+      description: 'Population FORGE proposes for the selected target',
+      icon: 'auto_awesome',
+      variant: 'primary',
+    },
+    {
+      label: 'CHANGE',
+      description: 'Difference from the current population',
+      icon: 'compare_arrows',
+    },
+    {
+      label: 'PLANNED',
+      description: 'Population resolved after applying constraints',
+      icon: 'account_tree',
+    },
+    {
+      label: 'STATUS',
+      description: 'Whether the population satisfies model constraints',
+      icon: 'verified',
+    },
+  ];
+
+  readonly scalingTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
+      'scalingTemplate',
+    );
+
+  readonly minimumTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
+      'minimumTemplate',
+    );
+
+  readonly proposedTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
+      'proposedTemplate',
+    );
+
+  readonly plannedTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
+      'plannedTemplate',
+    );
+
+  readonly statusTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
+      'statusTemplate',
+    );
+
   readonly changeTemplate =
     viewChild<TemplateRef<WorkspaceSimpleTableCellContext<PopulationTableRow>>>(
       'changeTemplate',
@@ -58,6 +129,11 @@ export class EntityPopulationTableComponent {
   readonly columns = computed<
     readonly WorkspaceSimpleTableColumn<PopulationTableRow>[]
   >(() => {
+    const scalingTemplate = this.scalingTemplate();
+    const minimumTemplate = this.minimumTemplate();
+    const proposedTemplate = this.proposedTemplate();
+    const plannedTemplate = this.plannedTemplate();
+    const statusTemplate = this.statusTemplate();
     const changeTemplate = this.changeTemplate();
 
     return [
@@ -78,12 +154,14 @@ export class EntityPopulationTableComponent {
         label: 'Scaling',
         width: '110px',
         align: 'center',
+        template: scalingTemplate,
       },
       {
         key: 'minimumAllowed',
         label: 'Minimum Allowed',
         width: '130px',
         align: 'center',
+        template: minimumTemplate,
       },
       {
         key: 'original',
@@ -96,6 +174,7 @@ export class EntityPopulationTableComponent {
         label: 'Proposed',
         width: '110px',
         align: 'center',
+        template: proposedTemplate,
       },
       {
         key: 'change',
@@ -109,12 +188,14 @@ export class EntityPopulationTableComponent {
         label: 'Planned',
         width: '110px',
         align: 'center',
+        template: plannedTemplate,
       },
       {
         key: 'status',
         label: 'Status',
         width: '120px',
         align: 'center',
+        template: statusTemplate,
       },
     ];
   });

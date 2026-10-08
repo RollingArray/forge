@@ -1,41 +1,3 @@
-<ng-template #headerTemplate let-column>
-  <span class="column-heading">
-    {{ column.label }}
-    @if (column.label !== '#') {
-      <span class="column-info-wrapper">
-        <span class="material-symbols-outlined column-info">
-          info
-        </span>
-        <span class="column-tooltip">
-          @switch (column.label) {
-            @case ('Scaling') {
-              Whether FORGE may change this population when distributing the target.
-            }
-            @case ('Minimum Allowed') {
-              The smallest population allowed by the model's structural relationships.
-            }
-            @case ('Current') {
-              The population currently defined in the model before this distribution.
-            }
-            @case ('Proposed') {
-              The population FORGE proposes for the selected dataset target.
-            }
-            @case ('Change') {
-              The difference between the current and proposed populations.
-            }
-            @case ('Planned') {
-              The population resolved by FORGE after applying model constraints.
-            }
-            @case ('Status') {
-              Whether the proposed population satisfies the model constraints.
-            }
-          }
-        </span>
-      </span>
-    }
-  </span>
-</ng-template>
-
 <ng-template #scalingTemplate let-row>
   <span
     class="mode-badge"
@@ -48,31 +10,19 @@
 
 <ng-template #minimumTemplate let-row>
   <span class="numeric-cell">
-    {{
-      row.minimumAllowed !== null
-        ? (row.minimumAllowed | number)
-        : '—'
-    }}
+    {{ row.minimumAllowed !== null ? (row.minimumAllowed | number) : '—' }}
   </span>
 </ng-template>
 
 <ng-template #proposedTemplate let-row>
   <span class="numeric-cell candidate-cell">
-    {{
-      row.proposed !== null
-        ? (row.proposed | number)
-        : '—'
-    }}
+    {{ row.proposed !== null ? (row.proposed | number) : '—' }}
   </span>
 </ng-template>
 
 <ng-template #plannedTemplate let-row>
   <span class="numeric-cell planned-cell">
-    {{
-      row.planned !== null
-        ? (row.planned | number)
-        : '—'
-    }}
+    {{ row.planned !== null ? (row.planned | number) : '—' }}
   </span>
 </ng-template>
 
@@ -107,18 +57,15 @@
 
         <span>
           @if (row.changePercent > 0) {
-            +{{ row.changePercent | number:'1.0-1' }}%
+            +{{ row.changePercent | number: '1.0-1' }}%
           } @else {
-            {{ row.changePercent | number:'1.0-1' }}%
+            {{ row.changePercent | number: '1.0-1' }}%
           }
         </span>
       </div>
 
       <div class="change-track">
-        <span
-          class="change-bar"
-          [style.width.%]="row.changeBarWidth"
-        ></span>
+        <span class="change-bar" [style.width.%]="row.changeBarWidth"></span>
       </div>
     </div>
   } @else {
@@ -133,23 +80,8 @@
       title="Entity Population Plan"
       summary="Compare the current population with the population FORGE is proposing for the selected target. Each column explains a different part of that decision."
     />
-
-    <div class="mode-explanation">
-      <div class="mode-explanation-item">
-        <span class="mode-badge scaling-scalable">SCALABLE</span>
-        <span>FORGE may adjust this population</span>
-      </div>
-
-      <div class="mode-explanation-item">
-        <span class="mode-badge scaling-fixed">FIXED</span>
-        <span>FORGE keeps this population unchanged</span>
-      </div>
-    </div>
   </div>
 
-  <app-workspace-simple-table
-    [columns]="columns()"
-    [rows]="rows()"
-    rowKey="entity"
-  />
+  <app-workspace-table-legend [items]="tableLegend" />
+  <app-workspace-simple-table [columns]="columns()" [rows]="rows()" rowKey="entity" />
 </app-workspace-section>
