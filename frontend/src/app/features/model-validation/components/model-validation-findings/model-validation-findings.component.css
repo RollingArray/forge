@@ -1,10 +1,25 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+app-workspace-scroll-area {
+  width: 100%;
+  height: 360px;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--forge-border) transparent;
+}
+
 .findings-list {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 50vh;
   min-width: 0;
-  min-height: 0;
 }
 
 .finding-row {
@@ -13,6 +28,11 @@
   align-items: start;
   gap: 14px;
   padding: 17px 24px;
+  border-bottom: 1px solid var(--forge-border-subtle);
+}
+
+.finding-row:last-child {
+  border-bottom: 0;
 }
 
 .finding-icon {
@@ -27,18 +47,18 @@
 }
 
 .finding-icon[data-severity='error'] {
-  background: #fef3f2;
-  color: #d92d20;
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
 }
 
 .finding-icon[data-severity='warning'] {
-  background: #fffaeb;
-  color: #dc6803;
+  background: var(--forge-warning-soft);
+  color: var(--forge-warning-strong);
 }
 
 .finding-icon[data-severity='passed'] {
-  background: #ecfdf3;
-  color: #067647;
+  background: var(--forge-success-soft);
+  color: var(--forge-success-strong);
 }
 
 .finding-main {
@@ -53,16 +73,16 @@
 }
 
 .finding-title-row strong {
-  color: #101828;
+  color: var(--forge-text-heading);
   font-size: 13px;
 }
 
 .category-chip {
   padding: 3px 7px;
-  border: 1px solid #eaecf0;
+  border: 1px solid var(--forge-border-subtle);
   border-radius: 5px;
-  background: #f9fafb;
-  color: #667085;
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
@@ -71,7 +91,7 @@
 
 .finding-main p {
   margin: 5px 0 0;
-  color: #667085;
+  color: var(--forge-text-secondary);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -86,8 +106,8 @@
 .finding-context span {
   padding: 3px 7px;
   border-radius: 5px;
-  background: #f2f4f7;
-  color: #475467;
+  background: var(--forge-surface-muted);
+  color: var(--forge-text-subtle);
   font-size: 10px;
   font-weight: 600;
 }
@@ -101,15 +121,15 @@
 }
 
 .severity-label[data-severity='error'] {
-  color: #d92d20;
+  color: var(--forge-error-strong);
 }
 
 .severity-label[data-severity='warning'] {
-  color: #dc6803;
+  color: var(--forge-warning-strong);
 }
 
 .severity-label[data-severity='passed'] {
-  color: #067647;
+  color: var(--forge-success-strong);
 }
 
 .empty-findings {
@@ -119,7 +139,7 @@
   flex-direction: column;
   gap: 7px;
   min-height: 220px;
-  color: #667085;
+  color: var(--forge-text-secondary);
 }
 
 .empty-icon {
@@ -130,13 +150,13 @@
   height: 38px;
   margin-bottom: 4px;
   border-radius: 50%;
-  background: #f2f4f7;
-  color: #667085;
+  background: var(--forge-surface-muted);
+  color: var(--forge-text-secondary);
   font-size: 20px;
 }
 
 .empty-findings strong {
-  color: #344054;
+  color: var(--forge-text);
   font-size: 13px;
 }
 

@@ -1,13 +1,11 @@
-<div class="entity-health-grid">
-  <app-model-validation-entity-chart
-    [validation]="validation()"
-  />
+<app-model-validation-entity-chart
+  [validation]="validation()"
+/>
 
-  <app-model-validation-status-chart
-    [validation]="validation()"
-  />
+<app-model-validation-status-chart
+  [validation]="validation()"
+/>
 
-  <app-model-validation-entity-table
-    [entities]="validation().entities"
-  />
-</div>
+<app-model-validation-entity-table
+  [entities]="validation().entities"
+/>

@@ -1,15 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { ChartOptions } from 'chart.js';
 
 import { SpecificationValidationResult } from '../../../../core/interfaces/specification-validation.interface';
 import { ChartComponent } from '../../../../shared/components/chart/chart.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
+import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
 
 @Component({
   selector: 'app-model-validation-status-chart',
@@ -18,24 +14,20 @@ import { WorkspaceSectionComponent } from '../../../../shared/components/workspa
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
     ChartComponent,
+    WorkspaceScrollAreaComponent,
   ],
   templateUrl: './model-validation-status-chart.component.html',
   styleUrl: './model-validation-status-chart.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModelValidationStatusChartComponent {
-  readonly validation =
-    input.required<SpecificationValidationResult>();
+  readonly validation = input.required<SpecificationValidationResult>();
 
   readonly chartLabels = ['Passed', 'Warnings', 'Errors'];
 
   readonly chartDatasets = computed(() => [
     {
-      data: [
-        this.validation().passed,
-        this.validation().warnings,
-        this.validation().errors,
-      ],
+      data: [this.validation().passed, this.validation().warnings, this.validation().errors],
       backgroundColor: [
         this.cssColor('--forge-success'),
         this.cssColor('--forge-warning'),
@@ -98,10 +90,6 @@ export class ModelValidationStatusChartComponent {
   };
 
   private cssColor(variable: string): string {
-    return getComputedStyle(
-      document.documentElement,
-    )
-      .getPropertyValue(variable)
-      .trim();
+    return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
   }
 }

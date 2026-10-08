@@ -7,9 +7,9 @@ import {
 } from '@angular/core';
 
 import { SpecificationValidationResult } from '../../../../core/interfaces/specification-validation.interface';
+import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
 import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
-import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import {
   WorkspaceTableToolbarComponent,
   WorkspaceToolbarFilter,
@@ -100,16 +100,6 @@ export class ModelValidationFindingsComponent {
         .includes(query);
     });
   });
-
-  updateSearch(event: Event): void {
-    this.searchQuery.set(
-      (event.target as HTMLInputElement).value,
-    );
-  }
-
-  clearSearch(): void {
-    this.searchQuery.set('');
-  }
 
   setFilter(filter: string): void {
     if (

@@ -1,8 +1,11 @@
 import { ModelValidationSummaryComponent } from './components/model-validation-summary/model-validation-summary.component';
-import { ModelValidationEntityHealthComponent } from './components/model-validation-entity-health/model-validation-entity-health.component';
+import { ModelValidationEntityChartComponent } from './components/model-validation-entity-chart/model-validation-entity-chart.component';
+import { ModelValidationStatusChartComponent } from './components/model-validation-status-chart/model-validation-status-chart.component';
+import { ModelValidationEntityTableComponent } from './components/model-validation-entity-table/model-validation-entity-table.component';
 import { ModelValidationFindingsComponent } from './components/model-validation-findings/model-validation-findings.component';
 
 import { WorkspaceHeaderComponent } from '../../shared/components/workspace-header/workspace-header.component';
+import { WorkspaceSectionComponent } from '../../shared/components/workspace-section/workspace-section.component';
 
 /**
  * ============================================================================
@@ -45,6 +48,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpecificationService } from '../../core/services/specification.service';
 import { SpecificationValidationResult } from '../../core/interfaces/specification-validation.interface';
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
+import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
 import {
@@ -69,10 +73,14 @@ Chart.register(
   standalone: true,
   imports: [
     ModelValidationSummaryComponent,
-    ModelValidationEntityHealthComponent,
+    ModelValidationEntityChartComponent,
+    ModelValidationStatusChartComponent,
+    ModelValidationEntityTableComponent,
     ModelValidationFindingsComponent,
     WorkspaceHeaderComponent,
+    WorkspaceSectionComponent,
     WorkflowPageComponent,
+    WorkflowRowComponent,
     WorkflowActionBarComponent,
     WorkflowStepperComponent,
   ],
