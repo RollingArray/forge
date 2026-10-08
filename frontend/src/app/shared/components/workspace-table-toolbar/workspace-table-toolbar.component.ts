@@ -40,7 +40,7 @@ export class WorkspaceTableToolbarComponent {
   readonly searchPlaceholder = input('Search...');
   readonly searchValue = input('');
 
-  readonly actions = input<WorkspaceToolbarAction[]>([]);
+  readonly actions = input<readonly WorkspaceToolbarAction[]>([]);
 
   readonly searchValueChange = output<string>();
   readonly filterChange = output<string>();

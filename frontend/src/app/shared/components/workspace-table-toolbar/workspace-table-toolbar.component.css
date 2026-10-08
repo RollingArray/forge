@@ -244,7 +244,37 @@
   }
 
   .toolbar-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .toolbar-filter,
+  .toolbar-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .toolbar-filter {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .toolbar-action {
+    flex: initial;
+  }
+
+  .toolbar-search {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    flex: initial;
+  }
+}
+
+@media (max-width: 420px) {
+  .toolbar-actions {
+    grid-template-columns: 1fr;
   }
 }
