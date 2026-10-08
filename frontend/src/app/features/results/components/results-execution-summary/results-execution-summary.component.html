@@ -5,7 +5,7 @@
     summary="Review the execution outcome, generation performance, and dataset completion."
   />
 
-  <div class="results-execution-success">
+  <div class="forge-card results-execution-success">
     <div class="results-execution-success-icon">
       <span class="material-symbols-outlined">check_circle</span>
     </div>
@@ -35,10 +35,7 @@
 
   <div class="results-execution-progress">
     <div class="results-execution-progress-track">
-      <div
-        class="results-execution-progress-fill"
-        [style.width.%]="progress()"
-      ></div>
+      <div class="results-execution-progress-fill" [style.width.%]="progress()"></div>
     </div>
 
     <div class="results-execution-progress-meta">

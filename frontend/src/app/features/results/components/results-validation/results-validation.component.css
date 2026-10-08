@@ -20,83 +20,55 @@ app-workspace-section .forge-card {
 
 .validation-status {
   display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--forge-success);
+  border-radius: 10px;
+  background: var(--forge-success-soft);
+}
+
+.validation-status-icon {
+  display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 12px;
-
-  padding: 16px;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--forge-surface);
+  background: linear-gradient(
+    135deg,
+    var(--forge-success-strong),
+    var(--forge-success)
+  );
+  box-shadow: 0 4px 10px rgb(18 183 106 / 20%);
 }
 
-.validation-status .material-symbols-outlined {
-  font-size: 24px;
-  color: var(--forge-success);
+.validation-status-icon .material-symbols-outlined {
+  font-size: 30px;
+  font-weight: 600;
 }
 
-.validation-status strong {
+.validation-status-content {
+  min-width: 0;
+}
+
+.validation-status-content > strong {
   display: block;
-
-  color: var(--forge-text-heading);
+  color: var(--forge-success-strong);
   font-size: 13px;
   font-weight: 700;
 }
 
-.validation-status span {
+.validation-status-content > span {
   display: block;
-  margin-top: 3px;
-
+  margin-top: 5px;
   color: var(--forge-text-secondary);
   font-size: 11px;
 }
 
-.validation-placeholder {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 120px;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px dashed var(--forge-border);
-  border-radius: 10px;
-
-  color: var(--forge-text-muted);
-  background: var(--forge-surface-subtle);
-
-  font-size: 11px;
-  text-align: center;
-}
-
-
-.validation-metrics {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.validation-metric {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 10px;
-}
-
-.validation-metric .material-symbols-outlined {
-  color: var(--forge-text-muted);
-  font-size: 18px;
-}
-
-.validation-metric strong {
-  color: var(--forge-text-heading);
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.validation-metric span:last-child {
-  color: var(--forge-text-secondary);
-  font-size: 10px;
-}
-
-.validaiton-details-button {
+.validation-details-button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -114,20 +86,8 @@ app-workspace-section .forge-card {
   opacity: 0.8;
 }
 
-.validaiton-details-button .coming-soon {
+.validation-details-button .coming-soon {
   color: var(--forge-text-muted);
   font-size: 10px;
   font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .validation-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .validation-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

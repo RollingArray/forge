@@ -7,12 +7,14 @@
   />
 
   <div class="validation-overview">
-    <div class="validation-status forge-card">
-      <span class="material-symbols-outlined">
-        {{ validation()?.valid ? 'verified' : 'warning' }}
-      </span>
+    <div class="forge-card validation-status">
+      <div class="validation-status-icon">
+        <span class="material-symbols-outlined">
+          {{ validation()?.valid ? 'verified' : 'warning' }}
+        </span>
+      </div>
 
-      <div>
+      <div class="validation-status-content">
         <strong>
           {{ validation()?.valid ? 'Validation passed' : 'Validation requires attention' }}
         </strong>
@@ -27,46 +29,11 @@
     </div>
   </div>
 
-  <div class="validation-metrics">
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">database</span>
-      <strong>{{ validation()?.generated_rows | number }}</strong>
-      <span>Rows validated</span>
-    </div>
+  <app-metric-grid [columns]="3" [metrics]="metrics()" />
 
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">account_tree</span>
-      <strong>{{ validation()?.entity_count | number }}</strong>
-      <span>Entities checked</span>
-    </div>
-
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">link</span>
-      <strong>{{ foreignKeyCount() | number }}</strong>
-      <span>Relationships checked</span>
-    </div>
-
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">rule</span>
-      <strong>{{ constraintCount() | number }}</strong>
-      <span>Constraints checked</span>
-    </div>
-
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">error</span>
-      <strong>{{ validation()?.error_count | number }}</strong>
-      <span>Errors</span>
-    </div>
-
-    <div class="validation-metric forge-card">
-      <span class="material-symbols-outlined">warning</span>
-      <strong>{{ validation()?.warnings?.length | number }}</strong>
-      <span>Warnings</span>
-    </div>
-  </div>
   <button
     type="button"
-    class="validaiton-details-button"
+    class="validation-details-button"
     disabled
     title="Detailed validation analysis will be available here."
   >
