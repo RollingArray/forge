@@ -1,0 +1,40 @@
+<app-workspace-section>
+  <div class="population-target-content">
+    <div class="population-target-copy">
+      <app-workspace-header
+        eyebrow="POPULATION TARGET"
+        title="How much synthetic data do you need?"
+        summary="Define the total dataset size you want FORGE to plan. FORGE will distribute that target across the model and then evaluate the resulting population against its constraints."
+      />
+    </div>
+
+    <div class="population-target-controls">
+      <label for="population-target">Target records</label>
+
+      <div class="population-target-input-row">
+        <input
+          id="population-target"
+          type="number"
+          min="1"
+          step="1"
+          [value]="targetRows() ?? ''"
+          (input)="onTargetChange($any($event.target).value)"
+          placeholder="e.g. 1,000,000"
+        />
+
+        <button
+          type="button"
+          class="population-target-button"
+          [disabled]="targetRows() === null || isDistributing()"
+          (click)="onDistribute()"
+        >
+          <span class="material-symbols-outlined">
+            {{ isDistributing() ? 'progress_activity' : 'tune' }}
+          </span>
+
+          {{ isDistributing() ? 'Distributing…' : 'Distribute Target' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</app-workspace-section>

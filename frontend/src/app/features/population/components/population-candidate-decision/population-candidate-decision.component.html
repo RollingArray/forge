@@ -1,0 +1,60 @@
+<section
+  class="forge-card candidate-decision-card"
+  [class.candidate-decision-card-success]="candidate().feasible"
+  [class.candidate-decision-card-warning]="!candidate().feasible"
+>
+  <div class="candidate-decision-icon">
+    <span class="material-symbols-outlined">
+      {{ candidate().feasible ? 'check_circle' : 'warning' }}
+    </span>
+  </div>
+
+  <div class="candidate-decision-content">
+    <div class="candidate-decision-header">
+      <strong>
+        {{
+          candidate().feasible
+            ? 'Candidate plan is feasible'
+            : 'Target cannot be achieved with this driver'
+        }}
+      </strong>
+
+      <span class="candidate-decision-status">
+        {{ candidate().feasible ? 'FEASIBLE' : 'NEEDS REVIEW' }}
+      </span>
+    </div>
+
+    @if (candidate().feasible) {
+      <p>
+        FORGE allocated
+        <strong>{{ candidate().allocated_total | number }}</strong>
+        records across
+        <strong>{{ entityCount() }}</strong>
+        entities and the resulting population satisfies the model constraints.
+      </p>
+    } @else {
+      <p>
+        The requested target of
+        <strong>{{ candidate().target | number }}</strong>
+        records cannot be reached with
+        <strong>{{ candidate().driver }}</strong>
+        as the selected population driver.
+      </p>
+
+      @if (candidate().target_reason) {
+        <div class="candidate-decision-reason">
+          <span class="material-symbols-outlined">info</span>
+          <span>{{ candidate().target_reason }}</span>
+        </div>
+      }
+
+      <div class="candidate-decision-guidance">
+        <strong>What you can do</strong>
+        <span>
+          Increase the target, or choose a different population driver that allows more of the model
+          to scale.
+        </span>
+      </div>
+    }
+  </div>
+</section>

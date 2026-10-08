@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  margin-top: 20px;
+}
+
+.population-target-content {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.population-target-copy {
+  min-width: 0;
+  max-width: 620px;
+}
+
+.population-target-controls {
+  min-width: 420px;
+}
+
+.population-target-controls label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--forge-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.population-target-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.population-target-input-row input {
+  width: 220px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--forge-border);
+  border-radius: 10px;
+  color: var(--forge-text-heading);
+  background: var(--forge-surface);
+  font-size: 14px;
+  outline: none;
+}
+
+.population-target-input-row input:focus {
+  border-color: var(--forge-text-muted);
+  box-shadow: 0 0 0 3px rgb(17 24 39 / 8%);
+}
+
+.population-target-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 180px;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--forge-surface);
+  background: var(--forge-text-heading);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.population-target-button:disabled {
+  color: var(--forge-text-muted);
+  background: var(--forge-border);
+  cursor: not-allowed;
+}
+
+@media (max-width: 1100px) {
+  .population-target-content {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .population-target-controls {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .population-target-input-row {
+    flex-direction: column;
+  }
+
+  .population-target-input-row input,
+  .population-target-button {
+    width: 100%;
+  }
+}

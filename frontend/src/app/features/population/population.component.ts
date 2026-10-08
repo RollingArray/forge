@@ -22,6 +22,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { PopulationService } from './services/population.service';
 import { EntityPopulationTableComponent } from './components/entity-population-table/entity-population-table.component';
+import { PopulationSummaryComponent } from './components/population-summary/population-summary.component';
+import { PopulationTargetComponent } from './components/population-target/population-target.component';
+import { PopulationCandidateDecisionComponent } from './components/population-candidate-decision/population-candidate-decision.component';
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import {
   WorkflowStep,
@@ -38,6 +41,9 @@ import {
     WorkflowPageComponent,
     DecimalPipe,
     EntityPopulationTableComponent,
+    PopulationSummaryComponent,
+    PopulationTargetComponent,
+    PopulationCandidateDecisionComponent,
   ],
   templateUrl: './population.component.html',
   styleUrl: './population.component.css',

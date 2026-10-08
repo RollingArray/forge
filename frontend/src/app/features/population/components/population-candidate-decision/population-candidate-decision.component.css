@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  margin-top: 20px;
+}
+
+.candidate-decision-card {
+  display: flex;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid;
+  border-radius: 12px;
+}
+
+.candidate-decision-card-warning {
+  border-color: var(--forge-warning);
+  background: var(--forge-warning-soft);
+}
+
+.candidate-decision-card-success {
+  border-color: var(--forge-success);
+  background: var(--forge-success-soft);
+}
+
+.candidate-decision-icon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex: 0 0 32px;
+}
+
+.candidate-decision-icon .material-symbols-outlined {
+  font-size: 28px;
+}
+
+.candidate-decision-card-warning .candidate-decision-icon {
+  color: var(--forge-warning-strong);
+}
+
+.candidate-decision-card-success .candidate-decision-icon {
+  color: var(--forge-success-strong);
+}
+
+.candidate-decision-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.candidate-decision-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.candidate-decision-header strong {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.candidate-decision-status {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.candidate-decision-card-warning .candidate-decision-status {
+  color: var(--forge-warning-strong);
+  background: var(--forge-warning-soft);
+}
+
+.candidate-decision-card-success .candidate-decision-status {
+  color: var(--forge-success-strong);
+  background: var(--forge-success-soft);
+}
+
+.candidate-decision-content p {
+  margin: 8px 0 0;
+  color: var(--forge-text-subtle);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.candidate-decision-content p strong {
+  color: var(--forge-text-heading);
+}
+
+.candidate-decision-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--forge-surface);
+  color: var(--forge-warning-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.candidate-decision-reason .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+.candidate-decision-guidance {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--forge-border-active);
+  color: var(--forge-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.candidate-decision-guidance strong {
+  color: var(--forge-text);
+}
+
+@media (max-width: 720px) {
+  .candidate-decision-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

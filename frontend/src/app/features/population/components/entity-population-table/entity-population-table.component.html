@@ -1,16 +1,138 @@
-<section class="table-card">
-  <div class="section-header">
-    <div>
-      <span class="section-eyebrow">Entity Population Plan</span>
+<ng-template #headerTemplate let-column>
+  <span class="column-heading">
+    {{ column.label }}
+    @if (column.label !== '#') {
+      <span class="column-info-wrapper">
+        <span class="material-symbols-outlined column-info">
+          info
+        </span>
+        <span class="column-tooltip">
+          @switch (column.label) {
+            @case ('Scaling') {
+              Whether FORGE may change this population when distributing the target.
+            }
+            @case ('Minimum Allowed') {
+              The smallest population allowed by the model's structural relationships.
+            }
+            @case ('Current') {
+              The population currently defined in the model before this distribution.
+            }
+            @case ('Proposed') {
+              The population FORGE proposes for the selected dataset target.
+            }
+            @case ('Change') {
+              The difference between the current and proposed populations.
+            }
+            @case ('Planned') {
+              The population resolved by FORGE after applying model constraints.
+            }
+            @case ('Status') {
+              Whether the proposed population satisfies the model constraints.
+            }
+          }
+        </span>
+      </span>
+    }
+  </span>
+</ng-template>
 
-      <h2>How FORGE is distributing the dataset</h2>
+<ng-template #scalingTemplate let-row>
+  <span
+    class="mode-badge"
+    [class.scaling-scalable]="row.scaling === 'SCALABLE'"
+    [class.scaling-fixed]="row.scaling === 'FIXED'"
+  >
+    {{ row.scaling }}
+  </span>
+</ng-template>
 
-      <p>
-        Compare the current population with the population FORGE is proposing
-        for the selected target. Each column explains a different part of
-        that decision.
-      </p>
+<ng-template #minimumTemplate let-row>
+  <span class="numeric-cell">
+    {{
+      row.minimumAllowed !== null
+        ? (row.minimumAllowed | number)
+        : '—'
+    }}
+  </span>
+</ng-template>
+
+<ng-template #proposedTemplate let-row>
+  <span class="numeric-cell candidate-cell">
+    {{
+      row.proposed !== null
+        ? (row.proposed | number)
+        : '—'
+    }}
+  </span>
+</ng-template>
+
+<ng-template #plannedTemplate let-row>
+  <span class="numeric-cell planned-cell">
+    {{
+      row.planned !== null
+        ? (row.planned | number)
+        : '—'
+    }}
+  </span>
+</ng-template>
+
+<ng-template #statusTemplate let-row>
+  <span
+    class="status-badge"
+    [class.status-feasible]="row.status === 'FEASIBLE'"
+    [class.status-auto]="row.status === 'AUTO'"
+    [class.status-infeasible]="row.status === 'INFEASIBLE'"
+    [class.status-unresolved]="row.status === 'UNRESOLVED'"
+  >
+    {{ row.status }}
+  </span>
+</ng-template>
+
+<ng-template #changeTemplate let-row>
+  @if (row.change !== null && row.changePercent !== null) {
+    <div
+      class="change-indicator"
+      [class.change-positive]="row.change > 0"
+      [class.change-negative]="row.change < 0"
+      [class.change-neutral]="row.change === 0"
+    >
+      <div class="change-values">
+        <strong>
+          @if (row.change > 0) {
+            +{{ row.change | number }}
+          } @else {
+            {{ row.change | number }}
+          }
+        </strong>
+
+        <span>
+          @if (row.changePercent > 0) {
+            +{{ row.changePercent | number:'1.0-1' }}%
+          } @else {
+            {{ row.changePercent | number:'1.0-1' }}%
+          }
+        </span>
+      </div>
+
+      <div class="change-track">
+        <span
+          class="change-bar"
+          [style.width.%]="row.changeBarWidth"
+        ></span>
+      </div>
     </div>
+  } @else {
+    <span class="change-empty">—</span>
+  }
+</ng-template>
+
+<app-workspace-section>
+  <div class="entity-population-header">
+    <app-workspace-header
+      eyebrow="POPULATION PLAN"
+      title="Entity Population Plan"
+      summary="Compare the current population with the population FORGE is proposing for the selected target. Each column explains a different part of that decision."
+    />
 
     <div class="mode-explanation">
       <div class="mode-explanation-item">
@@ -25,219 +147,9 @@
     </div>
   </div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th class="center-cell">#</th>
-
-          <th>Entity</th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Scaling
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  Whether FORGE may change this population when distributing the target.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Minimum Allowed
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  The smallest population allowed by the model's structural relationships.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Current
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  The population currently defined in the model before this distribution.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Proposed
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  The population FORGE proposes for the selected dataset target.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Change
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  The difference between the current and proposed populations.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Planned
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  The population resolved by FORGE after applying model constraints.
-                </span>
-              </span>
-            </span>
-          </th>
-
-          <th class="center-cell">
-            <span class="column-heading">
-              Status
-              <span class="column-info-wrapper">
-                <span class="material-symbols-outlined column-info">
-                  info
-                </span>
-                <span class="column-tooltip">
-                  Whether the proposed population satisfies the model constraints.
-                </span>
-              </span>
-            </span>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        @for (row of rows(); track row.entity; let index = $index) {
-          <tr>
-            <td class="index-cell center-cell">
-              {{ index + 1 }}
-            </td>
-
-            <td class="entity-cell">
-              {{ row.entity }}
-            </td>
-
-            <td class="center-cell">
-              <span
-                class="mode-badge"
-                [class.scaling-scalable]="row.plan.scaling === 'SCALABLE'"
-                [class.scaling-fixed]="row.plan.scaling === 'FIXED'"
-              >
-                {{ row.plan.scaling }}
-              </span>
-            </td>
-
-            <td class="numeric-cell center-cell">
-              {{
-                row.plan.minimum_feasible !== null
-                  ? (row.plan.minimum_feasible | number)
-                  : '—'
-              }}
-            </td>
-
-            <td class="numeric-cell center-cell original-cell">
-              {{
-                row.original !== null
-                  ? (row.original | number)
-                  : '—'
-              }}
-            </td>
-
-            <td class="numeric-cell center-cell candidate-cell">
-              {{
-                row.plan.requested !== null
-                  ? (row.plan.requested | number)
-                  : '—'
-              }}
-            </td>
-
-            <td class="change-cell">
-              @if (row.change !== null && row.changePercent !== null) {
-                <div
-                  class="change-indicator"
-                  [class.change-positive]="row.change > 0"
-                  [class.change-negative]="row.change < 0"
-                  [class.change-neutral]="row.change === 0"
-                >
-                  <div class="change-values">
-                    <strong>
-                      @if (row.change > 0) {
-                        +{{ row.change | number }}
-                      } @else {
-                        {{ row.change | number }}
-                      }
-                    </strong>
-
-                    <span>
-                      @if (row.changePercent > 0) {
-                        +{{ row.changePercent | number:'1.0-1' }}%
-                      } @else {
-                        {{ row.changePercent | number:'1.0-1' }}%
-                      }
-                    </span>
-                  </div>
-
-                  <div class="change-track">
-                    <span
-                      class="change-bar"
-                      [style.width.%]="row.changeBarWidth"
-                    ></span>
-                  </div>
-                </div>
-              } @else {
-                <span class="change-empty">—</span>
-              }
-            </td>
-
-            <td class="numeric-cell center-cell planned-cell">
-              {{
-                row.plan.resolved !== null
-                  ? (row.plan.resolved | number)
-                  : '—'
-              }}
-            </td>
-
-            <td class="center-cell">
-              <span
-                class="status-badge"
-                [class.status-feasible]="row.plan.status === 'FEASIBLE'"
-                [class.status-auto]="row.plan.status === 'AUTO'"
-                [class.status-infeasible]="row.plan.status === 'INFEASIBLE'"
-                [class.status-unresolved]="row.plan.status === 'UNRESOLVED'"
-              >
-                {{ row.plan.status }}
-              </span>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-</section>
+  <app-workspace-simple-table
+    [columns]="columns()"
+    [rows]="rows()"
+    rowKey="entity"
+  />
+</app-workspace-section>
