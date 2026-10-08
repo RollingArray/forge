@@ -1,6 +1,5 @@
 :host {
   display: block;
-  margin-top: 20px;
 }
 
 .candidate-decision-card {
@@ -93,8 +92,9 @@
   gap: 9px;
   margin-top: 14px;
   padding: 12px 14px;
+  border: 1px solid var(--forge-border-active);
   border-radius: 8px;
-  background: var(--forge-surface);
+  background: var(--forge-surface-active);
   color: var(--forge-warning-strong);
   font-size: 13px;
   line-height: 1.5;

@@ -26,6 +26,7 @@ import { PopulationSummaryComponent } from './components/population-summary/popu
 import { PopulationTargetComponent } from './components/population-target/population-target.component';
 import { PopulationCandidateDecisionComponent } from './components/population-candidate-decision/population-candidate-decision.component';
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
+import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import {
   WorkflowStep,
   WorkflowStepItem,
@@ -39,6 +40,7 @@ import {
   standalone: true,
   imports: [
     WorkflowPageComponent,
+    WorkflowRowComponent,
     DecimalPipe,
     EntityPopulationTableComponent,
     PopulationSummaryComponent,

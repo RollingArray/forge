@@ -17,8 +17,7 @@
   (primaryAction)="reviewAndAcceptPlan()"
 >
   @if (displayedPlan(); as plan) {
-    <section class="population-shell">
-
+    <app-workflow-row [columns]="1">
       <app-population-summary
         [targetRows]="targetRows()"
         [resolvedRows]="resolvedRows()"
@@ -27,43 +26,45 @@
         [entityCount]="entityCount()"
         [isCandidate]="isCandidate()"
       />
+    </app-workflow-row>
 
+    <app-workflow-row [columns]="1">
       <app-population-target
         [targetRows]="targetRows()"
         [isDistributing]="isDistributing()"
         (targetChange)="setTarget($event)"
         (distribute)="distributeTarget()"
       />
+    </app-workflow-row>
 
-
-      @if (errorMessage(); as error) {
+    @if (errorMessage(); as error) {
+      <app-workflow-row [columns]="1">
         <section class="population-message population-message-error">
           <strong>Unable to build candidate plan</strong>
           <span>{{ error }}</span>
         </section>
-      }
+      </app-workflow-row>
+    }
 
-      @if (candidatePlan(); as candidate) {
+    @if (candidatePlan(); as candidate) {
+      <app-workflow-row [columns]="1">
         <app-population-candidate-decision
           [candidate]="candidate"
           [entityCount]="entityCount()"
         />
-      }
+      </app-workflow-row>
+    }
 
-      <section class="population-table-section">
-        <app-entity-population-table
-  [plan]="plan"
-  [originalPlan]="populationPlan()!"
-/>
-      </section>
-
-    </section>
+    <app-workflow-row [columns]="1">
+      <app-entity-population-table
+        [plan]="plan"
+        [originalPlan]="populationPlan()!"
+      />
+    </app-workflow-row>
   } @else {
-    <section class="population-shell">
-      <div class="loading-card">
-        <h2>Loading population plan…</h2>
-        <p>Loading the derived population plan from FORGE.</p>
-      </div>
+    <section class="loading-card">
+      <h2>Loading population plan…</h2>
+      <p>Loading the derived population plan from FORGE.</p>
     </section>
   }
 </app-workflow-page>
