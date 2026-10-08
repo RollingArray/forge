@@ -1,0 +1,109 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 16px;
+}
+
+.table-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--forge-border);
+  border-radius: 10px;
+  background: var(--forge-surface-subtle);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 3%);
+}
+
+.table-legend::before {
+  content: 'TABLE DEFINITIONS';
+  grid-column: 1 / -1;
+  padding: 11px 14px;
+  color: var(--forge-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table-legend-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 9px 14px;
+}
+
+.table-legend-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--forge-text-muted);
+  font-size: 18px;
+}
+
+.table-legend-label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  min-height: 23px;
+  padding: 0 8px;
+  border: 1px solid var(--forge-border);
+  border-radius: 6px;
+  background: var(--forge-surface);
+  color: var(--forge-text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.table-legend-label-neutral {
+  background: var(--forge-surface-muted);
+  color: var(--forge-text-secondary);
+}
+
+.table-legend-label-primary {
+  border-color: var(--forge-border-active);
+  background: var(--forge-primary-soft);
+  color: var(--forge-primary-strong);
+}
+
+.table-legend-label-success {
+  background: var(--forge-success-soft);
+  color: var(--forge-success-strong);
+}
+
+.table-legend-label-warning {
+  background: var(--forge-warning-soft);
+  color: var(--forge-warning-strong);
+}
+
+.table-legend-label-error {
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+}
+
+.table-legend-description {
+  min-width: 0;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1050px) {
+  .table-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .table-legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

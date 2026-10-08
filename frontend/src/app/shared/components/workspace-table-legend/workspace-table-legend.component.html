@@ -1,0 +1,26 @@
+<div class="table-legend">
+  @for (item of items(); track item.label) {
+    <div class="table-legend-item">
+      @if (item.icon) {
+        <span class="material-symbols-outlined table-legend-icon">
+          {{ item.icon }}
+        </span>
+      }
+
+      <span
+        class="table-legend-label"
+        [class.table-legend-label-neutral]="item.variant === 'neutral'"
+        [class.table-legend-label-primary]="item.variant === 'primary'"
+        [class.table-legend-label-success]="item.variant === 'success'"
+        [class.table-legend-label-warning]="item.variant === 'warning'"
+        [class.table-legend-label-error]="item.variant === 'error'"
+      >
+        {{ item.label }}
+      </span>
+
+      <span class="table-legend-description">
+        {{ item.description }}
+      </span>
+    </div>
+  }
+</div>
