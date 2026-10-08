@@ -16,7 +16,7 @@
 
   width: 100%;
   min-width: 0;
-  min-height: 0;
+  height: 30vh;
 
   overflow: hidden;
 
@@ -27,25 +27,19 @@
 .workspace-table-header {
   flex: 0 0 auto;
 
-  display: grid;
-  align-items: center;
-
   min-width: 0;
-  min-height: 38px;
-  padding: 0 12px;
 
   border-bottom: 1px solid var(--forge-border);
-  background: var(--forge-surface-subtle);
+  background: var(--forge-surface);
 }
 
-.workspace-table-list {
+.workspace-table-body {
   flex: 1 1 auto;
 
   min-width: 0;
   min-height: 0;
 
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
 
   scrollbar-width: thin;
   scrollbar-color: var(--forge-border) transparent;
