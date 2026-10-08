@@ -1,32 +1,8 @@
-
 /* ==========================================================================
-   FORGE — Shared Visual Foundation
+   FORGE — Design Tokens
    ========================================================================== */
 
-.forge-card {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid rgba(226, 215, 208, 0.92);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow:
-    0 1px 2px rgba(74, 58, 48, 0.04),
-    0 8px 22px rgba(105, 77, 60, 0.07),
-    0 22px 44px rgba(225, 174, 139, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 22px;
-}
-
-/* ============================================================================
- * FORGE — Global Typography
- * ============================================================================ */
-
 :root {
-  /* FORGE — Color System */
-
   /* Primary */
   --forge-primary: #5149d1;
   --forge-primary-soft: #f0efff;
@@ -36,54 +12,50 @@
   --forge-text: #344054;
   --forge-text-secondary: #667085;
   --forge-text-muted: #98a2b3;
+  --forge-text-heading: #111827;
+  --forge-text-eyebrow: #6b7280;
+  --forge-text-subtle: #475467;
 
   /* Surfaces */
   --forge-surface: #ffffff;
   --forge-surface-subtle: #f8fafc;
+  --forge-surface-muted: #f1f3f6;
+  --forge-surface-active: #f7f6ff;
+  --forge-surface-active-end: #fbfaff;
 
   /* Borders */
   --forge-border: #e5e7eb;
   --forge-border-subtle: #eef0f3;
+  --forge-border-active: #dedcf8;
+  --forge-border-row: #f1f2f4;
 
   /* Status */
   --forge-success: #12b76a;
-  --forge-success-soft: #ecfdf3;
-  --forge-success-strong: #067647;
   --forge-success-soft: #ecfdf3;
   --forge-success-strong: #067647;
 
   --forge-warning: #f79009;
   --forge-warning-soft: #fffaeb;
   --forge-warning-strong: #dc6803;
-  --forge-warning-soft: #fffaeb;
-  --forge-warning-strong: #dc6803;
 
   --forge-error: #f04438;
   --forge-error-soft: #fef3f2;
   --forge-error-strong: #d92d20;
-  --forge-error-soft: #fef3f2;
-  --forge-error-strong: #d92d20;
 
   /* UI */
-  --forge-text-heading: #111827;
-  --forge-text-eyebrow: #6b7280;
-  --forge-text-subtle: #475467;
-
-  --forge-surface-muted: #f1f3f6;
-  --forge-surface-active: #f7f6ff;
-  --forge-surface-active-end: #fbfaff;
-
-  --forge-border-active: #dedcf8;
-  --forge-border-row: #f1f2f4;
   --forge-spinner-track: #d9d6f2;
 
-
+  /* Typography */
   --forge-font-family:
     Calibri,
     "Segoe UI",
     Arial,
     sans-serif;
 }
+
+/* ==========================================================================
+   FORGE — Global Foundation
+   ========================================================================== */
 
 html,
 body {
@@ -159,10 +131,30 @@ input {
     'opsz' 24;
 }
 
+/* ==========================================================================
+   FORGE — Visual Primitives
+   ========================================================================== */
 
 /* ==========================================================================
-   FORGE — Shared Data Surface
+   FORGE — Data Surface
    ========================================================================== */
+
+.forge-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(226, 215, 208, 0.92);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 1px 2px rgba(74, 58, 48, 0.04),
+    0 8px 22px rgba(105, 77, 60, 0.07),
+    0 22px 44px rgba(225, 174, 139, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 22px;
+}
 
 .forge-data-surface {
   width: 100%;
@@ -177,4 +169,3 @@ input {
 .forge-data-row:last-child {
   border-bottom: 0;
 }
-
