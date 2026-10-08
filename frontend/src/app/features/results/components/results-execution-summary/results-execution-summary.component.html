@@ -1,122 +1,44 @@
-<section class="results-execution-summary forge-card">
-  <div class="results-execution-overview">
-    <div class="results-execution-status">
-      <span class="results-execution-icon">
-        <span class="material-symbols-outlined">check</span>
-      </span>
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="EXECUTION"
+    title="Data Generation"
+    summary="Review the execution outcome, generation performance, and dataset completion."
+  />
 
-      <div class="results-execution-title">
-        <div class="results-execution-title-line">
-          <h2>Data Generation</h2>
-          <span class="results-execution-state">Completed</span>
-        </div>
+  <div class="results-execution-success">
+    <div class="results-execution-success-icon">
+      <span class="material-symbols-outlined">check_circle</span>
+    </div>
 
-        <div class="results-execution-identity">
-          <span>
-            Job ID:
-            <strong [title]="generationJob()?.job_id ?? jobId()">
-              {{ generationJob()?.job_id ?? jobId() }}
-            </strong>
-          </span>
+    <div class="results-execution-success-content">
+      <strong>Generation completed</strong>
 
-          <span>
-            Model:
-            <strong [title]="dataModelName() || '—'">
-              {{ dataModelName() || '—' }}
-            </strong>
-          </span>
-        </div>
+      <div class="results-execution-identity">
+        <span>
+          Job ID:
+          <strong [title]="generationJob()?.job_id ?? jobId()">
+            {{ generationJob()?.job_id ?? jobId() }}
+          </strong>
+        </span>
+
+        <span>
+          Model:
+          <strong [title]="dataModelName() || '—'">
+            {{ dataModelName() || '—' }}
+          </strong>
+        </span>
       </div>
     </div>
   </div>
 
-  <div class="results-execution-metrics">
-    <div class="results-execution-metric">
-      <span class="results-execution-metric-icon">
-        <span class="material-symbols-outlined">schedule</span>
-      </span>
-
-      <div class="results-execution-metric-content">
-        <span>Total Time</span>
-
-        <strong>
-          {{ totalTime() !== null ? (totalTime() | number: '1.2-2') : '—' }}
-          <small>s</small>
-        </strong>
-
-        <div class="results-execution-metric-detail">
-          <span>
-            Started
-            {{
-              generationJob()?.started_at ? (generationJob()?.started_at | date: 'HH:mm:ss') : '—'
-            }}
-          </span>
-          <span>
-            Completed
-            {{
-              generationJob()?.completed_at
-                ? (generationJob()?.completed_at | date: 'HH:mm:ss')
-                : '—'
-            }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <div class="results-execution-metric">
-      <span class="results-execution-metric-icon">
-        <span class="material-symbols-outlined">bar_chart</span>
-      </span>
-
-      <div class="results-execution-metric-content">
-        <span>Throughput</span>
-
-        <strong>
-          {{ throughput() !== null ? (throughput() | number: '1.0-0') : '—' }}
-        </strong>
-
-        <div class="results-execution-metric-detail">
-          <span>rows/second</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="results-execution-metric">
-      <span class="results-execution-metric-icon">
-        <span class="material-symbols-outlined">database</span>
-      </span>
-
-      <div class="results-execution-metric-content">
-        <span>Peak Memory</span>
-
-        <strong>
-          {{ peakMemory() !== null ? (peakMemory() | number: '1.1-1') : '—' }}
-          <small>MB</small>
-        </strong>
-      </div>
-    </div>
-
-    <div class="results-execution-metric">
-      <span class="results-execution-metric-icon">
-        <span class="material-symbols-outlined">format_list_numbered</span>
-      </span>
-
-      <div class="results-execution-metric-content">
-        <span>Entities</span>
-
-        <strong>{{ entityCount() }}</strong>
-
-        <div class="results-execution-metric-detail">
-          <span>Completed: {{ completedEntityCount() }}</span>
-          <span>Failed: {{ failedEntityCount() }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-metric-grid [columns]="4" [metrics]="metrics()" />
 
   <div class="results-execution-progress">
     <div class="results-execution-progress-track">
-      <div class="results-execution-progress-fill" [style.width.%]="progress()"></div>
+      <div
+        class="results-execution-progress-fill"
+        [style.width.%]="progress()"
+      ></div>
     </div>
 
     <div class="results-execution-progress-meta">
@@ -130,4 +52,4 @@
       <strong>{{ progress() | number: '1.0-0' }}%</strong>
     </div>
   </div>
-</section>
+</app-workspace-section>
