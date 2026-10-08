@@ -1,0 +1,39 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.summary-card {
+  min-width: 0;
+  min-height: 118px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid var(--forge-border);
+  border-radius: 14px;
+  background: var(--forge-surface);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+.summary-label {
+  display: block;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.summary-value {
+  display: block;
+  margin-top: 12px;
+  color: var(--forge-text-heading);
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.summary-detail {
+  display: block;
+  margin-top: 11px;
+  color: var(--forge-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
