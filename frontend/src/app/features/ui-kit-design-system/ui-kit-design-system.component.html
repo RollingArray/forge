@@ -1,0 +1,366 @@
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  pageIcon="design_services"
+  pageTitle="FORGE Design System"
+  pageDescription="Static reference screen for shared FORGE UI components, layout patterns, and interaction states."
+  progressLabel="UI reference"
+  actionBarTitle="Design system"
+  actionBarDescription="Shared UI patterns are maintained here as the canonical screen reference."
+  secondaryLabel="Back"
+  secondaryIcon="arrow_back"
+  primaryLabel="Continue"
+  primaryIcon="arrow_forward"
+>
+  <!-- ============================================================
+       UI KIT REFERENCE: Metrics
+       Standard metric presentation used across FORGE workflow screens.
+       ============================================================ -->
+  <app-workflow-row [columns]="1">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="CENTER WORKSPACE"
+        title="Metrics"
+        summary="Standard metric presentation used across FORGE workflow screens."
+      />
+
+      <app-metric-grid [columns]="4" [metrics]="metrics" />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Status
+       Standard state communication for workflow conditions.
+       ============================================================ -->
+  <app-workflow-row [columns]="1">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="STATUS"
+        title="Status card"
+        summary="Standard state communication for important workflow conditions."
+      />
+
+      <app-status-card
+        label="MODEL VALIDATION"
+        title="Specification is ready"
+        description="All required model checks have completed successfully and the model can continue to population planning."
+        status="success"
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Charts and data table
+       Demonstrates standard multi-column workflow content.
+       ============================================================ -->
+  <app-workflow-row [columns]="3">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="BAR CHART"
+        title="Population by entity"
+        summary="Scrollable horizontal comparison across many entities."
+      />
+
+      <div class="chart-scroll-area">
+        <div class="chart-scroll-content">
+          <app-chart
+            type="bar"
+            [labels]="populationChartLabels"
+            [datasets]="populationChartDatasets"
+            [options]="{
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+            }"
+          />
+        </div>
+      </div>
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="PIE CHART"
+        title="Validation status"
+        summary="Compact part-to-whole status distribution."
+      />
+
+      <div class="pie-chart-container">
+        <app-chart
+          type="doughnut"
+          [labels]="statusDistributionLabels"
+          [datasets]="statusDistributionDatasets"
+        />
+      </div>
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="DATA TABLE"
+        title="Entity population"
+        summary="Scrollable tabular representation of the same model data."
+      />
+
+      <app-workspace-simple-table
+        [columns]="wideTableColumns"
+        [rows]="wideTableRowsA"
+        rowKey="entity"
+        [height]="'360px'"
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Two-column layout
+       Standard primary and secondary content arrangement.
+       ============================================================ -->
+  <app-workflow-row [columns]="2">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="PRIMARY"
+        title="Primary content"
+        summary="A wider content region for the main workflow output."
+      />
+
+      <app-metric-grid [columns]="2" [metrics]="metrics.slice(0, 2)" />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="SECONDARY"
+        title="Secondary content"
+        summary="A supporting region for status or contextual information."
+      />
+
+      <app-status-card
+        label="WORKFLOW"
+        title="Ready to continue"
+        description="Supporting content can sit beside the primary workspace."
+        status="success"
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Three-column status layout
+       Standard compact status arrangement across workflow stages.
+       ============================================================ -->
+  <app-workflow-row [columns]="3">
+    <app-workspace-section>
+      <app-status-card
+        label="VALIDATION"
+        title="Valid"
+        description="No blocking validation findings."
+        status="success"
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-status-card
+        label="POPULATION"
+        title="Ready"
+        description="Population requirements can be planned."
+        status="info"
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-status-card
+        label="GENERATION"
+        title="Pending"
+        description="Generation has not started."
+        status="neutral"
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Validation findings
+       Standard validation findings presentation with filtering.
+       ============================================================ -->
+  <app-workflow-row [columns]="1">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Toolbar + scrollable findings"
+        summary="Real validation findings showing toolbar filtering over arbitrary scrollable content."
+      />
+
+      <app-model-validation-findings [validation]="designSystemValidation" />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Searchable table
+       Standard table pattern with toolbar, search, status, and numeric columns.
+       ============================================================ -->
+  <app-workflow-row [columns]="1">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="DATA"
+        title="Searchable table"
+        summary="Standard table pattern with toolbar, search, status, and numeric columns."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="filteredTableRows"
+        rowKey="entity"
+        [showSearch]="true"
+        searchPlaceholder="Search entities..."
+        [searchValue]="tableSearch()"
+        emptyMessage="No entities match your search."
+        (searchValueChange)="updateTableSearch($event)"
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Two-column data tables
+       Standard side-by-side table arrangement.
+       ============================================================ -->
+  <app-workflow-row [columns]="2">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Entity health"
+        summary="Validation results by entity."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="tableRowsValidation"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No validation records."
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Entity health"
+        summary="Validation results by entity."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="tableRowsValidation"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No validation records."
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+
+  <!-- ============================================================
+       UI KIT REFERENCE: Three-column data tables
+       Standard compact table arrangement across multiple sections.
+       ============================================================ -->
+  <app-workflow-row [columns]="3">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Entity health"
+        summary="Validation results by entity."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="tableRowsValidation"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No validation records."
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Entity health"
+        summary="Validation results by entity."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="tableRowsValidation"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No validation records."
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="VALIDATION"
+        title="Entity health"
+        summary="Validation results by entity."
+      />
+
+      <app-workspace-simple-table
+        [columns]="tableColumns"
+        [rows]="tableRowsValidation"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No validation records."
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+  <!-- ============================================================
+       UI KIT REFERENCE: Wide data tables
+       Standard two-column arrangement for richer tabular content.
+       ============================================================ -->
+  <app-workflow-row [columns]="2">
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="MODEL"
+        title="Entity overview"
+        summary="Model structure and population health."
+      />
+
+      <app-workspace-simple-table
+        [columns]="getWideTableColumns(entityCell, populationCell)"
+        [rows]="wideTableRowsA"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No model records."
+      />
+    </app-workspace-section>
+
+    <app-workspace-section>
+      <app-workspace-header
+        eyebrow="REFERENCE"
+        title="Reference entities"
+        summary="Reference and master-data coverage."
+      />
+
+      <app-workspace-simple-table
+        [columns]="getWideTableColumns(entityCell, populationCell)"
+        [rows]="wideTableRowsB"
+        rowKey="entity"
+        [height]="'320px'"
+        emptyMessage="No reference records."
+      />
+    </app-workspace-section>
+  </app-workflow-row>
+  <ng-template #entityCell let-row let-value="value">
+    <div class="custom-entity-cell">
+      <span class="material-symbols-outlined custom-entity-icon"> account_tree </span>
+      <div class="custom-entity-content">
+        <strong>{{ value }}</strong>
+        <span>{{ getEntityDescription(row.entity) }}</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #populationCell let-value="value">
+    <div class="custom-population-cell">
+      <div class="custom-population-value">
+        <strong>{{ value }}</strong>
+        <span>{{ populationPercent(value) }}%</span>
+      </div>
+      <div class="custom-population-track">
+        <span class="custom-population-fill" [style.width.%]="populationPercent(value)"></span>
+      </div>
+    </div>
+  </ng-template>
+</app-workflow-page>
