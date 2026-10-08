@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,7 +9,9 @@ import {
 import { WorkspaceTableEmptyComponent } from '../workspace-table-empty/workspace-table-empty.component';
 import { WorkspaceTableToolbarComponent } from '../workspace-table-toolbar/workspace-table-toolbar.component';
 import {
+  WorkspaceSimpleTableCellContext,
   WorkspaceSimpleTableColumn,
+  WorkspaceSimpleTableHeaderContext,
 } from './workspace-simple-table.models';
 
 @Component({
@@ -17,6 +20,7 @@ import {
   imports: [
     WorkspaceTableToolbarComponent,
     WorkspaceTableEmptyComponent,
+    NgTemplateOutlet,
   ],
   templateUrl: './workspace-simple-table.component.html',
   styleUrl: './workspace-simple-table.component.css',
@@ -29,6 +33,8 @@ export class WorkspaceSimpleTableComponent<T extends object> {
   readonly rows = input.required<readonly T[]>();
 
   readonly rowKey = input.required<keyof T>();
+
+  readonly height = input('360px');
 
   readonly searchValue = input('');
 
@@ -48,6 +54,41 @@ export class WorkspaceSimpleTableComponent<T extends object> {
     return row[column.key];
   }
 
+  getCellContext(
+    row: T,
+    column: WorkspaceSimpleTableColumn<T>,
+    index: number,
+  ): WorkspaceSimpleTableCellContext<T> {
+    return {
+      $implicit: row,
+      row,
+      column,
+      value: this.getCellValue(row, column),
+      index,
+    };
+  }
+
+  getGridTemplateColumns(): string {
+    return this.columns()
+      .map((column) => column.width ?? 'minmax(0, 1fr)')
+      .join(' ');
+  }
+
+  getColumnAlignClass(
+    column: WorkspaceSimpleTableColumn<T>,
+  ): string {
+    return `align-${column.align ?? 'left'}`;
+  }
+
+  getHeaderContext(
+    column: WorkspaceSimpleTableColumn<T>,
+  ): WorkspaceSimpleTableHeaderContext<T> {
+    return {
+      $implicit: column,
+      column,
+    };
+  }
+
   getRowKey(row: T): string | number {
     return row[this.rowKey()] as string | number;
   }
@@ -65,6 +106,10 @@ export class WorkspaceSimpleTableComponent<T extends object> {
 
   isStatus(column: WorkspaceSimpleTableColumn<T>): boolean {
     return column.type === 'status';
+  }
+
+  isIndex(column: WorkspaceSimpleTableColumn<T>): boolean {
+    return column.type === 'index';
   }
 
   statusClass(value: unknown): string {

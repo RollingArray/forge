@@ -12,52 +12,69 @@
   @if (rows().length === 0) {
     <app-workspace-table-empty [message]="emptyMessage()" />
   } @else {
-    <div class="simple-table" [style.--workspace-simple-table-column-count]="columns().length">
-      <div class="simple-table-header">
-        @for (column of columns(); track column.label) {
-          <span>{{ column.label }}</span>
-        }
-      </div>
+    <div
+      class="simple-table"
+      [style.--workspace-simple-table-grid]="getGridTemplateColumns()"
+      [style.--workspace-simple-table-height]="height()"
+    >
+      <div class="simple-table-scroll">
+        <div class="simple-table-canvas">
 
-      <div class="simple-table-body">
-        @for (row of rows(); track getRowKey(row)) {
-          <article class="simple-table-row">
+          <div class="simple-table-header">
             @for (column of columns(); track column.label) {
-              @if (isStatus(column)) {
-                <span class="status-chip" [class]="statusClass(getCellValue(row, column))">
-                  <i></i>
-                  {{ statusLabel(getCellValue(row, column)) }}
-                </span>
+              @if (column.headerTemplate) {
+                <ng-container
+                  [ngTemplateOutlet]="column.headerTemplate"
+                  [ngTemplateOutletContext]="getHeaderContext(column)"
+                />
               } @else {
-                <span
-                  [class.value-error]="isErrorCount(column, row)"
-                  [class.value-warning]="isWarningCount(column, row)"
-                  [title]="displayValue(getCellValue(row, column))"
-                >
-                  {{ getCellValue(row, column) }}
+                <span [class]="getColumnAlignClass(column)">
+                  {{ column.label }}
                 </span>
               }
             }
-          </article>
-          <article class="simple-table-row">
-            @for (column of columns(); track column.label) {
-              @if (isStatus(column)) {
-                <span class="status-chip" [class]="statusClass(getCellValue(row, column))">
-                  <i></i>
-                  {{ statusLabel(getCellValue(row, column)) }}
-                </span>
-              } @else {
-                <span
-                  [class.value-error]="isErrorCount(column, row)"
-                  [class.value-warning]="isWarningCount(column, row)"
-                  [title]="displayValue(getCellValue(row, column))"
-                >
-                  {{ getCellValue(row, column) }}
-                </span>
-              }
+          </div>
+
+          <div class="simple-table-body">
+            @for (row of rows(); track getRowKey(row); let index = $index) {
+              <article class="simple-table-row">
+                @for (column of columns(); track column.label) {
+                  @if (column.template) {
+                    <ng-container
+                      [ngTemplateOutlet]="column.template"
+                      [ngTemplateOutletContext]="getCellContext(row, column, index)"
+                    />
+                  } @else if (isIndex(column)) {
+                    <span [class]="getColumnAlignClass(column)">
+                      {{ index + 1 }}
+                    </span>
+                  } @else if (isStatus(column)) {
+                    <span
+                      class="status-chip"
+                      [class]="statusClass(getCellValue(row, column))"
+                      [class.align-left]="column.align === 'left' || !column.align"
+                      [class.align-center]="column.align === 'center'"
+                      [class.align-right]="column.align === 'right'"
+                    >
+                      <i></i>
+                      {{ statusLabel(getCellValue(row, column)) }}
+                    </span>
+                  } @else {
+                    <span
+                      [class]="getColumnAlignClass(column)"
+                      [class.value-error]="isErrorCount(column, row)"
+                      [class.value-warning]="isWarningCount(column, row)"
+                      [title]="displayValue(getCellValue(row, column))"
+                    >
+                      {{ getCellValue(row, column) }}
+                    </span>
+                  }
+                }
+              </article>
             }
-          </article>
-        }
+          </div>
+
+        </div>
       </div>
     </div>
   }
