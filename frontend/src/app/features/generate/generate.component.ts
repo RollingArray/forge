@@ -11,10 +11,7 @@ import { GenerationService } from './services/generation.service';
 import { GenerationCheckpoint } from '../../shared/models/generation-checkpoint.models';
 import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
-import { GenerationJobCardComponent } from '../../shared/components/generation-job-card/generation-job-card.component';
-import { GenerationTargetCardComponent } from '../../shared/components/generation-target-card/generation-target-card.component';
-import { GenerationEntitiesCardComponent } from '../../shared/components/generation-entities-card/generation-entities-card.component';
-import { GenerationThroughputCardComponent } from '../../shared/components/generation-throughput-card/generation-throughput-card.component';
+import { GenerationSummaryCardComponent } from '../../shared/components/generation-summary-card/generation-summary-card.component';
 import { GenerationPipelineComponent } from '../../shared/components/generation-pipeline/generation-pipeline.component';
 import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
 import { GenerationCheckpointComponent } from '../../shared/components/generation-checkpoint/generation-checkpoint.component';
@@ -30,10 +27,7 @@ import {
   imports: [
     CommonModule,
     WorkflowPageComponent,
-    GenerationJobCardComponent,
-    GenerationTargetCardComponent,
-    GenerationEntitiesCardComponent,
-    GenerationThroughputCardComponent,
+    GenerationSummaryCardComponent,
   GenerationPipelineComponent,
     EntityGenerationProgressComponent,
     GenerationCheckpointComponent,
@@ -154,6 +148,50 @@ export class GenerateComponent {
     this.pipelineMapper.toGraph(
       this.pipelineNodes(),
     ),
+  );
+  readonly generationJobIdDisplay = computed(
+    () => this.generationJob()?.job_id ?? '—',
+  );
+
+  readonly generationJobDetail = computed(
+    () =>
+      this.generationJob() !== null
+        ? 'Generation job created'
+        : 'Assigned when generation starts',
+  );
+
+  readonly generationTargetRowsDisplay = computed(
+    () =>
+      (this.generationJob()?.total_target_rows ??
+        this.generationReadiness()?.total_target_rows ??
+        0).toLocaleString(),
+  );
+
+  readonly generationEntitiesDisplay = computed(
+    () =>
+      (
+        this.generationJob()?.entities?.length ??
+        this.generationReadiness()?.entity_count ??
+        null
+      )?.toLocaleString() ?? '—',
+  );
+
+  readonly generationThroughputDisplay = computed(
+    () => {
+      const throughput = this.generationJob()?.throughput_rows_per_second;
+
+      return throughput !== null && throughput !== undefined
+        ? `${Math.round(throughput).toLocaleString()} rows/sec`
+        : '—';
+    },
+  );
+
+  readonly generationThroughputDetail = computed(
+    () =>
+      this.generationJob()?.throughput_rows_per_second !== null &&
+      this.generationJob()?.throughput_rows_per_second !== undefined
+        ? 'Measured generation throughput'
+        : 'Available after execution completes',
   );
 
   selectStep(step: WorkflowStep): void {

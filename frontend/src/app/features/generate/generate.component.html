@@ -137,25 +137,28 @@
     </section>
 
     <section class="summary-grid">
-      <app-generation-job-card
-        [jobId]="generationJob()?.job_id ?? null"
-        [exists]="generationJob() !== null"
+      <app-generation-summary-card
+        label="Job ID"
+        [value]="generationJobIdDisplay()"
+        [detail]="generationJobDetail()"
       />
 
-      <app-generation-target-card
-        [totalTargetRows]="
-          generationJob()?.total_target_rows ?? generationReadiness()?.total_target_rows ?? 0
-        "
+      <app-generation-summary-card
+        label="Total Target Rows"
+        [value]="generationTargetRowsDisplay()"
+        detail="Rows planned for generation"
       />
 
-      <app-generation-entities-card
-        [entityCount]="
-          generationJob()?.entities?.length ?? generationReadiness()?.entity_count ?? null
-        "
+      <app-generation-summary-card
+        label="Entities"
+        [value]="generationEntitiesDisplay()"
+        detail="Entities in generation plan"
       />
 
-      <app-generation-throughput-card
-        [throughputRowsPerSecond]="generationJob()?.throughput_rows_per_second ?? null"
+      <app-generation-summary-card
+        label="Throughput"
+        [value]="generationThroughputDisplay()"
+        [detail]="generationThroughputDetail()"
       />
     </section>
 
