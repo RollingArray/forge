@@ -9,6 +9,7 @@
 }
 
 .workflow-row {
+  align-items: stretch;
   display: grid;
   width: 100%;
   min-width: 0;
@@ -17,6 +18,10 @@
 
 .workflow-row-1 {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.workflow-row-40-60 {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 }
 
 .workflow-row-2 {

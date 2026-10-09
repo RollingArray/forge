@@ -1,4 +1,5 @@
 <app-workflow-page
+  class="generate-workflow-page"
   [steps]="steps"
   [activeStep]="activeStep"
   [pageIcon]="'database'"
@@ -54,115 +55,54 @@
   (primaryAction)="handlePrimaryAction()"
 >
   <section class="generate-shell">
-    <section class="generation-status-card">
-      <div class="status-icon">
-        <span class="material-symbols-outlined">
-          {{
+    <app-workflow-row [columns]="1">
+      <app-workspace-section>
+        <app-workspace-header
+          eyebrow="GENERATION OVERVIEW"
+          title="Generation metrics"
+          summary="Current job, planned data volume, model size, and execution throughput."
+        />
+        <app-status-card
+          class="generation-status-card"
+          label="GENERATION STATUS"
+          [title]="
             generationLoading()
-              ? 'hourglass_top'
-              : generationReadiness()?.ready
-                ? 'check_circle'
-                : 'error'
-          }}
-        </span>
-      </div>
-
-      <div class="status-content">
-        <div class="status-header">
-          <div>
-            <span class="section-eyebrow">Generation</span>
-            <h2>
-              {{
-                generationLoading()
-                  ? 'Loading generation plan'
-                  : generationJob()?.status === 'CREATED'
-                    ? 'Generation job is ready to begin execution'
-                    : generationJob()?.status === 'RUNNING'
-                      ? 'Generation is currently running'
-                      : generationJob()?.status === 'COMPLETED'
-                        ? 'Generation completed'
-                        : generationJob()?.status === 'FAILED'
-                          ? 'Generation failed'
-                          : generationReadiness()?.ready
-                            ? 'Generation is ready'
-                            : 'Generation is not ready'
-              }}
-            </h2>
-          </div>
-
-          <span class="status-badge">
-            {{
-              generationLoading()
-                ? 'LOADING'
+              ? 'Loading generation'
+              : generationError()
+                ? 'Generation failed'
                 : (generationJob()?.status ??
-                  (generationReadiness()?.ready ? 'READY' : 'NOT READY'))
-            }}
-          </span>
-        </div>
-
-        <p *ngIf="generationLoading()">
-          The backend is loading the canonical specification and generation plan.
-        </p>
-
-        <p *ngIf="generationError()">
-          {{ generationError() }}
-        </p>
-
-        <p *ngIf="!generationLoading() && !generationError() && generationReadiness()?.ready">
-          {{
-            generationJob()?.status === 'CREATED'
-              ? 'The generation job has been created and is ready to begin execution.'
-              : generationJob()?.status === 'RUNNING'
-                ? 'Generation is actively producing synthetic data.'
+                  (generationReadiness()?.ready ? 'Ready to generate' : 'Not ready'))
+          "
+          [description]="
+            generationError()
+              ? generationError()!
+              : generationLoading()
+                ? 'Loading the canonical specification and generation plan.'
+                : generationReadiness()?.ready
+                  ? 'Generation readiness checks have passed.'
+                  : 'Review generation readiness and resolve any outstanding requirements.'
+          "
+          [status]="
+            generationLoading()
+              ? 'info'
+              : generationError()
+                ? 'error'
                 : generationJob()?.status === 'COMPLETED'
-                  ? 'Generation has completed and the generated data is ready for review.'
+                  ? 'success'
                   : generationJob()?.status === 'FAILED'
-                    ? 'Generation could not be completed. Review the execution details below.'
-                    : 'The accepted population plan is available as the authoritative population input for generation.'
-          }}
-        </p>
+                    ? 'error'
+                    : generationJob()?.status === 'RUNNING'
+                      ? 'info'
+                      : generationReadiness()?.ready
+                        ? 'success'
+                        : 'warning'
+          "
+        />
+        <app-metric-grid [columns]="4" [metrics]="generationMetrics()" />
+      </app-workspace-section>
+    </app-workflow-row>
 
-        <div class="status-details" *ngIf="!generationLoading() && generationReadiness()">
-          <div class="status-detail">
-            <span>Data Model</span>
-            <strong>{{ dataModelId }}</strong>
-          </div>
-
-          <div class="status-detail">
-            <span>Execution</span>
-            <strong>{{ generationJob()?.status ?? 'Not started' }}</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="summary-grid">
-      <app-generation-summary-card
-        label="Job ID"
-        [value]="generationJobIdDisplay()"
-        [detail]="generationJobDetail()"
-      />
-
-      <app-generation-summary-card
-        label="Total Target Rows"
-        [value]="generationTargetRowsDisplay()"
-        detail="Rows planned for generation"
-      />
-
-      <app-generation-summary-card
-        label="Entities"
-        [value]="generationEntitiesDisplay()"
-        detail="Entities in generation plan"
-      />
-
-      <app-generation-summary-card
-        label="Throughput"
-        [value]="generationThroughputDisplay()"
-        [detail]="generationThroughputDetail()"
-      />
-    </section>
-
-    <section class="generation-execution-workspace">
+    <app-workflow-row [columns]="'40-60'" class="generation-execution-row">
       <app-generation-pipeline
         [nodes]="pipelineNodes()"
         [loading]="generationLoading()"
@@ -175,7 +115,7 @@
         [totalTargetRows]="generationJob()?.total_target_rows ?? 0"
         [activeSemanticCall]="activeSemanticCall()"
       />
-    </section>
+    </app-workflow-row>
 
     <aside class="generation-activity-panel">
       <app-generation-activity
@@ -184,72 +124,11 @@
       />
     </aside>
 
-    <section class="two-column-grid">
-      <section class="workspace-section generate-deferred-section">
-        <div class="section-heading">
-          <div>
-            <span class="section-eyebrow">Quality</span>
-            <h2>Data Quality</h2>
-          </div>
-        </div>
-
-        <div class="quality-grid">
-          <div class="quality-item">
-            <span>Population Fidelity</span>
-            <strong>—</strong>
-          </div>
-
-          <div class="quality-item">
-            <span>Distribution Fidelity</span>
-            <strong>—</strong>
-          </div>
-
-          <div class="quality-item">
-            <span>Statistical Fidelity</span>
-            <strong>—</strong>
-          </div>
-
-          <div class="quality-item">
-            <span>Identity Space</span>
-            <strong>—</strong>
-          </div>
-
-          <div class="quality-item">
-            <span>Relationship Fidelity</span>
-            <strong>—</strong>
-          </div>
-
-          <div class="quality-item">
-            <span>Performance</span>
-            <strong>—</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="workspace-section generate-deferred-section">
-        <div class="section-heading">
-          <div>
-            <span class="section-eyebrow">Validation</span>
-            <h2>Generation Validation</h2>
-          </div>
-        </div>
-
-        <div class="validation-state">
-          <span class="material-symbols-outlined"> fact_check </span>
-
-          <div>
-            <strong>Validation pending</strong>
-            <span>
-              Validation results will be available after generated data has been produced.
-            </span>
-          </div>
-        </div>
-      </section>
-    </section>
-
-    <app-generation-checkpoint
-      [checkpoint]="generationCheckpoint()"
-      [loading]="generationCheckpointLoading()"
-    />
+    <app-workflow-row [columns]="1" class="generation-execution-row">
+      <app-generation-checkpoint
+        [checkpoint]="generationCheckpoint()"
+        [loading]="generationCheckpointLoading()"
+      />
+    </app-workflow-row>
   </section>
 </app-workflow-page>

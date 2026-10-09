@@ -13,13 +13,15 @@
   gap: 12px;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1px solid var(--status-color);
-  border-radius: 10px;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 12px;
   background: linear-gradient(
-    135deg,
-    var(--forge-surface),
-    var(--status-soft)
+    110deg,
+    var(--forge-primary-soft) 0%,
+    var(--forge-surface-active) 55%,
+    var(--forge-surface) 100%
   );
+  box-shadow: inset 3px 0 0 var(--status-color);
 }
 
 .status-success {

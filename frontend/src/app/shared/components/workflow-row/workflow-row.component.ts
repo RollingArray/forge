@@ -4,7 +4,7 @@ import {
   input,
 } from '@angular/core';
 
-export type WorkflowRowColumns = 1 | 2 | 3 | 4;
+export type WorkflowRowColumns = 1 | 2 | 3 | 4 | '40-60';
 
 @Component({
   selector: 'app-workflow-row',

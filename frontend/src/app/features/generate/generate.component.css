@@ -1,16 +1,20 @@
 .generate-shell {
+  display: block;
+  width: 100%;
+  min-width: 0;
   min-height: 360px;
-  padding-right: 350px;
-  padding-bottom: 16px;
+  box-sizing: border-box;
 }
 
 .generation-status-card {
   display: flex;
   gap: 16px;
-  padding: 20px 22px;
-  border: 1px solid #9bd3ae;
-  border-radius: 14px;
-  background: #f3fbf5;
+  padding: 20px 0;
+}
+
+/* Add breathing room around the generation execution row. */
+.generation-execution-row {
+  margin: 20px 0;
 }
 
 .status-icon {
@@ -108,58 +112,6 @@
   font-size: 12px;
   font-weight: 600;
   word-break: break-all;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin: 20px 0;
-}
-
-.summary-card,
-.workspace-section {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
-  margin: 20px 0 0 0;
-}
-
-.summary-card {
-  min-width: 0;
-  min-height: 118px;
-  padding: 18px;
-}
-
-.summary-label {
-  display: block;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.summary-value {
-  display: block;
-  margin-top: 12px;
-  color: #111827;
-  font-size: 26px;
-  font-weight: 650;
-  line-height: 1;
-}
-
-.summary-detail {
-  display: block;
-  margin-top: 11px;
-  color: #9ca3af;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.workspace-section {
-  padding: 20px;
 }
 
 .section-heading {
@@ -323,68 +275,6 @@
   justify-content: center;
 }
 
-.quality-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.quality-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid #eaecf0;
-  border-radius: 9px;
-  background: #fafafa;
-}
-
-.quality-item span {
-  color: #667085;
-  font-size: 11px;
-}
-
-.quality-item strong {
-  color: #98a2b3;
-  font-size: 13px;
-}
-
-.validation-state {
-  display: flex;
-  min-height: 150px;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 20px;
-  border: 1px dashed #d8dce5;
-  border-radius: 10px;
-  background: #fafbfc;
-}
-
-.validation-state > .material-symbols-outlined {
-  color: #98a2b3;
-  font-size: 26px;
-}
-
-.validation-state div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.validation-state strong {
-  color: #475467;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.validation-state span {
-  color: #98a2b3;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
 .checkpoint-state {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -445,10 +335,6 @@
     height: auto;
   }
 
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .checkpoint-state {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -465,7 +351,6 @@
 }
 
 @media (max-width: 620px) {
-  .summary-grid,
   .checkpoint-state {
     grid-template-columns: 1fr;
   }
@@ -497,22 +382,9 @@
   display: none !important;
 }
 
-/* Summary cards */
-.workspace-section {
-  border-radius: 16px;
-}
-
+/* Generation workspace spacing */
 .two-column-grid {
   gap: 16px;
-}
-
-.summary-card {
-  min-width: 0;
-}
-
-.summary-card h3,
-.summary-card .value {
-  overflow-wrap: anywhere;
 }
 
 .job-id,
@@ -535,6 +407,14 @@
 .section-heading > span,
 .section-heading > .badge {
   white-space: nowrap;
+}
+
+.generate-shell app-workflow-row {
+  min-width: 0;
+}
+
+.generate-shell app-workflow-row:nth-of-type(2) {
+  margin-bottom: 4px;
 }
 
 /* Better spacing around the main generation sections */
@@ -604,45 +484,19 @@
   min-height: 0;
 }
 
-/* Generation execution workspace */
-
-.generation-execution-workspace {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.35fr) minmax(420px, 0.65fr);
-  gap: 16px;
-  height: calc(clamp(420px, 58vh, 620px) - 16px);
-  min-height: 404px;
-  margin: 20px 0 16px;
-  min-width: 0;
+/* Shared workspace section styling */
+.workspace-section {
+  border-radius: 16px;
 }
 
-.generation-execution-workspace > app-generation-pipeline,
-.generation-execution-workspace > app-entity-generation-progress {
-  display: block;
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
+
+/* Reserve space for the fixed generation activity panel. */
+.generate-workflow-page {
+  --workflow-content-right-reserve: 374px;
 }
 
-@media (max-width: 1400px) {
-  .generation-execution-workspace {
-    grid-template-columns: minmax(0, 1fr);
-    height: auto;
-  }
-
-  .generation-execution-workspace > app-generation-pipeline,
-  .generation-execution-workspace > app-entity-generation-progress {
-    height: 500px;
-  }
-}
-
-@media (max-width: 620px) {
-  .generation-execution-workspace {
-    gap: 12px;
-  }
-
-  .generation-execution-workspace > app-generation-pipeline,
-  .generation-execution-workspace > app-entity-generation-progress {
-    height: 460px;
+@media (max-width: 1100px) {
+  .generate-workflow-page {
+    --workflow-content-right-reserve: 24px;
   }
 }
