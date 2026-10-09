@@ -116,6 +116,29 @@ class JsonUserRepository(UserRepository):
 
         return user
 
+    def update_profile(self, email: str, profile: dict) -> AuthUser:
+        """Persist a validated corporate profile without changing FORGE ID."""
+        normalized_email = self._normalize_email(email)
+
+        with self._lock:
+            data = self._read_data()
+            record = next(
+                (
+                    item for item in data["users"]
+                    if item["email"] == normalized_email
+                ),
+                None,
+            )
+
+            if record is None:
+                raise ValueError("FORGE user must exist before profile update.")
+
+            record["ad_user_id"] = profile["userId"]
+            record["ad_profile"] = profile
+            record["display_name"] = profile["fullName"]
+            self._write_data(data)
+            return self._to_auth_user(record)
+
     def _ensure_store(self) -> None:
         """Ensure the FORGE user repository storage exists."""
         self._file_path.parent.mkdir(
@@ -170,4 +193,6 @@ class JsonUserRepository(UserRepository):
             user_id=record["user_id"],
             email=record["email"],
             display_name=record["display_name"],
+            employee_id=record.get("ad_user_id"),
+            profile=record.get("ad_profile"),
         )
