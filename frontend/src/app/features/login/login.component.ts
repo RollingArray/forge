@@ -1,22 +1,13 @@
-/**
- * File: login.component.ts
- * Purpose: FORGE Login page presentation and user interaction handling.
- *
- * Author: Ranjoy Sen
- * Email: ranjoy.sen@collins.com
- */
-
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-
-import { AuthService } from '../../core/services/auth.service';
+import { LoginShellComponent } from './components/login-shell/login-shell.component';
+import { MagicLinkService } from '../../core/services/magic-link.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, LoginShellComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
@@ -24,16 +15,14 @@ export class LoginComponent {
   readonly email = signal('');
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
+  readonly linkSent = signal(false);
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly router: Router,
-  ) {}
+  constructor(private readonly magicLinkService: MagicLinkService) {}
 
   async continue(): Promise<void> {
     const value = this.email().trim();
 
-    if (!value || this.isLoading()) {
+    if (!value || this.isLoading() || this.linkSent()) {
       return;
     }
 
@@ -41,20 +30,17 @@ export class LoginComponent {
     this.isLoading.set(true);
 
     try {
-      await this.authService.login({
-        email: value,
-      });
-
-      await this.router.navigate(['/workspace']);
+      await this.magicLinkService.requestLink(value);
+      this.linkSent.set(true);
     } catch (error) {
-      console.error('FORGE login failed:', error);
+      console.error('FORGE magic-link request failed:', error);
 
       if (
         error instanceof HttpErrorResponse &&
         error.status === 403
       ) {
         this.errorMessage.set(
-          'Unable to sign in. Please use your organization email address.',
+          'Please use an email address from your organization.',
         );
       } else if (
         error instanceof HttpErrorResponse &&
@@ -65,12 +51,17 @@ export class LoginComponent {
         );
       } else {
         this.errorMessage.set(
-          'Unable to sign in. Please try again.',
+          'Unable to send the sign-in link. Please try again.',
         );
       }
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  useDifferentEmail(): void {
+    this.linkSent.set(false);
+    this.errorMessage.set('');
   }
 
   toggleTheme(): void {
