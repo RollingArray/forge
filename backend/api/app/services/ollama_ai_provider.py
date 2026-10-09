@@ -1039,6 +1039,35 @@ class OllamaAIProvider(AIProvider):
         identity = proposal.get("identity")
         generation = proposal.get("generation")
 
+        if generation is not None and not isinstance(generation, dict):
+            raise RuntimeError(
+                "FORGE AI field proposal contains invalid generation metadata.",
+            )
+
+        if (
+            isinstance(generation, dict)
+            and generation.get("generator") == "SEMANTIC"
+        ):
+            parameters = generation.get("parameters")
+
+            if not isinstance(parameters, dict):
+                raise RuntimeError(
+                    "FORGE AI semantic field proposal requires parameters.",
+                )
+
+            description = parameters.get("description")
+            if not isinstance(description, str) or not description.strip():
+                raise RuntimeError(
+                    "FORGE AI semantic field proposal requires a valid description.",
+                )
+
+            mode = parameters.get("mode")
+            if mode not in {"UNIQUE", "VOCABULARY"}:
+                raise RuntimeError(
+                    "FORGE AI semantic field proposal requires mode "
+                    "'UNIQUE' or 'VOCABULARY'.",
+                )
+
         if identity is not None and not isinstance(identity, dict):
             raise RuntimeError(
                 "FORGE AI field proposal contains invalid identity metadata.",
@@ -1252,8 +1281,26 @@ class OllamaAIProvider(AIProvider):
         collected_values: list[str] = []
         collected_set: set[str] = set()
 
+        # Bound repeated refill calls when the model returns duplicate values
+        # or persistently underproduces. The initial request plus up to 5
+        # refill attempts gives the provider a finite recovery window.
+        max_attempts = 6
+        attempt_count = 0
+        semantic_request_batch_size = 30
+
         while len(collected_values) < count:
-            remaining = count - len(collected_values)
+            if attempt_count >= max_attempts:
+                raise RuntimeError(
+                    "FORGE AI could not produce enough distinct semantic values "
+                    f"after {max_attempts} attempts: requested {count}, "
+                    f"collected {len(collected_values)}."
+                )
+
+            attempt_count += 1
+            remaining = min(
+                count - len(collected_values),
+                semantic_request_batch_size,
+            )
 
             request_payload = {
                 "model": self._model,
@@ -1265,9 +1312,15 @@ class OllamaAIProvider(AIProvider):
                     {
                         "role": "user",
                         "content": (
-                            f"Mode: {normalized_mode}\\n"
-                            f"Count: {remaining}\\n"
+                            f"Mode: {normalized_mode}\n"
+                            f"Count: {remaining}\n"
                             f"Description: {normalized_description}"
+                            + (
+                                "\nPreviously generated values (do not repeat):\n"
+                                + json.dumps(collected_values, ensure_ascii=False)
+                                if collected_values
+                                else ""
+                            )
                         ),
                     },
                 ],
@@ -1380,6 +1433,9 @@ class OllamaAIProvider(AIProvider):
                     "FORGE AI semantic generation returned invalid STRING values.",
                 )
 
+            unique_before = len(collected_values)
+            duplicate_count = 0
+
             for value in values:
                 normalized_value = value.strip()
 
@@ -1389,6 +1445,20 @@ class OllamaAIProvider(AIProvider):
 
                     if len(collected_values) == count:
                         break
+                else:
+                    duplicate_count += 1
+
+            newly_accepted = len(collected_values) - unique_before
+
+            print(
+                "[SEMANTIC-VALUES] "
+                f"mode={normalized_mode} "
+                f"requested={remaining} "
+                f"raw_returned={len(values)} "
+                f"new_unique={newly_accepted} "
+                f"duplicates={duplicate_count} "
+                f"total_unique={len(collected_values)}/{count}"
+            )
 
             if not values:
                 raise RuntimeError(
