@@ -3,15 +3,20 @@ import {
   Component,
   input,
   output,
+  TemplateRef,
+  viewChild,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { GenerationArtifact } from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
-import { WorkspaceTableComponent } from '../../../../shared/components/workspace-table/workspace-table.component';
-import { WorkspaceTableToolbarComponent } from '../../../../shared/components/workspace-table-toolbar/workspace-table-toolbar.component';
-import { WorkspaceTableEmptyComponent } from '../../../../shared/components/workspace-table-empty/workspace-table-empty.component';
+import { WorkspaceSimpleTableComponent } from '../../../../shared/components/workspace-simple-table/workspace-simple-table.component';
+import {
+  WorkspaceSimpleTableCellContext,
+  WorkspaceSimpleTableColumn,
+} from '../../../../shared/components/workspace-simple-table/workspace-simple-table.models';
 
 @Component({
   selector: 'app-generated-files',
@@ -20,9 +25,7 @@ import { WorkspaceTableEmptyComponent } from '../../../../shared/components/work
     CommonModule,
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
-    WorkspaceTableComponent,
-    WorkspaceTableToolbarComponent,
-    WorkspaceTableEmptyComponent,
+    WorkspaceSimpleTableComponent,
   ],
   templateUrl: './generated-files.component.html',
   styleUrl: './generated-files.component.css',
@@ -36,12 +39,45 @@ export class GeneratedFilesComponent {
   readonly selectedArtifact = input<GenerationArtifact | null>(null);
   readonly searchTerm = input('');
 
+  readonly filenameTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<GenerationArtifact>>>(
+      'filenameTemplate',
+    );
+  readonly sizeTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<GenerationArtifact>>>(
+      'sizeTemplate',
+    );
+  readonly downloadTemplate =
+    viewChild<TemplateRef<WorkspaceSimpleTableCellContext<GenerationArtifact>>>(
+      'downloadTemplate',
+    );
+
+  readonly columns = computed<
+    readonly WorkspaceSimpleTableColumn<GenerationArtifact>[]
+  >(() => {
+    const filenameTemplate = this.filenameTemplate();
+    const sizeTemplate = this.sizeTemplate();
+    const downloadTemplate = this.downloadTemplate();
+
+    return [
+      { key: 'entity_name', label: '#', type: 'index', width: '36px', align: 'center' },
+      { key: 'filename', label: 'File Name', width: 'minmax(180px, 1fr)', template: filenameTemplate },
+      { key: 'rows', label: 'Rows', type: 'number', width: '80px', align: 'right' },
+      { key: 'size_bytes', label: 'Size', width: '90px', align: 'right', template: sizeTemplate },
+      { key: 'entity_name', label: 'Actions', width: '64px', align: 'center', template: downloadTemplate },
+    ];
+  });
+
   readonly searchTermChange = output<string>();
   readonly artifactSelected = output<GenerationArtifact>();
   readonly downloadRequested = output<GenerationArtifact>();
 
   updateSearchTerm(value: string): void {
     this.searchTermChange.emit(value);
+  }
+
+  selectTableRow(artifact: GenerationArtifact): void {
+    this.selectArtifact(artifact);
   }
 
   selectArtifact(artifact: GenerationArtifact): void {
