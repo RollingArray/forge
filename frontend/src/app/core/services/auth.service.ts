@@ -44,6 +44,11 @@ export class AuthService {
     return authenticatedSession;
   }
 
+  acceptSession(authenticatedSession: AuthSession): void {
+    this.session.set(authenticatedSession);
+    this.storeSession(authenticatedSession);
+  }
+
   async logout(): Promise<void> {
     const currentSession = this.session();
 
