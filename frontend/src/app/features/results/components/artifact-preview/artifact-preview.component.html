@@ -11,62 +11,42 @@
     [state]="loading() ? 'Loading' : artifact() ? 'Ready' : 'Waiting'"
   />
 
-  <app-workspace-table-toolbar
-    summaryIcon="table_view"
-    [summary]="
-      preview()
-        ? (
-            searchTerm()
-              ? filteredRows().length + ' of ' + preview()!.rows.length + ' preview rows'
-              : preview()!.rows.length + ' preview rows'
-          )
-        : 'No preview loaded'
-    "
-    [showSearch]="true"
-    searchPlaceholder="Search preview..."
-    [searchValue]="searchTerm()"
-    (searchValueChange)="updateSearchTerm($event)"
-  />
-
-  <div *ngIf="error()" class="preview-state preview-state-error">
-    {{ error() }}
-  </div>
-
-  <div
-    *ngIf="!loading() && !error() && !artifact()"
-    class="preview-state"
-  >
-    Select a generated file to preview its contents.
-  </div>
-
-  <app-workspace-table
-    *ngIf="!loading() && !error() && preview() && filteredRows().length > 0"
-  >
-    <div
-      table-header
-      class="preview-table-header"
-      [style.gridTemplateColumns]="'repeat(' + preview()!.columns.length + ', minmax(120px, max-content))'"
-    >
-      <span *ngFor="let column of preview()!.columns">
-        {{ column }}
-      </span>
+  @if (error()) {
+    <div class="preview-state preview-state-error">
+      {{ error() }}
     </div>
-
-    <div table-body>
-      <div
-        *ngFor="let row of filteredRows()"
-        class="preview-table-row"
-        [style.gridTemplateColumns]="'repeat(' + preview()!.columns.length + ', minmax(120px, max-content))'"
-      >
-        <span *ngFor="let column of preview()!.columns">
-          {{ row[column] }}
-        </span>
-      </div>
+  } @else if (!loading() && !artifact()) {
+    <div class="preview-state">
+      Select a generated file to preview its contents.
     </div>
-  </app-workspace-table>
-
-  <app-workspace-table-empty
-    *ngIf="!loading() && !error() && preview() && filteredRows().length === 0"
-    message="No preview rows match your search."
-  />
+  } @else if (!loading() && preview()) {
+    <app-workspace-simple-table
+      [columns]="tableColumns()"
+      [rows]="filteredRows()"
+      [rowKey]="preview()!.columns[0]"
+      [height]="'360px'"
+      [showSearch]="true"
+      searchPlaceholder="Search preview..."
+      [searchValue]="searchTerm()"
+      [summary]="
+        searchTerm()
+          ? filteredRows().length + ' of ' + preview()!.rows.length + ' preview rows'
+          : preview()!.rows.length + ' preview rows'
+      "
+      summaryIcon="table_view"
+      [toolbarActions]="[
+        {
+          id: 'download',
+          icon: 'download',
+          label: 'Download Data',
+          variant: 'primary',
+          disabled: !artifact(),
+          tooltip: 'Download the complete generated file'
+        }
+      ]"
+      emptyMessage="No preview rows match your search."
+      (searchValueChange)="updateSearchTerm($event)"
+      (toolbarAction)="download()"
+    />
+  }
 </app-workspace-section>

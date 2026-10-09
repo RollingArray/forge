@@ -14,9 +14,8 @@ import {
 } from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
-import { WorkspaceTableComponent } from '../../../../shared/components/workspace-table/workspace-table.component';
-import { WorkspaceTableToolbarComponent } from '../../../../shared/components/workspace-table-toolbar/workspace-table-toolbar.component';
-import { WorkspaceTableEmptyComponent } from '../../../../shared/components/workspace-table-empty/workspace-table-empty.component';
+import { WorkspaceSimpleTableComponent } from '../../../../shared/components/workspace-simple-table/workspace-simple-table.component';
+import { WorkspaceSimpleTableColumn } from '../../../../shared/components/workspace-simple-table/workspace-simple-table.models';
 
 @Component({
   selector: 'app-artifact-preview',
@@ -25,9 +24,7 @@ import { WorkspaceTableEmptyComponent } from '../../../../shared/components/work
     CommonModule,
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
-    WorkspaceTableComponent,
-    WorkspaceTableToolbarComponent,
-    WorkspaceTableEmptyComponent,
+    WorkspaceSimpleTableComponent,
   ],
   templateUrl: './artifact-preview.component.html',
   styleUrl: './artifact-preview.component.css',
@@ -42,6 +39,16 @@ export class ArtifactPreviewComponent {
   readonly downloadRequested = output<GenerationArtifact>();
 
   readonly searchTerm = signal('');
+
+  readonly tableColumns = computed<
+    readonly WorkspaceSimpleTableColumn<Record<string, unknown>>[]
+  >(() =>
+    (this.preview()?.columns ?? []).map((column) => ({
+      key: column,
+      label: column,
+      width: 'minmax(120px, max-content)',
+    })),
+  );
 
   readonly filteredRows = computed(() => {
     const preview = this.preview();
