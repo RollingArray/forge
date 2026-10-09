@@ -1,0 +1,38 @@
+<app-login-shell>
+  <section class="w-full text-center">
+    <div class="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf2ff]">
+      <span class="material-symbols-outlined text-[34px] text-[#525a87]">
+        @if (isVerifying()) {
+          progress_activity
+        } @else {
+          error
+        }
+      </span>
+    </div>
+
+    @if (isVerifying()) {
+      <h2 class="text-[31px] font-semibold tracking-[-0.04em] text-[#0d1230]">
+        Verifying your sign-in
+      </h2>
+      <p class="mt-3 text-[15px] leading-6 text-[#626a87]">
+        We're securely verifying your link and retrieving your organization profile.
+        This may take a moment.
+      </p>
+    } @else {
+      <h2 class="text-[31px] font-semibold tracking-[-0.04em] text-[#0d1230]">
+        Unable to sign in
+      </h2>
+      <p class="mt-3 text-[15px] leading-6 text-[#626a87]">
+        {{ errorMessage() }}
+      </p>
+      <button
+        type="button"
+        class="continue-button mt-8"
+        (click)="requestNewLink()"
+      >
+        <span>Request a new link</span>
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    }
+  </section>
+</app-login-shell>
