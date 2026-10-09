@@ -1,7 +1,8 @@
 <div class="workspace-simple-table">
   @if (showSearch()) {
     <app-workspace-table-toolbar
-      [summary]="rows().length + (rows().length === 1 ? ' item' : ' items')"
+      [summary]="summary() ?? (rows().length + (rows().length === 1 ? ' item' : ' items'))"
+      [summaryIcon]="summaryIcon()"
       [showSearch]="true"
       [searchPlaceholder]="searchPlaceholder()"
       [searchValue]="searchValue()"
@@ -37,7 +38,17 @@
 
           <div class="simple-table-body">
             @for (row of rows(); track getRowKey(row); let index = $index) {
-              <article class="simple-table-row">
+              <article
+                class="simple-table-row"
+                [class.simple-table-row-selectable]="selectable()"
+                [class.simple-table-row-selected]="isSelected(row)"
+                [attr.tabindex]="selectable() ? 0 : null"
+                [attr.role]="selectable() ? 'button' : null"
+                [attr.aria-pressed]="selectable() ? isSelected(row) : null"
+                (click)="selectRow(row)"
+                (keydown.enter)="selectRow(row)"
+                (keydown.space)="$event.preventDefault(); selectRow(row)"
+              >
                 @for (column of columns(); track column.label) {
                   @if (column.template) {
                     <ng-container

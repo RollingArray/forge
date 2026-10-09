@@ -34,6 +34,12 @@ export class WorkspaceSimpleTableComponent<T extends object> {
 
   readonly rowKey = input.required<keyof T>();
 
+  readonly selectable = input(false);
+
+  readonly selectedRowKey = input<string | number | null>(null);
+
+  readonly rowSelected = output<T>();
+
   readonly height = input('360px');
 
   readonly searchValue = input('');
@@ -43,6 +49,10 @@ export class WorkspaceSimpleTableComponent<T extends object> {
   readonly searchPlaceholder = input('Search...');
 
   readonly emptyMessage = input('No records available.');
+
+  readonly summary = input<string | null>(null);
+
+  readonly summaryIcon = input('description');
 
   readonly searchValueChange = output<string>();
 
@@ -91,6 +101,16 @@ export class WorkspaceSimpleTableComponent<T extends object> {
 
   getRowKey(row: T): string | number {
     return row[this.rowKey()] as string | number;
+  }
+
+  isSelected(row: T): boolean {
+    return this.selectedRowKey() === this.getRowKey(row);
+  }
+
+  selectRow(row: T): void {
+    if (this.selectable()) {
+      this.rowSelected.emit(row);
+    }
   }
 
   isErrorCount(column: WorkspaceSimpleTableColumn<T>, row: T): boolean {

@@ -210,3 +210,26 @@
 .status-error i {
   background: var(--forge-error);
 }
+
+.simple-table-row-selectable {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.simple-table-row-selectable:hover {
+  background: var(--forge-surface-subtle);
+}
+
+.simple-table-row-selectable:focus-visible {
+  outline: 2px solid var(--forge-primary);
+  outline-offset: -2px;
+}
+
+.simple-table-row-selected {
+  background: var(--forge-surface-active);
+  box-shadow: inset 3px 0 0 var(--forge-primary);
+}
+
+.simple-table-row-selected:hover {
+  background: var(--forge-surface-active);
+}
