@@ -39,11 +39,13 @@ export const authTokenInterceptor: HttpInterceptorFn = (request, next) => {
   return next(authenticatedRequest).pipe(
     catchError((error) => {
       const isUnauthorized = error.status === 401;
-      const isLoginRequest = request.url.includes('/api/v1/auth/login');
+      const isPublicAuthRequest =
+        request.url.includes('/api/v1/auth/login') ||
+        request.url.includes('/api/v1/auth/magic-link');
 
       if (
         isUnauthorized &&
-        !isLoginRequest &&
+        !isPublicAuthRequest &&
         !logoutInProgress
       ) {
         logoutInProgress = true;

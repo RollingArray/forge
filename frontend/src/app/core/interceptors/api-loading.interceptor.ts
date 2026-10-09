@@ -17,10 +17,12 @@ import { ApiLoadingService } from '../services/api-loading.service';
 export const apiLoadingInterceptor: HttpInterceptorFn = (request, next) => {
   const apiLoadingService = inject(ApiLoadingService);
 
-  const isLoginRequest = request.url.includes('/api/v1/auth/login');
+  const isPublicAuthRequest =
+    request.url.includes('/api/v1/auth/login') ||
+    request.url.includes('/api/v1/auth/magic-link');
   const skipGlobalLoading = request.context.get(API_LOADING_SKIP);
 
-  if (isLoginRequest || skipGlobalLoading) {
+  if (isPublicAuthRequest || skipGlobalLoading) {
     return next(request);
   }
 

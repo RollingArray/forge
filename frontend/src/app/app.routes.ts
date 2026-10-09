@@ -11,6 +11,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { AuthenticatedLayoutComponent } from './layout/authenticated/authenticated-layout.component';
 import { LoginComponent } from './features/login/login.component';
+import { MagicLinkVerifyComponent } from './features/login/magic-link-verify.component';
 import { WorkspaceComponent } from './features/workspace/workspace.component';
 import { ModelStudioComponent } from './features/model-studio/model-studio.component';
 import { ModelValidationComponent } from './features/model-validation/model-validation.component';
@@ -24,6 +25,10 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     redirectTo: 'login',
+  },
+  {
+    path: 'login/verify',
+    component: MagicLinkVerifyComponent,
   },
   {
     path: 'login',
