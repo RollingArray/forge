@@ -359,6 +359,31 @@
 
           @if (showSemanticParameters) {
             <div class="parameter-panel">
+              <app-field-parameter-header
+                title="How should semantic values behave?"
+                description="Choose whether values can be reused or should be distinct per record."
+              />
+
+              <div class="choice-grid generator-grid">
+                <app-choice-card
+                  icon="category"
+                  title="Reusable Vocabulary"
+                  description="Reuse meaningful categories, labels, and business terms."
+                  example="Hydraulic Systems"
+                  [selected]="semanticMode() === 'VOCABULARY'"
+                  (selectedChange)="semanticMode.set('VOCABULARY')"
+                />
+
+                <app-choice-card
+                  icon="auto_awesome"
+                  title="Distinct Value per Record"
+                  description="Generate distinct, meaningful values for individual records."
+                  example="A detailed component description"
+                  [selected]="semanticMode() === 'UNIQUE'"
+                  (selectedChange)="semanticMode.set('UNIQUE')"
+                />
+              </div>
+
               <app-semantic-generator
                 [description]="semanticDescription()"
                 [showValidation]="showValidation()"

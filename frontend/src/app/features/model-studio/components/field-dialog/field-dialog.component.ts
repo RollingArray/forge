@@ -83,6 +83,9 @@ export class FieldDialogComponent {
   readonly maximum = signal('');
   readonly pattern = signal('');
   readonly semanticDescription = signal('');
+  readonly semanticMode = signal<'UNIQUE' | 'VOCABULARY'>(
+    'VOCABULARY',
+  );
   readonly characterSet = signal<'ALPHA' | 'DIGITS' | 'ALPHANUMERIC'>(
     'ALPHANUMERIC',
   );
@@ -160,6 +163,9 @@ export class FieldDialogComponent {
         typeof parameters['description'] === 'string'
           ? parameters['description']
           : '',
+      );
+      this.semanticMode.set(
+        parameters['mode'] === 'UNIQUE' ? 'UNIQUE' : 'VOCABULARY',
       );
 
       this.characterSet.set(
@@ -554,6 +560,7 @@ export class FieldDialogComponent {
     this.maximum.set('');
     this.pattern.set('');
     this.semanticDescription.set('');
+    this.semanticMode.set('VOCABULARY');
     this.minimumLength.set('');
     this.maximumLength.set('');
     this.categoricalValues.set('');
@@ -588,6 +595,9 @@ export class FieldDialogComponent {
     if (parameters['description'] !== undefined) {
       this.semanticDescription.set(String(parameters['description']));
     }
+    this.semanticMode.set(
+      parameters['mode'] === 'UNIQUE' ? 'UNIQUE' : 'VOCABULARY',
+    );
 
     if (parameters['minimum_length'] !== undefined) {
       this.minimumLength.set(String(parameters['minimum_length']));
@@ -646,6 +656,7 @@ export class FieldDialogComponent {
       if (this.generator() === 'SEMANTIC') {
         parameters['description'] =
           this.semanticDescription().trim();
+        parameters['mode'] = this.semanticMode();
       }
 
       if (Object.keys(parameters).length > 0) {
@@ -769,6 +780,7 @@ export class FieldDialogComponent {
     this.maximum.set('');
     this.pattern.set('');
     this.semanticDescription.set('');
+    this.semanticMode.set('VOCABULARY');
     this.characterSet.set('ALPHANUMERIC');
     this.minimumLength.set('');
     this.maximumLength.set('');
