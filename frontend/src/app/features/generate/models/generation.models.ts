@@ -98,6 +98,9 @@ export interface GenerationCompletedEvent {
   status: GenerationJobStatus;
   generated_rows: number;
   expected_rows: number;
+  elapsed_seconds: number | null;
+  throughput_rows_per_second: number | null;
+  peak_memory_mb: number | null;
   valid: boolean;
   error_count: number;
   progress: number;

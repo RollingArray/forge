@@ -682,6 +682,13 @@ class GenerationService:
                     "status": job.status.value,
                     "generated_rows": job.total_generated_rows,
                     "expected_rows": job.total_target_rows,
+                    "elapsed_seconds": job.elapsed_seconds,
+                    "throughput_rows_per_second": (
+                        job.total_generated_rows / job.elapsed_seconds
+                        if job.elapsed_seconds and job.elapsed_seconds > 0
+                        else None
+                    ),
+                    "peak_memory_mb": job.peak_memory_mb,
                     "valid": result.validation.valid,
                     "error_count": result.validation.error_count,
                     "progress": job.progress,

@@ -238,6 +238,9 @@ export class GenerationExecutionStore {
       ...current,
       status: event.status,
       total_generated_rows: event.generated_rows,
+      elapsed_seconds: event.elapsed_seconds,
+      throughput_rows_per_second: event.throughput_rows_per_second,
+      peak_memory_mb: event.peak_memory_mb,
       progress: event.progress,
     });
   }
