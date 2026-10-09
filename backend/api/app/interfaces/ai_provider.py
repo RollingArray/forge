@@ -28,6 +28,16 @@ class AIProviderStatus:
 
 
 @dataclass(frozen=True)
+class AIEntityProposal:
+    """Represents an AI-generated proposal for a FORGE entity."""
+
+    name: str
+    description: str
+    population: int
+    reasoning: str
+
+
+@dataclass(frozen=True)
 class AIDataModelProposal:
     """Represents an AI-generated proposal for a FORGE Data Model."""
 
@@ -95,6 +105,11 @@ class AIProvider(ABC):
     @abstractmethod
     def get_status(self) -> AIProviderStatus:
         """Return the current provider availability status."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def propose_entity(self, prompt: str) -> AIEntityProposal:
+        """Generate a structured entity proposal without persistence."""
         raise NotImplementedError
 
     @abstractmethod

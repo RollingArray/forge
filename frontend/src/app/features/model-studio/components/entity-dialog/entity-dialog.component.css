@@ -13,233 +13,144 @@
       min-height: 610px;
     }
 
-    .ai-panel {
-      padding: 28px 28px 30px;
-      background: linear-gradient(145deg, #faf7ff 0%, #f7f4ff 100%);
-      border: 1px solid #e6ddff;
-      border-radius: 18px;
+    .ai-column {
+      min-width: 0;
+      padding: 0 22px 22px;
     }
 
-    .recommended-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border: 1px solid #d8caff;
-      border-radius: 999px;
-      color: #6547cf;
-      background: #f5efff;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-    }
-
-    .recommended-badge .material-symbols-outlined {
-      font-size: 14px;
-    }
-
-    .ai-heading {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-top: 20px;
-    }
-
-    .ai-icon {
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
-      border-radius: 14px;
-      background: #7352d8;
-      color: white;
-      box-shadow: 0 8px 18px rgba(83, 55, 170, 0.22);
-      flex: 0 0 auto;
-    }
-
-    .ai-icon .material-symbols-outlined {
-      font-size: 28px;
-    }
-
-    .ai-heading h2 {
-      display: inline;
-      margin: 0 8px 0 0;
-      color: #292540;
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .online-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #edf9f1;
-      border: 1px solid #ccead5;
-      color: #27814c;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      vertical-align: middle;
-    }
-
-    .online-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #32a85d;
-    }
-
-    .ai-description {
-      margin: 12px 0 18px 66px;
-      color: #77748a;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .ai-prompt {
+    .ai-column app-ai-assist-panel {
+      display: block;
       width: 100%;
-      min-height: 150px;
-      resize: vertical;
-      box-sizing: border-box;
-      padding: 16px;
-      border: 1px solid #ddd4f4;
+    }
+
+    .entity-ai-proposal {
+      margin-top: 18px;
+      padding: 18px;
+      background: #ffffff;
+      border: 1px solid #ded5fa;
       border-radius: 14px;
-      background: white;
-      color: #302d3d;
-      font: inherit;
-      outline: none;
+      box-shadow: 0 4px 14px rgb(72 48 125 / 6%);
     }
 
-    .ai-prompt:focus,
-    .field-input:focus {
-      border-color: #8367df;
-      box-shadow: 0 0 0 3px rgba(115, 82, 216, 0.10);
+    .entity-proposal-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
-    .ai-action-row {
+    .entity-proposal-heading > .material-symbols-outlined {
+      color: #6d45c5;
+      font-size: 22px;
+    }
+
+    .entity-proposal-heading > div {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .entity-proposal-heading > div > span {
+      color: #7255b5;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .entity-proposal-heading > div > strong {
+      color: #302747;
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .entity-ai-proposal > p {
+      margin: 0 0 14px;
+      color: #59536a;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .entity-proposal-population {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px;
-      margin-top: -1px;
-      border: 1px solid #ddd4f4;
-      border-top: 0;
-      border-radius: 0 0 14px 14px;
-      background: #f5f0ff;
+      padding: 12px 14px;
+      background: #f7f4ff;
+      border: 1px solid #eee7ff;
+      border-radius: 9px;
     }
 
-    .ai-hint {
+    .entity-proposal-population span {
+      color: #615872;
+      font-size: 12px;
+    }
+
+    .entity-proposal-population strong {
+      color: #5b36ad;
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .entity-ai-proposal > .entity-proposal-reasoning {
+      margin-top: 12px;
+      color: #777083;
+      font-size: 12px;
+    }
+
+    .entity-proposal-actions {
       display: flex;
-      align-items: center;
-      gap: 5px;
-      color: #8a849d;
-      font-size: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
     }
 
-    .ai-hint .material-symbols-outlined {
-      font-size: 17px;
-      color: #795bd5;
-    }
-
-    .ai-button {
+    .entity-proposal-actions button {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 7px;
-      border: 0;
-      border-radius: 10px;
-      padding: 11px 15px;
-      background: #7556d8;
-      color: white;
+      min-height: 38px;
+      padding: 0 13px;
+      border-radius: 8px;
       font: inherit;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 650;
       cursor: pointer;
-      white-space: nowrap;
     }
 
-    .ai-button:disabled {
-      opacity: 0.45;
+    .entity-proposal-actions button:disabled {
       cursor: not-allowed;
+      opacity: 0.55;
     }
 
-    .ai-button .material-symbols-outlined {
-      font-size: 17px;
+    .entity-regenerate-button {
+      color: #5c4591;
+      background: #ffffff;
+      border: 1px solid #d9cdef;
     }
 
-    .examples-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 20px;
-      padding: 16px;
-      border: 1px solid #e5def4;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.65);
+    .entity-use-proposal-button {
+      color: #ffffff;
+      background: #6842bb;
+      border: 1px solid #6842bb;
     }
 
-    .examples-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 3px;
-      color: #5c5870;
-      font-size: 12px;
+    .entity-use-proposal-button:hover {
+      background: #55339e;
     }
 
-    .examples-title .material-symbols-outlined {
-      color: #7556d8;
-      font-size: 19px;
-    }
-
-    .example-prompt {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #e5def4;
+    .entity-ai-error {
+      margin-top: 14px;
+      padding: 12px 14px;
+      color: #9f2638;
+      background: #fff2f3;
+      border: 1px solid #f3cbd1;
       border-radius: 9px;
-      background: white;
-      color: #666276;
-      text-align: left;
-      font: inherit;
-      font-size: 11px;
-      line-height: 1.4;
-      cursor: pointer;
-    }
-
-    .example-prompt:hover {
-      border-color: #b9a6ed;
-      background: #faf8ff;
-      color: #5f45bd;
-    }
-
-    .decision-card {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-      padding: 16px;
-      border: 1px dashed #e5def4;
-      border-radius: 12px;
-      background: transparent;
-      color: #68647a;
-    }
-
-    .decision-card .material-symbols-outlined {
-      color: #7556d8;
-      font-size: 20px;
-      flex: 0 0 auto;
-    }
-
-    .decision-card strong {
-      color: #5c5870;
-      font-size: 12px;
-    }
-
-    .decision-card p {
-      margin: 5px 0 0;
-      font-size: 11px;
-      line-height: 1.45;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .divider {

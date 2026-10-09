@@ -28,6 +28,10 @@ from app.models.ai_field_proposal_model import (
     AIFieldProposalRequestModel,
     AIFieldProposalResponseModel,
 )
+from app.models.ai_entity_proposal_model import (
+    AIEntityProposalModel,
+    AIEntityProposalRequestModel,
+)
 from app.models.ai_identity_proposal_model import (
     AIIdentityProposalRequestModel,
     AIIdentityProposalResponseModel,
@@ -105,6 +109,36 @@ def preview_semantic_values(
         status=preview.status,
         message=preview.message,
         preview_values=preview.preview_values,
+    )
+
+
+@router.post(
+    "/entities/propose",
+    response_model=AIEntityProposalModel,
+)
+def propose_entity(
+    request: AIEntityProposalRequestModel,
+) -> AIEntityProposalModel:
+    """Generate an entity proposal for user review without saving it."""
+
+    try:
+        proposal = _ai_service.propose_entity(prompt=request.prompt)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AIEntityProposalModel(
+        name=proposal.name,
+        description=proposal.description,
+        population=proposal.population,
+        reasoning=proposal.reasoning,
     )
 
 

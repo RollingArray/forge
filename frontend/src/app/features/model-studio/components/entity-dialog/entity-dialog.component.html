@@ -8,96 +8,71 @@
       <div dialog-body class="entity-dialog-body">
         <div class="authoring-layout">
 
-          <section class="ai-panel">
-            <div class="recommended-badge">
-              <span class="material-symbols-outlined">auto_awesome</span>
-              RECOMMENDED
-            </div>
-
-            <div class="ai-heading">
-              <div class="ai-icon">
-                <span class="material-symbols-outlined">auto_awesome</span>
-              </div>
-
-              <div>
-                <h2>Start with FORGE AI</h2>
-                <span class="online-badge">
-                  <span class="online-dot"></span>
-                  ONLINE
-                </span>
-              </div>
-            </div>
-
-            <p class="ai-description">
-              Describe the entity you want to model in natural language.
-              FORGE AI will propose a starting point for you to review.
-            </p>
-
-            <textarea
-              class="ai-prompt"
-              [(ngModel)]="aiPrompt"
+          <section class="ai-column">
+            <app-ai-assist-panel
+              title="Start with FORGE AI"
+              description="Describe the business entity you want to model. FORGE AI will propose a starting point for you to review."
               placeholder="e.g. Create a CUSTOMER entity representing enterprise customers with 50,000 records."
-              maxlength="2000"
-            ></textarea>
+              hint="Describe the entity and expected population."
+              [generateLabel]="aiProposal() ? 'Generate again' : 'Generate with FORGE AI'"
+              [generating]="aiLoading()"
+              [proposal]="null"
+              [(prompt)]="aiPrompt"
+              [llmOnline]="true"
+              [examples]="aiExamples"
+              exampleHeading="Try an example"
+              exampleDescription="Choose an example to get started."
+              decisionTitle="AI proposes. You decide."
+              decisionDescription="Review the proposed entity and apply it when you are ready."
+              (generate)="requestAiProposal($event)"
+              (regenerate)="requestAiProposal(aiPrompt())"
+              (exampleSelected)="aiPrompt.set($event)"
+            >
+              <div ai-result>
+                @if (aiError()) {
+                  <div class="entity-ai-error" role="alert">{{ aiError() }}</div>
+                }
 
-            <div class="ai-action-row">
-              <span class="ai-hint">
-                <span class="material-symbols-outlined">lightbulb</span>
-                Describe the business entity and expected population.
-              </span>
+                @if (aiProposal(); as proposal) {
+                  <section class="entity-ai-proposal">
+                    <div class="entity-proposal-heading">
+                      <span class="material-symbols-outlined">check_circle</span>
+                      <div>
+                        <span>FORGE AI Proposal</span>
+                        <strong>{{ proposal.name }}</strong>
+                      </div>
+                    </div>
 
-              <button
-                type="button"
-                class="ai-button"
-                [disabled]="!aiPrompt().trim()"
-                (click)="requestAiProposal()"
-              >
-                <span class="material-symbols-outlined">auto_awesome</span>
-                Generate with FORGE AI
-              </button>
-            </div>
+                    <p>{{ proposal.description }}</p>
+                    <div class="entity-proposal-population">
+                      <span>Suggested population</span>
+                      <strong>{{ proposal.population }}</strong>
+                    </div>
+                    <p class="entity-proposal-reasoning">{{ proposal.reasoning }}</p>
 
-            <div class="examples-section">
-              <div class="examples-title">
-                <span class="material-symbols-outlined">lightbulb</span>
-                <strong>Example prompts</strong>
+                    <div class="entity-proposal-actions">
+                      <button
+                        type="button"
+                        class="entity-regenerate-button"
+                        [disabled]="aiLoading()"
+                        (click)="requestAiProposal(aiPrompt())"
+                      >
+                        <span class="material-symbols-outlined">refresh</span>
+                        Regenerate
+                      </button>
+                      <button
+                        type="button"
+                        class="entity-use-proposal-button"
+                        (click)="applyAiProposal()"
+                      >
+                        <span class="material-symbols-outlined">check_circle</span>
+                        Use this proposal
+                      </button>
+                    </div>
+                  </section>
+                }
               </div>
-
-              <button
-                type="button"
-                class="example-prompt"
-                (click)="useExample('I need 100 customers.')"
-              >
-                I need 100 customers.
-              </button>
-
-              <button
-                type="button"
-                class="example-prompt"
-                (click)="useExample('Create an SAP customer master table named KNA1 with 100 records.')"
-              >
-                Create an SAP customer master table named KNA1 with 100 records.
-              </button>
-
-              <button
-                type="button"
-                class="example-prompt"
-                (click)="useExample('Create a sales order header entity called VBAK with 200 records.')"
-              >
-                Create a sales order header entity called VBAK with 200 records.
-              </button>
-            </div>
-
-            <div class="decision-card">
-              <span class="material-symbols-outlined">lightbulb</span>
-              <div>
-                <strong>AI proposes. You decide.</strong>
-                <p>
-                  Review the proposed entity before it becomes part of the
-                  FORGE specification.
-                </p>
-              </div>
-            </div>
+            </app-ai-assist-panel>
           </section>
 
           <div class="divider">

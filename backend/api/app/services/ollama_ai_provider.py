@@ -21,6 +21,7 @@ from urllib.request import Request, urlopen
 
 from app.core.ai_settings import AIConfiguration
 from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
+from app.prompts.entity_proposal_prompt import ENTITY_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.constraint_proposal_prompt import (
     CONSTRAINT_PROPOSAL_SYSTEM_PROMPT,
 )
@@ -34,6 +35,7 @@ from app.interfaces.ai_provider import (
     AIConstraintProposal,
     AIForeignKeyProposal,
     AIDataModelProposal,
+    AIEntityProposal,
     AIFieldProposal,
     AIIdentityProposal,
     AIRelationshipProposal,
@@ -90,6 +92,108 @@ class OllamaAIProvider(AIProvider):
             mode="offline",
             model=self._model,
             message="FORGE AI is available.",
+        )
+
+    def propose_entity(self, prompt: str) -> AIEntityProposal:
+        """Generate a structured entity proposal without persisting it."""
+
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError("Entity proposal request must not be empty.")
+
+        request_payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": ENTITY_PROPOSAL_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt.strip(),
+                },
+            ],
+            "stream": False,
+            "format": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "description": {"type": "string"},
+                    "population": {"type": "integer", "minimum": 0},
+                    "reasoning": {"type": "string"},
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "population",
+                    "reasoning",
+                ],
+            },
+        }
+
+        request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider."
+            ) from exc
+
+        message = payload.get("message")
+        if not isinstance(message, dict):
+            raise RuntimeError("FORGE AI returned an invalid chat response.")
+
+        raw_response = message.get("content")
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError("FORGE AI returned an empty entity proposal.")
+
+        try:
+            proposal = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid entity proposal JSON."
+            ) from exc
+
+        if not isinstance(proposal, dict):
+            raise RuntimeError("FORGE AI returned an invalid entity proposal.")
+
+        name = proposal.get("name")
+        description = proposal.get("description")
+        population = proposal.get("population")
+        reasoning = proposal.get("reasoning")
+
+        if not isinstance(name, str) or not name.strip():
+            raise RuntimeError("FORGE AI entity proposal has an invalid name.")
+        if not isinstance(description, str) or not description.strip():
+            raise RuntimeError(
+                "FORGE AI entity proposal has an invalid description."
+            )
+        if isinstance(population, bool) or not isinstance(population, int) or population < 0:
+            raise RuntimeError(
+                "FORGE AI entity proposal has an invalid population."
+            )
+        if not isinstance(reasoning, str) or not reasoning.strip():
+            raise RuntimeError(
+                "FORGE AI entity proposal has invalid reasoning."
+            )
+
+        return AIEntityProposal(
+            name=name.strip(),
+            description=description.strip(),
+            population=population,
+            reasoning=reasoning.strip(),
         )
 
     def suggest_data_model(

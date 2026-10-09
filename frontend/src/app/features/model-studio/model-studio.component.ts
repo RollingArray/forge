@@ -22,6 +22,8 @@ import {
   ForgeSpecificationRelationship,
 } from '../../core/interfaces/forge-specification.interface';
 import { SpecificationService } from '../../core/services/specification.service';
+import { AIService } from '../../core/services/ai.service';
+import { AIEntityProposal } from '../../core/interfaces/ai-entity-proposal.interface';
 
 import { adaptSpecification } from './data/specification-adapter';
 import { CanvasEntity } from './models/model-studio.models';
@@ -205,6 +207,10 @@ type StudioStepItem = WorkflowStepItem;
 
       @if (entityDialogOpen()) {
         <app-model-studio-entity-dialog
+          [aiLoading]="entityAiLoading()"
+          [aiError]="entityAiError()"
+          [aiProposal]="entityAiProposal()"
+          (aiRequested)="requestEntityAiProposal($event)"
           (saved)="handleEntityCreated($event)"
           (closed)="closeEntityDialog()"
         />
@@ -655,6 +661,7 @@ export class ModelStudioComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly specificationService = inject(SpecificationService);
+  private readonly aiService = inject(AIService);
 
   readonly specification = signal<ForgeSpecification | null>(null);
 
@@ -668,6 +675,9 @@ export class ModelStudioComponent {
     this.specification()?.entities.find((entity) => entity.name === this.selectedEntity()) ?? null;
 
   readonly entityDialogOpen = signal(false);
+  readonly entityAiLoading = signal(false);
+  readonly entityAiError = signal<string | null>(null);
+  readonly entityAiProposal = signal<AIEntityProposal | null>(null);
 
   readonly fieldDialogOpen = signal(false);
 
@@ -747,11 +757,40 @@ export class ModelStudioComponent {
   }
 
   openEntityDialog(): void {
+    this.entityAiLoading.set(false);
+    this.entityAiError.set(null);
+    this.entityAiProposal.set(null);
     this.entityDialogOpen.set(true);
+  }
+
+  requestEntityAiProposal(prompt: string): void {
+    if (this.entityAiLoading()) {
+      return;
+    }
+
+    this.entityAiLoading.set(true);
+    this.entityAiError.set(null);
+    this.entityAiProposal.set(null);
+
+    this.aiService.proposeEntity(prompt).subscribe({
+      next: (proposal) => {
+        this.entityAiProposal.set(proposal);
+        this.entityAiLoading.set(false);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.entityAiError.set(
+          error.error?.detail ?? 'FORGE AI could not generate an entity proposal.',
+        );
+        this.entityAiLoading.set(false);
+      },
+    });
   }
 
   closeEntityDialog(): void {
     this.entityDialogOpen.set(false);
+    this.entityAiLoading.set(false);
+    this.entityAiError.set(null);
+    this.entityAiProposal.set(null);
   }
 
   openIdentityDialog(): void {

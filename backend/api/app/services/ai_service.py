@@ -16,6 +16,7 @@ from typing import Callable
 
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AIEntityProposal,
     AIConstraintProposal,
     AIForeignKeyProposal,
     AIFieldProposal,
@@ -37,6 +38,11 @@ class AIService:
         """Return the current AI capability status."""
 
         return self._provider.get_status()
+
+    def propose_entity(self, prompt: str) -> AIEntityProposal:
+        """Generate an entity proposal without persisting it."""
+
+        return self._provider.propose_entity(prompt)
 
     def suggest_data_model(
         self,
