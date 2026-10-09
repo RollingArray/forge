@@ -95,26 +95,31 @@
   </button>
 }
 
-<!-- Divider -->
-<div class="my-7 flex items-center gap-4">
-  <div class="h-px flex-1 bg-[#dfe1e8]"></div>
+<!-- Technical data restriction -->
+<div
+  class="mt-7 rounded-xl border border-[#f0d9a8] bg-[#fffaf0] p-5"
+  role="note"
+  aria-label="Technical data restriction"
+>
+  <div class="flex items-start gap-3">
+    <span
+      class="material-symbols-outlined shrink-0 text-[25px] text-[#a76512]"
+      aria-hidden="true"
+    >
+      shield_lock
+    </span>
 
-  <span class="text-[13px] text-[#7a7f94]"> OR </span>
+    <div class="min-w-0">
+      <h3 class="font-semibold text-[#754515]">
+        Technical Data Strictly Prohibited
+      </h3>
 
-  <div class="h-px flex-1 bg-[#dfe1e8]"></div>
-</div>
-
-<!-- Microsoft -->
-<!-- Enterprise -->
-<div class="enterprise-card">
-  <div class="enterprise-icon">
-    <span class="material-symbols-outlined"> lock </span>
-  </div>
-
-  <div>
-    <h3>Enterprise Authentication</h3>
-
-    <p>FORGE uses your organization's identity provider for secure access.</p>
+      <p class="mt-2 text-sm leading-6 text-[#795d3b]">
+        Do not enter, upload, or process technical data in FORGE.
+        Use only data authorized for this application and permitted by
+        your organization's data-handling requirements.
+      </p>
+    </div>
   </div>
 </div>
 </app-login-shell>
