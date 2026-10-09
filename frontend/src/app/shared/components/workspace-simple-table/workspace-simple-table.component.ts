@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 
 import { WorkspaceTableEmptyComponent } from '../workspace-table-empty/workspace-table-empty.component';
+import { WorkspaceToolbarAction } from '../workspace-table-toolbar/workspace-table-toolbar.component';
 import { WorkspaceTableToolbarComponent } from '../workspace-table-toolbar/workspace-table-toolbar.component';
 import {
   WorkspaceSimpleTableCellContext,
@@ -54,10 +55,18 @@ export class WorkspaceSimpleTableComponent<T extends object> {
 
   readonly summaryIcon = input('description');
 
+  readonly toolbarActions = input<readonly WorkspaceToolbarAction[]>([]);
+
+  readonly toolbarAction = output<string>();
+
   readonly searchValueChange = output<string>();
 
   updateSearchValue(value: string): void {
     this.searchValueChange.emit(value);
+  }
+
+  onToolbarAction(actionId: string): void {
+    this.toolbarAction.emit(actionId);
   }
 
   getCellValue(row: T, column: WorkspaceSimpleTableColumn<T>): unknown {

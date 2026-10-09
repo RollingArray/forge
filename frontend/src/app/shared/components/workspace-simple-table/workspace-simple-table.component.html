@@ -6,7 +6,9 @@
       [showSearch]="true"
       [searchPlaceholder]="searchPlaceholder()"
       [searchValue]="searchValue()"
+      [actions]="toolbarActions()"
       (searchValueChange)="updateSearchValue($event)"
+      (action)="onToolbarAction($event)"
     />
   }
 
