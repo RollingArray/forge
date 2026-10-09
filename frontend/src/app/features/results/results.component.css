@@ -3,21 +3,6 @@
    Visual language aligned with Population and Generate
    ============================================================ */
 
-/* ============================================================
-   Main workspace
-   ============================================================ */
-
-.results-content-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
-  gap: 16px;
-
-  height: calc(clamp(420px, 58vh, 620px) - 16px);
-  min-height: 404px;
-
-  min-width: 0;
-}
-
 .results-panel {
   min-width: 0;
   overflow: hidden;
@@ -54,12 +39,6 @@
 /* ============================================================
    Responsive
    ============================================================ */
-
-@media (max-width: 700px) {
-  .results-content-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 @media (max-width: 700px) {
   .results-workspace {

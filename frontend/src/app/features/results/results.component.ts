@@ -26,12 +26,14 @@ import { ResultsExecutionSummaryComponent } from './components/results-execution
 import { GeneratedFilesComponent } from './components/generated-files/generated-files.component';
 import { ArtifactPreviewComponent } from './components/artifact-preview/artifact-preview.component';
 import { ResultsValidationComponent } from './components/results-validation/results-validation.component';
+import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import { ResultsQualitySummaryComponent } from './components/results-quality-summary/results-quality-summary.component';
 
 @Component({
   selector: 'app-results',
   standalone: true,
   imports: [
+    WorkflowRowComponent,
     CommonModule,
     WorkflowPageComponent,
     ResultsExecutionSummaryComponent,
