@@ -52,6 +52,13 @@ STRING:
   - pattern
 - SEMANTIC parameters must include:
   - description
+  - mode, which must be UNIQUE or VOCABULARY
+- Use SEMANTIC mode = UNIQUE when each record needs its own
+  independently generated value, such as a product name or description.
+- Use SEMANTIC mode = VOCABULARY when values should be selected from a
+  reusable set of business categories or labels.
+- Do not omit mode for SEMANTIC fields.
+- Do not use SEMANTIC mode values other than UNIQUE or VOCABULARY.
 
 INTEGER:
 - Use generation.strategy = RANDOM.
@@ -111,7 +118,8 @@ Return ONLY valid JSON matching this structure:
       "distribution": null,
       "generator": "SEMANTIC",
       "parameters": {
-        "description": "meaning of the field"
+        "description": "meaning of the field",
+        "mode": "UNIQUE"
       }
     }
   }
