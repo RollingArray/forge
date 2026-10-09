@@ -458,7 +458,7 @@ class GenerationService:
                         "committed_rows": entity.generated_rows,
                     }
 
-                self._checkpoint_store.save(
+                saved_checkpoint = self._checkpoint_store.save(
                     data_model_id=job.data_model_id,
                     job_id=job.job_id,
                     seed=existing_checkpoint.get(
@@ -509,6 +509,7 @@ class GenerationService:
                         "generated_rows": job.total_generated_rows,
                         "entity_generated_rows": entity_generated_rows,
                         "entity_target_rows": entity_target_rows,
+                        "checkpoint_updated_at": saved_checkpoint["updated_at"],
                         "entity_progress": (
                             entity_generated_rows / entity_target_rows
                             if entity_target_rows > 0

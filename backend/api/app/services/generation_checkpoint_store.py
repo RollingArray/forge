@@ -115,8 +115,8 @@ class GenerationCheckpointStore:
         entities: dict[str, Any],
         specification_hash: str | None = None,
         chunk_size: int | None = None,
-    ) -> None:
-        """Persist checkpoint state atomically."""
+    ) -> dict[str, Any]:
+        """Persist checkpoint state atomically and return the saved state."""
 
         path = self._checkpoint_path(data_model_id, job_id)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -176,6 +176,8 @@ class GenerationCheckpointStore:
         except Exception:
             temporary_path.unlink(missing_ok=True)
             raise
+
+        return checkpoint
 
     def get(
         self,
