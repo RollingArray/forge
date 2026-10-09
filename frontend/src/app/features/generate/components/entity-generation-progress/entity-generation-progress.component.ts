@@ -1,3 +1,5 @@
+import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
+import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -27,6 +29,8 @@ import { WorkspaceTableComponent } from '../../../../shared/components/workspace
     DecimalPipe,
     WorkspaceHeaderComponent,
     WorkspaceTableComponent,
+    WorkspaceSectionComponent,
+    WorkspaceScrollAreaComponent,
   ],
   templateUrl: './entity-generation-progress.component.html',
   styleUrl: './entity-generation-progress.component.css',

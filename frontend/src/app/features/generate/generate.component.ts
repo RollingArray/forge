@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
+import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import {
   WorkflowStep,
   WorkflowStepItem,
@@ -11,10 +12,14 @@ import { GenerationService } from './services/generation.service';
 import { GenerationCheckpoint } from '../../shared/models/generation-checkpoint.models';
 import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
-import { GenerationSummaryCardComponent } from '../../shared/components/generation-summary-card/generation-summary-card.component';
-import { GenerationPipelineComponent } from '../../shared/components/generation-pipeline/generation-pipeline.component';
+import { MetricGridComponent } from '../../shared/components/metric-grid/metric-grid.component';
+import { WorkspaceHeaderComponent } from '../../shared/components/workspace-header/workspace-header.component';
+import { StatusCardComponent } from '../../shared/components/status-card/status-card.component';
+import { WorkspaceSectionComponent } from '../../shared/components/workspace-section/workspace-section.component';
+import { MetricCardData } from '../../shared/components/metric-grid/metric-card-data';
+import { GenerationPipelineComponent } from './components/generation-pipeline/generation-pipeline.component';
 import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
-import { GenerationCheckpointComponent } from '../../shared/components/generation-checkpoint/generation-checkpoint.component';
+import { GenerationCheckpointComponent } from './components/generation-checkpoint/generation-checkpoint.component';
 import { GenerationActivityComponent } from '../../shared/components/generation-activity/generation-activity.component';
 import {
   GenerationJobResponse,
@@ -27,11 +32,15 @@ import {
   imports: [
     CommonModule,
     WorkflowPageComponent,
-    GenerationSummaryCardComponent,
-  GenerationPipelineComponent,
+    WorkflowRowComponent,
+    MetricGridComponent,
+    WorkspaceSectionComponent,
+    WorkspaceHeaderComponent,
+    GenerationPipelineComponent,
     EntityGenerationProgressComponent,
     GenerationCheckpointComponent,
     GenerationActivityComponent,
+    StatusCardComponent,
   ],
   templateUrl: './generate.component.html',
   styleUrl: './generate.component.css',
@@ -63,18 +72,6 @@ export class GenerateComponent {
     if (this.jobId) {
       this.loadExistingGenerationJob(this.jobId);
     }
-
-    effect(() => {
-      const event = this.executionStore.lastEvent();
-
-      if (event?.type === 'GENERATION_COMPLETED') {
-        const job = this.executionStore.generationJob();
-
-        if (job) {
-          this.loadGenerationCheckpoint(job.job_id);
-        }
-      }
-    });
   }
 
   private loadExistingGenerationJob(jobId: string): void {
@@ -133,7 +130,7 @@ export class GenerateComponent {
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
   readonly generationActivities = this.executionStore.generationActivities;
   readonly isGenerating = this.executionStore.isGenerating;
-  readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
+  readonly generationCheckpoint = this.executionStore.generationCheckpoint;
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);
 
@@ -193,6 +190,33 @@ export class GenerateComponent {
         ? 'Measured generation throughput'
         : 'Available after execution completes',
   );
+
+  readonly generationMetrics = computed<readonly MetricCardData[]>(() => [
+    {
+      label: 'Job ID',
+      value: this.generationJobIdDisplay(),
+      description: this.generationJobDetail(),
+      icon: 'badge',
+    },
+    {
+      label: 'Total Target Rows',
+      value: this.generationTargetRowsDisplay(),
+      description: 'Rows planned for generation',
+      icon: 'table_rows',
+    },
+    {
+      label: 'Entities',
+      value: this.generationEntitiesDisplay(),
+      description: 'Entities in generation plan',
+      icon: 'account_tree',
+    },
+    {
+      label: 'Throughput',
+      value: this.generationThroughputDisplay(),
+      description: this.generationThroughputDetail(),
+      icon: 'speed',
+    },
+  ]);
 
   selectStep(step: WorkflowStep): void {
     if (!this.dataModelId) {
@@ -296,7 +320,9 @@ export class GenerateComponent {
       return;
     }
 
-    this.generationCheckpointLoading.set(true);
+    if (!this.generationCheckpoint()) {
+      this.generationCheckpointLoading.set(true);
+    }
     this.generationCheckpointError.set(null);
 
     this.generationService

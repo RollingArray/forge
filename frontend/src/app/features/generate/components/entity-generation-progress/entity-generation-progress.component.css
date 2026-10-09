@@ -1,8 +1,8 @@
 :host {
   display: block;
-  height: 100%;
   min-height: 0;
   min-width: 0;
+  width: 100%;
 }
 
 /* ============================================================
@@ -13,40 +13,6 @@
    Section Header
    ============================================================ */
 
-.section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.section-eyebrow {
-  display: block;
-  color: var(--forge-text-eyebrow);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.section-heading h2 {
-  margin: 5px 0 0;
-  color: var(--forge-text-heading);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.section-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  color: var(--forge-text-secondary);
-  font-size: 12px;
-}
-
 .section-summary > span {
   color: var(--forge-text-muted);
 }
@@ -55,19 +21,6 @@
   color: var(--forge-success);
   font-weight: 750;
 }
-
-.section-state {
-  flex: 0 0 auto;
-  padding: 5px 9px;
-  border-radius: 999px;
-  color: var(--forge-text-secondary);
-  background: var(--forge-surface-muted);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
 
 /* ============================================================
    Execution Table
@@ -87,7 +40,6 @@
   border: 1px solid var(--forge-border);
   border-radius: 12px;
 }
-
 
 /*
  * Analytical columns:
@@ -126,7 +78,6 @@
   text-transform: uppercase;
 }
 
-
 /* ============================================================
    Entity Rows
    ============================================================ */
@@ -136,8 +87,6 @@
 
   min-width: 0;
   min-height: 0;
-
-  overflow-y: auto;
   overflow-x: hidden;
 
   scrollbar-width: thin;
@@ -194,7 +143,6 @@
   border-left: 2px solid var(--forge-error);
   background: var(--forge-surface-subtle);
 }
-
 
 /* ============================================================
    Entity Identity + Progress
@@ -300,7 +248,6 @@
   background: var(--forge-surface-muted);
 }
 
-
 .progress-track {
   width: 100%;
   height: 6px;
@@ -314,7 +261,6 @@
 }
 
 .progress-fill {
-  height: 100%;
 
   border-radius: inherit;
 
@@ -339,7 +285,6 @@
   font-weight: 750;
   text-align: right;
 }
-
 
 /* ============================================================
    Telemetry Columns
@@ -369,7 +314,6 @@
   color: var(--forge-text-muted);
   font-size: 9px;
 }
-
 
 /* ============================================================
    Chunk Activity
@@ -480,8 +424,6 @@
   font-weight: 700;
 }
 
-
-
 /* ============================================================
    Animation
    ============================================================ */
@@ -510,7 +452,6 @@
     transform: scale(1.12);
   }
 }
-
 
 /* ============================================================
    Empty State
@@ -549,7 +490,6 @@
   line-height: 1.5;
 }
 
-
 /* ============================================================
    Responsive
    ============================================================ */
@@ -577,7 +517,37 @@
 }
 
 @media (max-width: 620px) {
-  .section-heading {
-    flex-direction: column;
-  }
+}
+
+/* UIkit bounded internal scrolling */
+app-workspace-scroll-area {
+  display: flex;
+  width: 100%;
+  height: 420px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.entity-progress-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+
+:host app-workspace-scroll-area {
+  display: flex;
+  flex: 0 0 420px;
+  width: 100%;
+  height: 420px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host app-workspace-scroll-area .workspace-scroll-area {
+  height: 100%;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
 }

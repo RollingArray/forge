@@ -1,36 +1,15 @@
-<section class="forge-card">
-  <div class="section-heading">
-    <div>
-      <span class="section-eyebrow">Entities</span>
-      <h2>Entity Generation Progress</h2>
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="EXECUTION"
+    title="Entity Generation Progress"
+    [summary]="entities().length + ' entities · ' + (totalGeneratedRows() | number) + ' rows generated'"
+    [state]="entities().length
+      ? (totalGeneratedRows() | number) + ' / ' + (totalTargetRows() | number) + ' rows'
+      : 'Awaiting execution'"
+  />
 
-      <span class="section-summary">
-        {{ entities().length }}
-        {{ entities().length === 1 ? 'entity' : 'entities' }}
-        <span>•</span>
-        {{ totalGeneratedRows() | number }}
-        rows
-        <span>•</span>
-        <strong>
-          {{
-            totalTargetRows() > 0
-              ? ((totalGeneratedRows() / totalTargetRows()) * 100 | number: '1.0-0')
-              : 0
-          }}% complete
-        </strong>
-      </span>
-    </div>
-
-    <span class="section-state">
-      {{
-        entities().length
-          ? (totalGeneratedRows() | number) + ' / ' + (totalTargetRows() | number) + ' rows'
-          : 'Awaiting execution'
-      }}
-    </span>
-  </div>
-
-  <div class="entity-progress-table" *ngIf="entities().length; else noEntityExecution">
+<app-workspace-scroll-area>
+<div class="entity-progress-table" *ngIf="entities().length; else noEntityExecution">
     <!-- Table header -->
     <div class="entity-table-header">
       <span>Entity</span>
@@ -200,4 +179,5 @@
       <span> Planned and generated row counts will appear here after generation begins. </span>
     </div>
   </ng-template>
-</section>
+</app-workspace-scroll-area>
+</app-workspace-section>

@@ -79,6 +79,7 @@ export interface GenerationChunkCommittedEvent {
   entity_target_rows: number;
   entity_progress: number;
   progress: number;
+  checkpoint_updated_at: string;
 }
 
 export interface GenerationEntityCompletedEvent {

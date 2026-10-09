@@ -8,6 +8,7 @@ import {
 } from '../models/generation.models';
 
 import { GenerationService } from './generation.service';
+import { GenerationCheckpoint } from '../../../shared/models/generation-checkpoint.models';
 import { Subscription } from 'rxjs';
 
 
@@ -21,6 +22,7 @@ export class GenerationExecutionStore {
   private executionSubscription: Subscription | null = null;
 
   readonly generationJob = signal<GenerationJobResponse | null>(null);
+  readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
 
   readonly lastEvent = signal<GenerationSseEvent | null>(null);
 
@@ -90,6 +92,7 @@ export class GenerationExecutionStore {
       case 'CHUNK_COMMITTED':
         this.activeSemanticCall.set(null);
         this.applyChunkProgress(event.data);
+        this.applyCheckpointChunk(event.data);
         break;
 
 
@@ -114,6 +117,45 @@ export class GenerationExecutionStore {
       ...activities,
       activity,
     ]);
+  }
+
+  private applyCheckpointChunk(
+    event: Extract<
+      GenerationSseEvent,
+      { type: 'CHUNK_COMMITTED' }
+    >['data'],
+  ): void {
+    this.generationCheckpoint.update((checkpoint) => {
+      if (!checkpoint) {
+        return checkpoint;
+      }
+
+      const existing = checkpoint.entities[event.entity_name] ?? {
+        target_rows: event.entity_target_rows,
+        completed_chunks: [],
+      };
+
+      const completedChunks = existing.completed_chunks.includes(
+        event.chunk_number,
+      )
+        ? existing.completed_chunks
+        : [...existing.completed_chunks, event.chunk_number].sort(
+            (a, b) => a - b,
+          );
+
+      return {
+        ...checkpoint,
+        updated_at: event.checkpoint_updated_at,
+        entities: {
+          ...checkpoint.entities,
+          [event.entity_name]: {
+            ...existing,
+            target_rows: event.entity_target_rows,
+            completed_chunks: completedChunks,
+          },
+        },
+      };
+    });
   }
 
   private applyChunkProgress(
