@@ -1,0 +1,15 @@
+{
+  "smtp": {
+    "host": "mailhub.utc.com",
+    "port": 25,
+    "username": "",
+    "sender": "forge@collins.com",
+    "display_name": "FORGE",
+    "use_starttls": false,
+    "timeout_seconds": 15
+  },
+  "magic_link": {
+    "expiration_minutes": 5,
+    "frontend_base_url": "http://localhost:4200"
+  }
+}

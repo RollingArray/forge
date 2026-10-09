@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Your secure FORGE sign-in link</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #edf2ff;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #171b35;
+    "
+  >
+    <!-- Preheader -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        color: transparent;
+      "
+    >
+      Your secure sign-in link for FORGE is ready. It expires in
+      {{EXPIRATION_MINUTES}} minutes.
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      style="background-color: #edf2ff; width: 100%"
+    >
+      <tr>
+        <td align="center" style="padding: 36px 14px">
+          <!-- Main card -->
+          <table
+            role="presentation"
+            width="600"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="
+              width: 100%;
+              max-width: 600px;
+              background-color: #ffffff;
+              border: 1px solid #e1e5f0;
+              border-radius: 18px;
+              overflow: hidden;
+            "
+          >
+            <!-- Brand header -->
+            <tr>
+              <td style="padding:30px 38px 26px;background-color:#fbfaf8;border-bottom:1px solid #ececf3;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td width="55%" valign="middle" style="padding-right:12px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td valign="middle" style="padding-right:12px;">
+                            <img src="cid:forge-logo" width="39" height="39" alt=""
+                                 style="display:block;width:39px;height:39px;border:0;">
+                          </td>
+                          <td valign="middle">
+                            <div style="font-size:25px;line-height:1.05;font-weight:800;letter-spacing:3px;color:#171b35;">
+                              FORGE
+                            </div>
+                            <div style="margin-top:7px;font-size:12px;line-height:1.5;font-weight:600;color:#525a87;">
+                              AI-Assisted Synthetic Data Generation
+                            </div>
+                            <div style="font-size:12px;line-height:1.5;color:#7772c9;">
+                              from Observed Rules
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td width="1" style="width:1px;padding:0 14px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td width="1" height="48" bgcolor="#c5c8d7"
+                              style="width:1px;height:48px;font-size:1px;line-height:1px;">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td width="45%" valign="middle" align="right" style="padding-left:14px;">
+                      <img src="cid:collins-logo" width="165" alt="Collins Aerospace"
+                           style="display:block;width:165px;max-width:100%;height:auto;border:0;">
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Main content -->
+          <!-- Product introduction -->
+          <tr>
+            <td style="padding:28px 38px 8px;">
+              <p style="margin:0;font-size:14px;line-height:1.85;color:#626a87;">
+                A specification-driven framework that combines AI with observed
+                system rules to engineer
+                <strong style="color:#303653;font-weight:600;">realistic, coherent and reproducible synthetic data</strong>
+                for enterprise systems.
+              </p>
+            </td>
+          </tr>
+
+            <tr>
+              <td style="padding: 42px 38px 18px">
+                <div
+                  style="
+                    display: inline-block;
+                    padding: 7px 11px;
+                    background-color: #f0efff;
+                    border: 1px solid #e3e0ff;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    color: #514bb5;
+                    text-transform: uppercase;
+                  "
+                >
+                  Secure sign-in
+                </div>
+
+                <h1
+                  style="
+                    margin: 22px 0 14px;
+                    font-size: 31px;
+                    line-height: 1.22;
+                    letter-spacing: -0.8px;
+                    font-weight: 700;
+                    color: #171b35;
+                  "
+                >
+                  Your workspace<br />is one click away.
+                </h1>
+
+                <p
+                  style="
+                    margin: 0 0 18px;
+                    font-size: 15px;
+                    line-height: 1.8;
+                    color: #626a87;
+                  "
+                >
+                  You requested access to FORGE. Use the secure link below to
+                  verify your email address and continue to your workspace.
+                </p>
+
+                <!-- CTA -->
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  style="margin: 28px 0 22px"
+                >
+                  <tr>
+                    <td
+                      align="center"
+                      bgcolor="#514fc8"
+                      style="border-radius: 9px"
+                    >
+                      <a
+                        href="{{MAGIC_LINK}}"
+                        target="_blank"
+                        style="
+                          display: inline-block;
+                          padding: 16px 28px;
+                          border: 1px solid #514fc8;
+                          border-radius: 9px;
+                          background-color: #514fc8;
+                          color: #ffffff;
+                          text-decoration: none;
+                          font-size: 15px;
+                          font-weight: 700;
+                          letter-spacing: 0.1px;
+                        "
+                      >
+                        Sign in to FORGE &nbsp; &#8594;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p
+                  style="
+                    margin: 0 0 24px;
+                    font-size: 12px;
+                    line-height: 1.7;
+                    color: #858aa3;
+                  "
+                >
+                  For your security, this link expires in
+                  <strong style="color: #454b68"
+                    >{{EXPIRATION_MINUTES}} minutes</strong
+                  >
+                  and should only be used by you.
+                </p>
+
+                <!-- Security note -->
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  style="
+                    background-color: #f7f8fc;
+                    border: 1px solid #e8eaf3;
+                    border-radius: 10px;
+                  "
+                >
+                  <tr>
+                    <td
+                      width="38"
+                      valign="top"
+                      style="padding: 16px 0 16px 16px"
+                    >
+                      <div
+                        style="
+                          width: 28px;
+                          height: 28px;
+                          line-height: 28px;
+                          text-align: center;
+                          background-color: #ecebff;
+                          border-radius: 8px;
+                          font-size: 15px;
+                          color: #514fc8;
+                        "
+                      >
+                        &#128274;
+                      </div>
+                    </td>
+                    <td style="padding: 16px 16px 16px 10px">
+                      <p
+                        style="
+                          margin: 0 0 5px;
+                          font-size: 13px;
+                          font-weight: 700;
+                          color: #303653;
+                        "
+                      >
+                        You didn't request this?
+                      </p>
+                      <p
+                        style="
+                          margin: 0;
+                          font-size: 12px;
+                          line-height: 1.7;
+                          color: #747a94;
+                        "
+                      >
+                        You can safely ignore this email. No one will gain
+                        access to your workspace from this email alone without
+                        using the link.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Fallback URL -->
+                <p
+                  style="
+                    margin: 28px 0 7px;
+                    font-size: 12px;
+                    line-height: 1.7;
+                    color: #858aa3;
+                  "
+                >
+                  If the button doesn't work, copy and paste this link into your
+                  browser:
+                </p>
+                <p
+                  style="
+                    margin: 0 0 20px;
+                    font-size: 12px;
+                    line-height: 1.7;
+                    word-break: break-all;
+                  "
+                >
+                  <a
+                    href="{{MAGIC_LINK}}"
+                    style="color: #514fc8; text-decoration: underline"
+                    >{{MAGIC_LINK}}</a
+                  >
+                </p>
+              </td>
+            </tr>
+
+            <!-- FORGE capabilities -->
+          <tr>
+            <td style="padding:12px 38px 30px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                     style="border-top:1px solid #ececf3;">
+                <tr>
+                  <td colspan="2" style="padding:22px 0 18px;">
+                    <p style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.2px;color:#171b35;">
+                      What you can do with FORGE
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td width="50%" valign="top" style="padding:0 12px 22px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="38" valign="top">
+                          <div style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#eeedff;color:#514fc8;font-size:17px;">&#8644;</div>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:2px 0 6px;font-size:13px;font-weight:700;color:#202543;">Model Your System</p>
+                          <p style="margin:0;font-size:12px;line-height:1.7;color:#747a94;">Define entities, relationships and business rules.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="50%" valign="top" style="padding:0 0 22px 12px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="38" valign="top">
+                          <div style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#eaf1ff;color:#4165bb;font-size:17px;">&#10022;</div>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:2px 0 6px;font-size:13px;font-weight:700;color:#202543;">Generate with AI</p>
+                          <p style="margin:0;font-size:12px;line-height:1.7;color:#747a94;">Create realistic, high-quality synthetic datasets with AI assistance.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td width="50%" valign="top" style="padding:0 12px 0 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="38" valign="top">
+                          <div style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#e9f7f0;color:#25865b;font-size:17px;">&#10003;</div>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:2px 0 6px;font-size:13px;font-weight:700;color:#202543;">Validate and Explore</p>
+                          <p style="margin:0;font-size:12px;line-height:1.7;color:#747a94;">Ensure integrity and realism with built-in validation.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="50%" valign="top" style="padding:0 0 0 12px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="38" valign="top">
+                          <div style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#fff2e7;color:#b96c29;font-size:17px;">&#9638;</div>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:2px 0 6px;font-size:13px;font-weight:700;color:#202543;">Enterprise Ready</p>
+                          <p style="margin:0;font-size:12px;line-height:1.7;color:#747a94;">Domain agnostic, configurable and transparent.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  padding: 24px 38px 30px;
+                  background-color: #fbfafc;
+                  border-top: 1px solid #ececf3;
+                "
+              >
+                <p
+                  style="
+                    margin: 0 0 8px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    color: #555b79;
+                  "
+                >
+                  Don't learn the data. Understand the system. Engineer the
+                  data.
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 11px;
+                    line-height: 1.8;
+                    color: #9297ab;
+                  "
+                >
+                  This is an automated security email from FORGE.<br />
+                  Please do not reply to this message.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <p
+            style="
+              margin: 18px 0 0;
+              font-size: 10px;
+              line-height: 1.7;
+              text-align: center;
+              color: #858ba5;
+            "
+          >
+            FORGE &middot; Enterprise access
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

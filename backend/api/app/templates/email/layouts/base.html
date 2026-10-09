@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Your secure FORGE sign-in link</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #edf2ff;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #171b35;
+    "
+  >
+    <!-- Preheader -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        color: transparent;
+      "
+    >
+      Your secure sign-in link for FORGE is ready. It expires in
+      {{EXPIRATION_MINUTES}} minutes.
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      style="background-color: #edf2ff; width: 100%"
+    >
+      <tr>
+        <td align="center" style="padding: 36px 14px">
+          <!-- Main card -->
+          <table
+            role="presentation"
+            width="600"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="
+              width: 100%;
+              max-width: 600px;
+              background-color: #ffffff;
+              border: 1px solid #e1e5f0;
+              border-radius: 18px;
+              overflow: hidden;
+            "
+          >
+            {% include "email/partials/brand_header.html" %}
+
+<!-- Main content -->
+{% block email_body %}{% endblock %}
+
+{% include "email/partials/email_footer.html" %}
+
+          </table>
+
+          <p
+            style="
+              margin: 18px 0 0;
+              font-size: 10px;
+              line-height: 1.7;
+              text-align: center;
+              color: #858ba5;
+            "
+          >
+            FORGE &middot; Enterprise access
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
