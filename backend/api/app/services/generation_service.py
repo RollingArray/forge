@@ -688,6 +688,31 @@ class GenerationService:
             )
 
         except Exception as exc:
+            import traceback
+
+            print(
+                f"[GENERATION FAILURE] job_id={job.job_id} "
+                f"data_model_id={job.data_model_id} "
+                f"error_type={type(exc).__name__} error={exc}",
+                flush=True,
+            )
+            traceback.print_exception(
+                type(exc),
+                exc,
+                exc.__traceback__,
+            )
+
+            cause = exc.__cause__
+            depth = 0
+            while cause is not None and depth < 5:
+                print(
+                    f"[GENERATION FAILURE CAUSE {depth + 1}] "
+                    f"type={type(cause).__name__} error={cause}",
+                    flush=True,
+                )
+                cause = cause.__cause__
+                depth += 1
+
             job.status = GenerationJobStatus.FAILED
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)
