@@ -55,11 +55,11 @@
       type="button"
       class="profile-button"
       aria-label="Profile"
-      (click)="select('profile')"
+      (click)="openProfile()"
     >
 
       <span class="avatar">
-        RS
+        {{ initials }}
       </span>
 
       <span class="material-symbols-outlined">
@@ -71,3 +71,203 @@
   </div>
 
 </header>
+
+@if (profileDialogOpen()) {
+  <app-form-dialog
+    title="Your Profile"
+    subtitle="Your identity, your workspace."
+    icon="account_circle"
+    width="720px"
+    (closed)="closeProfile()"
+  >
+    <div dialog-body class="profile-dialog-body">
+      @if (currentUser; as user) {
+        <section class="profile-hero">
+          <div class="profile-hero-avatar">{{ initials }}</div>
+
+          <div class="profile-hero-content">
+            <div class="profile-eyebrow">
+              <span class="profile-status-dot"></span>
+              YOUR FORGE PROFILE
+            </div>
+
+            <h2 class="profile-hero-name">
+              {{ profileValue('fullName') || user.displayName || 'FORGE User' }}
+            </h2>
+
+            @if (profileValue('designation'); as designation) {
+              <p class="profile-hero-designation">{{ designation }}</p>
+            }
+
+            <div class="profile-hero-meta">
+              @if (profileValue('company'); as company) {
+                <span>
+                  <span class="material-symbols-outlined">apartment</span>
+                  {{ company }}
+                </span>
+              }
+              @if (profileValue('country'); as country) {
+                <span>
+                  <span class="material-symbols-outlined">location_on</span>
+                  {{ country }}
+                </span>
+              }
+            </div>
+
+            <div class="profile-badges">
+              <span class="profile-badge profile-badge-forge">
+                <span class="material-symbols-outlined">verified_user</span>
+                FORGE User
+              </span>
+              <span class="profile-badge profile-badge-directory">
+                <span class="material-symbols-outlined">domain_verification</span>
+                Corporate Directory
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-panel profile-contact-panel">
+          <div class="profile-panel-heading">
+            <div class="profile-panel-icon profile-icon-purple">
+              <span class="material-symbols-outlined">mail</span>
+            </div>
+            <div>
+              <h3>Personal details</h3>
+              <p>Your primary contact information.</p>
+            </div>
+          </div>
+
+          <div class="profile-email-card">
+            <div class="profile-detail-copy">
+              <span class="profile-detail-label">Email address</span>
+              <span class="profile-detail-value">
+                {{ profileValue('email') || user.email }}
+              </span>
+            </div>
+            <span class="material-symbols-outlined profile-email-icon">alternate_email</span>
+          </div>
+        </section>
+
+        <section class="profile-panel">
+          <div class="profile-panel-heading">
+            <div class="profile-panel-icon profile-icon-blue">
+              <span class="material-symbols-outlined">corporate_fare</span>
+            </div>
+            <div>
+              <h3>Organization details</h3>
+              <p>Your information from the corporate directory.</p>
+            </div>
+          </div>
+
+          <div class="profile-organization-grid">
+            @if (profileValue('designation'); as designation) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">work</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Designation</span>
+                  <span class="profile-detail-value">{{ designation }}</span>
+                </div>
+              </div>
+            }
+
+            @if (profileValue('country'); as country) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">public</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Country</span>
+                  <span class="profile-detail-value">{{ country }}</span>
+                </div>
+              </div>
+            }
+
+            @if (profileValue('department'); as department) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">groups</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Department</span>
+                  <span class="profile-detail-value">{{ department }}</span>
+                </div>
+              </div>
+            }
+
+            @if (profileValue('manager'); as manager) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">person</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Manager</span>
+                  <span class="profile-detail-value">{{ manager }}</span>
+                </div>
+              </div>
+            }
+
+            @if (profileValue('company'); as company) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">business</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Company</span>
+                  <span class="profile-detail-value">{{ company }}</span>
+                </div>
+              </div>
+            }
+
+            @if (profileValue('userId') || user.employeeId) {
+              <div class="profile-info-card">
+                <span class="material-symbols-outlined profile-info-icon">badge</span>
+                <div class="profile-detail-copy">
+                  <span class="profile-detail-label">Directory user ID</span>
+                  <span class="profile-detail-value">
+                    {{ profileValue('userId') || user.employeeId }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="profile-application-panel">
+          <div class="profile-panel-heading">
+            <div class="profile-panel-icon profile-icon-blue">
+              <span class="material-symbols-outlined">shield_person</span>
+            </div>
+            <div>
+              <h3>Application identity</h3>
+              <p>Your unique identity within FORGE.</p>
+            </div>
+          </div>
+
+          <div class="profile-forge-id-card">
+            <div class="profile-detail-copy">
+              <span class="profile-detail-label">FORGE user ID</span>
+              <span class="profile-detail-value profile-monospace">{{ user.userId }}</span>
+            </div>
+            <span class="material-symbols-outlined profile-id-icon">fingerprint</span>
+          </div>
+
+          <p class="profile-identity-note">
+            Your FORGE ID is your stable application identity. It is separate
+            from your corporate directory ID.
+          </p>
+        </section>
+      } @else {
+        <div class="profile-empty">
+          No authenticated user profile is available.
+        </div>
+      }
+    </div>
+
+    <div dialog-footer class="profile-dialog-footer">
+      <span class="profile-footer-note">
+        <span class="material-symbols-outlined">lock</span>
+        Your profile is managed through authenticated identity.
+      </span>
+      <button
+        type="button"
+        class="profile-close-button"
+        (click)="closeProfile()"
+      >
+        Done
+      </button>
+    </div>
+  </app-form-dialog>
+}
