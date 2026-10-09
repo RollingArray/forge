@@ -5,6 +5,8 @@ import {
   output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
+import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
 
 import { GenerationQualityProfile } from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
@@ -15,6 +17,7 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
   standalone: true,
   imports: [
     CommonModule,
+    MetricGridComponent,
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
   ],
@@ -25,6 +28,45 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
 export class ResultsQualitySummaryComponent {
   readonly quality = input<GenerationQualityProfile | null>(null);
   readonly viewDetails = output<void>();
+
+  readonly metrics = (): MetricCardData[] => [
+    {
+      label: 'Population fidelity',
+      value: `${this.populationFidelity().toFixed(1)}%`,
+      description: 'Percentage of requested population achieved',
+      icon: 'verified',
+    },
+    {
+      label: 'Relationships analyzed',
+      value: this.relationshipCount(),
+      description: 'Relationships evaluated',
+      icon: 'account_tree',
+    },
+    {
+      label: 'Distributions analyzed',
+      value: this.distributionCount(),
+      description: 'Fields with distribution analysis',
+      icon: 'pie_chart',
+    },
+    {
+      label: 'Numeric fields analyzed',
+      value: this.statisticalCount(),
+      description: 'Numeric fields evaluated',
+      icon: 'query_stats',
+    },
+    {
+      label: 'Rows / second',
+      value: Math.round(this.performance()).toLocaleString('en-US'),
+      description: 'Generation throughput',
+      icon: 'speed',
+    },
+    {
+      label: 'Identity spaces analyzed',
+      value: this.identityCount(),
+      description: 'Entity identity spaces evaluated',
+      icon: 'key',
+    },
+  ];
 
   populationFidelity(): number {
     return Number(

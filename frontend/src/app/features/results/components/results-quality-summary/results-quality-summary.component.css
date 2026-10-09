@@ -12,48 +12,6 @@ app-workspace-section .forge-card {
   height: auto;
 }
 
-.quality-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.quality-summary-card {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 14px;
-  border: 1px solid var(--forge-border);
-  border-radius: 10px;
-  background: var(--forge-surface-subtle);
-}
-
-.quality-summary-card .material-symbols-outlined {
-  color: var(--forge-text-secondary);
-  font-size: 19px;
-}
-
-.quality-summary-card strong {
-  color: var(--forge-text-heading);
-  font-size: 20px;
-  line-height: 1.1;
-}
-
-.quality-summary-card span:last-child {
-  color: var(--forge-text-secondary);
-  font-size: 10px;
-}
-
-.quality-summary-card-primary {
-  border-color: #d1fae5;
-  background: #f0fdf4;
-}
-
-.quality-summary-card-primary .material-symbols-outlined,
-.quality-summary-card-primary strong {
-  color: var(--forge-success);
-}
-
 .quality-details-button {
   display: flex;
   align-items: center;
@@ -76,16 +34,4 @@ app-workspace-section .forge-card {
   color: var(--forge-text-muted);
   font-size: 10px;
   font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .quality-summary-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .quality-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
