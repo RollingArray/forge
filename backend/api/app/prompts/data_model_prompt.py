@@ -35,4 +35,14 @@ Rules:
 - Do not invent detailed technical architecture.
 - The reasoning should briefly explain how the proposal reflects the user's
   stated intent.
-""".strip()
+
+Output format requirements:
+- Return exactly one valid JSON object and nothing else.
+- Do not use Markdown, headings, bullet points, or code fences.
+- Use exactly these four keys: name, description, suggested_tags, reasoning.
+- name, description, and reasoning must be strings.
+- suggested_tags must be an array of 3 to 10 concise strings.
+- Do not include entities, fields, relationships, foreign keys,
+  constraints, or synthetic data in the response.
+- Ensure all string values are properly escaped for valid JSON.
+  """.strip()
