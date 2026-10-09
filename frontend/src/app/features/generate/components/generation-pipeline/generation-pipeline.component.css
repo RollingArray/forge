@@ -1,81 +1,3 @@
-/* Generation pipeline */
-
-.workspace-section {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
-}
-
-.section-eyebrow {
-  display: block;
-  color: var(--forge-text-secondary);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.section-heading h2 {
-  margin: 5px 0 0;
-  color: var(--forge-text-heading);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.section-description {
-  margin: 5px 0 0;
-  color: var(--forge-text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.section-state {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
-  border: 1px solid var(--forge-border);
-  border-radius: 999px;
-  color: var(--forge-text-secondary);
-  background: var(--forge-surface-subtle);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.section-state-ready {
-  border-color: var(--forge-border-subtle);
-  color: var(--forge-success);
-  background: var(--forge-surface-subtle);
-}
-
-.section-state-loading {
-  color: var(--forge-text-subtle);
-  background: var(--forge-surface-muted);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--forge-text-muted);
-}
-
-.section-state-ready .status-dot {
-  background: var(--forge-success);
-}
-
 /* Execution rail */
 
 .pipeline {
@@ -85,10 +7,8 @@
   min-height: 0;
   flex-direction: column;
   gap: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+
   padding: 4px 6px 12px 2px;
-  scrollbar-width: thin;
 }
 
 .pipeline-stage {
@@ -402,8 +322,6 @@
   background: var(--forge-border-subtle);
 }
 
-/* Connectors */
-
 .pipeline-connector {
   position: relative;
   display: flex;
@@ -435,19 +353,10 @@
   font-size: 18px;
 }
 
-/* Completed */
-
-/* Running */
-
 /*
  * The running card communicates activity without inventing
  * intra-chunk percentage progress.
  */
-
-
-
-
-/* Queued */
 
 .pipeline-stage-queued {
   border-color: var(--forge-border);
@@ -462,19 +371,9 @@
   background: var(--forge-text-secondary);
 }
 
-/* Failed */
-
-/* Waiting */
-
 .pipeline-stage-waiting {
   background: var(--forge-surface-subtle);
 }
-
-
-
-/* Connectors */
-
-/* Empty state */
 
 .empty-state {
   display: flex;
@@ -505,8 +404,6 @@
   font-size: 11px;
 }
 
-/* Motion */
-
 @keyframes pipeline-pulse {
   0%,
   100% {
@@ -519,21 +416,6 @@
     transform: scale(1);
   }
 }
-
-@keyframes pipeline-activity {
-  0% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0.55;
-  }
-}
-
 
 /* Live execution summary */
 
@@ -588,40 +470,42 @@
   font-size: 9px;
 }
 
-/* Motion */
-
-/* Completed */
-
-/* Running */
-
-/* Queued */
-
-/* Failed */
-
-/* Waiting */
-
-/* Empty state */
-
-/* Bounded execution workspace */
-
+/* UIkit bounded internal scrolling */
 :host {
   display: block;
-  height: 100%;
+  width: 100%;
   min-width: 0;
   min-height: 0;
 }
 
-:host .workspace-section {
+app-workspace-scroll-area {
   display: flex;
-  height: 100%;
+  width: 100%;
+  height: 420px;
+  min-width: 0;
   min-height: 0;
-  flex-direction: column;
-  margin: 0;
-  box-sizing: border-box;
+  overflow: hidden;
 }
 
 :host .pipeline {
-  flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
+}
+
+
+:host app-workspace-scroll-area {
+  display: flex;
+  flex: 0 0 420px;
+  width: 100%;
+  height: 271px;
+  min-width: 0;
+  min-height: 271px;
+  overflow: hidden;
+}
+
+:host app-workspace-scroll-area .workspace-scroll-area {
+  height: 100%;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
 }

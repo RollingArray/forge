@@ -1,17 +1,21 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import { GenerationPipelineNode } from '../../models/generation-pipeline.models';
+import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
+import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
+import { StatusCardComponent } from '../../../../shared/components/status-card/status-card.component';
+import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
+import { GenerationPipelineNode } from '../../../../shared/models/generation-pipeline.models';
 
 @Component({
   selector: 'app-generation-pipeline',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    WorkspaceSectionComponent,
+    WorkspaceHeaderComponent,
+    StatusCardComponent,
+    WorkspaceScrollAreaComponent,
+  ],
   templateUrl: './generation-pipeline.component.html',
   styleUrl: './generation-pipeline.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,8 +25,8 @@ export class GenerationPipelineComponent {
   readonly loading = input(false);
   readonly ready = input(false);
 
-  readonly completedCount = computed(() =>
-    this.nodes().filter((node) => node.status === 'COMPLETED').length,
+  readonly completedCount = computed(
+    () => this.nodes().filter((node) => node.status === 'COMPLETED').length,
   );
 
   readonly runningIndex = computed(() =>
@@ -30,31 +34,21 @@ export class GenerationPipelineComponent {
   );
 
   readonly totalGeneratedRows = computed(() =>
-    this.nodes().reduce(
-      (total, node) => total + node.generatedRows,
-      0,
-    ),
+    this.nodes().reduce((total, node) => total + node.generatedRows, 0),
   );
 
   readonly totalTargetRows = computed(() =>
-    this.nodes().reduce(
-      (total, node) => total + node.targetRows,
-      0,
-    ),
+    this.nodes().reduce((total, node) => total + node.targetRows, 0),
   );
 
   readonly overallProgress = computed(() => {
     const target = this.totalTargetRows();
 
-    return target > 0
-      ? this.totalGeneratedRows() / target
-      : 0;
+    return target > 0 ? this.totalGeneratedRows() / target : 0;
   });
 
   dependencyNode(dependencyName: string): GenerationPipelineNode | undefined {
-    return this.nodes().find(
-      (node) => node.entityName === dependencyName,
-    );
+    return this.nodes().find((node) => node.entityName === dependencyName);
   }
 
   dependencyStatusLabel(dependencyName: string): string {
@@ -93,10 +87,7 @@ export class GenerationPipelineComponent {
       return `Executing entity ${runningIndex + 1} of ${nodes.length}`;
     }
 
-    if (
-      nodes.length > 0 &&
-      this.completedCount() === nodes.length
-    ) {
+    if (nodes.length > 0 && this.completedCount() === nodes.length) {
       return 'Generation complete';
     }
 

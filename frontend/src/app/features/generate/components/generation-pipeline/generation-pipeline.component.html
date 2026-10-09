@@ -1,24 +1,19 @@
-<section class="workspace-section forge-card">
-  <div class="section-heading">
-    <div>
-      <span class="section-eyebrow">Execution</span>
-      <h2>Generation Pipeline</h2>
-      <p class="section-description">
-        Generation follows the dependency order defined by the data model.
-      </p>
-    </div>
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="EXECUTION"
+    title="Generation Pipeline"
+    summary="Generation follows the dependency order defined by the data model."
+    [state]="loading() ? 'Loading' : ready() ? 'Ready' : 'Not ready'"
+  />
+  <app-status-card
+    label="PIPELINE STATUS"
+    [title]="loading() ? 'Loading generation plan' : ready() ? 'Ready to generate' : 'Not ready'"
+    [description]="executionDetail()"
+    [status]="loading() ? 'info' : ready() ? 'success' : 'warning'"
+  />
 
-    <span
-      class="section-state"
-      [class.section-state-ready]="ready()"
-      [class.section-state-loading]="loading()"
-    >
-      <span class="status-dot"></span>
-      {{ loading() ? 'Loading' : ready() ? 'Ready' : 'Not ready' }}
-    </span>
-  </div>
-
-  <div class="pipeline" *ngIf="nodes().length">
+  <app-workspace-scroll-area>
+<div class="pipeline" *ngIf="nodes().length">
     <ng-container *ngFor="let node of nodes(); let i = index">
       <article
         class="pipeline-stage"
@@ -125,6 +120,7 @@
       </div>
     </ng-container>
   </div>
+</app-workspace-scroll-area>
 
   <div class="execution-summary" *ngIf="nodes().length">
     <div class="execution-summary-main">
@@ -153,4 +149,4 @@
 
     <span> A generation plan is required before execution can begin. </span>
   </div>
-</section>
+</app-workspace-section>
