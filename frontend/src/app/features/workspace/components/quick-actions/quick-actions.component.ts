@@ -15,6 +15,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  input,
   output,
 } from '@angular/core';
 
@@ -28,6 +29,7 @@ import { QuickAction } from '../../../../core/interfaces/quick-action.interface'
   styleUrl: './quick-actions.component.css',
 })
 export class QuickActionsComponent {
+  readonly variant = input<'default' | 'sidebar'>('default');
   readonly actionSelected = output<string>();
 
   readonly actions: QuickAction[] = [
@@ -54,6 +56,10 @@ export class QuickActionsComponent {
   ];
 
   selectAction(action: QuickAction): void {
+    if (action.action !== 'new-dataModel') {
+      return;
+    }
+
     this.actionSelected.emit(action.action);
   }
 }

@@ -21,18 +21,12 @@ import {
 
 import { Activity } from '../../../../core/interfaces/activity.interface';
 
-import { QuickActionsComponent } from '../quick-actions/quick-actions.component';
 import { RecentActivityComponent } from '../recent-activity/recent-activity.component';
-import { HelpCardComponent } from '../help-card/help-card.component';
 
 @Component({
   selector: 'app-workspace-right-rail',
   standalone: true,
-  imports: [
-    QuickActionsComponent,
-    RecentActivityComponent,
-    HelpCardComponent,
-  ],
+  imports: [RecentActivityComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workspace-right-rail.component.html',
   styleUrl: './workspace-right-rail.component.css',
@@ -40,7 +34,5 @@ import { HelpCardComponent } from '../help-card/help-card.component';
 export class WorkspaceRightRailComponent {
   readonly activities = input.required<Activity[]>();
 
-  readonly quickActionSelected = output<string>();
   readonly viewAllActivity = output<void>();
-  readonly documentationRequested = output<void>();
 }

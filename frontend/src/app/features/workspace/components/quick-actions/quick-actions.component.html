@@ -12,7 +12,7 @@
  * ============================================================================
  -->
 
-<section class="quick-actions">
+<section class="quick-actions" [class.sidebar-variant]="variant() === 'sidebar'">
   <div class="section-header">
     <div>
       <h2>Quick Actions</h2>
@@ -25,6 +25,13 @@
       <button
         type="button"
         class="action-item"
+        [class.coming-soon]="action.action !== 'new-dataModel'"
+        [disabled]="action.action !== 'new-dataModel'"
+        [attr.aria-label]="
+          action.action === 'new-dataModel'
+            ? action.label
+            : action.label + ', Coming Soon'
+        "
         (click)="selectAction(action)"
       >
         <span class="action-icon">
@@ -33,9 +40,13 @@
 
         <span class="action-label">{{ action.label }}</span>
 
-        <span class="material-symbols-outlined action-arrow">
-          arrow_forward
-        </span>
+        @if (action.action !== 'new-dataModel') {
+          <span class="coming-soon-label">Coming Soon</span>
+        } @else {
+          <span class="material-symbols-outlined action-arrow">
+            arrow_forward
+          </span>
+        }
       </button>
     }
   </div>

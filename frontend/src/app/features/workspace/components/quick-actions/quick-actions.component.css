@@ -104,3 +104,112 @@
   transform: translateX(2px);
   color: #7c5ce5;
 }
+
+
+/* Compact dark-surface variant used by the authenticated sidebar. */
+.quick-actions.sidebar-variant .section-header h2 {
+  color: #ffffff;
+}
+
+.quick-actions.sidebar-variant .section-header p {
+  color: #aaa3c5;
+}
+
+.quick-actions.sidebar-variant .action-list {
+  gap: 5px;
+}
+
+.quick-actions.sidebar-variant .action-item {
+  min-height: 39px;
+  padding: 5px 7px;
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f4f1ff;
+  box-shadow: none;
+}
+
+.quick-actions.sidebar-variant .action-item:hover {
+  border-color: rgba(178, 166, 255, 0.42);
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: none;
+  transform: none;
+}
+
+.quick-actions.sidebar-variant .action-icon {
+  width: 27px;
+  height: 27px;
+  margin-right: 8px;
+  background: rgba(151, 134, 255, 0.17);
+  color: #c5bbff;
+}
+
+.quick-actions.sidebar-variant .action-label {
+  color: #e4dff5;
+  font-size: 11px;
+}
+
+.quick-actions.sidebar-variant .action-arrow {
+  color: #a49abb;
+}
+
+.quick-actions.sidebar-variant .action-item:hover .action-arrow {
+  color: #d3cbff;
+}
+/* Inactive actions remain visible without suggesting they are clickable. */
+.action-item.coming-soon,
+.action-item.coming-soon:hover,
+.action-item.coming-soon:disabled {
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+  border-color: #f0eef5;
+  background: #fafafa;
+}
+
+.action-item.coming-soon .action-icon {
+  background: #f4f4f5;
+  color: #a1a1aa;
+}
+
+.action-item.coming-soon .action-label {
+  color: #71717a;
+}
+
+.coming-soon-label {
+  flex-shrink: 0;
+  padding: 3px 6px;
+  border: 1px solid #e4e4e7;
+  border-radius: 5px;
+  background: #f4f4f5;
+  color: #71717a;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.quick-actions.sidebar-variant .action-item.coming-soon,
+.quick-actions.sidebar-variant .action-item.coming-soon:hover,
+.quick-actions.sidebar-variant .action-item.coming-soon:disabled {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.quick-actions.sidebar-variant .action-item.coming-soon .action-icon {
+  background: rgba(255, 255, 255, 0.05);
+  color: #8f89a5;
+}
+
+.quick-actions.sidebar-variant .action-item.coming-soon .action-label {
+  color: #aaa4bd;
+}
+
+.quick-actions.sidebar-variant .coming-soon-label {
+  padding: 3px 5px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #b7b0cc;
+  font-size: 8px;
+}
+

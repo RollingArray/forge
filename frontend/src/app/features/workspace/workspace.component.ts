@@ -18,7 +18,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { Activity } from '../../core/interfaces/activity.interface';
 import { DataModel } from '../../core/interfaces/data-model.interface';
@@ -63,6 +63,7 @@ import {
 })
 export class WorkspaceComponent {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly workspaceService = inject(WorkspaceService);
 
   readonly metrics = signal<Metric[]>([]);
@@ -79,6 +80,20 @@ export class WorkspaceComponent {
 
   constructor() {
     this.loadWorkspace();
+
+    this.route.queryParamMap.subscribe((params) => {
+      if (params.get('quickAction') !== 'new-dataModel') {
+        return;
+      }
+
+      this.handleNewDataModel();
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { quickAction: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
   }
 
   loadWorkspace(): void {
@@ -151,10 +166,18 @@ export class WorkspaceComponent {
       : this.workspaceService.createDataModel(request);
 
     operation.subscribe({
-      next: () => {
+      next: (response) => {
         this.savingDataModel.set(false);
         this.closeDataModelDialog();
         this.loadWorkspace();
+
+        if (!editingDataModel && response.data_model_id) {
+          void this.router.navigate([
+            '/workspace',
+            response.data_model_id,
+            'model-studio',
+          ]);
+        }
       },
       error: (error) => {
         this.savingDataModel.set(false);
