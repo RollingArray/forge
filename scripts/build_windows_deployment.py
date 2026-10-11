@@ -217,7 +217,7 @@ def main():
         safe_email.setdefault("magic_link",{})["frontend_base_url"]="https://REPLACE-WITH-FORGE-HOST"
         write_json(tpl/"email.json.template",safe_email)
         tok=auth.get("development_token",{})
-        write_json(tpl/"authentication.json.template",{"allowed_domains":auth.get("allowed_domains",[]),"development_token":{"algorithm":tok.get("algorithm","HS256"),"expiration_minutes":tok.get("expiration_minutes",60),"secret":"GENERATED-ON-TARGET"}})
+        write_json(tpl/"authentication.json.template",{"allowed_domains":auth.get("allowed_domains",[]),"development_token":{"algorithm":tok.get("algorithm","HS256"),"expiration_minutes":60,"secret":"GENERATED-ON-TARGET"}})
         for name,content in {"Caddyfile":CADDY,"Install-FORGE.ps1":INSTALL,"prepare_config.py":PREPARE,"Start-FORGE.ps1":START,"Stop-FORGE.ps1":STOP,"Health-FORGE.ps1":HEALTH,"Diagnose-FORGE.ps1":DIAGNOSE,"Restore-FORGE-Data.ps1":RESTORE,"DEPLOYMENT-GUIDE.md":GUIDE}.items():
             (dep/name).write_text(content,encoding="utf-8")
         (stage/"README-DEPLOYMENT.md").write_text("Read deployment/DEPLOYMENT-GUIDE.md before installing. This archive contains no runtime data or production authentication secret.\n",encoding="utf-8")

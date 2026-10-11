@@ -98,7 +98,7 @@ sanitized_auth = {
     "allowed_domains": auth.get("allowed_domains", []),
     "development_token": {
         "algorithm": token.get("algorithm", "HS256"),
-        "expiration_minutes": token.get("expiration_minutes", 60),
+        "expiration_minutes": 60,
         # Fresh per-build secret; replace/rotate on the target host before production use.
         "secret": secrets.token_urlsafe(48),
     },
