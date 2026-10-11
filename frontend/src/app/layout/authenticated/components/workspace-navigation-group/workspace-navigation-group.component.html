@@ -1,0 +1,27 @@
+<section class="workspace-tree-group" [attr.aria-label]="group().title">
+  <div class="navigation-section">
+    <span class="category-icon-tile" aria-hidden="true">
+      <span class="material-symbols-outlined tree-category-icon">{{ group().icon }}</span>
+    </span>
+    <span class="category-heading-label">{{ group().title }}</span>
+  </div>
+
+  <div class="workspace-tree-children">
+    @for (item of group().items; track item.action + ':' + item.label) {
+      <button
+        type="button"
+        class="navigation-item"
+        [class.coming-soon]="item.availability === 'soon'"
+        [disabled]="item.availability === 'soon'"
+        [attr.aria-label]="item.availability === 'soon' ? item.label + ', coming soon' : item.label"
+        (click)="selectItem(item)"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+        <span class="navigation-label">{{ item.label }}</span>
+        @if (item.availability === 'soon') {
+          <span class="coming-soon-label">Soon</span>
+        }
+      </button>
+    }
+  </div>
+</section>

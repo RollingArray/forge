@@ -1,0 +1,326 @@
+/**
+ * File: sidebar.component.ts
+ * Purpose: Shared, route-aware FORGE authenticated navigation sidebar.
+ */
+
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { QuickActionsComponent } from '../../../../features/workspace/components/quick-actions/quick-actions.component';
+import { UserProfileComponent } from '../../../../shared/components/user-profile/user-profile.component';
+import {
+  WorkspaceNavigationGroup,
+  WorkspaceNavigationGroupComponent,
+} from '../workspace-navigation-group/workspace-navigation-group.component';
+
+@Component({
+  selector: 'app-forge-sidebar',
+  standalone: true,
+  imports: [QuickActionsComponent, UserProfileComponent, WorkspaceNavigationGroupComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.css',
+})
+export class SidebarComponent {
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
+
+  private readonly sessionUser = this.authService.getSession()?.user;
+
+  readonly userDisplayName = signal(this.sessionUser?.displayName || 'Signed-in User');
+
+  readonly userInitials = signal(this.getUserInitials(this.sessionUser?.displayName || 'User'));
+
+  readonly isProfileModalOpen = signal(false);
+
+  readonly workspaceNavigationGroups: readonly WorkspaceNavigationGroup[] = [
+    {
+      title: 'CREATE & BUILD',
+      icon: 'construction',
+      items: [
+        {
+          label: 'Create Data Model',
+          icon: 'add_circle',
+          action: 'create-data-model',
+        },
+        {
+          label: 'Templates',
+          icon: 'dashboard_customize',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Import Model',
+          icon: 'upload_file',
+          action: '',
+          availability: 'soon',
+        },
+      ],
+    },
+    {
+      title: 'EXECUTION & MONITORING',
+      icon: 'account_tree',
+      items: [
+        {
+          label: 'Executions',
+          icon: 'play_circle',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Generated Data',
+          icon: 'database',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Execution History',
+          icon: 'history',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Metrics & Analytics',
+          icon: 'monitoring',
+          action: '',
+          availability: 'soon',
+        },
+      ],
+    },
+    {
+      title: 'RESOURCES',
+      icon: 'folder_open',
+      items: [
+        {
+          label: 'Recent',
+          icon: 'schedule',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Favorites',
+          icon: 'star',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Specification Library',
+          icon: 'library_books',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Activity Feed',
+          icon: 'history',
+          action: 'recent-activity',
+        },
+      ],
+    },
+    {
+      title: 'ADMINISTRATION',
+      icon: 'admin_panel_settings',
+      items: [
+        {
+          label: 'People & Access',
+          icon: 'group',
+          action: '',
+          availability: 'soon',
+        },
+        {
+          label: 'Workspace Settings',
+          icon: 'settings',
+          action: '',
+          availability: 'soon',
+        },
+      ],
+    },
+    {
+      title: 'HELP & SUPPORT',
+      icon: 'help',
+      items: [
+        {
+          label: 'Help &amp; Documentation',
+          icon: 'menu_book',
+          action: '',
+          availability: 'soon',
+        },
+      ],
+    },
+  ];
+
+  private getUserInitials(name: string): string {
+    const profile = this.sessionUser?.profile;
+    const nested =
+      profile?.['ad_profile'] &&
+      typeof profile['ad_profile'] === 'object' &&
+      !Array.isArray(profile['ad_profile'])
+        ? (profile['ad_profile'] as Record<string, unknown>)
+        : profile;
+
+    const firstName = typeof nested?.['firstName'] === 'string' ? nested['firstName'].trim() : '';
+    const lastName = typeof nested?.['lastName'] === 'string' ? nested['lastName'].trim() : '';
+
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+
+    // Handle directory display names such as "Sen, Ranjoy (IND)".
+    if (name.includes(',')) {
+      const [surname, ...givenParts] = name.split(',');
+      const givenName = givenParts.join(',').trim().split(/\\s+/)[0] ?? '';
+      return `${givenName[0] ?? ''}${surname.trim()[0] ?? ''}`.toUpperCase() || '?';
+    }
+
+    const parts = name.trim().split(/\\s+/).filter(Boolean);
+
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+
+    if (firstName || lastName) {
+      return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
+    }
+
+    return name.trim().slice(0, 2).toUpperCase() || '?';
+  }
+
+  readonly action = output<string>();
+  readonly currentUrl = signal(this.router.url);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => this.currentUrl.set(event.urlAfterRedirects));
+  }
+
+  isWorkspaceContext(): boolean {
+    const url = this.currentUrl().split('?')[0].split('#')[0];
+    return url === '/workspace' || url === '/workspace/ui-kit-design-system';
+  }
+
+  isDataModelContext(): boolean {
+    const segments = this.currentUrl().split('?')[0].split('#')[0].split('/').filter(Boolean);
+
+    return (
+      segments[0] === 'workspace' && segments.length >= 3 && segments[1] !== 'ui-kit-design-system'
+    );
+  }
+
+  isActive(section: string): boolean {
+    const url = this.currentUrl().split('?')[0].split('#')[0];
+    const segments = url.split('/').filter(Boolean);
+
+    switch (section) {
+      case 'workspace':
+        return url === '/workspace' || url === '/workspace/ui-kit-design-system';
+
+      case 'model-studio':
+        return segments.at(-1) === 'model-studio';
+
+      case 'validation':
+        return segments.at(-1) === 'model-validation';
+
+      case 'population':
+        return segments.at(-1) === 'population';
+
+      case 'generate':
+        return segments.includes('generate');
+
+      case 'results':
+        return segments.includes('results');
+
+      default:
+        return false;
+    }
+  }
+
+  select(action: string): void {
+    const url = this.currentUrl().split('?')[0].split('#')[0];
+    const segments = url.split('/').filter(Boolean);
+    const workspaceIndex = segments.indexOf('workspace');
+    const dataModelId = workspaceIndex >= 0 ? segments[workspaceIndex + 1] : undefined;
+
+    switch (action) {
+      case 'workspace':
+      case 'data-models':
+        void this.router.navigate(['/workspace']);
+        break;
+
+      case 'create-data-model':
+        void this.router.navigate(['/workspace'], {
+          queryParams: { quickAction: 'new-dataModel' },
+        });
+        break;
+
+      case 'templates':
+        void this.router.navigate(['/workspace'], {
+          fragment: 'templates',
+        });
+        break;
+
+      case 'recent-activity':
+        void this.router.navigate(['/workspace'], {
+          fragment: 'recent-activity',
+        });
+        break;
+
+      case 'model-studio':
+        if (dataModelId && dataModelId !== 'ui-kit-design-system') {
+          void this.router.navigate(['/workspace', dataModelId, 'model-studio']);
+        }
+        break;
+
+      case 'validation':
+        if (dataModelId && dataModelId !== 'ui-kit-design-system') {
+          void this.router.navigate(['/workspace', dataModelId, 'model-validation']);
+        }
+        break;
+
+      case 'population':
+        if (dataModelId && dataModelId !== 'ui-kit-design-system') {
+          void this.router.navigate(['/workspace', dataModelId, 'data-model', 'population']);
+        }
+        break;
+
+      case 'generate':
+        if (dataModelId && dataModelId !== 'ui-kit-design-system') {
+          void this.router.navigate(['/workspace', dataModelId, 'data-model', 'generate']);
+        }
+        break;
+
+      case 'results': {
+        const resultsIndex = segments.indexOf('results');
+        const generateIndex = segments.indexOf('generate');
+        const jobId =
+          resultsIndex >= 0
+            ? segments[resultsIndex + 1]
+            : generateIndex >= 0
+              ? segments[generateIndex + 1]
+              : undefined;
+
+        if (dataModelId && dataModelId !== 'ui-kit-design-system' && jobId) {
+          void this.router.navigate(['/workspace', dataModelId, 'data-model', 'results', jobId]);
+        }
+        break;
+      }
+
+      default:
+        this.action.emit(action);
+        break;
+    }
+  }
+}

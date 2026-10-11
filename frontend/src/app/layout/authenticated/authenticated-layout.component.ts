@@ -12,23 +12,15 @@
  * ============================================================================
  */
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-} from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 
 import { ApiLoadingService } from '../../core/services/api-loading.service';
 
-import {
-  ApiLoadingSpinnerComponent,
-} from './components/api-loading-spinner/api-loading-spinner.component';
-import {
-  TechnicalDataBannerComponent,
-} from './components/technical-data-banner/technical-data-banner.component';
+import { ApiLoadingSpinnerComponent } from './components/api-loading-spinner/api-loading-spinner.component';
+import { TechnicalDataBannerComponent } from './components/technical-data-banner/technical-data-banner.component';
 
-import { SidebarComponent } from './sidebar/sidebar.component';
+import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { TopbarComponent } from './topbar/topbar.component';
 
 @Component({
@@ -47,7 +39,16 @@ import { TopbarComponent } from './topbar/topbar.component';
 })
 export class AuthenticatedLayoutComponent {
   readonly apiLoadingService = inject(ApiLoadingService);
+  private readonly router = inject(Router);
+
   handleSidebarAction(action: string): void {
+    if (action === 'new-dataModel') {
+      void this.router.navigate(['/workspace'], {
+        queryParams: { quickAction: action },
+      });
+      return;
+    }
+
     console.info('[FORGE Navigation] sidebar action:', action);
   }
 

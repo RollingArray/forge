@@ -14,12 +14,12 @@ import {
 } from '@angular/core';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { FormDialogComponent } from '../../../shared/components/form-dialog/form-dialog.component';
+import { UserProfileComponent } from '../../../shared/components/user-profile/user-profile.component';
 
 @Component({
   selector: 'app-forge-topbar',
   standalone: true,
-  imports: [FormDialogComponent],
+  imports: [UserProfileComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.css',

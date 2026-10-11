@@ -1,0 +1,143 @@
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span class="brand-name">FORGE</span>
+  </div>
+
+  @if (isWorkspaceContext()) {
+    <nav class="navigation workspace-navigation" aria-label="FORGE Workspace navigation">
+      <button
+        type="button"
+        class="navigation-item workspace-home active"
+        aria-current="page"
+        (click)="select('workspace')"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+        <span>Workspace</span>
+      </button>
+
+      @for (group of workspaceNavigationGroups; track group.title) {
+        <app-workspace-navigation-group
+          [group]="group"
+          (selected)="select($event)"
+        />
+      }
+
+    </nav>
+  } @else {
+    <nav class="navigation" aria-label="FORGE application navigation">
+      <button
+        type="button"
+        class="navigation-item"
+        [class.active]="isActive('workspace')"
+        [attr.aria-current]="isActive('workspace') ? 'page' : null"
+        (click)="select('workspace')"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+        <span>Workspace</span>
+      </button>
+
+      @if (isDataModelContext()) {
+        <div class="navigation-section">
+          <span>DATA MODEL</span>
+        </div>
+
+        <button
+          type="button"
+          class="navigation-item"
+          [class.active]="isActive('model-studio')"
+          [attr.aria-current]="isActive('model-studio') ? 'page' : null"
+          (click)="select('model-studio')"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+          <span>Model Studio</span>
+        </button>
+
+        <button
+          type="button"
+          class="navigation-item"
+          [class.active]="isActive('validation')"
+          [attr.aria-current]="isActive('validation') ? 'page' : null"
+          (click)="select('validation')"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+          <span>Validation</span>
+        </button>
+
+        <button
+          type="button"
+          class="navigation-item"
+          [class.active]="isActive('population')"
+          [attr.aria-current]="isActive('population') ? 'page' : null"
+          (click)="select('population')"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <span>Population Plan</span>
+        </button>
+
+        <button
+          type="button"
+          class="navigation-item"
+          [class.active]="isActive('generate')"
+          [attr.aria-current]="isActive('generate') ? 'page' : null"
+          (click)="select('generate')"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+          <span>Generate</span>
+        </button>
+
+        <button
+          type="button"
+          class="navigation-item"
+          [class.active]="isActive('results')"
+          [attr.aria-current]="isActive('results') ? 'page' : null"
+          (click)="select('results')"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">dataset</span>
+          <span>Results</span>
+        </button>
+      }
+    </nav>
+  }
+
+  @if (isWorkspaceContext()) {
+    <div class="sidebar-bottom">
+      <button
+        type="button"
+        class="workspace-sidebar-footer"
+        (click)="isProfileModalOpen.set(true)"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="isProfileModalOpen()"
+        aria-label="Open user profile"
+      >
+        <span class="workspace-user-avatar" aria-hidden="true">
+          {{ userInitials() }}
+        </span>
+        <span class="workspace-user-details">
+          <span class="workspace-user-name">{{ userDisplayName() }}</span>
+          <span class="workspace-user-context">Signed in · My Workspace</span>
+        </span>
+        <span class="material-symbols-outlined profile-chevron" aria-hidden="true">
+          expand_more
+        </span>
+      </button>
+
+      <div class="organization-logo">
+        <img src="/assets/org_logo.svg" alt="Organization logo" />
+      </div>
+    </div>
+
+    <app-user-profile [open]="isProfileModalOpen()" (closed)="isProfileModalOpen.set(false)" />
+  } @else {
+    <section class="sidebar-quick-actions" aria-label="Quick actions">
+      <app-quick-actions variant="sidebar" (actionSelected)="select($event)" />
+    </section>
+    <div class="organization-logo">
+      <img src="/assets/org_logo.svg" alt="Organization logo" />
+    </div>
+  }
+</aside>
