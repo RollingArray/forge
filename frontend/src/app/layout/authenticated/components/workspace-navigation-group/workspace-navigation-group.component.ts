@@ -27,6 +27,7 @@ export interface WorkspaceNavigationGroup {
 })
 export class WorkspaceNavigationGroupComponent {
   readonly group = input.required<WorkspaceNavigationGroup>();
+  readonly activeAction = input<string | null>(null);
   readonly selected = output<string>();
 
   selectItem(item: WorkspaceNavigationItem): void {

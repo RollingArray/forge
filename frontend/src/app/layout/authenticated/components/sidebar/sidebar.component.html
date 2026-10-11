@@ -30,115 +30,86 @@
     </nav>
   } @else {
     <nav class="navigation" aria-label="FORGE application navigation">
-      <button
-        type="button"
-        class="navigation-item"
-        [class.active]="isActive('workspace')"
-        [attr.aria-current]="isActive('workspace') ? 'page' : null"
-        (click)="select('workspace')"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-        <span>Workspace</span>
-      </button>
-
       @if (isDataModelContext()) {
-        <div class="navigation-section data-model-section">
-          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-          <span>DATA MODEL</span>
-        </div>
-
+        <button
+          type="button"
+          class="data-model-identity"
+          (click)="select('workspace')"
+          aria-label="Return to workspace"
+        >
+          <span class="data-model-identity-heading">
+            <span class="material-symbols-outlined data-model-identity-icon" aria-hidden="true">schema</span>
+            <span class="data-model-identity-name">
+              {{ currentDataModelName() ?? 'Data Model' }}
+            </span>
+          </span>
+          @if (currentDataModelDescription()) {
+            <span class="data-model-identity-divider" aria-hidden="true"></span>
+            <span class="data-model-identity-description">
+              {{ currentDataModelDescription() }}
+            </span>
+          }
+        </button>
+      } @else {
         <button
           type="button"
           class="navigation-item"
-          [class.active]="isActive('model-studio')"
-          [attr.aria-current]="isActive('model-studio') ? 'page' : null"
-          (click)="select('model-studio')"
+          [class.active]="isActive('workspace')"
+          [attr.aria-current]="isActive('workspace') ? 'page' : null"
+          (click)="select('workspace')"
         >
-          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-          <span>Model Studio</span>
+          <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+          <span>Workspace</span>
         </button>
+      }
+      @if (isDataModelContext()) {
+        <app-workspace-navigation-group
+          [group]="dataModelNavigationGroup"
+          [activeAction]="
+            isActive('model-studio') ? 'model-studio' :
+            isActive('validation') ? 'validation' :
+            isActive('population') ? 'population' :
+            isActive('generate') ? 'generate' :
+            isActive('results') ? 'results' : null
+          "
+          (selected)="select($event)"
+        />
 
-        <button
-          type="button"
-          class="navigation-item"
-          [class.active]="isActive('validation')"
-          [attr.aria-current]="isActive('validation') ? 'page' : null"
-          (click)="select('validation')"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-          <span>Validation</span>
-        </button>
-
-        <button
-          type="button"
-          class="navigation-item"
-          [class.active]="isActive('population')"
-          [attr.aria-current]="isActive('population') ? 'page' : null"
-          (click)="select('population')"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
-          <span>Population Plan</span>
-        </button>
-
-        <button
-          type="button"
-          class="navigation-item"
-          [class.active]="isActive('generate')"
-          [attr.aria-current]="isActive('generate') ? 'page' : null"
-          (click)="select('generate')"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-          <span>Generate</span>
-        </button>
-
-        <button
-          type="button"
-          class="navigation-item"
-          [class.active]="isActive('results')"
-          [attr.aria-current]="isActive('results') ? 'page' : null"
-          (click)="select('results')"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">dataset</span>
-          <span>Results</span>
-        </button>
+        @for (group of dataModelSupportingGroups; track group.title) {
+          <app-workspace-navigation-group
+            [group]="group"
+            (selected)="select($event)"
+          />
+        }
       }
     </nav>
   }
 
-  @if (isWorkspaceContext()) {
-    <div class="sidebar-bottom">
-      <button
-        type="button"
-        class="workspace-sidebar-footer"
-        (click)="isProfileModalOpen.set(true)"
-        aria-haspopup="dialog"
-        [attr.aria-expanded]="isProfileModalOpen()"
-        aria-label="Open user profile"
-      >
-        <span class="workspace-user-avatar" aria-hidden="true">
-          {{ userInitials() }}
-        </span>
-        <span class="workspace-user-details">
-          <span class="workspace-user-name">{{ userDisplayName() }}</span>
-          <span class="workspace-user-context">Signed in · My Workspace</span>
-        </span>
-        <span class="material-symbols-outlined profile-chevron" aria-hidden="true">
-          expand_more
-        </span>
-      </button>
+  <div class="sidebar-bottom">
+    <button
+      type="button"
+      class="workspace-sidebar-footer"
+      (click)="isProfileModalOpen.set(true)"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="isProfileModalOpen()"
+      aria-label="Open user profile"
+    >
+      <span class="workspace-user-avatar" aria-hidden="true">
+        {{ userInitials() }}
+      </span>
+      <span class="workspace-user-details">
+        <span class="workspace-user-name">{{ userDisplayName() }}</span>
+        <span class="workspace-user-context">Signed in · My Workspace</span>
+      </span>
+      <span class="material-symbols-outlined profile-chevron" aria-hidden="true">
+        expand_more
+      </span>
+    </button>
 
-      <div class="organization-logo">
-        <img src="/assets/org_logo.svg" alt="Organization logo" />
-      </div>
-    </div>
-
-    <app-user-profile [open]="isProfileModalOpen()" (closed)="isProfileModalOpen.set(false)" />
-  } @else {
-    <section class="sidebar-quick-actions" aria-label="Quick actions">
-      <app-quick-actions variant="sidebar" (actionSelected)="select($event)" />
-    </section>
     <div class="organization-logo">
       <img src="/assets/org_logo.svg" alt="Organization logo" />
     </div>
-  }
+  </div>
+
+  <app-user-profile [open]="isProfileModalOpen()" (closed)="isProfileModalOpen.set(false)" />
 </aside>

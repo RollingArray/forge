@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
+import { WorkspaceService } from '../../../../core/services/workspace.service';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -35,8 +36,12 @@ export class SidebarComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  private readonly workspaceService = inject(WorkspaceService);
 
   private readonly sessionUser = this.authService.getSession()?.user;
+
+  readonly currentDataModelName = signal<string | null>(null);
+  readonly currentDataModelDescription = signal<string | null>(null);
 
   readonly userDisplayName = signal(this.sessionUser?.displayName || 'Signed-in User');
 
@@ -159,6 +164,22 @@ export class SidebarComponent {
     },
   ];
 
+  readonly dataModelNavigationGroup: WorkspaceNavigationGroup = {
+    title: 'DATA MODEL',
+    icon: 'account_tree',
+    items: [
+      { label: 'Model Studio', icon: 'account_tree', action: 'model-studio' },
+      { label: 'Validation', icon: 'verified', action: 'validation' },
+      { label: 'Population Plan', icon: 'groups', action: 'population' },
+      { label: 'Generate', icon: 'auto_awesome', action: 'generate' },
+      { label: 'Results', icon: 'dataset', action: 'results' },
+    ],
+  };
+
+  readonly dataModelSupportingGroups = this.workspaceNavigationGroups.filter(
+    (group) => !['CREATE & BUILD', 'ADMINISTRATION'].includes(group.title),
+  );
+
   private getUserInitials(name: string): string {
     const profile = this.sessionUser?.profile;
     const nested =
@@ -199,6 +220,20 @@ export class SidebarComponent {
   readonly currentUrl = signal(this.router.url);
 
   constructor() {
+    this.workspaceService.getDataModels().subscribe({
+      next: (models) => {
+        const segments = this.router.url.split('?')[0].split('#')[0].split('/').filter(Boolean);
+        const dataModelId = segments[0] === 'workspace' ? segments[1] : undefined;
+        const model = models.find((item) => item.dataModelId === dataModelId);
+        this.currentDataModelName.set(model?.name ?? null);
+        this.currentDataModelDescription.set(model?.description?.trim() || null);
+      },
+      error: () => {
+        this.currentDataModelName.set(null);
+        this.currentDataModelDescription.set(null);
+      },
+    });
+
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),

@@ -226,6 +226,87 @@
   box-shadow: 0 6px 18px rgba(9, 5, 37, 0.22);
 }
 
+/* Data-model identity card */
+.data-model-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 18px;
+  padding: 14px 13px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 13px;
+  background: linear-gradient(125deg, #5144c7 0%, #7564e8 66%, #df829d 100%);
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(9, 5, 37, 0.22);
+  transition: filter 160ms ease;
+}
+
+.data-model-identity:hover {
+  filter: brightness(1.06);
+}
+
+.data-model-identity:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
+.data-model-identity-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.data-model-identity-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.13);
+  font-size: 22px;
+}
+
+.data-model-identity-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.data-model-identity-divider {
+  display: block;
+  height: 1px;
+  margin: 11px 0 9px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.22) 72%,
+    transparent
+  );
+}
+
+.data-model-identity-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+
 .workspace-navigation .navigation-section {
   margin-top: 18px;
   margin-bottom: 7px;
@@ -540,4 +621,62 @@
 .data-model-section .material-symbols-outlined {
   font-size: 16px;
   color: #9685e8;
+}
+
+
+/* Data-model navigation scrolls independently of the fixed footer. */
+.navigation:not(.workspace-navigation) {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(190, 180, 235, 0.35) transparent;
+}
+
+.navigation:not(.workspace-navigation)::-webkit-scrollbar {
+  width: 5px;
+}
+
+.navigation:not(.workspace-navigation)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navigation:not(.workspace-navigation)::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(190, 180, 235, 0.35);
+}
+
+.sidebar-quick-actions {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.sidebar-bottom {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  min-height: 0;
+  background: linear-gradient(180deg, rgba(29, 24, 53, 0.96), #171329 22%);
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.sidebar-bottom .workspace-sidebar-footer {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+  padding: 8px 24px;
+  border-top: 0;
+}
+
+.sidebar-bottom .organization-logo {
+  margin-top: 0;
+  padding: 8px 20px 16px;
+}
+
+.sidebar-bottom .organization-logo img {
+  max-width: 125px;
 }

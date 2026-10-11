@@ -11,6 +11,8 @@
       <button
         type="button"
         class="navigation-item"
+        [class.active]="item.action === activeAction()"
+        [attr.aria-current]="item.action === activeAction() ? 'page' : null"
         [class.coming-soon]="item.availability === 'soon'"
         [disabled]="item.availability === 'soon'"
         [attr.aria-label]="item.availability === 'soon' ? item.label + ', coming soon' : item.label"

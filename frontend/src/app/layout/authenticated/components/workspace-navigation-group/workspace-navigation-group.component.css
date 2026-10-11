@@ -73,6 +73,7 @@
 
 .workspace-tree-children > .navigation-item {
   position: relative;
+  z-index: 1;
   width: calc(100% - 8px);
   margin-left: 8px;
 }
@@ -169,4 +170,11 @@
     font-size: 11px;
     letter-spacing: 0.4px;
   }
+}
+
+.navigation-item.active {
+  background: linear-gradient(110deg, #7165e8 0%, #5144c7 100%);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 5px 14px rgba(10, 7, 32, 0.22);
 }
