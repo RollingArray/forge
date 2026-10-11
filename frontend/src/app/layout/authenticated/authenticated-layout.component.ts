@@ -21,7 +21,7 @@ import { ApiLoadingSpinnerComponent } from './components/api-loading-spinner/api
 import { TechnicalDataBannerComponent } from './components/technical-data-banner/technical-data-banner.component';
 
 import { SidebarComponent } from './components/sidebar/sidebar.component';
-import { TopbarComponent } from './topbar/topbar.component';
+import { TopbarComponent } from './components/topbar/topbar.component';
 
 @Component({
   selector: 'app-authenticated-layout',

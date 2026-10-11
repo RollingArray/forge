@@ -13,8 +13,8 @@ import {
   signal,
 } from '@angular/core';
 
-import { AuthService } from '../../../core/services/auth.service';
-import { UserProfileComponent } from '../../../shared/components/user-profile/user-profile.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { UserProfileComponent } from '../../../../shared/components/user-profile/user-profile.component';
 
 @Component({
   selector: 'app-forge-topbar',

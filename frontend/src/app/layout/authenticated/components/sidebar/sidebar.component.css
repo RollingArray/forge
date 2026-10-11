@@ -522,3 +522,22 @@
     transition: none;
   }
 }
+
+/* Data-model navigation heading */
+.data-model-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 12px 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b8addb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.data-model-section .material-symbols-outlined {
+  font-size: 16px;
+  color: #9685e8;
+}
