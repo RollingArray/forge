@@ -1,14 +1,6 @@
-<div class="canvas-shell">
-  <div
-    #canvasViewport
-    class="canvas-viewport"
-    (scroll)="handleScroll()"
-  >
-    <div
-      class="canvas"
-      [style.width.px]="canvasSize.width"
-      [style.height.px]="canvasSize.height"
-    >
+<div class="forge-card canvas-shell">
+  <div #canvasViewport class="canvas-viewport" (scroll)="handleScroll()">
+    <div class="canvas" [style.width.px]="canvasSize.width" [style.height.px]="canvasSize.height">
       <div class="canvas-grid"></div>
 
       <app-model-studio-relationship-layer
@@ -28,8 +20,5 @@
     </div>
   </div>
 
-  <app-model-studio-minimap
-    [entities]="entities()"
-    [viewport]="viewport()"
-  />
+  <app-model-studio-minimap [entities]="entities()" [viewport]="viewport()" />
 </div>

@@ -14,6 +14,7 @@
   min-height: 0;
   overflow: hidden;
   background: #f4f6fb;
+  padding: 0;
 }
 
 .canvas-viewport {
@@ -30,7 +31,7 @@
 .canvas {
   position: relative;
   min-width: 2100px;
-  min-height: 1250px;
+  min-height: 50vh;
   background: #f4f6fb;
 }
 
