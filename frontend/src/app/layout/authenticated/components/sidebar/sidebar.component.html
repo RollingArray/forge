@@ -1,12 +1,24 @@
 <aside class="sidebar">
   <div class="brand">
     <div class="brand-mark" aria-hidden="true">
-      <span></span>
-      <span></span>
-      <span></span>
+      <img src="/assets/app_logo.svg" alt="" />
     </div>
-    <span class="brand-name">FORGE</span>
+    <div class="brand-copy">
+      <span class="brand-name">FORGE</span>
+      <span class="brand-tagline">
+        AI-Assisted Synthetic Data Generation from <b>Observed Rules</b>
+      </span>
+    </div>
   </div>
+
+  <div class="brand-divider" aria-hidden="true"></div>
+
+  <div class="organization-logo">
+    <span class="organization-caption">An enterprise platform by</span>
+    <img src="/assets/org_logo_white.svg" alt="Organization logo" />
+  </div>
+
+  <div class="brand-divider-full" aria-hidden="true"></div>
 
   @if (isWorkspaceContext()) {
     <nav class="navigation workspace-navigation" aria-label="FORGE Workspace navigation">
@@ -21,12 +33,8 @@
       </button>
 
       @for (group of workspaceNavigationGroups; track group.title) {
-        <app-workspace-navigation-group
-          [group]="group"
-          (selected)="select($event)"
-        />
+        <app-workspace-navigation-group [group]="group" (selected)="select($event)" />
       }
-
     </nav>
   } @else {
     <nav class="navigation" aria-label="FORGE application navigation">
@@ -38,7 +46,9 @@
           aria-label="Return to workspace"
         >
           <span class="data-model-identity-heading">
-            <span class="material-symbols-outlined data-model-identity-icon" aria-hidden="true">schema</span>
+            <span class="material-symbols-outlined data-model-identity-icon" aria-hidden="true"
+              >schema</span
+            >
             <span class="data-model-identity-name">
               {{ currentDataModelName() ?? 'Data Model' }}
             </span>
@@ -66,24 +76,28 @@
         <app-workspace-navigation-group
           [group]="dataModelNavigationGroup"
           [activeAction]="
-            isActive('model-studio') ? 'model-studio' :
-            isActive('validation') ? 'validation' :
-            isActive('population') ? 'population' :
-            isActive('generate') ? 'generate' :
-            isActive('results') ? 'results' : null
+            isActive('model-studio')
+              ? 'model-studio'
+              : isActive('validation')
+                ? 'validation'
+                : isActive('population')
+                  ? 'population'
+                  : isActive('generate')
+                    ? 'generate'
+                    : isActive('results')
+                      ? 'results'
+                      : null
           "
           (selected)="select($event)"
         />
 
         @for (group of dataModelSupportingGroups; track group.title) {
-          <app-workspace-navigation-group
-            [group]="group"
-            (selected)="select($event)"
-          />
+          <app-workspace-navigation-group [group]="group" (selected)="select($event)" />
         }
       }
     </nav>
   }
+
 
   <div class="sidebar-bottom">
     <button
@@ -105,10 +119,6 @@
         expand_more
       </span>
     </button>
-
-    <div class="organization-logo">
-      <img src="/assets/org_logo.svg" alt="Organization logo" />
-    </div>
   </div>
 
   <app-user-profile [open]="isProfileModalOpen()" (closed)="isProfileModalOpen.set(false)" />

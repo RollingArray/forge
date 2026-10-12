@@ -74,14 +74,14 @@
 .workspace-tree-children > .navigation-item {
   position: relative;
   z-index: 1;
-  width: calc(100% - 8px);
-  margin-left: 8px;
+  width: calc(100% - 19px);
+  margin-left: 19px;
 }
 
 .workspace-tree-children > .navigation-item::before {
   position: absolute;
   top: 3px;
-  left: -3px;
+  left: -14px;
   width: 9px;
   height: calc(50% + 4px);
   border-left: 1px solid rgba(190, 180, 235, 1);

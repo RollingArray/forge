@@ -1,10 +1,12 @@
 <section class="workspace-tree-group" [attr.aria-label]="group().title">
-  <div class="navigation-section">
-    <span class="category-icon-tile" aria-hidden="true">
-      <span class="material-symbols-outlined tree-category-icon">{{ group().icon }}</span>
-    </span>
-    <span class="category-heading-label">{{ group().title }}</span>
-  </div>
+  @if (group().title !== 'DATA MODEL') {
+    <div class="navigation-section">
+      <span class="category-icon-tile" aria-hidden="true">
+        <span class="material-symbols-outlined tree-category-icon">{{ group().icon }}</span>
+      </span>
+      <span class="category-heading-label">{{ group().title }}</span>
+    </div>
+  }
 
   <div class="workspace-tree-children">
     @for (item of group().items; track item.action + ':' + item.label) {
