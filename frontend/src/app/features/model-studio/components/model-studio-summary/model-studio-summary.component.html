@@ -1,0 +1,18 @@
+<app-workspace-section>
+  <div class="model-summary-header">
+    <app-workspace-header
+      eyebrow="DATA MODEL"
+      [title]="model().model.name"
+      [summary]="model().model.description ?? ''"
+    />
+
+    <button type="button" class="primary-action" (click)="addEntity.emit()">
+      <span class="material-symbols-outlined">add</span>
+      Add Entity
+    </button>
+  </div>
+
+  <div class="model-summary-content">
+    <app-metric-grid [columns]="4" [metrics]="metrics()" />
+  </div>
+</app-workspace-section>

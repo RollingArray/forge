@@ -1,0 +1,44 @@
+.model-summary-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.model-summary-header app-workspace-header {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.model-summary-content {
+  margin-top: 16px;
+}
+
+.primary-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 7px;
+  background: #554dd4;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-action .material-symbols-outlined {
+  font-size: 17px;
+}
+
+@media (max-width: 760px) {
+  .model-summary-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
