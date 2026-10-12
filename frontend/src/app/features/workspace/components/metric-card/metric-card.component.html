@@ -12,19 +12,14 @@
  * ============================================================================
  -->
 
-<div class="metric-card">
-
-  <div
-    class="metric-icon"
-    [class]="metric().accent"
-  >
+<div class="forge-card metric-card">
+  <div class="metric-icon" [class]="metric().accent">
     <span class="material-symbols-outlined">
       {{ metric().icon }}
     </span>
   </div>
 
   <div class="metric-content">
-
     <span class="metric-label">
       {{ metric().label }}
     </span>
@@ -34,12 +29,9 @@
     </strong>
 
     @switch (metric().supportingType) {
-
       @case ('positive') {
         <span class="metric-change">
-          <span class="material-symbols-outlined">
-            trending_up
-          </span>
+          <span class="material-symbols-outlined"> trending_up </span>
 
           {{ metric().supportingText }}
         </span>
@@ -57,9 +49,6 @@
           {{ metric().supportingText }}
         </span>
       }
-
     }
-
   </div>
-
 </div>

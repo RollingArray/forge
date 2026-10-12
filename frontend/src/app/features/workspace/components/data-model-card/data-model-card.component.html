@@ -24,9 +24,7 @@
 >
   <div class="dataModel-card-header">
     <div class="dataModel-icon">
-      <span class="material-symbols-outlined">
-        deployed_code
-      </span>
+      <span class="material-symbols-outlined"> deployed_code </span>
     </div>
 
     <div class="dataModel-title">
@@ -42,9 +40,7 @@
       aria-label="Edit Data Model"
       (click)="edit($event)"
     >
-      <span class="material-symbols-outlined more-icon">
-        more_vert
-      </span>
+      <span class="material-symbols-outlined more-icon"> more_vert </span>
     </button>
   </div>
 
@@ -57,9 +53,7 @@
       }
 
       @if (dataModel().tags.length > 4) {
-        <span class="dataModel-tag-more">
-          +{{ dataModel().tags.length - 4 }}
-        </span>
+        <span class="dataModel-tag-more"> +{{ dataModel().tags.length - 4 }} </span>
       }
     </div>
   }
@@ -89,9 +83,7 @@
         aria-label="Share Data Model"
         (click)="share($event)"
       >
-        <span class="material-symbols-outlined">
-          group
-        </span>
+        <span class="material-symbols-outlined"> group </span>
 
         Share
       </button>
@@ -122,9 +114,7 @@
         [class.generated]="dataModel().status === 'Generated'"
       >
         @if (dataModel().status === 'Generated') {
-          <span class="material-symbols-outlined">
-            check_circle
-          </span>
+          <span class="material-symbols-outlined"> check_circle </span>
         }
 
         {{ dataModel().status }}

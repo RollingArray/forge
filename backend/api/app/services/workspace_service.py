@@ -65,11 +65,75 @@ class WorkspaceService:
             owner_user_id=owner_user_id,
         )
 
+        import csv
+        import json
+        from pathlib import Path
+
+        data_root = Path(__file__).resolve().parents[2] / "data" / "data_model"
+        total_entities = 0
+        generated_datasets = 0
+        total_records = 0
+
+        for data_model in data_models:
+            model_root = data_root / data_model.data_model_id
+            specification_path = model_root / "specification.json"
+
+            if specification_path.is_file():
+                try:
+                    specification = json.loads(
+                        specification_path.read_text(encoding="utf-8")
+                    )
+                    entities = specification.get("entities", [])
+                    if isinstance(entities, list):
+                        total_entities += len(entities)
+                except (OSError, json.JSONDecodeError):
+                    pass
+
+            generation_root = model_root / "generation"
+            if not generation_root.is_dir():
+                continue
+
+            for job_path in generation_root.glob("*/job.json"):
+                try:
+                    job = json.loads(job_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    continue
+
+                if job.get("status") != "COMPLETED":
+                    continue
+
+                for entity in job.get("entities", []):
+                    if not isinstance(entity, dict):
+                        continue
+                    if entity.get("status") != "COMPLETED":
+                        continue
+
+                    entity_name = entity.get("entity_name")
+                    if not isinstance(entity_name, str) or not entity_name:
+                        continue
+
+                    csv_path = (
+                        job_path.parent / "generated" / f"{entity_name}.csv"
+                    )
+                    if not csv_path.is_file():
+                        continue
+
+                    try:
+                        with csv_path.open(
+                            "r", encoding="utf-8-sig", newline=""
+                        ) as csv_file:
+                            row_count = sum(1 for _ in csv.reader(csv_file))
+                        if row_count > 0:
+                            generated_datasets += 1
+                            total_records += row_count - 1
+                    except (OSError, UnicodeError, csv.Error):
+                        continue
+
         return WorkspaceMetrics(
             total_data_models=len(data_models),
-            total_entities=0,
-            generated_datasets=0,
-            total_records=0,
+            total_entities=total_entities,
+            generated_datasets=generated_datasets,
+            total_records=total_records,
         )
 
     def get_templates(self) -> list[WorkspaceTemplate]:
