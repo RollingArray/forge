@@ -20,10 +20,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.workflow-row-40-60 {
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-}
-
 .workflow-row-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
