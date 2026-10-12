@@ -29,7 +29,7 @@ type InspectorTab =
   styleUrl: './entity-inspector.component.css',
 })
 export class EntityInspectorComponent {
-  readonly entity = input.required<ForgeSpecificationEntity>();
+  readonly entity = input<ForgeSpecificationEntity | null>(null);
 
   readonly relationships =
     input<ForgeSpecificationRelationship[]>([]);
@@ -50,7 +50,8 @@ export class EntityInspectorComponent {
   readonly closed = output<void>();
 
   constraintsForEntity(): ForgeConstraint[] {
-    const entityName = this.entity().name;
+    const entityName = this.entity()?.name;
+    if (!entityName) return [];
 
     return this.constraints().filter(
       (constraint) => constraint.entity === entityName,
@@ -58,7 +59,8 @@ export class EntityInspectorComponent {
   }
 
   foreignKeysForEntity(): ForgeForeignKey[] {
-    const entityName = this.entity().name;
+    const entityName = this.entity()?.name;
+    if (!entityName) return [];
 
     return this.foreignKeys().filter(
       (foreignKey) =>
@@ -68,7 +70,8 @@ export class EntityInspectorComponent {
   }
 
   relationshipsForEntity(): ForgeSpecificationRelationship[] {
-    const entityName = this.entity().name;
+    const entityName = this.entity()?.name;
+    if (!entityName) return [];
 
     return this.relationships().filter(
       (relationship) =>
@@ -80,7 +83,8 @@ export class EntityInspectorComponent {
   relationshipOtherSide(
     relationship: ForgeSpecificationRelationship,
   ): string {
-    const entityName = this.entity().name;
+    const entityName = this.entity()?.name;
+    if (!entityName) return '';
 
     if (relationship.source.startsWith(`${entityName}.`)) {
       return relationship.target;
@@ -92,7 +96,8 @@ export class EntityInspectorComponent {
   relationshipDirection(
     relationship: ForgeSpecificationRelationship,
   ): string {
-    const entityName = this.entity().name;
+    const entityName = this.entity()?.name;
+    if (!entityName) return '';
 
     if (relationship.source.startsWith(`${entityName}.`)) {
       return 'Connects to';
@@ -108,11 +113,11 @@ export class EntityInspectorComponent {
   }
 
   identityFieldCount(): number {
-    return this.entity().identity?.fields?.length ?? 0;
+    return this.entity()?.identity?.fields?.length ?? 0;
   }
 
   identityFields(): string[] {
-    return this.entity().identity?.fields ?? [];
+    return this.entity()?.identity?.fields ?? [];
   }
 
   isIdentityField(fieldName: string): boolean {

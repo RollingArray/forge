@@ -1,10 +1,11 @@
 <aside class="inspector">
+  @if (entity(); as selectedEntity) {
 
   <div class="inspector-header">
     <div>
       <span class="eyebrow">Entity</span>
 
-      <h2>{{ entity().name }}</h2>
+      <h2>{{ selectedEntity.name }}</h2>
     </div>
 
     <button
@@ -20,12 +21,12 @@
   <div class="inspector-summary">
     <div>
       <span>Population</span>
-      <strong>{{ entity().population?.count ?? 0 }}</strong>
+      <strong>{{ selectedEntity.population?.count ?? 0 }}</strong>
     </div>
 
     <div>
       <span>Fields</span>
-      <strong>{{ entity().fields.length }}</strong>
+      <strong>{{ selectedEntity.fields.length }}</strong>
     </div>
   </div>
 
@@ -39,7 +40,7 @@
     >
       <span class="material-symbols-outlined">view_column</span>
       <span>Fields</span>
-      <span class="tab-count">{{ entity().fields.length }}</span>
+      <span class="tab-count">{{ selectedEntity.fields.length }}</span>
     </button>
 
     <button
@@ -116,7 +117,7 @@
           </button>
         </div>
 
-        @if (entity().fields.length === 0) {
+        @if (selectedEntity.fields.length === 0) {
           <div class="empty-state">
             <span class="material-symbols-outlined">view_column</span>
 
@@ -128,7 +129,7 @@
           </div>
         } @else {
           <div class="field-list">
-            @for (field of entity().fields; track field.name) {
+            @for (field of selectedEntity.fields; track field.name) {
               <div class="field-row">
 
                 <div class="field-icon">
@@ -260,7 +261,7 @@
           <button
             type="button"
             class="add-button"
-            (click)="addRelationship.emit(entity().name)"
+            (click)="addRelationship.emit(selectedEntity.name)"
           >
             <span class="material-symbols-outlined">add</span>
             Add
@@ -281,7 +282,7 @@
             <button
               type="button"
               class="secondary-action"
-              (click)="addRelationship.emit(entity().name)"
+              (click)="addRelationship.emit(selectedEntity.name)"
             >
               <span class="material-symbols-outlined">add</span>
               Add Relationship
@@ -336,7 +337,7 @@
           <button
             type="button"
             class="add-button"
-            (click)="addForeignKey.emit(entity().name)"
+            (click)="addForeignKey.emit(selectedEntity.name)"
           >
             <span class="material-symbols-outlined">add</span>
             Add
@@ -357,7 +358,7 @@
             <button
               type="button"
               class="secondary-action"
-              (click)="addForeignKey.emit(entity().name)"
+              (click)="addForeignKey.emit(selectedEntity.name)"
             >
               <span class="material-symbols-outlined">add</span>
               Add Foreign Key
@@ -545,4 +546,11 @@
 
   </div>
 
+  } @else {
+    <div class="empty-state large">
+      <span class="material-symbols-outlined">ads_click</span>
+      <strong>Select an entity to view details</strong>
+      <p>Choose an entity on the canvas to inspect its fields, identities, relationships, and constraints.</p>
+    </div>
+  }
 </aside>
