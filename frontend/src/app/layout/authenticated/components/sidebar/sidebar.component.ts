@@ -220,10 +220,32 @@ export class SidebarComponent {
   readonly currentUrl = signal(this.router.url);
 
   constructor() {
+    this.loadCurrentDataModelIdentity();
+
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => {
+        this.currentUrl.set(event.urlAfterRedirects);
+        this.loadCurrentDataModelIdentity();
+      });
+  }
+
+  private loadCurrentDataModelIdentity(): void {
+    const segments = this.router.url.split('?')[0].split('#')[0].split('/').filter(Boolean);
+    const workspaceIndex = segments.indexOf('workspace');
+    const dataModelId = workspaceIndex >= 0 ? segments[workspaceIndex + 1] : undefined;
+
+    if (!dataModelId || dataModelId === 'ui-kit-design-system') {
+      this.currentDataModelName.set(null);
+      this.currentDataModelDescription.set(null);
+      return;
+    }
+
     this.workspaceService.getDataModels().subscribe({
       next: (models) => {
-        const segments = this.router.url.split('?')[0].split('#')[0].split('/').filter(Boolean);
-        const dataModelId = segments[0] === 'workspace' ? segments[1] : undefined;
         const model = models.find((item) => item.dataModelId === dataModelId);
         this.currentDataModelName.set(model?.name ?? null);
         this.currentDataModelDescription.set(model?.description?.trim() || null);
@@ -233,13 +255,6 @@ export class SidebarComponent {
         this.currentDataModelDescription.set(null);
       },
     });
-
-    this.router.events
-      .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((event) => this.currentUrl.set(event.urlAfterRedirects));
   }
 
   isWorkspaceContext(): boolean {
