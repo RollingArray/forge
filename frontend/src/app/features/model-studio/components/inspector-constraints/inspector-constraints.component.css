@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.constraint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.constraint-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.constraint-diagram {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--forge-text);
+  font-size: 13px;
+  text-align: center;
+}
+
+.constraint-field,
+.constraint-value {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;
+}
+
+.constraint-field strong {
+  max-width: 100%;
+  color: var(--forge-text);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.constraint-connector {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.connector-line {
+  width: 2px;
+  height: 12px;
+  flex: 0 0 12px;
+  background: var(--forge-primary);
+}
+
+.constraint-operator {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 12px;
+  border: 1px solid var(--forge-border);
+  border-radius: 8px;
+  background: var(--forge-surface);
+  color: var(--forge-primary);
+  font-size: 13px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.constraint-value {
+  color: var(--forge-primary);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+@media (max-width: 560px) {
+  .constraint-content {
+    padding: 4px 0;
+  }
+
+  .constraint-field,
+  .constraint-value {
+    padding: 8px 4px;
+  }
+}

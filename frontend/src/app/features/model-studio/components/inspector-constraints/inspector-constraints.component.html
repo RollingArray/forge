@@ -1,0 +1,55 @@
+<app-inspector-shell
+  title="Constraints"
+  description="Rules that restrict generated values for this entity."
+  [actionLabel]="constraints().length > 0 ? 'Add Constraint' : undefined"
+  actionIcon="add"
+  (action)="addConstraint.emit()"
+>
+
+  @if (constraints().length === 0) {
+    <app-empty-inspector-state
+      icon="rule"
+      title="No constraints defined"
+      description="Add rules that restrict the values generated for this entity."
+      actionLabel="Add Constraint"
+      (action)="addConstraint.emit()"
+    />
+  } @else {
+    <div class="constraint-list">
+      @for (
+        constraint of constraints();
+        track constraint.entity + constraint.field + constraint.operator + constraint.value
+      ) {
+        <app-inspector-row
+          icon="rule"
+          [ariaLabel]="'Constraint on ' + constraint.entity + '.' + constraint.field"
+          [showEdit]="true"
+          variant="compact"
+          (edit)="editConstraint.emit(constraint)"
+        >
+          <div inspector-row-content class="constraint-content">
+            <div class="constraint-diagram">
+              <div class="constraint-field">
+                <strong>{{ constraint.entity }}.{{ constraint.field }}</strong>
+              </div>
+              <div class="constraint-connector" aria-hidden="true">
+                <span class="connector-line"></span>
+                <span class="constraint-operator">
+                  {{
+                    constraint.operator === '=='
+                      ? '='
+                      : constraint.operator === '!='
+                        ? '≠'
+                        : constraint.operator
+                  }}
+                </span>
+                <span class="connector-line"></span>
+              </div>
+              <div class="constraint-value">{{ constraint.value }}</div>
+            </div>
+          </div>
+        </app-inspector-row>
+      }
+    </div>
+  }
+</app-inspector-shell>
