@@ -1,0 +1,27 @@
+<div class="inspector-header">
+  <div>
+    <span class="eyebrow">Entity</span>
+    <h2>{{ entity().name }}</h2>
+  </div>
+
+  <button
+    type="button"
+    class="close-button"
+    aria-label="Close entity inspector"
+    (click)="closed.emit()"
+  >
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</div>
+
+<div class="inspector-summary">
+  <div>
+    <span>Population</span>
+    <strong>{{ entity().population?.count ?? 0 }}</strong>
+  </div>
+
+  <div>
+    <span>Fields</span>
+    <strong>{{ entity().fields.length }}</strong>
+  </div>
+</div>
