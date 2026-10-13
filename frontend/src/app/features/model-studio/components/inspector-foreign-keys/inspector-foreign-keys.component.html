@@ -1,0 +1,55 @@
+<app-inspector-shell
+  title="Foreign Keys"
+  description="Source fields mapped to target identity fields."
+  [actionLabel]="foreignKeys().length > 0 ? 'Add Foreign Key' : undefined"
+  actionIcon="add"
+  (action)="addForeignKey.emit(entityName())"
+>
+  @if (foreignKeys().length === 0) {
+    <app-empty-inspector-state
+      icon="link"
+      title="No foreign keys yet"
+      description="Add a foreign key to connect this entity to another entity's identity."
+      actionLabel="Add Foreign Key"
+      (action)="addForeignKey.emit(entityName())"
+    />
+  } @else {
+    <div class="relationship-list">
+      @for (foreignKey of foreignKeys(); track foreignKey.name) {
+        <app-inspector-row
+          icon="link"
+          [ariaLabel]="'Foreign key ' + foreignKey.name"
+          [showEdit]="true"
+          variant="compact"
+          (edit)="editForeignKey.emit(foreignKey)"
+        >
+          <div inspector-row-content class="foreign-key-row-content">
+            <div class="relationship-diagram foreign-key-diagram">
+              <div class="entity-row source-row">
+                <div class="entity-details">
+                  @for (field of foreignKey.source.fields; track field) {
+                    <strong>{{ foreignKey.source.entity }}.{{ field }}</strong>
+                  }
+                </div>
+              </div>
+
+              <div class="relationship-connector foreign-key-connector" aria-hidden="true">
+                <span class="connector-line"></span>
+                <span class="material-symbols-outlined connector-arrow">link</span>
+                <span class="connector-line"></span>
+              </div>
+
+              <div class="entity-row target-row">
+                <div class="entity-details">
+                  @for (field of foreignKey.target.fields; track field) {
+                    <strong>{{ foreignKey.target.entity }}.{{ field }}</strong>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </app-inspector-row>
+      }
+    </div>
+  }
+</app-inspector-shell>
