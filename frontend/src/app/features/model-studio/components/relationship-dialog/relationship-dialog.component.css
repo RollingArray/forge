@@ -1067,3 +1067,307 @@
   color: #81798f;
   font-size: 19px;
 }
+
+
+/* Destructive action is available only while editing an existing relationship. */
+.dialog-footer {
+  justify-content: flex-end;
+}
+
+.dialog-footer:has(.delete-relationship-button) {
+  justify-content: space-between;
+}
+
+.dialog-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delete-relationship-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #d92d20;
+  border-radius: 10px;
+  background: #d92d20;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.delete-relationship-button:hover:not(:disabled) {
+  background: #b42318;
+  transform: translateY(-1px);
+}
+
+.delete-relationship-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.relationship-dialog {
+  position: relative;
+}
+
+.relationship-delete-confirmation {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+  min-height: 290px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 34px clamp(24px, 5vw, 72px) 38px;
+  border: 1px solid #e5ddd7;
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background:
+    radial-gradient(circle at 15% 0%, #f8e9dc 0%, transparent 45%),
+    #f4efeb;
+  box-shadow: 0 -16px 44px rgb(30 24 48 / 12%);
+  animation: relationship-confirmation-enter 280ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.relationship-delete-confirmation-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  border-radius: 17px;
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.relationship-delete-confirmation-icon .material-symbols-outlined {
+  font-size: 30px;
+}
+
+.relationship-delete-confirmation-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 760px;
+}
+
+.relationship-delete-eyebrow {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.relationship-delete-confirmation-content h3 {
+  margin: 8px 0 10px;
+  color: #24212d;
+  font-size: clamp(23px, 3vw, 30px);
+  font-weight: 700;
+}
+
+.relationship-delete-confirmation-content > p:not(.relationship-delete-warning, .relationship-delete-error) {
+  margin: 0;
+  color: #777180;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.relationship-delete-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid #e7ded8;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 65%);
+  color: #494253;
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.relationship-delete-context .material-symbols-outlined {
+  color: #6558c8;
+  flex: 0 0 auto;
+}
+
+.relationship-delete-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 0;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.relationship-delete-error {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #f2b8b5;
+  border-radius: 10px;
+  background: #fff1f0;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.dialog-footer-confirming {
+  justify-content: flex-end;
+}
+
+.dialog-footer-confirming .dialog-footer-right {
+  margin-left: auto;
+}
+
+@keyframes relationship-confirmation-enter {
+  from {
+    opacity: 0.85;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .relationship-delete-confirmation {
+    min-height: 240px;
+    gap: 16px;
+    padding: 26px 20px 30px;
+    border-radius: 20px 20px 0 0;
+  }
+  .relationship-delete-confirmation-icon {
+    flex-basis: 46px;
+    width: 46px;
+    height: 46px;
+  }
+  .relationship-delete-confirmation-icon .material-symbols-outlined {
+    font-size: 24px;
+  }
+  .dialog-footer-confirming .dialog-footer-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.delete-relationship-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+
+/* Relationship inline delete-confirmation visual treatment */
+.dialog-footer.delete-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 88px;
+  padding: 18px 24px;
+}
+
+.dialog-footer.delete-confirmation .delete-message {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 12px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #F4C7C3;
+  border-radius: 12px;
+  background: #FDE8E7;
+  color: #C52B24;
+  font-size: 23px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy strong {
+  color: var(--text-primary, #24232B);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy > span {
+  color: var(--text-secondary, #777583);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dialog-footer.delete-confirmation .dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .dialog-footer.delete-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dialog-footer.delete-confirmation .dialog-actions {
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
+
+
+/* Destructive confirmation: subtle error-state gradient */
+.dialog-footer.delete-confirmation {
+  background: linear-gradient(
+    110deg,
+    #fff1ef 0%,
+    #fce9e6 48%,
+    #f8e3e0 100%
+  );
+  border-top: 1px solid #edcfca;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 75%);
+}
+
+.dialog-footer.delete-confirmation .delete-message-icon {
+  background: #fde2df;
+  border-color: #f7c3bd;
+  color: #c92a22;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy strong {
+  color: #30252a;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy > span {
+  color: #795e60;
+}
+
+.dialog-footer.delete-confirmation .cancel-button {
+  background: #fff;
+  border-color: #e3d8d6;
+}

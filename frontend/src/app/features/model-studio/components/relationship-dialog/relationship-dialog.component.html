@@ -1,13 +1,13 @@
 <app-form-dialog
-  title="Add Relationship"
-  subtitle="Connect two entities and describe how their records are related."
+  [title]="existingRelationship() ? 'Edit Relationship' : 'Add Relationship'"
+  [subtitle]="existingRelationship()
+    ? 'Review and update how these entities are related.'
+    : 'Connect two entities and describe how their records are related.'"
   icon="account_tree"
   width="1180px"
   (closed)="close()"
 >
   <div dialog-body class="relationship-dialog">
-
-    <!-- ================================================================== -->
     <!-- FORGE AI                                                           -->
     <!-- ================================================================== -->
 
@@ -558,33 +558,42 @@ Define a foreign key first.
 
   </div>
 
-  <div dialog-footer class="dialog-footer">
-
-    <button
-      type="button"
-      class="cancel-button"
-      (click)="close()"
-    >
-      Cancel
-    </button>
-
-    <div class="dialog-actions">
-
-      <button
-        type="button"
-        class="save-button"
-        [disabled]="!canSave()"
-        (click)="save()"
-      >
-        <span class="material-symbols-outlined">
-          account_tree
-        </span>
-
-        {{ existingRelationship() ? 'Save Changes' : 'Save Relationship' }}
-      </button>
-
+  @if (deleteConfirmation()) {
+    <div dialog-footer class="dialog-footer delete-confirmation">
+      <div class="delete-message">
+        <span class="delete-message-icon material-symbols-outlined" aria-hidden="true">warning</span>
+        <div class="delete-message-copy">
+          <strong>Delete this Relationship?</strong>
+          <span>This action cannot be undone.</span>
+        </div>
+        @if (deleteError()) {
+          <span class="relationship-delete-error" role="alert">{{ deleteError() }}</span>
+        }
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" [disabled]="deleteBusy()" (click)="cancelDeleteConfirmation()">Cancel</button>
+        <button type="button" class="delete-relationship-button" [disabled]="deleteBusy()" (click)="confirmDelete()">
+          <span class="material-symbols-outlined">{{ deleteBusy() ? "progress_activity" : "delete" }}</span>
+          {{ deleteBusy() ? "Deleting…" : "Delete Relationship" }}
+        </button>
+      </div>
     </div>
-
-  </div>
+  } @else {
+    <div dialog-footer class="dialog-footer">
+      @if (existingRelationship()) {
+        <button type="button" class="delete-relationship-button" (click)="requestDeleteConfirmation()">
+          <span class="material-symbols-outlined">delete</span>
+          Delete Relationship
+        </button>
+      }
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" (click)="close()">Cancel</button>
+        <button type="button" class="save-button" [disabled]="!canSave()" (click)="save()">
+          <span class="material-symbols-outlined">account_tree</span>
+          {{ existingRelationship() ? 'Save Changes' : 'Save Relationship' }}
+        </button>
+      </div>
+    </div>
+  }
 
 </app-form-dialog>

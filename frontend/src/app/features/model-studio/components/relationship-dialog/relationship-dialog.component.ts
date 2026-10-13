@@ -84,6 +84,10 @@ export class RelationshipDialogComponent {
 
   readonly saved = output<RelationshipDraft>();
   readonly closed = output<void>();
+  readonly deleteRequested = output<void>();
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
+  readonly deleteConfirmation = signal(false);
 
   private readonly aiService = inject(AIService);
 
@@ -410,6 +414,24 @@ export class RelationshipDialogComponent {
 
   close(): void {
     this.closed.emit();
+  }
+
+  requestDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(true);
+    }
+  }
+
+  cancelDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(false);
+    }
+  }
+
+  confirmDelete(): void {
+    if (!this.deleteBusy()) {
+      this.deleteRequested.emit();
+    }
   }
 
   private loadAiCapability(): void {
