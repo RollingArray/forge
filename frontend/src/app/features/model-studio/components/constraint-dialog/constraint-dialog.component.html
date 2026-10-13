@@ -1,6 +1,8 @@
 <app-form-dialog
-  title="Add Constraint"
-  subtitle="Define a rule that restricts the values generated for this entity."
+  [title]="existingConstraint() ? 'Edit Constraint' : 'Add Constraint'"
+  [subtitle]="existingConstraint()
+    ? 'Review and update the rule that restricts generated values.'
+    : 'Define a rule that restricts the values generated for this entity.'"
   icon="rule"
   width="1180px"
   (closed)="close()"
