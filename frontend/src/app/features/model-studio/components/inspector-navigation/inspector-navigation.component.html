@@ -1,0 +1,19 @@
+<nav class="inspector-tabs" aria-label="Entity details">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      class="inspector-tab"
+      [class.active]="activeTab() === tab.id"
+      [attr.aria-pressed]="activeTab() === tab.id"
+      [attr.aria-label]="tab.label"
+      [title]="tab.label"
+      (click)="tabSelected.emit(tab.id)"
+    >
+      <span class="material-symbols-outlined">{{ tab.icon }}</span>
+      <!-- <span class="tab-label">{{ tab.shortLabel }}</span> -->
+      @if (tab.count > 0) {
+        <span class="tab-count">{{ tab.count }}</span>
+      }
+    </button>
+  }
+</nav>

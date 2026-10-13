@@ -1,0 +1,108 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.inspector-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid var(--forge-border);
+  background: var(--forge-surface-subtle);
+}
+
+.inspector-tab {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: column;
+  padding: 6px 2px;
+  border: 0;
+  border-right: 1px solid var(--forge-border-subtle);
+  background: transparent;
+  color: var(--forge-text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.inspector-tab:last-child {
+  border-right: 0;
+}
+
+.inspector-tab:hover {
+  background: var(--forge-surface-active);
+  color: var(--forge-primary-strong);
+}
+
+.inspector-tab.active {
+  background: var(--forge-surface);
+  color: var(--forge-primary);
+}
+
+.inspector-tab.active::after {
+  position: absolute;
+  right: 7px;
+  bottom: 0;
+  left: 7px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--forge-primary);
+  content: '';
+}
+
+.inspector-tab .material-symbols-outlined {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.tab-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-count {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  min-width: 17px;
+  min-height: 17px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  place-items: center;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 999px;
+  background: var(--forge-primary-soft);
+  color: var(--forge-primary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 360px) {
+  .inspector-tab {
+    gap: 5px;
+    min-height: 48px;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
+  .tab-count {
+    top: 2px;
+    right: 2px;
+  }
+}
