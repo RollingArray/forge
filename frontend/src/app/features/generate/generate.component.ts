@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import {
@@ -9,7 +8,7 @@ import {
   WorkflowStepItem,
 } from '../../shared/components/workflow-stepper/workflow-stepper.component';
 import { GenerationService } from './services/generation.service';
-import { GenerationCheckpoint } from '../../shared/models/generation-checkpoint.models';
+import { GenerationCheckpoint } from '../../core/interfaces/generation-checkpoint.interface';
 import { GenerationExecutionStore } from './services/generation-execution.store';
 import { GenerationPipelineMapper } from './services/generation-pipeline.mapper';
 import { MetricGridComponent } from '../../shared/components/metric-grid/metric-grid.component';
@@ -25,6 +24,7 @@ import {
   GenerationJobResponse,
   GenerationReadiness,
 } from './models/generation.models';
+
 
 @Component({
   selector: 'app-generate',

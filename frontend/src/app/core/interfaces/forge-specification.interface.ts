@@ -12,6 +12,14 @@
  * ============================================================================
  */
 
+import { ForgeConstraint } from './forge-constraint.interface';
+import { ForgeForeignKey } from './forge-foreign-key.interface';
+import { ForgeSpecificationDependency } from './forge-specification-dependency.interface';
+import { ForgeSpecificationEntity } from './forge-specification-entity.interface';
+import { ForgeSpecificationGeneration } from './forge-specification-generation.interface';
+import { ForgeSpecificationModel } from './forge-specification-model.interface';
+import { ForgeSpecificationRelationship } from './forge-specification-relationship.interface';
+
 export interface ForgeSpecification {
   version: string;
   vocabularyVersion: string;
@@ -24,74 +32,4 @@ export interface ForgeSpecification {
   dependencies: ForgeSpecificationDependency[];
   statisticalBehavior: unknown[];
   scenarios: unknown[];
-}
-
-export interface ForgeSpecificationModel {
-  name: string;
-  description: string;
-}
-
-export interface ForgeSpecificationGeneration {
-  seed: number;
-  scenario: string;
-}
-
-export interface ForgeSpecificationEntity {
-  name: string;
-  description?: string;
-  population?: {
-    count?: number;
-  };
-  fields: ForgeSpecificationField[];
-  identity?: {
-    fields?: string[];
-  };
-}
-
-export interface ForgeSpecificationField {
-  name: string;
-  type: string;
-  description?: string;
-  generation?: ForgeFieldGeneration;
-  identity?: {
-    strategy?: string;
-  };
-}
-
-export interface ForgeFieldGeneration {
-  strategy?: string;
-  distribution?: string;
-  generator?: string;
-  parameters?: Record<string, unknown>;
-}
-
-export interface ForgeSpecificationRelationship {
-  source: string;
-  target: string;
-  type: string;
-  source_participation?: string;
-  target_participation?: string;
-}
-
-export interface ForgeForeignKey {
-  name: string;
-  source: {
-    entity: string;
-    fields: string[];
-  };
-  target: {
-    entity: string;
-    fields: string[];
-  };
-}
-
-export interface ForgeConstraint {
-  entity: string;
-  field: string;
-  operator: string;
-  value: string | number | boolean;
-}
-
-export interface ForgeSpecificationDependency {
-  [key: string]: unknown;
 }

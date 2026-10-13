@@ -1,15 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-
 import { SseService } from '../../../core/services/sse.service';
-import { GenerationCheckpoint } from '../../../shared/models/generation-checkpoint.models';
-
+import { GenerationCheckpoint } from '../../../core/interfaces/generation-checkpoint.interface';
 import {
   GenerationArtifact,
   GenerationArtifactPreview,
 } from '../../results/results.models';
-
 import { environment } from '../../../../environments/environment';
 import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../../../core/tokens/api-loading-message.token';
@@ -23,6 +20,7 @@ import {
   GenerationReadiness,
   GenerationSseEvent,
 } from '../models/generation.models';
+
 
 @Injectable({
   providedIn: 'root',

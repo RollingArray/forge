@@ -23,19 +23,16 @@ import {
   output,
   signal,
 } from '@angular/core';
-
-import {
-  ForgeForeignKey,
-  ForgeSpecificationEntity,
-} from '../../../../core/interfaces/forge-specification.interface';
+import { ForgeForeignKey } from '../../../../core/interfaces/forge-foreign-key.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import {
   AIForeignKeyProposalResponse,
 } from '../../../../core/interfaces/ai-foreign-key-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
-
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
+
 
 export interface ForeignKeyDraft {
   sourceEntity: string;

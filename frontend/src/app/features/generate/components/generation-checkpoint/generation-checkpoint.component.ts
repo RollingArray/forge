@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GenerationCheckpoint } from '../../../../shared/models/generation-checkpoint.models';
+import { GenerationCheckpoint } from '../../../../core/interfaces/generation-checkpoint.interface';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
+
 
 @Component({
   selector: 'app-generation-checkpoint',

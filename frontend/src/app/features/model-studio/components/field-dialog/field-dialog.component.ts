@@ -10,8 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-
-import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification.interface';
+import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification-field.interface';
 import { AIFieldProposal } from '../../../../core/interfaces/ai-field-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
 import { FieldAiAssistPanelComponent } from '../field-ai-assist-panel/field-ai-assist-panel.component';
@@ -22,6 +21,7 @@ import { FieldParameterHeaderComponent } from '../../../../shared/components/fie
 import { PatternGeneratorComponent } from '../../../../shared/components/pattern-generator/pattern-generator.component';
 import { SemanticGeneratorComponent } from '../../../../shared/components/semantic-generator/semantic-generator.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
+
 
 export type FieldType =
   | 'IDENTIFIER'

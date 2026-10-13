@@ -1,10 +1,7 @@
-import {
-  ForgeForeignKey,
-  ForgeSpecification,
-  ForgeSpecificationEntity,
-  ForgeSpecificationField,
-} from '../../../core/interfaces/forge-specification.interface';
-
+import { ForgeForeignKey } from '../../../core/interfaces/forge-foreign-key.interface';
+import { ForgeSpecification } from '../../../core/interfaces/forge-specification.interface';
+import { ForgeSpecificationEntity } from '../../../core/interfaces/forge-specification-entity.interface';
+import { ForgeSpecificationField } from '../../../core/interfaces/forge-specification-field.interface';
 import {
   CanvasEntity,
   EntityAccent,
@@ -13,13 +10,12 @@ import {
   ModelRelationship,
   ModelStudioData,
 } from '../models/model-studio.models';
-
 import {
   MODEL_NODE_HEIGHT,
   MODEL_NODE_WIDTH,
 } from './model-geometry';
-
 import { layoutModel } from './model-layout';
+
 
 const ACCENTS: EntityAccent[] = [
   'blue',

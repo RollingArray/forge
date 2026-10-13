@@ -27,18 +27,15 @@ import {
   signal,
 } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
-
-import {
-  ForgeForeignKey,
-  ForgeSpecificationEntity,
-  ForgeSpecificationRelationship,
-} from '../../../../core/interfaces/forge-specification.interface';
+import { ForgeForeignKey } from '../../../../core/interfaces/forge-foreign-key.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
+import { ForgeSpecificationRelationship } from '../../../../core/interfaces/forge-specification-relationship.interface';
 import { AIService } from '../../../../core/services/ai.service';
 import { AICapability } from '../../../../core/interfaces/ai-capability.interface';
 import { AIRelationshipProposal } from '../../../../core/interfaces/ai-relationship-proposal.interface';
-
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+
 
 export type RelationshipType =
   | 'ONE_TO_ONE'

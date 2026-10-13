@@ -1,10 +1,9 @@
-import {
-  ForgeConstraint,
-  ForgeForeignKey,
-  ForgeSpecification,
-  ForgeSpecificationEntity,
-  ForgeSpecificationField,
-} from '../../../core/interfaces/forge-specification.interface';
+import { ForgeConstraint } from '../../../core/interfaces/forge-constraint.interface';
+import { ForgeForeignKey } from '../../../core/interfaces/forge-foreign-key.interface';
+import { ForgeSpecification } from '../../../core/interfaces/forge-specification.interface';
+import { ForgeSpecificationEntity } from '../../../core/interfaces/forge-specification-entity.interface';
+import { ForgeSpecificationField } from '../../../core/interfaces/forge-specification-field.interface';
+
 
 export type EntityAccent =
   | 'blue'

@@ -4,7 +4,8 @@ import { WorkspaceSectionComponent } from '../../../../shared/components/workspa
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
 import { StatusCardComponent } from '../../../../shared/components/status-card/status-card.component';
 import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
-import { GenerationPipelineNode } from '../../../../shared/models/generation-pipeline.models';
+import { GenerationPipelineNode } from '../../../../core/interfaces/generation-pipeline-node.interface';
+
 
 @Component({
   selector: 'app-generation-pipeline',

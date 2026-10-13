@@ -1,15 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
-
 import {
   GenerationActivityEvent,
   GenerationEntityCompletedEvent,
   GenerationJobResponse,
   GenerationSseEvent,
 } from '../models/generation.models';
-
 import { GenerationService } from './generation.service';
-import { GenerationCheckpoint } from '../../../shared/models/generation-checkpoint.models';
+import { GenerationCheckpoint } from '../../../core/interfaces/generation-checkpoint.interface';
 import { Subscription } from 'rxjs';
+
 
 
 @Injectable({

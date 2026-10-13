@@ -7,13 +7,13 @@ import {
   output,
   signal,
 } from '@angular/core';
-
 import { AIIdentityProposal } from '../../../../core/interfaces/ai-identity-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
-import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { IdentityAiAssistPanelComponent } from '../identity-ai-assist-panel/identity-ai-assist-panel.component';
+
 
 @Component({
   selector: 'app-model-studio-identity-dialog',

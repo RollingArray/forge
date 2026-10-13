@@ -14,17 +14,13 @@
 
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import {
-  ForgeConstraint,
-  ForgeSpecification,
-  ForgeSpecificationField,
-  ForgeSpecificationRelationship,
-} from '../../core/interfaces/forge-specification.interface';
+import { ForgeConstraint } from '../../core/interfaces/forge-constraint.interface';
+import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
+import { ForgeSpecificationField } from '../../core/interfaces/forge-specification-field.interface';
+import { ForgeSpecificationRelationship } from '../../core/interfaces/forge-specification-relationship.interface';
 import { SpecificationService } from '../../core/services/specification.service';
 import { AIService } from '../../core/services/ai.service';
 import { AIEntityProposal } from '../../core/interfaces/ai-entity-proposal.interface';
-
 import { adaptSpecification } from './data/specification-adapter';
 import { CanvasEntity } from './models/model-studio.models';
 import { ModelCanvasComponent } from './components/model-canvas/model-canvas.component';
@@ -53,6 +49,7 @@ import {
   WorkflowStep,
   WorkflowStepItem,
 } from '../../shared/components/workflow-stepper/workflow-stepper.component';
+
 
 type StudioStep = WorkflowStep;
 type StudioStepItem = WorkflowStepItem;

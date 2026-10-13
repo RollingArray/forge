@@ -23,18 +23,15 @@ import {
   output,
   signal,
 } from '@angular/core';
-
-import {
-  ForgeConstraint,
-  ForgeSpecificationEntity,
-} from '../../../../core/interfaces/forge-specification.interface';
+import { ForgeConstraint } from '../../../../core/interfaces/forge-constraint.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import { AIConstraintProposalResponse } from '../../../../core/interfaces/ai-constraint-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
-
 import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+
 
 export type ConstraintOperator =
   | '>'

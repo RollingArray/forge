@@ -15,24 +15,22 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-
 import { environment } from '../../../environments/environment';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
-import {
-  ForgeConstraint,
-  ForgeForeignKey,
-  ForgeSpecification,
-  ForgeSpecificationDependency,
-  ForgeSpecificationEntity,
-  ForgeSpecificationField,
-  ForgeSpecificationGeneration,
-  ForgeSpecificationModel,
-  ForgeSpecificationRelationship,
-} from '../interfaces/forge-specification.interface';
+import { ForgeConstraint } from '../interfaces/forge-constraint.interface';
+import { ForgeForeignKey } from '../interfaces/forge-foreign-key.interface';
+import { ForgeSpecification } from '../interfaces/forge-specification.interface';
+import { ForgeSpecificationDependency } from '../interfaces/forge-specification-dependency.interface';
+import { ForgeSpecificationEntity } from '../interfaces/forge-specification-entity.interface';
+import { ForgeSpecificationField } from '../interfaces/forge-specification-field.interface';
+import { ForgeSpecificationGeneration } from '../interfaces/forge-specification-generation.interface';
+import { ForgeSpecificationModel } from '../interfaces/forge-specification-model.interface';
+import { ForgeSpecificationRelationship } from '../interfaces/forge-specification-relationship.interface';
 import {
   SpecificationValidationResult,
 } from '../interfaces/specification-validation.interface';
+
 
 type PopulationScaling = 'FIXED' | 'SCALABLE';
 
