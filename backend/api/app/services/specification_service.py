@@ -1059,6 +1059,48 @@ class SpecificationService:
         if existing is None:
             raise ValueError("Foreign key not found.")
 
+        source = existing.get("source", {})
+        target = existing.get("target", {})
+        source_entity = source.get("entity") if isinstance(source, dict) else None
+        target_entity = target.get("entity") if isinstance(target, dict) else None
+        source_fields = source.get("fields", []) if isinstance(source, dict) else []
+        target_fields = target.get("fields", []) if isinstance(target, dict) else []
+
+        if (
+            source_entity
+            and target_entity
+            and source_fields
+            and target_fields
+        ):
+            foreign_key_endpoints = (
+                f"{source_entity}.{source_fields[0]}",
+                f"{target_entity}.{target_fields[0]}",
+            )
+            reverse_foreign_key_endpoints = (
+                foreign_key_endpoints[1],
+                foreign_key_endpoints[0],
+            )
+
+            for relationship in specification.get("relationships", []):
+                if not isinstance(relationship, dict):
+                    continue
+
+                relationship_endpoints = (
+                    relationship.get("source"),
+                    relationship.get("target"),
+                )
+
+                if relationship_endpoints in (
+                    foreign_key_endpoints,
+                    reverse_foreign_key_endpoints,
+                ):
+                    raise ValueError(
+                        f"Cannot delete foreign key '{request.name}' because "
+                        "it is used by relationship "
+                        f"'{relationship.get('source')}' → "
+                        f"'{relationship.get('target')}'. Delete that relationship first."
+                    )
+
         candidate = deepcopy(specification)
 
         candidate["foreign_keys"] = [
