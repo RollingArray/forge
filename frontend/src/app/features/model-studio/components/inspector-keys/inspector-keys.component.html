@@ -1,0 +1,33 @@
+<app-inspector-shell
+  title="Keys"
+  description="Define how each record is uniquely identified."
+  [actionLabel]="identityFields().length > 0 ? 'Edit Identity' : undefined"
+  actionIcon="edit"
+  actionVariant="secondary"
+  (action)="editIdentity.emit()"
+>
+  @if (identityFields().length === 0) {
+    <app-empty-inspector-state
+      icon="key"
+      title="No primary identity defined"
+      description="Choose the existing field or fields that uniquely identify each record."
+      actionLabel="Add Identity"
+      (action)="editIdentity.emit()"
+    />
+  } @else {
+    <div class="key-field-list">
+      @for (fieldName of identityFields(); track fieldName) {
+        <app-inspector-row
+          variant="compact"
+          icon="key"
+          [ariaLabel]="'Identity field ' + fieldName"
+        >
+          <div inspector-row-content class="key-field-card-content">
+            <strong class="key-field-name">{{ fieldName }}</strong>
+            <span class="key-field-type">Identity field</span>
+          </div>
+        </app-inspector-row>
+      }
+    </div>
+  }
+</app-inspector-shell>
