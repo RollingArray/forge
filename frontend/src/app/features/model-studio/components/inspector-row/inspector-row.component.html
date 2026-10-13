@@ -1,0 +1,21 @@
+<article class="inspector-row" [class.inspector-row--compact]="variant() === 'compact'">
+  <aside class="inspector-row-rail" aria-hidden="true">
+    <span class="material-symbols-outlined">{{ icon() }}</span>
+  </aside>
+
+  <div class="inspector-row-main">
+    <ng-content select="[inspector-row-content]" />
+  </div>
+
+  @if (showEdit()) {
+    <button
+      type="button"
+      class="inspector-row-edit"
+      aria-label="Edit"
+      title="Edit"
+      (click)="edit.emit()"
+    >
+      <span class="material-symbols-outlined">edit</span>
+    </button>
+  }
+</article>
