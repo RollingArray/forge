@@ -18,7 +18,10 @@ import { ForgeConstraint } from '../../core/interfaces/forge-constraint.interfac
 import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
 import { ForgeSpecificationField } from '../../core/interfaces/forge-specification-field.interface';
 import { ForgeSpecificationRelationship } from '../../core/interfaces/forge-specification-relationship.interface';
+import { ForgeForeignKey } from '../../core/interfaces/forge-foreign-key.interface';
 import { SpecificationService } from '../../core/services/specification.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { AIService } from '../../core/services/ai.service';
 import { AIEntityProposal } from '../../core/interfaces/ai-entity-proposal.interface';
 import { adaptSpecification } from './data/specification-adapter';
@@ -69,6 +72,7 @@ type StudioStepItem = WorkflowStepItem;
     WorkflowPageComponent,
     ModelStudioSummaryComponent,
     WorkflowRowComponent,
+    ConfirmationDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-studio.component.html',
@@ -78,6 +82,7 @@ export class ModelStudioComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly specificationService = inject(SpecificationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly aiService = inject(AIService);
 
   readonly specification = signal<ForgeSpecification | null>(null);
@@ -111,7 +116,11 @@ export class ModelStudioComponent {
 
   readonly foreignKeyDialogOpen = signal(false);
 
+  readonly editingForeignKey = signal<ForgeForeignKey | null>(null);
+
   readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
+  readonly relationshipPendingDeletion = signal<ForgeSpecificationRelationship | null>(null);
+  readonly relationshipDeleteBusy = signal(false);
 
   readonly relationshipSourceEntity = signal('');
 
@@ -296,13 +305,26 @@ export class ModelStudioComponent {
       return;
     }
 
+    this.editingForeignKey.set(null);
     this.foreignKeySourceEntity.set(sourceEntity ?? '');
+    this.foreignKeyDialogOpen.set(true);
+  }
+
+  openForeignKeyEditDialog(foreignKey: ForgeForeignKey): void {
+    if (!this.specification()) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.editingForeignKey.set(foreignKey);
+    this.foreignKeySourceEntity.set('');
     this.foreignKeyDialogOpen.set(true);
   }
 
   closeForeignKeyDialog(): void {
     this.foreignKeyDialogOpen.set(false);
     this.foreignKeySourceEntity.set('');
+    this.editingForeignKey.set(null);
   }
 
   handleForeignKeySaved(draft: ForeignKeyDraft): void {
@@ -316,24 +338,34 @@ export class ModelStudioComponent {
       return;
     }
 
-    this.specificationService
-      .createForeignKey(dataModelId, {
-        source_entity: draft.sourceEntity,
-        source_fields: draft.sourceFields,
-        target_entity: draft.targetEntity,
-      })
-      .subscribe({
-        next: () => {
-          this.closeForeignKeyDialog();
-          this.loadSpecification(dataModelId);
-        },
-        error: (error: { error?: { detail?: string } }) => {
-          this.errorMessage.set(
-            error.error?.detail ??
-              'Unable to add the foreign key.',
-          );
-        },
-      });
+    const existing = this.editingForeignKey();
+    const request = {
+      source_entity: draft.sourceEntity,
+      source_fields: draft.sourceFields,
+      target_entity: draft.targetEntity,
+    };
+
+    const operation = existing
+      ? this.specificationService.updateForeignKey(dataModelId, {
+          existing: { name: existing.name },
+          foreign_key: request,
+        })
+      : this.specificationService.createForeignKey(dataModelId, request);
+
+    operation.subscribe({
+      next: () => {
+        this.closeForeignKeyDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.errorMessage.set(
+          error.error?.detail ??
+            (existing
+              ? 'Unable to update the foreign key.'
+              : 'Unable to add the foreign key.'),
+        );
+      },
+    });
   }
 
   openRelationshipDialog(sourceEntity?: string): void {
@@ -344,6 +376,68 @@ export class ModelStudioComponent {
     this.editingRelationship.set(null);
     this.relationshipSourceEntity.set(sourceEntity ?? '');
     this.relationshipDialogOpen.set(true);
+  }
+
+  requestRelationshipDelete(relationship: ForgeSpecificationRelationship): void {
+    this.relationshipPendingDeletion.set(relationship);
+    this.errorMessage.set(null);
+    this.confirmRelationshipDelete();
+  }
+
+  cancelRelationshipDelete(): void {
+    if (!this.relationshipDeleteBusy()) {
+      this.relationshipPendingDeletion.set(null);
+    }
+  }
+
+  confirmRelationshipDelete(): void {
+    const relationship = this.relationshipPendingDeletion();
+
+    if (!relationship || this.relationshipDeleteBusy()) {
+      return;
+    }
+
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+    if (!dataModelId) {
+      this.errorMessage.set('Data Model ID is missing from the route.');
+      return;
+    }
+
+    this.relationshipDeleteBusy.set(true);
+
+    this.specificationService.deleteRelationship(dataModelId, {
+      source: relationship.source,
+      target: relationship.target,
+      type: relationship.type as
+        | 'ONE_TO_ONE'
+        | 'ONE_TO_MANY'
+        | 'MANY_TO_ONE'
+        | 'MANY_TO_MANY',
+      source_participation: (relationship.source_participation ?? 'MANDATORY') as
+        | 'MANDATORY'
+        | 'OPTIONAL',
+      target_participation: (relationship.target_participation ?? 'MANDATORY') as
+        | 'MANDATORY'
+        | 'OPTIONAL',
+    }).subscribe({
+      next: () => {
+        this.relationshipDeleteBusy.set(false);
+        this.relationshipPendingDeletion.set(null);
+        this.notificationService.success(
+          'Relationship deleted',
+          'The relationship was deleted successfully.',
+        );
+        this.closeRelationshipDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        console.error('[FORGE Model Studio] Failed to delete relationship:', error);
+        this.relationshipDeleteBusy.set(false);
+        this.errorMessage.set(
+          error.error?.detail ?? 'Unable to delete the relationship.',
+        );
+      },
+    });
   }
 
   openRelationshipEditDialog(relationship: ForgeSpecificationRelationship): void {

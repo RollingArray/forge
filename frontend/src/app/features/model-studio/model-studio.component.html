@@ -55,7 +55,9 @@
         (editField)="openFieldEditDialog($event)"
         (addRelationship)="openRelationshipDialog($event)"
         (addForeignKey)="openForeignKeyDialog($event)"
+        (editForeignKey)="openForeignKeyEditDialog($event)"
         (editRelationship)="openRelationshipEditDialog($event)"
+        (deleteRelationship)="requestRelationshipDelete($event)"
         (editIdentity)="openIdentityDialog()"
         (closed)="selectedEntity.set('')"
       />
@@ -118,7 +120,10 @@
         [foreignKeys]="specification.foreignKeys"
         [sourceEntityContext]="relationshipSourceEntity()"
         [existingRelationship]="editingRelationship()"
+        [deleteBusy]="relationshipDeleteBusy()"
+        [deleteError]="errorMessage()"
         (saved)="handleRelationshipSaved($event)"
+        (deleteRequested)="requestRelationshipDelete(editingRelationship()!)"
         (closed)="closeRelationshipDialog()"
       />
     }
@@ -130,6 +135,7 @@
         [entities]="specification.entities"
         [foreignKeys]="specification.foreignKeys"
         [sourceEntityContext]="foreignKeySourceEntity()"
+        [existingForeignKey]="editingForeignKey()"
         (saved)="handleForeignKeySaved($event)"
         (closed)="closeForeignKeyDialog()"
       />
