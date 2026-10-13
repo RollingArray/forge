@@ -1,0 +1,72 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.field-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-row-content {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-card-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 14px 0;
+}
+
+.field-card-name {
+  overflow: hidden;
+  color: var(--forge-text);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-card-type {
+  color: var(--forge-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.field-card-badge {
+  display: inline-flex;
+  align-self: center;
+  flex: 0 0 auto;
+  margin-right: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--forge-warning-soft);
+  border-radius: 7px;
+  background: var(--forge-warning-soft);
+  color: var(--forge-warning-strong);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+@media (max-width: 600px) {
+  .field-card-content {
+    padding: 10px 0;
+  }
+
+  .field-row-content {
+    gap: 4px;
+  }
+
+  .field-card-badge {
+    padding: 4px 6px;
+  }
+}

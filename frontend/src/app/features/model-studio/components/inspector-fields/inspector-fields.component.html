@@ -1,0 +1,39 @@
+<app-inspector-shell
+  title="Fields"
+  description="Information defined for this entity."
+  [actionLabel]="entity().fields.length > 0 ? 'Add Field' : undefined"
+  actionIcon="add"
+  (action)="addField.emit()"
+>
+  @if (entity().fields.length === 0) {
+    <app-empty-inspector-state
+      icon="view_column"
+      title="No fields defined yet"
+      description="Add fields to describe the information this entity contains."
+      actionLabel="Add Field"
+      (action)="addField.emit()"
+    />
+  } @else {
+    <div class="field-card-list">
+      @for (field of entity().fields; track field.name) {
+        <app-inspector-row
+          variant="compact"
+          [icon]="field.type === 'IDENTIFIER' ? 'key' : 'data_object'"
+          [ariaLabel]="'Field ' + field.name"
+          [showEdit]="true"
+          (edit)="editField.emit(field)"
+        >
+          <div inspector-row-content class="field-row-content">
+            <div class="field-card-content">
+              <strong class="field-card-name">{{ field.name }}</strong>
+              <span class="field-card-type">{{ field.type }}</span>
+            </div>
+            @if (isIdentityField(field.name)) {
+              <span class="field-card-badge">PK</span>
+            }
+          </div>
+        </app-inspector-row>
+      }
+    </div>
+  }
+</app-inspector-shell>
