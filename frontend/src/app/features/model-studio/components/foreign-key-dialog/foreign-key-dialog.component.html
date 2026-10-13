@@ -1,5 +1,5 @@
 <app-form-dialog
-  title="Add Foreign Key"
+  [title]="existingForeignKey() ? 'Edit Foreign Key' : 'Add Foreign Key'"
   subtitle="Connect a source entity to the identity of another entity."
   icon="link"
   width="1180px"
@@ -566,7 +566,7 @@
           link
         </span>
 
-        Save Foreign Key
+        {{ existingForeignKey() ? 'Update Foreign Key' : 'Save Foreign Key' }}
       </button>
 
     </div>

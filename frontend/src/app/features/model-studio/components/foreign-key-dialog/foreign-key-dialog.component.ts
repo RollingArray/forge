@@ -56,6 +56,7 @@ export class ForeignKeyDialogComponent {
   readonly entities = input<ForgeSpecificationEntity[]>([]);
   readonly foreignKeys = input<ForgeForeignKey[]>([]);
   readonly sourceEntityContext = input('');
+  readonly existingForeignKey = input<ForgeForeignKey | null>(null);
 
   readonly saved = output<ForeignKeyDraft>();
   readonly closed = output<void>();
@@ -160,6 +161,7 @@ export class ForeignKeyDialogComponent {
 
     return this.foreignKeys().some(
       (foreignKey) =>
+        foreignKey.name !== this.existingForeignKey()?.name &&
         foreignKey.source.entity === source &&
         foreignKey.target.entity === target &&
         this.sameFields(
@@ -221,6 +223,15 @@ export class ForeignKeyDialogComponent {
     this.loadAiCapability();
 
     effect(() => {
+      const existing = this.existingForeignKey();
+
+      if (existing) {
+        this.sourceEntity.set(existing.source.entity);
+        this.targetEntity.set(existing.target.entity);
+        this.aiResponse.set(null);
+        return;
+      }
+
       const sourceContext = this.sourceEntityContext();
 
       if (sourceContext && this.sourceEntity() !== sourceContext) {
