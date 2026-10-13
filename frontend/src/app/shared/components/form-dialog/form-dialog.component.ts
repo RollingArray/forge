@@ -32,6 +32,7 @@ export class FormDialogComponent {
   readonly icon = input<string>('edit');
   readonly closeLabel = input<string>('Close');
   readonly width = input<string>('520px');
+  readonly presentation = input<'modal' | 'bottom-sheet'>('modal');
 
   readonly closed = output<void>();
 

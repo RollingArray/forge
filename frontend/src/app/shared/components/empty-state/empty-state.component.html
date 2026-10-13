@@ -1,0 +1,9 @@
+<div class="empty-state">
+  <span class="material-symbols-outlined empty-icon">{{ icon() }}</span>
+  <strong>{{ title() }}</strong>
+  <p>{{ description() }}</p>
+  <button type="button" class="empty-action" (click)="action.emit()">
+    <span class="material-symbols-outlined">add</span>
+    {{ actionLabel() }}
+  </button>
+</div>

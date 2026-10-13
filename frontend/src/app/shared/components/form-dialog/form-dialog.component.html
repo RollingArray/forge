@@ -14,10 +14,12 @@
 
 <div
   class="form-dialog-backdrop"
+  [class.form-dialog-backdrop-bottom-sheet]="presentation() === 'bottom-sheet'"
   (click)="close()"
 >
   <section
     class="form-dialog"
+    [class.form-dialog-bottom-sheet]="presentation() === 'bottom-sheet'"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="title()"

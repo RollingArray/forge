@@ -1,0 +1,63 @@
+<!--
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: confirmation-dialog.component.html
+ * Purpose: Presents a reusable confirmation using the shared modal shell.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ -->
+
+<app-form-dialog
+  presentation="bottom-sheet"
+  [title]="title()"
+  [subtitle]="message()"
+  [icon]="icon()"
+  [width]="width()"
+  closeLabel="Cancel"
+  (closed)="cancel()"
+>
+  <div dialog-body class="confirmation-body" [class]=" 'severity-' + severity()">
+    @if (context()) {
+      <div class="confirmation-context">
+        <span class="material-symbols-outlined">info</span>
+        <span>{{ context() }}</span>
+      </div>
+    }
+
+    @if (severity() === 'danger') {
+      <p class="confirmation-note">
+        <span class="material-symbols-outlined">warning</span>
+        This action cannot be undone.
+      </p>
+    }
+  </div>
+
+  <div dialog-footer class="confirmation-footer">
+    <button
+      type="button"
+      class="confirmation-button cancel-button"
+      [disabled]="busy()"
+      (click)="cancel()"
+    >
+      {{ cancelLabel() }}
+    </button>
+
+    <button
+      type="button"
+      class="confirmation-button confirm-button"
+      [class]=" 'confirm-button severity-' + severity()"
+      [disabled]="busy()"
+      (click)="confirm()"
+    >
+      @if (busy()) {
+        <span class="material-symbols-outlined spinning">progress_activity</span>
+      }
+      {{ busy() ? 'Please wait…' : confirmLabel() }}
+    </button>
+  </div>
+</app-form-dialog>

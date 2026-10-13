@@ -1,0 +1,66 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.empty-state {
+  display: flex;
+  min-height: 220px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 28px 20px;
+  border: 1px dashed #d8d4eb;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.empty-icon {
+  margin-bottom: 2px;
+  color: #8a7acb;
+  font-size: 30px;
+}
+
+.empty-state strong {
+  color: #30364d;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.empty-state p {
+  max-width: 360px;
+  margin: 0 0 8px;
+  color: #858ca1;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.empty-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 22px;
+  border: 1px solid #dedee8;
+  border-radius: 10px;
+  background: #fff;
+  color: #555c72;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.empty-action:hover {
+  border-color: #c9c5e8;
+  background: #faf9ff;
+  color: #554dd4;
+}
+
+.empty-action .material-symbols-outlined {
+  font-size: 20px;
+}

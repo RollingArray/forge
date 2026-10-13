@@ -1,0 +1,137 @@
+/**
+ * ============================================================================
+ * FORGE — Framework for Observed Rules, Generation & Engineered Data
+ * ============================================================================
+ *
+ * File: confirmation-dialog.component.css
+ * Purpose: Styles reusable confirmation content and decision actions.
+ *
+ * Author: Ranjoy Sen
+ * Email: ranjoy.sen@collins.com
+ *
+ * ============================================================================
+ */
+
+.confirmation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: #555c72;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirmation-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e3dfeb;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 65%);
+  overflow-wrap: anywhere;
+}
+
+.confirmation-context .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: #6558c8;
+}
+
+.confirmation-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #be123c;
+  font-size: 12px;
+}
+
+.confirmation-note .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.confirmation-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 36px;
+}
+
+.confirmation-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.confirmation-button:focus-visible {
+  outline: 3px solid rgb(101 88 223 / 35%);
+  outline-offset: 2px;
+}
+
+.confirmation-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.cancel-button {
+  border-color: #d8dbe5;
+  background: #fff;
+  color: #555c72;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #f5f6fa;
+}
+
+.confirm-button.severity-danger {
+  background: #e11d48;
+  color: #fff;
+}
+
+.confirm-button.severity-danger:hover:not(:disabled) {
+  background: #be123c;
+}
+
+.confirm-button.severity-warning {
+  background: #b45309;
+  color: #fff;
+}
+
+.confirm-button.severity-info {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.confirm-button.severity-success {
+  background: #047857;
+  color: #fff;
+}
+
+.spinning {
+  animation: confirmation-spin 1s linear infinite;
+}
+
+@keyframes confirmation-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .confirmation-footer {
+    padding: 14px 20px;
+  }
+
+  .confirmation-button {
+    flex: 1;
+    padding-inline: 10px;
+  }
+}
