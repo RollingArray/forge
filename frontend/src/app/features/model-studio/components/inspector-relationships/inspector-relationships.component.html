@@ -1,0 +1,77 @@
+<app-inspector-shell
+  title="Relationships"
+  description="Connections involving this entity."
+  [actionLabel]="relationships().length > 0 ? 'Add Relationship' : undefined"
+  actionIcon="add"
+  (action)="addRelationship.emit()"
+>
+  @if (relationships().length === 0) {
+    <app-empty-inspector-state
+      icon="account_tree"
+      title="No relationships yet"
+      description="Connect this entity to another entity to describe how their records belong together."
+      actionLabel="Add Relationship"
+      (action)="addRelationship.emit()"
+    />
+  } @else {
+    <section class="legend-card">
+      <strong>Participation</strong>
+      <div class="legend-items">
+        <span><i class="participation-dot optional"></i> Optional</span>
+        <span><i class="participation-dot mandatory"></i> Mandatory</span>
+      </div>
+    </section>
+
+    <div class="relationship-list">
+      @for (
+        relationship of relationships();
+        track relationship.source + relationship.target + relationship.type
+      ) {
+                <app-inspector-row icon="account_tree" ariaLabel="Relationship" [showEdit]="true" variant="compact" (edit)="editRelationship.emit(relationship)">
+                  <div inspector-row-content class="relationship-diagram">
+                    <div class="entity-row source-row">
+                      <span class="material-symbols-outlined entity-icon">database</span>
+                      <div class="entity-details">
+                        <strong>{{ relationship.source }}</strong>
+                        <small>Source entity</small>
+                      </div>
+
+                    </div>
+                
+                    <div class="relationship-connector">
+                      <i
+                        class="participation-dot connector-participation source-participation"
+                        [class.optional]="relationship.source_participation?.toUpperCase() === 'OPTIONAL'"
+                        [class.mandatory]="relationship.source_participation?.toUpperCase() === 'MANDATORY'"
+                        [attr.aria-label]="'Source participation: ' + (relationship.source_participation || 'unspecified')"
+                        role="img"
+                      ></i>
+                      <span class="connector-line"></span>
+                      <span class="relationship-type">{{ cardinality(relationship.type) }}</span>
+                      <span class="relationship-description">{{ cardinalityDescription(relationship.type) }}</span>
+                      <span class="material-symbols-outlined connector-arrow">arrow_downward</span>
+                      <i
+                        class="participation-dot connector-participation target-participation"
+                        [class.optional]="relationship.target_participation?.toUpperCase() === 'OPTIONAL'"
+                        [class.mandatory]="relationship.target_participation?.toUpperCase() === 'MANDATORY'"
+                        [attr.aria-label]="'Target participation: ' + (relationship.target_participation || 'unspecified')"
+                        role="img"
+                      ></i>
+                    </div>
+                
+                    <div class="entity-row target-row">
+                      <span class="material-symbols-outlined entity-icon">database</span>
+                      <div class="entity-details">
+                        <small>Target entity</small>
+                        <strong>{{ relationship.target }}</strong>
+                      </div>
+
+                    </div>
+                  </div>
+                
+                  
+                </app-inspector-row>
+      }
+    </div>
+  }
+</app-inspector-shell>
