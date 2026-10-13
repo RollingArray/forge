@@ -389,6 +389,9 @@ export class ConstraintDialogComponent {
       const existingConstraint = this.existingConstraint();
 
       if (!existingConstraint) {
+        this.field.set('');
+        this.operator.set('>=');
+        this.value.set('');
         return;
       }
 
