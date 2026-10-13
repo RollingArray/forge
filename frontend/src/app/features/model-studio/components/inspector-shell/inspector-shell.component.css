@@ -1,0 +1,11 @@
+:host { display: block; height: 100%; min-height: 0; }
+.inspector-shell { display: flex; height: 100%; min-height: 0; box-sizing: border-box; flex-direction: column; padding: 18px 20px; overflow: auto; }
+.inspector-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.inspector-heading { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.inspector-title { color: #30364d; font-size: 12px; font-weight: 700; }
+.inspector-description { color: #858ca1; font-size: 9px; line-height: 1.4; }
+.inspector-action { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--forge-border-active); border-radius: 6px; background: var(--forge-surface-active); color: var(--forge-primary); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.inspector-action:hover { background: var(--forge-primary-soft); }
+.inspector-action .material-symbols-outlined { font-size: 15px; }
+.inspector-action--secondary { border-color: var(--forge-border); background: var(--forge-surface); color: var(--forge-text-secondary); }
+.inspector-action--secondary:hover { background: var(--forge-surface-muted); }

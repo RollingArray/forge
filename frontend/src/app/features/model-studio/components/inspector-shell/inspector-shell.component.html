@@ -1,0 +1,24 @@
+<section class="inspector-shell">
+  <header class="inspector-header">
+    <div class="inspector-heading">
+      <span class="inspector-title">{{ title() }}</span>
+      <span class="inspector-description">{{ description() }}</span>
+    </div>
+    @if (actionLabel()) {
+      <button
+        type="button"
+        class="inspector-action"
+        [class.inspector-action--secondary]="actionVariant() === 'secondary'"
+        (click)="action.emit()"
+      >
+        @if (actionIcon()) {
+          <span class="material-symbols-outlined">{{ actionIcon() }}</span>
+        }
+        {{ actionLabel() }}
+      </button>
+    }
+  </header>
+  <div class="inspector-content">
+    <ng-content />
+  </div>
+</section>
