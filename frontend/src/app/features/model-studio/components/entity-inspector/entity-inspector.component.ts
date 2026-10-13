@@ -1,29 +1,30 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-
-import {
-  ForgeConstraint,
-  ForgeForeignKey,
-  ForgeSpecificationEntity,
-  ForgeSpecificationField,
-  ForgeSpecificationRelationship,
-} from '../../../../core/interfaces/forge-specification.interface';
-
-type InspectorTab =
-  | 'FIELDS'
-  | 'KEYS'
-  | 'RELATIONSHIPS'
-  | 'FOREIGN_KEYS'
-  | 'CONSTRAINTS';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { InspectorNavigationComponent } from '../inspector-navigation/inspector-navigation.component';
+import { InspectorHeaderComponent } from '../inspector-header/inspector-header.component';
+import { InspectorFieldsComponent } from '../inspector-fields/inspector-fields.component';
+import { InspectorRelationshipsComponent } from '../inspector-relationships/inspector-relationships.component';
+import { InspectorKeysComponent } from '../inspector-keys/inspector-keys.component';
+import { InspectorConstraintsComponent } from '../inspector-constraints/inspector-constraints.component';
+import { InspectorForeignKeysComponent } from '../inspector-foreign-keys/inspector-foreign-keys.component';
+import { ForgeConstraint } from '../../../../core/interfaces/forge-constraint.interface';
+import { ForgeForeignKey } from '../../../../core/interfaces/forge-foreign-key.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
+import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification-field.interface';
+import { ForgeSpecificationRelationship } from '../../../../core/interfaces/forge-specification-relationship.interface';
+import { InspectorTab } from '../../../../core/types/inspector-tab.type';
 
 @Component({
   selector: 'app-model-studio-entity-inspector',
   standalone: true,
+  imports: [
+    InspectorNavigationComponent,
+    InspectorHeaderComponent,
+    InspectorFieldsComponent,
+    InspectorKeysComponent,
+    InspectorRelationshipsComponent,
+    InspectorForeignKeysComponent,
+    InspectorConstraintsComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './entity-inspector.component.html',
   styleUrl: './entity-inspector.component.css',
@@ -31,8 +32,7 @@ type InspectorTab =
 export class EntityInspectorComponent {
   readonly entity = input<ForgeSpecificationEntity | null>(null);
 
-  readonly relationships =
-    input<ForgeSpecificationRelationship[]>([]);
+  readonly relationships = input<ForgeSpecificationRelationship[]>([]);
 
   readonly constraints = input<ForgeConstraint[]>([]);
 
@@ -43,8 +43,9 @@ export class EntityInspectorComponent {
   readonly editConstraint = output<ForgeConstraint>();
   readonly addRelationship = output<string>();
   readonly addForeignKey = output<string>();
-  readonly editRelationship =
-    output<ForgeSpecificationRelationship>();
+  readonly editForeignKey = output<ForgeForeignKey>();
+  readonly editRelationship = output<ForgeSpecificationRelationship>();
+  readonly deleteRelationship = output<ForgeSpecificationRelationship>();
   readonly editField = output<ForgeSpecificationField>();
   readonly editIdentity = output<void>();
   readonly closed = output<void>();
@@ -53,9 +54,7 @@ export class EntityInspectorComponent {
     const entityName = this.entity()?.name;
     if (!entityName) return [];
 
-    return this.constraints().filter(
-      (constraint) => constraint.entity === entityName,
-    );
+    return this.constraints().filter((constraint) => constraint.entity === entityName);
   }
 
   foreignKeysForEntity(): ForgeForeignKey[] {
@@ -64,8 +63,7 @@ export class EntityInspectorComponent {
 
     return this.foreignKeys().filter(
       (foreignKey) =>
-        foreignKey.source.entity === entityName ||
-        foreignKey.target.entity === entityName,
+        foreignKey.source.entity === entityName || foreignKey.target.entity === entityName,
     );
   }
 
@@ -80,9 +78,7 @@ export class EntityInspectorComponent {
     );
   }
 
-  relationshipOtherSide(
-    relationship: ForgeSpecificationRelationship,
-  ): string {
+  relationshipOtherSide(relationship: ForgeSpecificationRelationship): string {
     const entityName = this.entity()?.name;
     if (!entityName) return '';
 
@@ -93,9 +89,7 @@ export class EntityInspectorComponent {
     return relationship.source;
   }
 
-  relationshipDirection(
-    relationship: ForgeSpecificationRelationship,
-  ): string {
+  relationshipDirection(relationship: ForgeSpecificationRelationship): string {
     const entityName = this.entity()?.name;
     if (!entityName) return '';
 
