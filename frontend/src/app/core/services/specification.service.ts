@@ -297,6 +297,22 @@ export class SpecificationService {
     );
   }
 
+  deleteField(
+    dataModelId: string,
+    entityName: string,
+    fieldName: string,
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}/fields/${encodeURIComponent(fieldName)}`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.DeletingField,
+        ),
+      },
+    );
+  }
+
   updateForeignKey(
     dataModelId: string,
     request: UpdateForeignKeyRequest,

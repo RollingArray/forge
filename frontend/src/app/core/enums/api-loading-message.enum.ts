@@ -58,4 +58,5 @@ export enum ApiLoadingMessage {
   CreatingForeignKey = 'Adding foreign key to Data Model...',
   UpdatingForeignKey = 'Updating foreign key...',
   DeletingForeignKey = 'Removing foreign key from Data Model...',
+  DeletingField = 'Removing field from Data Model...',
 }
