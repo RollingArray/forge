@@ -461,15 +461,20 @@ export class FieldDialogComponent {
       return;
     }
 
+    const existingField = this.field();
+    const effectiveType = this.isEditMode && existingField
+      ? existingField.type as FieldType
+      : this.type();
+
     const draft: FieldDraft = {
-      name: this.name().trim(),
-      type: this.type(),
+      name: this.isEditMode && existingField
+        ? existingField.name
+        : this.name().trim(),
+      type: effectiveType,
     };
 
-    if (this.type() === 'IDENTIFIER') {
-      draft.identity = {
-        strategy: 'SEQUENTIAL_ID',
-      };
+    if (effectiveType === 'IDENTIFIER') {
+      draft.identity = { strategy: 'SEQUENTIAL_ID' };
     } else {
       draft.generation = this.buildGeneration();
     }
@@ -500,6 +505,10 @@ export class FieldDialogComponent {
   }
 
   handleTypeChanged(value: FieldType): void {
+    if (this.isEditMode) {
+      return;
+    }
+
     this.type.set(value);
     this.distribution.set('');
     this.generator.set('');
@@ -563,6 +572,10 @@ export class FieldDialogComponent {
   }
 
   useAiProposal(): void {
+    if (this.isEditMode) {
+      return;
+    }
+
     const proposal = this.aiProposal();
 
     if (!proposal) {

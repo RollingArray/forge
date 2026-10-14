@@ -91,6 +91,15 @@
   line-height: 1.3;
 }
 
+.field-lock {
+  display: inline-block;
+  margin-right: 6px;
+  color: #8a8490;
+  font-size: 15px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .field-help {
   display: block;
   color: #77727a;
@@ -581,4 +590,47 @@
   .save-button {
     flex: 1;
   }
+}
+
+
+.field-name-input[readonly] {
+  background: #f3f1f5;
+  border-color: #dedbe4;
+  color: #77727f;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.field-name-input[readonly]:focus {
+  outline: none;
+  border-color: #dedbe4;
+  box-shadow: none;
+}
+
+
+.locked-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.field-label-heading {
+  justify-content: flex-start;
+}
+
+.field-label-heading > span:last-child {
+  color: #292938;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.locked-heading > span:first-child {
+  min-width: 0;
+}
+
+.choice-section-heading > div,
+.configuration-heading {
+  min-width: 0;
 }
