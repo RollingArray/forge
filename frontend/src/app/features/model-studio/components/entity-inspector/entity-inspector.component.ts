@@ -39,6 +39,7 @@ export class EntityInspectorComponent {
   readonly foreignKeys = input<ForgeForeignKey[]>([]);
 
   readonly addField = output<void>();
+  readonly editEntity = output<void>();
   readonly addConstraint = output<void>();
   readonly editConstraint = output<ForgeConstraint>();
   readonly addRelationship = output<string>();

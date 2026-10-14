@@ -3,6 +3,7 @@
 
   <app-inspector-header
     [entity]="selectedEntity"
+    (edit)="editEntity.emit()"
     (closed)="closed.emit()"
   />
 
