@@ -202,7 +202,7 @@
   border-radius: 12px;
 
   background: #654bb8;
-  color: #ffffff;
+  color: var(--forge-surface);
 
   font-size: 24px;
   box-shadow:
@@ -561,7 +561,7 @@
   border-radius: 10px;
 
   background: #ffffff;
-  color: #4b4655;
+  color: var(--forge-text-secondary);
 
   cursor: pointer;
   text-align: left;
@@ -573,7 +573,7 @@
 }
 
 .categorical-value-option:hover {
-  border-color: #9a87cf;
+  border-color: var(--forge-accent-purple-border-strong);
   background: #f8f6fc;
 }
 
@@ -652,7 +652,7 @@
   border-radius: 11px;
 
   background: #654bb8;
-  color: #ffffff;
+  color: var(--forge-surface);
 
   font-size: 22px;
 
@@ -736,7 +736,7 @@
   border-radius: 11px;
 
   background: #654bb8;
-  color: #ffffff;
+  color: var(--forge-surface);
 
   font-size: 22px;
 
@@ -843,7 +843,7 @@
   border-radius: 10px;
 
   background: #654bb8;
-  color: #ffffff;
+  color: var(--forge-surface);
 
   font-size: 20px;
 
@@ -1027,7 +1027,7 @@
   border: 1px solid #5d45a8;
 
   background: #654bb8;
-  color: #ffffff;
+  color: var(--forge-surface);
 
   box-shadow:
     0 3px 8px rgb(76 55 125 / 16%);
@@ -1059,3 +1059,107 @@
   }
 }
 
+.dialog-footer:has(.delete-constraint-button) {
+  justify-content: space-between;
+}
+
+.delete-constraint-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--forge-error-strong);
+  border-radius: 10px;
+  background: var(--forge-error-strong);
+  color: var(--forge-surface);
+  font-size: 15px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.delete-constraint-button:hover:not(:disabled) {
+  background: var(--forge-error-strong);
+  transform: translateY(-1px);
+}
+
+.delete-constraint-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* Relationship inline delete-confirmation visual treatment */
+.dialog-footer.delete-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 88px;
+  padding: 18px 24px;
+}
+
+.dialog-footer.delete-confirmation .delete-message {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 12px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--forge-error-soft);
+  border-radius: 12px;
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+  font-size: 23px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy strong {
+  color: var(--forge-text-heading);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.dialog-footer.delete-confirmation .delete-message-copy > span {
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dialog-footer.delete-confirmation .dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .dialog-footer.delete-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dialog-footer.delete-confirmation .dialog-actions {
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
