@@ -18,10 +18,13 @@ export class ChoiceCardComponent {
   readonly description = input.required<string>();
   readonly example = input<string>('');
   readonly selected = input(false);
+  readonly disabled = input(false);
 
   readonly selectedChange = output<void>();
 
   select(): void {
-    this.selectedChange.emit();
+    if (!this.disabled()) {
+      this.selectedChange.emit();
+    }
   }
 }

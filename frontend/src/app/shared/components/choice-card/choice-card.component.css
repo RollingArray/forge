@@ -42,6 +42,27 @@
     0 4px 12px rgb(91 70 184 / 8%);
 }
 
+.choice-card.disabled {
+  cursor: not-allowed;
+}
+
+.choice-card.disabled:hover {
+  border-color: #e1dfe7;
+  background: #fff;
+  box-shadow: none;
+  transform: none;
+}
+
+.choice-card.disabled.selected,
+.choice-card.disabled.selected:hover {
+  opacity: 1;
+  border-color: #7657d9;
+  background: #faf8ff;
+  box-shadow:
+    0 0 0 2px rgb(118 87 217 / 10%),
+    0 4px 12px rgb(91 70 184 / 8%);
+}
+
 .choice-icon {
   display: flex;
   width: 34px;
