@@ -35,18 +35,18 @@ export class InspectorNavigationComponent {
       count: this.identityFieldCount(),
     },
     {
-      id: 'RELATIONSHIPS',
-      label: 'Relationships',
-      shortLabel: 'Relations',
-      icon: 'account_tree',
-      count: this.relationshipCount(),
-    },
-    {
       id: 'FOREIGN_KEYS',
       label: 'Foreign Keys',
       shortLabel: 'Foreign Keys',
       icon: 'link',
       count: this.foreignKeyCount(),
+    },
+    {
+      id: 'RELATIONSHIPS',
+      label: 'Relationships',
+      shortLabel: 'Relations',
+      icon: 'account_tree',
+      count: this.relationshipCount(),
     },
     {
       id: 'CONSTRAINTS',
