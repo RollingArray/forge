@@ -121,6 +121,7 @@ export class ModelStudioComponent {
   readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
   readonly relationshipPendingDeletion = signal<ForgeSpecificationRelationship | null>(null);
   readonly relationshipDeleteBusy = signal(false);
+  readonly constraintDeleteBusy = signal(false);
 
   readonly relationshipSourceEntity = signal('');
 
@@ -272,6 +273,10 @@ export class ModelStudioComponent {
         })
         .subscribe({
           next: () => {
+            this.notificationService.success(
+              'Constraint updated',
+              'The constraint was updated successfully.',
+            );
             this.closeConstraintDialog();
             this.loadSpecification(dataModelId);
           },
@@ -289,6 +294,10 @@ export class ModelStudioComponent {
       .createConstraint(dataModelId, draft)
       .subscribe({
         next: () => {
+          this.notificationService.success(
+            'Constraint added',
+            'The constraint was added successfully.',
+          );
           this.closeConstraintDialog();
           this.loadSpecification(dataModelId);
         },
@@ -298,6 +307,51 @@ export class ModelStudioComponent {
           );
         },
       });
+  }
+
+  requestConstraintDelete(): void {
+    if (!this.editingConstraint() || this.constraintDeleteBusy()) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.confirmConstraintDelete();
+  }
+
+  confirmConstraintDelete(): void {
+    const constraint = this.editingConstraint();
+
+    if (!constraint || this.constraintDeleteBusy()) {
+      return;
+    }
+
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+    if (!dataModelId) {
+      this.errorMessage.set('Data Model ID is missing from the route.');
+      return;
+    }
+
+    this.constraintDeleteBusy.set(true);
+    this.errorMessage.set(null);
+
+    this.specificationService.deleteConstraint(dataModelId, constraint).subscribe({
+      next: () => {
+        this.constraintDeleteBusy.set(false);
+        this.notificationService.success(
+          'Constraint deleted',
+          'The constraint was deleted successfully.',
+        );
+        this.closeConstraintDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        console.error('[FORGE Model Studio] Failed to delete constraint:', error);
+        this.constraintDeleteBusy.set(false);
+        this.errorMessage.set(
+          error.error?.detail ?? 'Unable to delete the constraint.',
+        );
+      },
+    });
   }
 
   openForeignKeyDialog(sourceEntity?: string): void {
