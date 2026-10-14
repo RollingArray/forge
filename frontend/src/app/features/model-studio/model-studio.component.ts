@@ -821,6 +821,10 @@ export class ModelStudioComponent {
         })
         .subscribe({
           next: () => {
+            this.notificationService.success(
+              'Field updated',
+              'The field was updated successfully.',
+            );
             this.closeFieldDialog();
             this.loadSpecification(dataModelId);
           },
@@ -839,6 +843,10 @@ export class ModelStudioComponent {
       })
       .subscribe({
         next: () => {
+          this.notificationService.success(
+            'Field added',
+            'The field was added successfully.',
+          );
           this.closeFieldDialog();
           this.loadSpecification(dataModelId);
         },
