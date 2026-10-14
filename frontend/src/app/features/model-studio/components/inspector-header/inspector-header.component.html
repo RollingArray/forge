@@ -1,24 +1,17 @@
 <div class="inspector-header">
   <div class="entity-heading">
-    <span class="eyebrow">Entity</span>
+    <div class="entity-heading-top">
+      <span class="eyebrow">Entity</span>
+      <button type="button" class="edit-button" (click)="edit.emit()">
+        <span class="material-symbols-outlined">edit</span>
+        Edit Entity
+      </button>
+    </div>
     <h2>{{ entity().name }}</h2>
     <p class="entity-description">
       {{ entity().description?.trim() || 'No description provided.' }}
     </p>
-    <button type="button" class="edit-button" (click)="edit.emit()">
-      <span class="material-symbols-outlined">edit</span>
-      Edit Entity
-    </button>
   </div>
-
-  <button
-    type="button"
-    class="close-button"
-    aria-label="Close entity inspector"
-    (click)="closed.emit()"
-  >
-    <span class="material-symbols-outlined">close</span>
-  </button>
 </div>
 
 <div class="inspector-summary">

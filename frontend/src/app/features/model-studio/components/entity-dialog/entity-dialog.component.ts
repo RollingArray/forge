@@ -15,6 +15,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
@@ -34,7 +35,13 @@ export interface EntityDraft {
 @Component({
   selector: 'app-model-studio-entity-dialog',
   standalone: true,
-  imports: [FormsModule, FormDialogComponent, AiAssistPanelComponent, ConfirmationDialogComponent],
+  imports: [
+    FormsModule,
+    FormDialogComponent,
+    AiAssistPanelComponent,
+    ConfirmationDialogComponent,
+    ChoiceDividerComponent,
+  ],
   templateUrl: './entity-dialog.component.html',
   styleUrl: './entity-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

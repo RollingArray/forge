@@ -3,20 +3,67 @@
       display: block;
     }
 
-    .entity-dialog-body {
-      width: 100%;
-    }
+:host {
+  display: block;
+}
 
-    .authoring-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.08fr) 42px minmax(360px, 0.92fr);
-      min-height: 610px;
-    }
+.entity-dialog-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  align-items: stretch;
+}
 
-    .ai-column {
-      min-width: 0;
-      padding: 0 22px 22px;
-    }
+.authoring-layout {
+  display: contents;
+}
+
+.ai-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: 700px;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 20px 0 20px 20px;
+  padding: 20px;
+  border: 1px solid #d8cef2;
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 15% 0%,
+      rgb(239 233 255 / 95%) 0%,
+      rgb(248 245 253 / 90%) 45%,
+      rgb(250 248 253 / 85%) 100%
+    );
+  box-shadow:
+    0 4px 14px rgb(91 70 184 / 6%),
+    inset 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+.ai-column app-ai-assist-panel {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+
+.manual-panel {
+  display: flex;
+  min-width: 0;
+  height: 700px;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 6px;
+  margin: 20px 20px 20px 0;
+  padding: 22px 24px 30px;
+  overflow-y: auto;
+  border: 1px solid #e7e0dc;
+  border-radius: 18px;
+  background: rgb(255 255 255 / 28%);
+}
 
     .ai-column app-ai-assist-panel {
       display: block;
@@ -211,6 +258,24 @@
       font-weight: 700;
     }
 
+    .field-lock {
+      margin-left: 6px;
+      color: #8a8490;
+      font-size: 15px;
+      vertical-align: middle;
+    }
+
+    .field-input[readonly] {
+      background: #f5f4f7;
+      color: #454052;
+      cursor: not-allowed;
+    }
+
+    .scaling-option:has(input:disabled) {
+      cursor: not-allowed;
+      opacity: 0.78;
+    }
+
     .field-help {
       margin: 0 0 9px;
       color: #8b8795;
@@ -394,14 +459,21 @@
     }
 
     @media (max-width: 900px) {
-      .authoring-layout {
-        grid-template-columns: 1fr;
+      .entity-dialog-body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ai-column,
+      .manual-panel {
+        height: auto;
+        min-height: 420px;
+        margin: 16px;
       }
 
       .divider {
         width: auto;
         height: 42px;
-        margin: 8px 28px;
+        margin: 0 16px;
       }
 
       .divider::before {

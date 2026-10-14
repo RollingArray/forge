@@ -23,6 +23,14 @@
 
 .entity-heading {
   min-width: 0;
+  width: 100%;
+}
+
+.entity-heading-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .entity-description {
@@ -66,29 +74,6 @@ h2 {
   font-size: 17px;
   font-weight: 650;
   overflow-wrap: anywhere;
-}
-
-.close-button {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--forge-text-secondary);
-  cursor: pointer;
-}
-
-.close-button:hover {
-  background: var(--forge-surface-muted);
-  color: var(--forge-text);
-}
-
-.close-button .material-symbols-outlined {
-  font-size: 18px;
 }
 
 .inspector-summary {

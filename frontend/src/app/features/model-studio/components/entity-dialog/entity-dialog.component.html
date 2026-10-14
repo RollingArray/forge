@@ -75,9 +75,7 @@
             </app-ai-assist-panel>
           </section>
 
-          <div class="divider">
-            <span>OR</span>
-          </div>
+          <app-choice-divider />
 
           <section class="manual-panel">
             <h2>Enter manually</h2>
@@ -87,6 +85,9 @@
 
             <label class="field-label" for="entity-name">
               Entity Name
+              @if (isEditing()) {
+                <span class="material-symbols-outlined field-lock" aria-label="Entity name cannot be changed while editing" title="Entity name cannot be changed while editing">lock</span>
+              }
             </label>
             <p class="field-help">
               Give the entity a clear name that identifies the business
@@ -148,6 +149,9 @@
   for="entity-population-scaling"
 >
   Population Scaling
+  @if (isEditing()) {
+    <span class="material-symbols-outlined field-lock" aria-label="Population scaling cannot be changed while editing" title="Population scaling cannot be changed while editing">lock</span>
+  }
 </label>
 
 <p class="field-help">
