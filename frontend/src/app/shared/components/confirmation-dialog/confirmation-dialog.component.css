@@ -16,9 +16,17 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  color: #555c72;
+  color: var(--forge-text-secondary);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.confirmation-subject {
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .confirmation-context {
@@ -26,15 +34,32 @@
   align-items: flex-start;
   gap: 10px;
   padding: 14px 16px;
-  border: 1px solid #e3dfeb;
+  border: 1px solid var(--forge-border-active);
   border-radius: 12px;
-  background: rgb(255 255 255 / 65%);
+  background: color-mix(in srgb, var(--forge-surface) 65%, transparent);
   overflow-wrap: anywhere;
 }
 
 .confirmation-context .material-symbols-outlined {
   flex: 0 0 auto;
-  color: #6558c8;
+  color: var(--forge-primary);
+}
+
+.confirmation-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--forge-error) 35%, var(--forge-border));
+  border-radius: 10px;
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.confirmation-error .material-symbols-outlined {
+  flex: 0 0 auto;
 }
 
 .confirmation-note {
@@ -42,7 +67,7 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  color: #be123c;
+  color: var(--forge-error-strong);
   font-size: 12px;
 }
 
@@ -74,7 +99,7 @@
 }
 
 .confirmation-button:focus-visible {
-  outline: 3px solid rgb(101 88 223 / 35%);
+  outline: 3px solid color-mix(in srgb, var(--forge-primary) 35%, transparent);
   outline-offset: 2px;
 }
 
@@ -84,37 +109,37 @@
 }
 
 .cancel-button {
-  border-color: #d8dbe5;
-  background: #fff;
-  color: #555c72;
+  border-color: var(--forge-border);
+  background: var(--forge-surface);
+  color: var(--forge-text-secondary);
 }
 
 .cancel-button:hover:not(:disabled) {
-  background: #f5f6fa;
+  background: var(--forge-surface-muted);
 }
 
 .confirm-button.severity-danger {
-  background: #e11d48;
-  color: #fff;
+  background: var(--forge-error-strong);
+  color: var(--forge-surface);
 }
 
 .confirm-button.severity-danger:hover:not(:disabled) {
-  background: #be123c;
+  background: var(--forge-error);
 }
 
 .confirm-button.severity-warning {
-  background: #b45309;
-  color: #fff;
+  background: var(--forge-warning-strong);
+  color: var(--forge-surface);
 }
 
 .confirm-button.severity-info {
-  background: #4f46e5;
-  color: #fff;
+  background: var(--forge-primary);
+  color: var(--forge-surface);
 }
 
 .confirm-button.severity-success {
-  background: #047857;
-  color: #fff;
+  background: var(--forge-success-strong);
+  color: var(--forge-surface);
 }
 
 .spinning {

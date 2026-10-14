@@ -22,14 +22,25 @@
   (closed)="cancel()"
 >
   <div dialog-body class="confirmation-body" [class]=" 'severity-' + severity()">
-    @if (context()) {
+    @if (subject()) {
+      <p class="confirmation-subject">{{ subject() }}</p>
+    }
+
+    @if (context() && !error()) {
       <div class="confirmation-context">
         <span class="material-symbols-outlined">info</span>
         <span>{{ context() }}</span>
       </div>
     }
 
-    @if (severity() === 'danger') {
+    @if (error()) {
+      <div class="confirmation-error" role="alert">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    @if (severity() === 'danger' && !error()) {
       <p class="confirmation-note">
         <span class="material-symbols-outlined">warning</span>
         This action cannot be undone.

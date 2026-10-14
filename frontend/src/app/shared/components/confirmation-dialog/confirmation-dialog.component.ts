@@ -33,8 +33,10 @@ export class ConfirmationDialogComponent {
   readonly confirmLabel = input<string>('Confirm');
   readonly cancelLabel = input<string>('Cancel');
   readonly context = input<string>('');
+  readonly subject = input<string>('');
   readonly width = input<string>('520px');
   readonly busy = input<boolean>(false);
+  readonly error = input<string | null>(null);
 
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();
