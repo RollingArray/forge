@@ -121,7 +121,9 @@ export class ModelStudioComponent {
   readonly editingRelationship = signal<ForgeSpecificationRelationship | null>(null);
   readonly relationshipPendingDeletion = signal<ForgeSpecificationRelationship | null>(null);
   readonly relationshipDeleteBusy = signal(false);
+  readonly relationshipDeleteError = signal<string | null>(null);
   readonly constraintDeleteBusy = signal(false);
+  readonly foreignKeyDeleteBusy = signal(false);
 
   readonly relationshipSourceEntity = signal('');
 
@@ -422,6 +424,44 @@ export class ModelStudioComponent {
     });
   }
 
+  requestForeignKeyDelete(): void {
+    const foreignKey = this.editingForeignKey();
+
+    if (!foreignKey || this.foreignKeyDeleteBusy()) {
+      return;
+    }
+
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+    if (!dataModelId) {
+      this.errorMessage.set('Data Model ID is missing from the route.');
+      return;
+    }
+
+    this.foreignKeyDeleteBusy.set(true);
+    this.errorMessage.set(null);
+
+    this.specificationService.deleteForeignKey(dataModelId, {
+      name: foreignKey.name,
+    }).subscribe({
+      next: () => {
+        this.foreignKeyDeleteBusy.set(false);
+        this.notificationService.success(
+          'Foreign key deleted',
+          'The foreign key was deleted successfully.',
+        );
+        this.closeForeignKeyDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        console.error('[FORGE Model Studio] Failed to delete foreign key:', error);
+        this.foreignKeyDeleteBusy.set(false);
+        this.errorMessage.set(
+          error.error?.detail ?? 'Unable to delete the foreign key.',
+        );
+      },
+    });
+  }
+
   openRelationshipDialog(sourceEntity?: string): void {
     if (!this.specification()) {
       return;
@@ -434,7 +474,7 @@ export class ModelStudioComponent {
 
   requestRelationshipDelete(relationship: ForgeSpecificationRelationship): void {
     this.relationshipPendingDeletion.set(relationship);
-    this.errorMessage.set(null);
+    this.relationshipDeleteError.set(null);
     this.confirmRelationshipDelete();
   }
 
@@ -487,7 +527,7 @@ export class ModelStudioComponent {
       error: (error: { error?: { detail?: string } }) => {
         console.error('[FORGE Model Studio] Failed to delete relationship:', error);
         this.relationshipDeleteBusy.set(false);
-        this.errorMessage.set(
+        this.relationshipDeleteError.set(
           error.error?.detail ?? 'Unable to delete the relationship.',
         );
       },

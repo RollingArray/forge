@@ -13,7 +13,7 @@
   (stepSelected)="selectStep($event)"
   (primaryAction)="continueToValidation()"
 >
-  @if (errorMessage(); as error) {
+  @if (errorMessage() && !specification(); as error) {
     <section class="model-state">
       <span class="material-symbols-outlined"> error </span>
 
@@ -124,7 +124,7 @@
         [sourceEntityContext]="relationshipSourceEntity()"
         [existingRelationship]="editingRelationship()"
         [deleteBusy]="relationshipDeleteBusy()"
-        [deleteError]="errorMessage()"
+        [deleteError]="relationshipDeleteError()"
         (saved)="handleRelationshipSaved($event)"
         (deleteRequested)="requestRelationshipDelete(editingRelationship()!)"
         (closed)="closeRelationshipDialog()"
@@ -139,7 +139,10 @@
         [foreignKeys]="specification.foreignKeys"
         [sourceEntityContext]="foreignKeySourceEntity()"
         [existingForeignKey]="editingForeignKey()"
+        [deleteBusy]="foreignKeyDeleteBusy()"
+        [deleteError]="errorMessage()"
         (saved)="handleForeignKeySaved($event)"
+        (deleteRequested)="requestForeignKeyDelete()"
         (closed)="closeForeignKeyDialog()"
       />
     }
