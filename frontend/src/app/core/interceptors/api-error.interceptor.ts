@@ -31,16 +31,20 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      const handledForeignKeyDeleteConflict =
+      const handledDeleteConflict =
         request.method === 'DELETE' &&
-        request.url.includes('/specification/foreign-keys') &&
+        (
+          request.url.includes('/specification/foreign-keys') ||
+          request.url.includes('/specification/entities/') &&
+            request.url.includes('/fields/')
+        ) &&
         error instanceof HttpErrorResponse &&
         error.status === 409;
 
       if (
         error instanceof HttpErrorResponse &&
         error.status !== 401 &&
-        !handledForeignKeyDeleteConflict
+        !handledDeleteConflict
       ) {
         notificationService.error(
           getErrorTitle(error.status),
