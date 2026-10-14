@@ -10,14 +10,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   input,
+  OnInit,
   output,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { AiAssistPanelComponent, AiAssistExample } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { AIEntityProposal } from '../../../../core/interfaces/ai-entity-proposal.interface';
+import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 
 export type PopulationScaling = 'FIXED' | 'SCALABLE';
 
@@ -31,22 +34,58 @@ export interface EntityDraft {
 @Component({
   selector: 'app-model-studio-entity-dialog',
   standalone: true,
-  imports: [FormsModule, FormDialogComponent, AiAssistPanelComponent],
+  imports: [FormsModule, FormDialogComponent, AiAssistPanelComponent, ConfirmationDialogComponent],
   templateUrl: './entity-dialog.component.html',
   styleUrl: './entity-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EntityDialogComponent {
+export class EntityDialogComponent implements OnInit {
   readonly saved = output<EntityDraft>();
   readonly aiRequested = output<string>();
+  readonly entity = input<ForgeSpecificationEntity | null>(null);
   readonly aiLoading = input(false);
   readonly aiError = input<string | null>(null);
   readonly aiProposal = input<AIEntityProposal | null>(null);
   readonly closed = output<void>();
+  readonly deleteRequested = output<void>();
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
+  readonly deleteConfirmation = signal(false);
 
   readonly name = signal('');
   readonly description = signal('');
   readonly population = signal<number>(100);
+
+  ngOnInit(): void {
+    const entity = this.entity();
+
+    if (entity) {
+      this.name.set(entity.name);
+      this.description.set(entity.description ?? '');
+      this.population.set(entity.population?.count ?? 0);
+      this.populationScaling = entity.population?.scaling ?? 'SCALABLE';
+    }
+  }
+
+  readonly isEditing = () => this.entity() !== null;
+
+  requestDeleteConfirmation(): void {
+    if (this.isEditing() && !this.deleteBusy()) {
+      this.deleteConfirmation.set(true);
+    }
+  }
+
+  cancelDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(false);
+    }
+  }
+
+  confirmDelete(): void {
+    if (this.isEditing() && !this.deleteBusy()) {
+      this.deleteRequested.emit();
+    }
+  }
   populationScaling: PopulationScaling = 'SCALABLE';
   readonly aiPrompt = signal('');
   readonly aiExamples: AiAssistExample[] = [

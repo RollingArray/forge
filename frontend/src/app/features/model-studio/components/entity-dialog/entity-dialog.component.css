@@ -319,31 +319,70 @@
       align-items: center;
       justify-content: flex-end;
       gap: 12px;
+      min-height: 76px;
       width: 100%;
       box-sizing: border-box;
-      padding: 18px 28px;
-      background: #f5f0e9;
+      padding: 16px 24px;
       border-top: 1px solid #e3ddd5;
     }
 
+    .dialog-footer:has(.delete-entity-button) {
+      justify-content: space-between;
+    }
+
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .delete-entity-button,
     .secondary-button,
     .primary-button {
-      min-width: 120px;
-      padding: 12px 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 44px;
+      padding: 0 18px;
       border-radius: 10px;
       font: inherit;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 650;
       cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    .delete-entity-button {
+      border: 1px solid var(--forge-error-strong);
+      background: var(--forge-error-strong);
+      color: var(--forge-surface);
+    }
+
+    .delete-entity-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .delete-entity-button:disabled,
+    .secondary-button:disabled,
+    .primary-button:disabled {
+      opacity: 0.6;
+      cursor: wait;
     }
 
     .secondary-button {
-      border: 1px solid #ddd9e2;
-      background: white;
-      color: #5c6175;
+      border: 1px solid #d8d1cb;
+      background: #faf8f6;
+      color: #464550;
+    }
+
+    .secondary-button:hover:not(:disabled) {
+      border-color: #c9c0b9;
+      background: #fff;
     }
 
     .primary-button {
+      min-width: 150px;
       border: 0;
       background: #7352d8;
       color: white;
@@ -371,3 +410,20 @@
         height: 1px;
       }
     }
+
+    @media (max-width: 560px) {
+      .dialog-footer {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .dialog-actions {
+        width: 100%;
+      }
+
+      .dialog-actions .secondary-button,
+      .dialog-actions .primary-button {
+        flex: 1;
+      }
+    }
+

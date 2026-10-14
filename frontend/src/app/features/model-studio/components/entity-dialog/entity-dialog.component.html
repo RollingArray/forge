@@ -1,12 +1,12 @@
     <app-form-dialog
-      title="Add Entity"
-      subtitle="Define an entity for this Data Model."
+      [title]="isEditing() ? 'Edit Entity' : 'Add Entity'"
+      [subtitle]="isEditing() ? 'Update the entity details.' : 'Define an entity for this Data Model.'"
       icon="table_view"
       width="1080px"
       (closed)="closed.emit()"
     >
       <div dialog-body class="entity-dialog-body">
-        <div class="authoring-layout">
+        <div class="authoring-layout" [class.edit-mode]="isEditing()">
 
           <section class="ai-column">
             <app-ai-assist-panel
@@ -99,6 +99,7 @@
               class="field-input"
               type="text"
               [(ngModel)]="name"
+              [readonly]="isEditing()"
               maxlength="120"
               placeholder="e.g. CUSTOMER"
             />
@@ -165,6 +166,7 @@
       name="population-scaling"
       value="SCALABLE"
       [checked]="populationScaling === 'SCALABLE'"
+      [disabled]="isEditing()"
       (change)="populationScaling = 'SCALABLE'"
     />
 
@@ -183,6 +185,7 @@
       name="population-scaling"
       value="FIXED"
       [checked]="populationScaling === 'FIXED'"
+      [disabled]="isEditing()"
       (change)="populationScaling = 'FIXED'"
     />
 
@@ -198,21 +201,52 @@
       </div>
 
       <div dialog-footer class="dialog-footer">
-        <button
-          type="button"
-          class="secondary-button"
-          (click)="closed.emit()"
-        >
-          Cancel
-        </button>
+        @if (isEditing()) {
+          <button
+            type="button"
+            class="delete-entity-button"
+            [disabled]="deleteBusy()"
+            (click)="requestDeleteConfirmation()"
+          >
+            <span class="material-symbols-outlined">delete</span>
+            Delete Entity
+          </button>
+        }
 
-        <button
-          type="button"
-          class="primary-button"
-          [disabled]="!canSave()"
-          (click)="save()"
-        >
-          Add Entity
-        </button>
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="deleteBusy()"
+            (click)="closed.emit()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="!canSave() || deleteBusy()"
+            (click)="save()"
+          >
+            {{ isEditing() ? 'Save Changes' : 'Add Entity' }}
+          </button>
+        </div>
       </div>
     </app-form-dialog>
+
+    @if (deleteConfirmation()) {
+      <app-confirmation-dialog
+        title="Delete this Entity?"
+        message="Review the entity below before proceeding."
+        icon="delete"
+        severity="danger"
+        confirmLabel="Delete Entity"
+        [subject]="entity()?.name ?? name()"
+        context="Entities referenced by a relationship, foreign key, or dependency cannot be deleted. Remove those dependencies first."
+        [busy]="deleteBusy()"
+        [error]="deleteError()"
+        (confirmed)="confirmDelete()"
+        (cancelled)="cancelDeleteConfirmation()"
+      />
+    }
