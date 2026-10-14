@@ -16,6 +16,7 @@ from app.models.population_model import (
 )
 from app.models.specification_entity_model import (
     CreateEntityRequest,
+    UpdateEntityRequest,
     UpdateEntityIdentityRequest,
     UpdateEntityPopulationRequest,
     UpdateEntityPopulationScalingRequest,
@@ -254,6 +255,49 @@ async def create_entity(
         entity = specification_service.create_entity(
             data_model_id=data_model_id,
             actor_user_id=user.user_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if entity is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return entity
+
+
+@router.put(
+    "/{data_model_id}/specification/entities/{entity_name}",
+    status_code=status.HTTP_200_OK,
+)
+async def update_entity(
+    data_model_id: str,
+    entity_name: str,
+    request: UpdateEntityRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Update the editable details of an existing FORGE entity."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        entity = specification_service.update_entity(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            entity_name=entity_name,
             request=request,
         )
     except ValueError as exc:

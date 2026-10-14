@@ -13,7 +13,10 @@ from typing import Any
 
 from app.interfaces.data_model_repository import DataModelRepository
 from app.interfaces.specification_repository import SpecificationRepository
-from app.models.specification_entity_model import CreateEntityRequest
+from app.models.specification_entity_model import (
+    CreateEntityRequest,
+    UpdateEntityRequest,
+)
 from app.models.specification_field_model import (
     CreateFieldRequest,
     UpdateFieldRequest,
@@ -114,6 +117,7 @@ class SpecificationService:
 
         entity: dict[str, Any] = {
             "name": request.name,
+            "description": request.description,
             "fields": [],
         }
 
@@ -160,6 +164,67 @@ class SpecificationService:
         return entity
 
 
+
+    def update_entity(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        entity_name: str,
+        request: UpdateEntityRequest,
+    ) -> dict[str, Any] | None:
+        """Update the editable details of an existing entity."""
+
+        specification = self.get_specification(
+            data_model_id=data_model_id,
+        )
+
+        if specification is None:
+            return None
+
+        entity = next(
+            (
+                item
+                for item in specification.get("entities", [])
+                if item.get("name") == entity_name
+            ),
+            None,
+        )
+
+        if entity is None:
+            raise ValueError(f"Unknown entity: {entity_name}")
+
+        candidate = deepcopy(specification)
+        updated_entity = next(
+            item
+            for item in candidate["entities"]
+            if item.get("name") == entity_name
+        )
+        updated_entity["description"] = request.description
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.ENTITY_UPDATED,
+                title="Entity updated",
+                description=f"Updated details for entity '{entity_name}'",
+                data_model_id=data_model_id,
+                metadata={
+                    "entity_name": entity_name,
+                    "operation": "UPDATE_DETAILS",
+                },
+            )
+
+        return updated_entity
 
     def update_entity_identity(
         self,

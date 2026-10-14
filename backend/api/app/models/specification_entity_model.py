@@ -52,6 +52,8 @@ class CreateEntityRequest(BaseModel):
         min_length=1,
     )
 
+    description: str = Field(default="", max_length=500)
+
     population: EntityPopulationModel | None = None
 
     @field_validator("name", mode="before")
@@ -68,6 +70,14 @@ class CreateEntityRequest(BaseModel):
             raise ValueError("name must not be empty.")
 
         return value
+
+
+class UpdateEntityRequest(BaseModel):
+    """Request to update the editable details of a FORGE entity."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: str = Field(default="", max_length=500)
 
 
 class UpdateEntityPopulationScalingRequest(BaseModel):

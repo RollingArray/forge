@@ -36,10 +36,15 @@ type PopulationScaling = 'FIXED' | 'SCALABLE';
 
 interface CreateEntityRequest {
   name: string;
+  description: string;
   population: {
     count: number;
     scaling: PopulationScaling;
   };
+}
+
+interface UpdateEntityRequest {
+  description: string;
 }
 
 interface CreateFieldRequest {
@@ -196,6 +201,7 @@ export class SpecificationService {
   createEntity(
     dataModelId: string,
     name: string,
+    description: string,
     population: number,
     scaling: PopulationScaling = 'SCALABLE',
   ): Observable<ForgeSpecificationEntity> {
@@ -203,6 +209,7 @@ export class SpecificationService {
       `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities`,
       {
         name,
+        description,
         population: {
           count: population,
           scaling,
@@ -212,6 +219,52 @@ export class SpecificationService {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
           ApiLoadingMessage.CreatingEntity,
+        ),
+      },
+    );
+  }
+
+  deleteEntity(dataModelId: string, entityName: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingSpecification,
+        ),
+      },
+    );
+  }
+
+  updateEntity(
+    dataModelId: string,
+    entityName: string,
+    description: string,
+  ): Observable<ForgeSpecificationEntity> {
+    return this.http.put<ForgeSpecificationEntity>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}`,
+      { description } satisfies UpdateEntityRequest,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingSpecification,
+        ),
+      },
+    );
+  }
+
+  updateEntityPopulation(
+    dataModelId: string,
+    entityName: string,
+    count: number,
+  ): Observable<ForgeSpecificationEntity> {
+    return this.http.put<ForgeSpecificationEntity>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}/population`,
+      { count },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingSpecification,
         ),
       },
     );

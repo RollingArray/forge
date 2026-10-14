@@ -19,6 +19,7 @@ export interface ForgeSpecificationEntity {
   description?: string;
   population?: {
     count?: number;
+    scaling?: 'FIXED' | 'SCALABLE';
   };
   fields: ForgeSpecificationField[];
   identity?: {
