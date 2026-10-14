@@ -402,6 +402,50 @@ async def update_field(
     return field
 
 
+@router.delete(
+    "/{data_model_id}/specification/entities/{entity_name}/fields/{field_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_field(
+    data_model_id: str,
+    entity_name: str,
+    field_name: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Delete a field that has no remaining specification dependencies."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        field = specification_service.delete_field(
+            data_model_id=data_model_id,
+            actor_user_id=user.user_id,
+            entity_name=entity_name,
+            field_name=field_name,
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        code = (
+            status.HTTP_409_CONFLICT
+            if detail.startswith("Cannot delete field")
+            else status.HTTP_404_NOT_FOUND
+        )
+        raise HTTPException(status_code=code, detail=detail) from exc
+
+    if field is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+
 @router.put(
     "/{data_model_id}/specification/entities/{entity_name}/population/scaling",
     status_code=status.HTTP_200_OK,

@@ -452,6 +452,127 @@ class SpecificationService:
 
         return candidate_field
 
+    def delete_field(
+        self,
+        data_model_id: str,
+        actor_user_id: str,
+        entity_name: str,
+        field_name: str,
+    ) -> dict[str, Any] | None:
+        """Delete an existing field when no specification references depend on it."""
+
+        specification = self.get_specification(data_model_id=data_model_id)
+
+        if specification is None:
+            return None
+
+        entity = next(
+            (
+                item for item in specification.get("entities", [])
+                if item.get("name") == entity_name
+            ),
+            None,
+        )
+        if entity is None:
+            raise ValueError(f"Unknown entity: {entity_name}")
+
+        field = next(
+            (
+                item for item in entity.get("fields", [])
+                if item.get("name") == field_name
+            ),
+            None,
+        )
+        if field is None:
+            raise ValueError(f"Unknown field: {entity_name}.{field_name}")
+
+        identity_fields = entity.get("identity", {}).get("fields", [])
+        if field_name in identity_fields:
+            raise ValueError(
+                f"Cannot delete field '{entity_name}.{field_name}' because it "
+                "is part of the entity identity. Update the identity first."
+            )
+
+        for relationship in specification.get("relationships", []):
+            if not isinstance(relationship, dict):
+                continue
+            for endpoint in ("source", "target"):
+                if relationship.get(endpoint) == f"{entity_name}.{field_name}":
+                    raise ValueError(
+                        f"Cannot delete field '{entity_name}.{field_name}' "
+                        f"because it is used by a relationship "
+                        f"('{relationship.get('source')}' → "
+                        f"'{relationship.get('target')}'). Delete that "
+                        "relationship first."
+                    )
+
+        for foreign_key in specification.get("foreign_keys", []):
+            if not isinstance(foreign_key, dict):
+                continue
+            for endpoint in ("source", "target"):
+                reference = foreign_key.get(endpoint, {})
+                if (
+                    isinstance(reference, dict)
+                    and reference.get("entity") == entity_name
+                    and field_name in reference.get("fields", [])
+                ):
+                    raise ValueError(
+                        f"Cannot delete field '{entity_name}.{field_name}' "
+                        f"because it is used by foreign key "
+                        f"'{foreign_key.get('name', 'Unnamed')}'. "
+                        "Delete that foreign key first."
+                    )
+
+        for constraint in specification.get("constraints", []):
+            if (
+                isinstance(constraint, dict)
+                and constraint.get("entity") == entity_name
+                and constraint.get("field") == field_name
+            ):
+                raise ValueError(
+                    f"Cannot delete field '{entity_name}.{field_name}' "
+                    "because it is used by a constraint. Delete that "
+                    "constraint first."
+                )
+
+        candidate = deepcopy(specification)
+        candidate_entity = next(
+            item for item in candidate["entities"]
+            if item.get("name") == entity_name
+        )
+        deleted_field = next(
+            item for item in candidate_entity.get("fields", [])
+            if item.get("name") == field_name
+        )
+        candidate_entity["fields"] = [
+            item for item in candidate_entity.get("fields", [])
+            if item.get("name") != field_name
+        ]
+
+        self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=candidate,
+        )
+
+        data_model = self._data_model_repository.get_by_id_any(
+            data_model_id=data_model_id,
+        )
+        if data_model is not None:
+            self._activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=actor_user_id,
+                activity_type=ActivityType.FIELD_DELETED,
+                title="Field deleted",
+                description=f"Deleted field '{entity_name}.{field_name}'",
+                data_model_id=data_model_id,
+                metadata={
+                    "entity_name": entity_name,
+                    "field": deleted_field,
+                },
+            )
+
+        return deleted_field
+
     def accept_population_plan(
         self,
         data_model_id: str,
