@@ -21,6 +21,45 @@
   text-transform: uppercase;
 }
 
+.entity-heading {
+  min-width: 0;
+}
+
+.entity-description {
+  margin: 8px 0 12px;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--forge-border);
+  border-radius: 6px;
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  border-color: var(--forge-border-strong, var(--forge-border));
+  background: var(--forge-surface-muted);
+  color: var(--forge-text);
+}
+
+.edit-button .material-symbols-outlined {
+  font-size: 16px;
+}
+
 h2 {
   margin: 4px 0 0;
   color: var(--forge-text-heading);

@@ -1,7 +1,14 @@
 <div class="inspector-header">
-  <div>
+  <div class="entity-heading">
     <span class="eyebrow">Entity</span>
     <h2>{{ entity().name }}</h2>
+    <p class="entity-description">
+      {{ entity().description?.trim() || 'No description provided.' }}
+    </p>
+    <button type="button" class="edit-button" (click)="edit.emit()">
+      <span class="material-symbols-outlined">edit</span>
+      Edit Entity
+    </button>
   </div>
 
   <button

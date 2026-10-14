@@ -11,4 +11,5 @@ import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-spec
 export class InspectorHeaderComponent {
   readonly entity = input.required<ForgeSpecificationEntity>();
   readonly closed = output<void>();
+  readonly edit = output<void>();
 }
