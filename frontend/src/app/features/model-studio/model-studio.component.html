@@ -107,7 +107,10 @@
       <app-model-studio-constraint-dialog
         [entity]="entity"
         [existingConstraint]="editingConstraint()"
+        [deleteBusy]="constraintDeleteBusy()"
+        [deleteError]="errorMessage()"
         (saved)="handleConstraintSaved($event)"
+        (deleteRequested)="requestConstraintDelete()"
         (closed)="closeConstraintDialog()"
       />
     }

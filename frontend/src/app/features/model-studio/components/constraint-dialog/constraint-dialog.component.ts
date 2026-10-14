@@ -75,6 +75,10 @@ export class ConstraintDialogComponent {
 
   readonly saved = output<ConstraintDraft>();
   readonly closed = output<void>();
+  readonly deleteRequested = output<void>();
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
+  readonly deleteConfirmation = signal(false);
 
   private readonly aiService = inject(AIService);
 
@@ -368,7 +372,27 @@ export class ConstraintDialogComponent {
   }
 
   close(): void {
-    this.closed.emit();
+    if (!this.deleteBusy()) {
+      this.closed.emit();
+    }
+  }
+
+  requestDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(true);
+    }
+  }
+
+  cancelDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(false);
+    }
+  }
+
+  confirmDelete(): void {
+    if (!this.deleteBusy() && this.existingConstraint()) {
+      this.deleteRequested.emit();
+    }
   }
 
   private loadAiCapability(): void {
