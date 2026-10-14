@@ -199,7 +199,7 @@
 
             <span>Source entity</span>
 
-            @if (sourceEntityContext()) {
+            @if (existingForeignKey() || sourceEntityContext()) {
 
               <div class="contextual-entity">
 
@@ -251,27 +251,44 @@
 
             <span>Target entity</span>
 
-            <select
-              [value]="targetEntity()"
-              (change)="selectTargetEntity($any($event.target).value)"
-            >
+            @if (existingForeignKey()) {
 
-              <option value="">
-                Choose an entity...
-              </option>
-
-              @for (entity of entities(); track entity.name) {
-
-                <option
-                  [value]="entity.name"
-                  [disabled]="entity.name === sourceEntity()"
+              <div class="contextual-entity">
+                <span>{{ targetEntity() }}</span>
+                <span
+                  class="material-symbols-outlined"
+                  aria-hidden="true"
+                  title="Target entity cannot be changed while editing"
                 >
-                  {{ entity.name }}
+                  lock
+                </span>
+              </div>
+
+            } @else {
+
+              <select
+                [value]="targetEntity()"
+                (change)="selectTargetEntity($any($event.target).value)"
+              >
+
+                <option value="">
+                  Choose an entity...
                 </option>
 
-              }
+                @for (entity of entities(); track entity.name) {
 
-            </select>
+                  <option
+                    [value]="entity.name"
+                    [disabled]="entity.name === sourceEntity()"
+                  >
+                    {{ entity.name }}
+                  </option>
+
+                }
+
+              </select>
+
+            }
 
           </label>
 
@@ -533,44 +550,59 @@
   </div>
 
   <div dialog-footer class="dialog-footer">
+      @if (existingForeignKey()) {
+        <button
+          type="button"
+          class="delete-foreign-key-button"
+          [disabled]="deleteBusy()"
+          (click)="requestDeleteConfirmation()"
+        >
+          <span class="material-symbols-outlined">delete</span>
+          Delete Foreign Key
+        </button>
+      }
 
-    @if (validationMessage()) {
-      <div class="validation-card">
-        <span class="material-symbols-outlined">
-          info
-        </span>
+      @if (validationMessage()) {
+        <div class="validation-card">
+          <span class="material-symbols-outlined">info</span>
+          <span>{{ validationMessage() }}</span>
+        </div>
+      }
 
-        <span>
-          {{ validationMessage() }}
-        </span>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          [disabled]="deleteBusy()"
+          (click)="close()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="save-button"
+          [disabled]="!canSave() || deleteBusy()"
+          (click)="save()"
+        >
+          <span class="material-symbols-outlined">link</span>
+          {{ existingForeignKey() ? 'Update Foreign Key' : 'Save Foreign Key' }}
+        </button>
       </div>
-    }
-
-    <div class="dialog-actions">
-
-      <button
-        type="button"
-        class="cancel-button"
-        (click)="close()"
-      >
-        Cancel
-      </button>
-
-      <button
-        type="button"
-        class="save-button"
-        [disabled]="!canSave()"
-        (click)="save()"
-      >
-        <span class="material-symbols-outlined">
-          link
-        </span>
-
-        {{ existingForeignKey() ? 'Update Foreign Key' : 'Save Foreign Key' }}
-      </button>
-
     </div>
-
-  </div>
-
 </app-form-dialog>
+
+@if (deleteConfirmation()) {
+  <app-confirmation-dialog
+    title="Delete this Foreign Key?"
+    message="Review the foreign key below before proceeding."
+    icon="link_off"
+    severity="danger"
+    confirmLabel="Delete Foreign Key"
+    [subject]="existingForeignKey()?.name ?? ''"
+    context="If a relationship depends on this foreign key, delete that relationship first, then try again."
+    [busy]="deleteBusy()"
+    [error]="deleteError()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDeleteConfirmation()"
+  />
+}

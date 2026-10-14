@@ -32,6 +32,7 @@ import { AIService } from '../../../../core/services/ai.service';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 
 export interface ForeignKeyDraft {
@@ -47,6 +48,7 @@ export interface ForeignKeyDraft {
     FormDialogComponent,
     ChoiceDividerComponent,
     AiAssistPanelComponent,
+    ConfirmationDialogComponent,
   ],
   templateUrl: './foreign-key-dialog.component.html',
   styleUrl: './foreign-key-dialog.component.css',
@@ -60,6 +62,10 @@ export class ForeignKeyDialogComponent {
 
   readonly saved = output<ForeignKeyDraft>();
   readonly closed = output<void>();
+  readonly deleteRequested = output<void>();
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
+  readonly deleteConfirmation = signal(false);
 
   private readonly aiService = inject(AIService);
 
@@ -332,7 +338,27 @@ export class ForeignKeyDialogComponent {
   }
 
   close(): void {
-    this.closed.emit();
+    if (!this.deleteBusy()) {
+      this.closed.emit();
+    }
+  }
+
+  requestDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(true);
+    }
+  }
+
+  cancelDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(false);
+    }
+  }
+
+  confirmDelete(): void {
+    if (!this.deleteBusy() && this.existingForeignKey()) {
+      this.deleteRequested.emit();
+    }
   }
 
   private loadAiCapability(): void {
