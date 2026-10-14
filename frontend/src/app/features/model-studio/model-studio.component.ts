@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ForgeConstraint } from '../../core/interfaces/forge-constraint.interface';
 import { ForgeSpecification } from '../../core/interfaces/forge-specification.interface';
 import { ForgeSpecificationField } from '../../core/interfaces/forge-specification-field.interface';
+import { ForgeSpecificationEntity } from '../../core/interfaces/forge-specification-entity.interface';
 import { ForgeSpecificationRelationship } from '../../core/interfaces/forge-specification-relationship.interface';
 import { ForgeForeignKey } from '../../core/interfaces/forge-foreign-key.interface';
 import { SpecificationService } from '../../core/services/specification.service';
@@ -97,6 +98,7 @@ export class ModelStudioComponent {
     this.specification()?.entities.find((entity) => entity.name === this.selectedEntity()) ?? null;
 
   readonly entityDialogOpen = signal(false);
+  readonly editingEntity = signal<ForgeSpecificationEntity | null>(null);
   readonly entityAiLoading = signal(false);
   readonly entityAiError = signal<string | null>(null);
   readonly entityAiProposal = signal<AIEntityProposal | null>(null);
@@ -186,6 +188,7 @@ export class ModelStudioComponent {
   }
 
   openEntityDialog(): void {
+    this.editingEntity.set(null);
     this.entityAiLoading.set(false);
     this.entityAiError.set(null);
     this.entityAiProposal.set(null);
@@ -215,12 +218,115 @@ export class ModelStudioComponent {
     });
   }
 
+  readonly entityDeleteBusy = signal(false);
+  readonly entityDeleteError = signal<string | null>(null);
+
   closeEntityDialog(): void {
     this.entityDialogOpen.set(false);
+    this.editingEntity.set(null);
     this.entityAiLoading.set(false);
     this.entityAiError.set(null);
     this.entityAiProposal.set(null);
+    this.entityDeleteBusy.set(false);
+    this.entityDeleteError.set(null);
   }
+
+  confirmEntityDelete(): void {
+    const entity = this.editingEntity();
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!entity || !dataModelId || this.entityDeleteBusy()) {
+      return;
+    }
+
+    this.entityDeleteBusy.set(true);
+    this.entityDeleteError.set(null);
+
+    this.specificationService.deleteEntity(dataModelId, entity.name).subscribe({
+      next: () => {
+        this.entityDeleteBusy.set(false);
+        this.notificationService.success(
+          'Entity deleted',
+          'The entity was deleted successfully.',
+        );
+        this.closeEntityDialog();
+        this.loadSpecification(dataModelId);
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.entityDeleteBusy.set(false);
+        this.entityDeleteError.set(
+          error.error?.detail ?? 'Unable to delete the entity.',
+        );
+      },
+    });
+  }
+
+  openEntityEditDialog(): void {
+    const entity = this.selectedEntityData();
+
+    if (!entity) {
+      return;
+    }
+
+    this.editingEntity.set(entity);
+    this.entityAiLoading.set(false);
+    this.entityAiError.set(null);
+    this.entityAiProposal.set(null);
+    this.entityDialogOpen.set(true);
+  }
+
+  handleEntityUpdated(entity: {
+    name: string;
+    description: string;
+    population: number;
+    scaling: 'FIXED' | 'SCALABLE';
+  }): void {
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+    const currentEntity = this.editingEntity();
+
+    if (!dataModelId || !currentEntity) {
+      this.errorMessage.set('Unable to identify the entity to update.');
+      return;
+    }
+
+    const savePopulation = (): void => {
+      const currentPopulation = currentEntity.population?.count;
+
+      if (currentPopulation === entity.population) {
+        this.closeEntityDialog();
+        this.loadSpecification(dataModelId);
+        return;
+      }
+
+      this.specificationService
+        .updateEntityPopulation(dataModelId, currentEntity.name, entity.population)
+        .subscribe({
+          next: () => {
+            this.closeEntityDialog();
+            this.loadSpecification(dataModelId);
+          },
+          error: (error: { error?: { detail?: string } }) => {
+            this.errorMessage.set(
+              error.error?.detail ?? 'Failed to update entity population.',
+            );
+          },
+        });
+    };
+
+    this.specificationService
+      .updateEntity(dataModelId, currentEntity.name, entity.description)
+      .subscribe({
+        next: () => {
+          savePopulation();
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.errorMessage.set(
+            error.error?.detail ?? 'Failed to update entity.',
+          );
+        },
+      });
+  }
+
 
   openIdentityDialog(): void {
     if (!this.selectedEntity()) {
@@ -759,6 +865,7 @@ export class ModelStudioComponent {
       .createEntity(
         dataModelId,
         entity.name,
+        entity.description,
         entity.population,
         entity.scaling,
       )

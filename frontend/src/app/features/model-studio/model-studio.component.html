@@ -50,6 +50,7 @@
         [constraints]="specification.constraints"
         [foreignKeys]="specification.foreignKeys"
         (addField)="openFieldDialog()"
+        (editEntity)="openEntityEditDialog()"
         (addConstraint)="openConstraintDialog()"
         (editConstraint)="openConstraintEditDialog($event)"
         (editField)="openFieldEditDialog($event)"
@@ -74,12 +75,16 @@
 
   @if (entityDialogOpen()) {
     <app-model-studio-entity-dialog
+      [entity]="editingEntity()"
       [aiLoading]="entityAiLoading()"
       [aiError]="entityAiError()"
       [aiProposal]="entityAiProposal()"
       (aiRequested)="requestEntityAiProposal($event)"
-      (saved)="handleEntityCreated($event)"
+      (saved)="editingEntity() ? handleEntityUpdated($event) : handleEntityCreated($event)"
       (closed)="closeEntityDialog()"
+      (deleteRequested)="confirmEntityDelete()"
+      [deleteBusy]="entityDeleteBusy()"
+      [deleteError]="entityDeleteError()"
     />
   }
 
