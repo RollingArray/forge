@@ -89,6 +89,9 @@
       [entityName]="selectedEntity()"
       (saved)="handleFieldSaved($event)"
       (closed)="closeFieldDialog()"
+      (deleteRequested)="confirmFieldDelete()"
+      [deleteBusy]="fieldDeleteBusy()"
+      [deleteError]="fieldDeleteError()"
     />
   }
 

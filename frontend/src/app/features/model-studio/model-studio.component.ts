@@ -654,6 +654,44 @@ export class ModelStudioComponent {
   closeFieldDialog(): void {
     this.fieldDialogOpen.set(false);
     this.editingField.set(null);
+    this.fieldDeleteBusy.set(false);
+    this.fieldDeleteError.set(null);
+  }
+
+  readonly fieldDeleteBusy = signal(false);
+  readonly fieldDeleteError = signal<string | null>(null);
+
+  confirmFieldDelete(): void {
+    const field = this.editingField();
+    const entityName = this.selectedEntity();
+    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
+
+    if (!field || !entityName || !dataModelId || this.fieldDeleteBusy()) {
+      return;
+    }
+
+    this.fieldDeleteBusy.set(true);
+    this.fieldDeleteError.set(null);
+
+    this.specificationService
+      .deleteField(dataModelId, entityName, field.name)
+      .subscribe({
+        next: () => {
+          this.fieldDeleteBusy.set(false);
+          this.notificationService.success(
+            'Field deleted',
+            'The field was deleted successfully.',
+          );
+          this.closeFieldDialog();
+          this.loadSpecification(dataModelId);
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.fieldDeleteBusy.set(false);
+          this.fieldDeleteError.set(
+            error.error?.detail ?? 'Unable to delete the field.',
+          );
+        },
+      });
   }
 
   handleFieldSaved(draft: FieldDraft): void {
