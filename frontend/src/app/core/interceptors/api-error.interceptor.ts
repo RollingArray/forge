@@ -36,7 +36,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         (
           request.url.includes('/specification/foreign-keys') ||
           request.url.includes('/specification/entities/') &&
-            request.url.includes('/fields/')
+            !request.url.includes('/fields/')
         ) &&
         error instanceof HttpErrorResponse &&
         error.status === 409;
