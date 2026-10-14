@@ -1,7 +1,12 @@
 <div class="parameter-header">
-  <span class="parameter-title">
-    {{ title() }}
-  </span>
+  <div class="parameter-title-row">
+    <span class="parameter-title">
+      {{ title() }}
+    </span>
+    @if (locked()) {
+      <span class="material-symbols-outlined field-lock" [attr.aria-label]="lockLabel()" [attr.title]="lockLabel()">lock</span>
+    }
+  </div>
 
   <small class="parameter-description">
     {{ description() }}

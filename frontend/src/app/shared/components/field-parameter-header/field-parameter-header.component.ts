@@ -14,4 +14,6 @@ import {
 export class FieldParameterHeaderComponent {
   readonly title = input.required<string>();
   readonly description = input.required<string>();
+  readonly locked = input(false);
+  readonly lockLabel = input('This option cannot be changed while editing');
 }
