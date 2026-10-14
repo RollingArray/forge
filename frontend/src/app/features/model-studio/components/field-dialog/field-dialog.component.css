@@ -441,6 +441,37 @@
   color: #7657d9;
 }
 
+.dialog-footer:has(.delete-field-button) {
+  justify-content: space-between;
+}
+
+.delete-field-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--forge-error-strong);
+  border-radius: 10px;
+  background: var(--forge-error-strong);
+  color: var(--forge-surface);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.delete-field-button:hover:not(:disabled) {
+  background: var(--forge-error-strong);
+  transform: translateY(-1px);
+}
+
+.delete-field-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .dialog-footer {
   display: flex;
   align-items: center;

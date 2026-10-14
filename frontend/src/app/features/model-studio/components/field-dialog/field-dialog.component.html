@@ -22,9 +22,7 @@
 
             <h3>Checking FORGE AI assistance</h3>
 
-            <p>
-              Checking whether FORGE AI assistance is available in this environment.
-            </p>
+            <p>Checking whether FORGE AI assistance is available in this environment.</p>
           </div>
         </div>
       } @else if (aiAvailable()) {
@@ -55,9 +53,7 @@
               {{ aiCapabilityMessage() }}
             </p>
 
-            <span class="ai-state-hint">
-              You can continue by defining the field manually.
-            </span>
+            <span class="ai-state-hint"> You can continue by defining the field manually. </span>
           </div>
         </div>
       }
@@ -249,14 +245,8 @@
             />
           </div>
 
-          @if (
-            showValidation() &&
-            type() === 'STRING' &&
-            !generator()
-          ) {
-            <small class="validation-message">
-              Choose how FORGE should generate this text.
-            </small>
+          @if (showValidation() && type() === 'STRING' && !generator()) {
+            <small class="validation-message"> Choose how FORGE should generate this text. </small>
           }
 
           @if (showRandomStringParameters) {
@@ -342,7 +332,6 @@
 
           @if (showPatternParameters) {
             <div class="parameter-panel">
-
               <app-field-parameter-header
                 title="What pattern should the values follow?"
                 description="Use the pattern format supported by your FORGE model."
@@ -353,7 +342,6 @@
                 [showValidation]="showValidation()"
                 (patternChange)="pattern.set($event)"
               />
-
             </div>
           }
 
@@ -440,23 +428,15 @@
             }
           </div>
 
-          @if (
-            showValidation() &&
-            !distribution()
-          ) {
-            <small class="validation-message">
-              Choose how values should be distributed.
-            </small>
+          @if (showValidation() && !distribution()) {
+            <small class="validation-message"> Choose how values should be distributed. </small>
           }
 
           @if (distribution() === 'UNIFORM' || distribution() === 'DISCRETE_UNIFORM') {
             <div class="parameter-panel">
               <div class="parameter-panel-title">What range should the values use?</div>
 
-              @if (
-                showValidation() &&
-                configurationValidationMessage
-              ) {
+              @if (showValidation() && configurationValidationMessage) {
                 <small class="validation-message">
                   {{ configurationValidationMessage }}
                 </small>
@@ -535,12 +515,47 @@
   </div>
 
   <div dialog-footer class="dialog-footer">
-    <button type="button" class="cancel-button" (click)="close()">Cancel</button>
+    @if (field()) {
+      <button
+        type="button"
+        class="delete-field-button"
+        [disabled]="deleteBusy()"
+        (click)="requestDeleteConfirmation()"
+      >
+        <span class="material-symbols-outlined">delete</span>
+        Delete Field
+      </button>
+    }
 
     <div class="dialog-actions">
-      <button type="button" class="save-button" [disabled]="!canSave()" (click)="save()">
-        {{ submitLabel }}
+      <button type="button" class="cancel-button" [disabled]="deleteBusy()" (click)="close()">
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="!canSave() || deleteBusy()"
+        (click)="save()"
+      >
+        <span class="material-symbols-outlined">view_column</span>
+        {{ field() ? 'Save Changes' : 'Save Field' }}
       </button>
     </div>
   </div>
 </app-form-dialog>
+
+@if (deleteConfirmation()) {
+  <app-confirmation-dialog
+    title="Delete this Field?"
+    message="Review the field below before proceeding."
+    icon="delete"
+    severity="danger"
+    confirmLabel="Delete Field"
+    [subject]="entityName() + '.' + (field()?.name ?? '')"
+    context="Fields used by an identity, relationship, foreign key, or constraint cannot be deleted. Remove those dependencies first."
+    [busy]="deleteBusy()"
+    [error]="deleteError()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDeleteConfirmation()"
+  />
+}

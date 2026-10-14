@@ -17,6 +17,7 @@ import { FieldAiAssistPanelComponent } from '../field-ai-assist-panel/field-ai-a
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { DistributionPreviewComponent } from '../../../../shared/components/distribution-preview/distribution-preview.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { FieldParameterHeaderComponent } from '../../../../shared/components/field-parameter-header/field-parameter-header.component';
 import { PatternGeneratorComponent } from '../../../../shared/components/pattern-generator/pattern-generator.component';
 import { SemanticGeneratorComponent } from '../../../../shared/components/semantic-generator/semantic-generator.component';
@@ -51,6 +52,7 @@ export type FieldDraft = {
   imports: [
     FormsModule,
     FormDialogComponent,
+    ConfirmationDialogComponent,
     FieldAiAssistPanelComponent,
     PatternGeneratorComponent,
     SemanticGeneratorComponent,
@@ -72,6 +74,10 @@ export class FieldDialogComponent {
 
   readonly saved = output<FieldDraft>();
   readonly closed = output<void>();
+  readonly deleteRequested = output<void>();
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
+  readonly deleteConfirmation = signal(false);
 
   readonly name = signal('');
   readonly type = signal<FieldType>('STRING');
@@ -469,6 +475,24 @@ export class FieldDialogComponent {
     }
 
     this.saved.emit(draft);
+  }
+
+  requestDeleteConfirmation(): void {
+    if (!this.deleteBusy() && this.field()) {
+      this.deleteConfirmation.set(true);
+    }
+  }
+
+  cancelDeleteConfirmation(): void {
+    if (!this.deleteBusy()) {
+      this.deleteConfirmation.set(false);
+    }
+  }
+
+  confirmDelete(): void {
+    if (!this.deleteBusy() && this.field()) {
+      this.deleteRequested.emit();
+    }
   }
 
   close(): void {
