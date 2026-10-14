@@ -31,6 +31,7 @@ import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 
 export type ConstraintOperator =
@@ -59,6 +60,7 @@ interface ConstraintOperatorOption {
   standalone: true,
   imports: [
     FormDialogComponent,
+    ConfirmationDialogComponent,
     ChoiceDividerComponent,
     ChoiceCardComponent,
     AiAssistPanelComponent,

@@ -304,44 +304,7 @@
     </section>
   </div>
 
-  @if (deleteConfirmation()) {
-    <div dialog-footer class="dialog-footer delete-confirmation">
-      <div class="delete-message">
-        <span class="delete-message-icon material-symbols-outlined" aria-hidden="true"
-          >warning</span
-        >
-        <div class="delete-message-copy">
-          <strong>Delete this Constraint?</strong>
-          <span>This action cannot be undone.</span>
-        </div>
-        @if (deleteError()) {
-          <span class="constraint-delete-error" role="alert">{{ deleteError() }}</span>
-        }
-      </div>
-      <div class="dialog-actions">
-        <button
-          type="button"
-          class="cancel-button"
-          [disabled]="deleteBusy()"
-          (click)="cancelDeleteConfirmation()"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="delete-constraint-button"
-          [disabled]="deleteBusy()"
-          (click)="confirmDelete()"
-        >
-          <span class="material-symbols-outlined">{{
-            deleteBusy() ? 'progress_activity' : 'delete'
-          }}</span>
-          {{ deleteBusy() ? 'Deleting…' : 'Delete Constraint' }}
-        </button>
-      </div>
-    </div>
-  } @else {
-    <div dialog-footer class="dialog-footer">
+  <div dialog-footer class="dialog-footer">
       @if (existingConstraint()) {
         <button
           type="button"
@@ -369,5 +332,19 @@
         </button>
       </div>
     </div>
-  }
 </app-form-dialog>
+
+@if (deleteConfirmation()) {
+  <app-confirmation-dialog
+    title="Delete this Constraint?"
+    message="Review the constraint below before proceeding."
+    icon="rule"
+    severity="danger"
+    confirmLabel="Delete Constraint"
+    [subject]="existingConstraint()?.entity + '.' + existingConstraint()?.field + ' ' + existingConstraint()?.operator + ' ' + existingConstraint()?.value"
+    [busy]="deleteBusy()"
+    [error]="deleteError()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDeleteConfirmation()"
+  />
+}
