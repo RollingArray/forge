@@ -35,6 +35,7 @@ import { AICapability } from '../../../../core/interfaces/ai-capability.interfac
 import { AIRelationshipProposal } from '../../../../core/interfaces/ai-relationship-proposal.interface';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 
 export type RelationshipType =
@@ -68,6 +69,7 @@ interface RelationshipOption {
   imports: [
     TitleCasePipe,
     FormDialogComponent,
+    ConfirmationDialogComponent,
     ChoiceDividerComponent,
     AiAssistPanelComponent,
   ],
