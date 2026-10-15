@@ -12,14 +12,7 @@
  * ============================================================================
  -->
 
-<section class="metrics-grid">
-
-  @for (metric of metrics(); track metric.label) {
-
-    <app-metric-card
-      [metric]="metric"
-    />
-
-  }
-
-</section>
+<app-metric-grid
+  [columns]="4"
+  [metrics]="metricCards()"
+/>

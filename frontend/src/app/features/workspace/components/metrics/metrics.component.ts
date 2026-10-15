@@ -19,16 +19,25 @@ import {
 } from '@angular/core';
 
 import { Metric } from '../../../../core/interfaces/metric.interface';
-import { MetricCardComponent } from '../metric-card/metric-card.component';
+import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
+import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 
 @Component({
   selector: 'app-workspace-metrics',
   standalone: true,
-  imports: [MetricCardComponent],
+  imports: [MetricGridComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './metrics.component.html',
   styleUrl: './metrics.component.css',
 })
 export class MetricsComponent {
   readonly metrics = input.required<Metric[]>();
+
+  readonly metricCards = () =>
+    this.metrics().map((metric): MetricCardData => ({
+      label: metric.label,
+      value: metric.value,
+      description: metric.supportingText,
+      icon: metric.icon,
+    }));
 }
