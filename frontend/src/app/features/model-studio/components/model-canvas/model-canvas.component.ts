@@ -47,6 +47,7 @@ export class ModelCanvasComponent implements AfterViewInit {
   readonly relationships =
     input.required<ModelRelationship[]>();
   readonly selectedEntity = input<string>('');
+  readonly empty = input(false);
 
   readonly entitySelected = output<string>();
 

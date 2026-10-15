@@ -1,4 +1,12 @@
 <div class="forge-card canvas-shell">
+  @if (empty()) {
+    <div class="canvas-empty-state">
+      <span class="material-symbols-outlined">account_tree</span>
+      <h2>Start building your model</h2>
+      <p>This Data Model does not have any entities yet.</p>
+    </div>
+  }
+
   <div #canvasViewport class="canvas-viewport" (scroll)="handleScroll()">
     <div class="canvas" [style.width.px]="canvasSize.width" [style.height.px]="canvasSize.height">
       <div class="canvas-grid"></div>

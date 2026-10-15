@@ -33,16 +33,9 @@
         [entities]="canvasEntities()"
         [relationships]="modelRelationships()"
         [selectedEntity]="selectedEntity()"
+        [empty]="specification.entities.length === 0"
         (entitySelected)="selectedEntity.set($event)"
       />
-
-      @if (specification.entities.length === 0) {
-        <div class="canvas-empty-state">
-          <span class="material-symbols-outlined">account_tree</span>
-          <h2>Start building your model</h2>
-          <p>This Data Model does not have any entities yet.</p>
-        </div>
-      }
 
       <app-model-studio-entity-inspector
         [entity]="selectedEntityData()"
