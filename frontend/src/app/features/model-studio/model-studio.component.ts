@@ -298,6 +298,10 @@ export class ModelStudioComponent {
       )
       .subscribe({
         next: () => {
+          this.notificationService.success(
+            'Entity updated',
+            'The entity was updated successfully.',
+          );
           this.closeEntityDialog();
           this.loadSpecification(dataModelId);
         },
@@ -860,7 +864,11 @@ export class ModelStudioComponent {
       )
       .subscribe({
         next: () => {
-          this.entityDialogOpen.set(false);
+          this.notificationService.success(
+            'Entity added',
+            'The entity was created successfully.',
+          );
+          this.closeEntityDialog();
           this.loadSpecification(dataModelId);
         },
         error: (error: { error?: { detail?: string } }) => {
