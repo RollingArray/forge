@@ -13,7 +13,10 @@
  -->
 
 <div class="workspace-content">
-  <app-workspace-metrics [metrics]="metrics()" />
+  <app-metric-grid
+  [columns]="4"
+  [metrics]="metricCards()"
+/>
 
   <app-workspace-recent-data-models
     [dataModels]="dataModels()"

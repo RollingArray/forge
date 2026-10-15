@@ -20,15 +20,16 @@ import {
 } from '@angular/core';
 
 import { Metric } from '../../../../core/interfaces/metric.interface';
+import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { DataModel } from '../../../../core/interfaces/data-model.interface';
 
-import { MetricsComponent } from '../metrics/metrics.component';
+import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
 import { RecentDataModelsComponent } from '../recent-data-models/recent-data-models.component';
 @Component({
   selector: 'app-workspace-content',
   standalone: true,
   imports: [
-    MetricsComponent,
+    MetricGridComponent,
     RecentDataModelsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +38,14 @@ import { RecentDataModelsComponent } from '../recent-data-models/recent-data-mod
 })
 export class WorkspaceContentComponent {
   readonly metrics = input.required<Metric[]>();
+
+  readonly metricCards = () =>
+    this.metrics().map((metric): MetricCardData => ({
+      label: metric.label,
+      value: metric.value,
+      description: metric.supportingText,
+      icon: metric.icon,
+    }));
   readonly dataModels = input.required<DataModel[]>();
 
   readonly selectedDataModel = input<DataModel | null>(null);
