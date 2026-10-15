@@ -17,6 +17,7 @@ import { AIDataModelProposal } from '../../../../core/interfaces/ai-data-model-p
 import { AIService } from '../../../../core/services/ai.service';
 import { ColorPickerComponent } from '../../../../shared/components/color-picker/color-picker.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { AiAssistPanelComponent, AiAssistExample } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { TagInputComponent } from '../../../../shared/components/tag-input/tag-input.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
@@ -28,6 +29,7 @@ import { ChoiceDividerComponent } from '../../../../shared/components/choice-div
     FormsModule,
     ColorPickerComponent,
     FormDialogComponent,
+    ConfirmationDialogComponent,
     AiAssistPanelComponent,
     TagInputComponent,
     ChoiceDividerComponent,
@@ -57,6 +59,8 @@ export class DataModelDialogComponent {
   readonly tags = signal<string[]>([]);
   readonly selectedColor = signal<DataModelColor | null>(null);
   readonly deleteConfirming = signal(false);
+  readonly deleteBusy = input(false);
+  readonly deleteError = input<string | null>(null);
 
   readonly aiCapabilityChecking = signal(true);
   readonly aiAvailable = signal(false);
@@ -140,17 +144,21 @@ export class DataModelDialogComponent {
   }
 
   delete(): void {
-    if (this.isEditMode) {
+    if (this.isEditMode && !this.deleteBusy()) {
       this.deleteConfirming.set(true);
     }
   }
 
   confirmDelete(): void {
-    this.deleted.emit();
+    if (this.isEditMode && !this.deleteBusy()) {
+      this.deleted.emit();
+    }
   }
 
   cancelDelete(): void {
-    this.deleteConfirming.set(false);
+    if (!this.deleteBusy()) {
+      this.deleteConfirming.set(false);
+    }
   }
 
   close(): void {

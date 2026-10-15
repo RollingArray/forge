@@ -50,6 +50,7 @@
 @if (dataModelDialogOpen()) {
   <app-data-model-dialog
     [dataModel]="editingDataModel()"
+    [deleteBusy]="savingDataModel()"
     (saved)="handleDataModelSaved($event)"
     (deleted)="handleDataModelDeleted()"
     (closed)="closeDataModelDialog()"

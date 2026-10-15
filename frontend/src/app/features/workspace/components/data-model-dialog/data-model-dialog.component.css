@@ -274,15 +274,22 @@
   margin-left: auto;
 }
 
+.dialog-footer:has(.delete-button) {
+  justify-content: space-between;
+}
+
+
 .cancel-button,
 .save-button,
 .delete-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   min-height: 44px;
   padding: 0 18px;
   border-radius: 10px;
+  font: inherit;
   font-size: 13px;
   font-weight: 650;
   cursor: pointer;
@@ -300,23 +307,23 @@
   box-shadow: 0 1px 2px rgb(55 45 40 / 4%);
 }
 
-.cancel-button:hover {
+.cancel-button:hover:not(:disabled) {
   border-color: #c9c0b9;
   background: #fff;
 }
 
 .save-button {
   min-width: 150px;
-  border: 1px solid #7657d9;
-  background: #7657d9;
+  border: 1px solid #7352d8;
+  background: #7352d8;
   color: #fff;
-  box-shadow: 0 4px 10px rgb(118 87 217 / 18%);
+  box-shadow: 0 4px 10px rgb(115 82 216 / 18%);
 }
 
 .save-button:hover:not(:disabled) {
-  border-color: #684bc9;
-  background: #684bc9;
-  box-shadow: 0 6px 14px rgb(118 87 217 / 22%);
+  border-color: #6242c4;
+  background: #6242c4;
+  box-shadow: 0 6px 14px rgb(115 82 216 / 22%);
   transform: translateY(-1px);
 }
 
@@ -327,18 +334,24 @@
 }
 
 .delete-button {
-  min-width: 108px;
-  border: 1px solid #efc7cb;
-  background: #fbe3e5;
-  color: #bd3744;
-  box-shadow: 0 2px 6px rgb(189 55 68 / 8%);
+  min-width: 0;
+  border: 1px solid #e12d22;
+  background: #e12d22;
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(225 45 34 / 12%);
 }
 
-.delete-button:hover {
-  border-color: #e5aeb4;
-  background: #f7d4d7;
-  box-shadow: 0 4px 10px rgb(189 55 68 / 12%);
+.delete-button:hover:not(:disabled) {
+  border-color: #c9231a;
+  background: #c9231a;
+  box-shadow: 0 4px 10px rgb(225 45 34 / 18%);
   transform: translateY(-1px);
+}
+
+.delete-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 /* -------------------------------------------------------------------------- */

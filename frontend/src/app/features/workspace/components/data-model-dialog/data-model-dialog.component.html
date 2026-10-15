@@ -36,10 +36,7 @@
 
             <h3>Checking FORGE AI assistance</h3>
 
-            <p>
-              Checking whether FORGE AI assistance is available in this
-              environment.
-            </p>
+            <p>Checking whether FORGE AI assistance is available in this environment.</p>
           </div>
         </div>
       } @else if (aiAvailable()) {
@@ -144,9 +141,7 @@
 
     <div class="dialog-column manual-column">
       <div class="manual-column-header">
-        <span class="manual-column-title">
-          Enter manually
-        </span>
+        <span class="manual-column-title"> Enter manually </span>
 
         <span class="manual-column-description">
           Prefer to define the Data Model yourself? Enter the details below.
@@ -157,8 +152,8 @@
         <span>Name</span>
 
         <small class="field-help">
-          Give the Data Model a clear name that identifies the business
-          process, system, or domain it represents.
+          Give the Data Model a clear name that identifies the business process, system, or domain
+          it represents.
         </small>
 
         <input
@@ -171,17 +166,15 @@
           autocomplete="off"
         />
 
-        <small class="field-example">
-          Example: <strong>SAP Order-to-Cash</strong>
-        </small>
+        <small class="field-example"> Example: <strong>SAP Order-to-Cash</strong> </small>
       </label>
 
       <label for="data-model-description">
         <span>Description</span>
 
         <small class="field-help">
-          Explain what the Data Model represents, including the business
-          process, source system, or type of data it contains.
+          Explain what the Data Model represents, including the business process, source system, or
+          type of data it contains.
         </small>
 
         <textarea
@@ -196,8 +189,8 @@
         <small class="field-example">
           Example:
           <strong>
-            SAP sales, delivery, billing, and customer relationship data
-            used to model the Order-to-Cash process.
+            SAP sales, delivery, billing, and customer relationship data used to model the
+            Order-to-Cash process.
           </strong>
         </small>
       </label>
@@ -232,69 +225,44 @@
     </div>
   </div>
 
-  @if (deleteConfirming()) {
-    <div
-      dialog-footer
-      class="dialog-footer delete-confirmation"
-    >
-      <div class="delete-message">
-        <strong>Delete this Data Model?</strong>
-        <span>
-          This action cannot be undone.
-        </span>
-      </div>
+  <div dialog-footer class="dialog-footer">
+    @if (isEditMode) {
+      <button type="button" class="delete-button" [disabled]="deleteBusy()" (click)="delete()">
+        <span class="material-symbols-outlined">delete</span>
+        Delete Data Model
+      </button>
+    }
 
-      <div class="dialog-actions">
-        <button
-          type="button"
-          class="cancel-button"
-          (click)="cancelDelete()"
-        >
-          Cancel
-        </button>
+    <div class="dialog-actions">
+      <button type="button" class="cancel-button" [disabled]="deleteBusy()" (click)="close()">
+        Cancel
+      </button>
 
-        <button
-          type="button"
-          class="delete-button"
-          (click)="confirmDelete()"
-        >
-          Delete
-        </button>
-      </div>
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="!name().trim() || deleteBusy()"
+        (click)="submit()"
+      >
+        <span class="material-symbols-outlined">deployed_code</span>
+        {{ submitLabel }}
+      </button>
     </div>
-  } @else {
-    <div
-      dialog-footer
-      class="dialog-footer"
-    >
-      @if (isEditMode) {
-        <button
-          type="button"
-          class="delete-button"
-          (click)="delete()"
-        >
-          Delete
-        </button>
-      }
-
-      <div class="dialog-actions">
-        <button
-          type="button"
-          class="cancel-button"
-          (click)="close()"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          class="save-button"
-          [disabled]="!name().trim()"
-          (click)="submit()"
-        >
-          {{ submitLabel }}
-        </button>
-      </div>
-    </div>
-  }
+  </div>
 </app-form-dialog>
+
+@if (deleteConfirming()) {
+  <app-confirmation-dialog
+    title="Delete this Data Model?"
+    message="Review the Data Model below before proceeding."
+    icon="delete"
+    severity="danger"
+    confirmLabel="Delete Data Model"
+    [subject]="dataModel()?.name ?? name()"
+    context="Deleting this Data Model cannot be undone."
+    [busy]="deleteBusy()"
+    [error]="deleteError()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}
