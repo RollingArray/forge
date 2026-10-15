@@ -17,7 +17,7 @@ import { AIDataModelProposal } from '../../../../core/interfaces/ai-data-model-p
 import { AIService } from '../../../../core/services/ai.service';
 import { ColorPickerComponent } from '../../../../shared/components/color-picker/color-picker.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
-import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
+import { AiAssistPanelComponent, AiAssistExample } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { TagInputComponent } from '../../../../shared/components/tag-input/tag-input.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
 
@@ -65,6 +65,22 @@ export class DataModelDialogComponent {
   readonly aiCapabilityMessage = signal(
     'Checking whether FORGE AI assistance is available in this environment.',
   );
+
+  readonly aiPrompt = signal('');
+  readonly aiExamples: AiAssistExample[] = [
+    {
+      label: 'Customer master',
+      prompt: 'Create a data model for enterprise customer master data, including customer identity, contact details, and business classification.',
+    },
+    {
+      label: 'Sales orders',
+      prompt: 'Create a data model for sales order processing, covering order headers, customer references, dates, status, and order totals.',
+    },
+    {
+      label: 'Manufacturing',
+      prompt: 'Create a data model for manufacturing operations, covering products, production orders, work centers, and material requirements.',
+    },
+  ];
 
   readonly aiGenerating = signal(false);
   readonly aiProposal = signal<AIDataModelProposal | null>(null);

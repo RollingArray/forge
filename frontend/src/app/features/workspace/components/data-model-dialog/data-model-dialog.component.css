@@ -14,7 +14,7 @@
 
 .data-model-dialog-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) 58px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
   gap: 0;
   padding: 0;
   align-items: stretch;
@@ -466,4 +466,130 @@
   background: #fef2f2;
   color: #b91c1c;
   font-size: 10px;
+}
+
+
+/* FORGE AI proposal card — aligned with the Entity Dialog treatment. */
+.data-model-ai-proposal {
+  margin-top: 18px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #ded5fa;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgb(72 48 125 / 6%);
+}
+
+.data-model-proposal-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.data-model-proposal-heading > .material-symbols-outlined {
+  color: #6d45c5;
+  font-size: 22px;
+}
+
+.data-model-proposal-heading > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.data-model-proposal-heading > div > span {
+  color: #7255b5;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.data-model-proposal-heading > div > strong {
+  color: #302747;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.data-model-ai-proposal > p {
+  margin: 0 0 14px;
+  color: #59536a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.data-model-proposal-tags {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.data-model-proposal-tags > span {
+  color: #625675;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.data-model-proposal-tags > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.data-model-proposal-tag {
+  padding: 5px 9px;
+  color: #5c4591;
+  background: #f5f1fd;
+  border: 1px solid #e5dcf7;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.data-model-ai-proposal > .data-model-proposal-reasoning {
+  margin-top: 12px;
+  color: #777083;
+  font-size: 12px;
+}
+
+.data-model-proposal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.data-model-proposal-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.data-model-proposal-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.data-model-regenerate-button {
+  color: #5c4591;
+  background: #fff;
+  border: 1px solid #d9cdef;
+}
+
+.data-model-use-proposal-button {
+  color: #fff;
+  background: #6842bb;
+  border: 1px solid #6842bb;
+}
+
+.data-model-use-proposal-button:hover {
+  background: #55339e;
 }

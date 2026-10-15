@@ -20,7 +20,7 @@
       : 'Create a new Data Model for your workspace.'
   "
   icon="deployed_code"
-  width="980px"
+  width="1080px"
   (closed)="close()"
 >
   <div dialog-body class="data-model-dialog-body">
@@ -44,22 +44,79 @@
         </div>
       } @else if (aiAvailable()) {
         <app-ai-assist-panel
+          title="Start with FORGE AI"
+          description="Describe the business domain you want to model."
+          placeholder="e.g. Create a data model for SAP Order-to-Cash..."
+          hint="Describe the domain, process, or system. You can refine the proposal before saving."
+          generateLabel="Generate Data Model"
+          exampleHeading="Try an example"
+          exampleDescription="Choose a request to get started."
+          decisionTitle="AI proposes. You decide."
+          decisionDescription="Review the suggestion and apply it when you're ready."
+          [(prompt)]="aiPrompt"
+          [examples]="aiExamples"
           [llmOnline]="aiAvailable()"
           [llmModel]="aiModel()"
           [llmMode]="aiMode()"
           [generating]="aiGenerating()"
-          [proposal]="aiProposal()"
           (generate)="handleAiGenerate($event)"
-          (useProposal)="useAiProposal($event)"
-          (regenerate)="regenerateAiProposal()"
-        />
+        >
+          <div ai-result>
+            @if (aiGenerationError(); as errorMessage) {
+              <div class="ai-generation-error" role="alert">
+                <span class="material-symbols-outlined">error</span>
+                {{ errorMessage }}
+              </div>
+            }
 
-        @if (aiGenerationError(); as errorMessage) {
-          <div class="ai-generation-error">
-            <span class="material-symbols-outlined">error</span>
-            {{ errorMessage }}
+            @if (aiProposal(); as proposal) {
+              <section class="data-model-ai-proposal">
+                <div class="data-model-proposal-heading">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  <div>
+                    <span>FORGE AI Proposal</span>
+                    <strong>{{ proposal.name }}</strong>
+                  </div>
+                </div>
+
+                <p>{{ proposal.description }}</p>
+
+                @if (proposal.suggestedTags.length) {
+                  <div class="data-model-proposal-tags">
+                    <span>Suggested tags</span>
+                    <div>
+                      @for (tag of proposal.suggestedTags; track tag) {
+                        <span class="data-model-proposal-tag">{{ tag }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <p class="data-model-proposal-reasoning">{{ proposal.reasoning }}</p>
+
+                <div class="data-model-proposal-actions">
+                  <button
+                    type="button"
+                    class="data-model-regenerate-button"
+                    [disabled]="aiGenerating()"
+                    (click)="regenerateAiProposal()"
+                  >
+                    <span class="material-symbols-outlined">refresh</span>
+                    Regenerate
+                  </button>
+                  <button
+                    type="button"
+                    class="data-model-use-proposal-button"
+                    (click)="useAiProposal(proposal)"
+                  >
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Use this proposal
+                  </button>
+                </div>
+              </section>
+            }
           </div>
-        }
+        </app-ai-assist-panel>
       } @else {
         <div class="ai-unavailable-state">
           <div class="ai-state-icon unavailable">
