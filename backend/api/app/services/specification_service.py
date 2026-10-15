@@ -478,7 +478,7 @@ class SpecificationService:
         field_name: str,
         request: UpdateFieldRequest,
     ) -> dict[str, Any] | None:
-        """Update an existing field in the canonical specification."""
+        """Update an existing field and record its actual changes."""
 
         specification = self.get_specification(
             data_model_id=data_model_id,
@@ -497,9 +497,7 @@ class SpecificationService:
         )
 
         if entity is None:
-            raise ValueError(
-                f"Unknown entity: {entity_name}"
-            )
+            raise ValueError(f"Unknown entity: {entity_name}")
 
         field = next(
             (
@@ -515,10 +513,7 @@ class SpecificationService:
                 f"Unknown field: {entity_name}.{field_name}"
             )
 
-        updates = request.model_dump(
-            exclude_unset=True,
-        )
-
+        updates = request.model_dump(exclude_unset=True)
         candidate = deepcopy(specification)
 
         candidate_entity = next(
@@ -533,13 +528,32 @@ class SpecificationService:
             if item.get("name") == field_name
         )
 
+        changes: list[dict[str, Any]] = []
+
         for key, value in updates.items():
             if key in {"identity", "generation"} and value is not None:
-                value = value.model_dump(
-                    exclude_none=True,
-                ) if hasattr(value, "model_dump") else value
+                value = (
+                    value.model_dump(exclude_none=True)
+                    if hasattr(value, "model_dump")
+                    else value
+                )
 
+            previous_value = deepcopy(candidate_field.get(key))
+
+            if previous_value == value:
+                continue
+
+            changes.append(
+                {
+                    "field": key,
+                    "from": previous_value,
+                    "to": deepcopy(value),
+                }
+            )
             candidate_field[key] = value
+
+        if not changes:
+            return candidate_field
 
         self._specification_repository.save(
             data_model_id=data_model_id,
@@ -557,13 +571,14 @@ class SpecificationService:
                 activity_type=ActivityType.FIELD_UPDATED,
                 title="Field updated",
                 description=(
-                    f"Updated field '{entity_name}.{field_name}'"
+                    f"Updated field "
+                    f"'{entity_name}.{candidate_field.get('name', field_name)}'"
                 ),
                 data_model_id=data_model_id,
                 metadata={
                     "entity_name": entity_name,
                     "field_name": field_name,
-                    "updates": list(updates.keys()),
+                    "changes": changes,
                 },
             )
 
