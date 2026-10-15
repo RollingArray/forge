@@ -153,11 +153,8 @@ class SpecificationService:
                 data_model_id=data_model_id,
                 metadata={
                     "entity_name": request.name,
-                    "population": (
-                        request.population.count
-                        if request.population is not None
-                        else None
-                    ),
+                    "population": entity["population"].get("count"),
+                    "scaling": entity["population"]["scaling"],
                 },
             )
 
@@ -172,7 +169,7 @@ class SpecificationService:
         entity_name: str,
         request: UpdateEntityRequest,
     ) -> dict[str, Any] | None:
-        """Update the editable details of an existing entity."""
+        """Update entity details and population as one logical operation."""
 
         specification = self.get_specification(
             data_model_id=data_model_id,
@@ -199,7 +196,41 @@ class SpecificationService:
             for item in candidate["entities"]
             if item.get("name") == entity_name
         )
-        updated_entity["description"] = request.description
+
+        changes: list[dict[str, object]] = []
+
+        previous_description = entity.get("description", "")
+        if previous_description != request.description:
+            changes.append(
+                {
+                    "field": "description",
+                    "from": previous_description,
+                    "to": request.description,
+                }
+            )
+            updated_entity["description"] = request.description
+
+        existing_population = entity.get("population", {})
+        if request.population is not None:
+            previous_population = existing_population.get("count")
+            if previous_population != request.population:
+                changes.append(
+                    {
+                        "field": "population",
+                        "from": previous_population,
+                        "to": request.population,
+                    }
+                )
+                updated_entity["population"] = {
+                    "count": request.population,
+                    "scaling": existing_population.get(
+                        "scaling",
+                        "SCALABLE",
+                    ),
+                }
+
+        if not changes:
+            return updated_entity
 
         self._specification_repository.save(
             data_model_id=data_model_id,
@@ -211,16 +242,37 @@ class SpecificationService:
         )
 
         if data_model is not None:
+            changed_fields = [str(change["field"]) for change in changes]
+
+            if changed_fields == ["description"]:
+                title = "Updated Entity description"
+                description = (
+                    f"Updated the description of entity '{entity_name}'"
+                )
+            elif changed_fields == ["population"]:
+                title = "Updated Entity population"
+                change = changes[0]
+                description = (
+                    f"Updated population for entity '{entity_name}' "
+                    f"from {change['from']} to {change['to']}"
+                )
+            else:
+                title = "Updated Entity"
+                description = (
+                    f"Updated description and population for entity "
+                    f"'{entity_name}'"
+                )
+
             self._activity_service.record(
                 owner_user_id=data_model.owner_user_id,
                 actor_user_id=actor_user_id,
                 activity_type=ActivityType.ENTITY_UPDATED,
-                title="Entity updated",
-                description=f"Updated details for entity '{entity_name}'",
+                title=title,
+                description=description,
                 data_model_id=data_model_id,
                 metadata={
                     "entity_name": entity_name,
-                    "operation": "UPDATE_DETAILS",
+                    "changes": changes,
                 },
             )
 
@@ -736,7 +788,7 @@ class SpecificationService:
         entity_name: str,
         count: int,
     ) -> dict[str, Any] | None:
-        """Update an entity population using UPDATE_POPULATION semantics."""
+        """Update entity population using the standard change-log convention."""
 
         specification = self.get_specification(
             data_model_id=data_model_id,
@@ -745,41 +797,34 @@ class SpecificationService:
         if specification is None:
             return None
 
-        entities = specification.setdefault("entities", [])
-
         entity = next(
             (
                 item
-                for item in entities
+                for item in specification.get("entities", [])
                 if item.get("name") == entity_name
             ),
             None,
         )
 
         if entity is None:
-            raise ValueError(
-                f"Unknown entity: {entity_name}"
-            )
+            raise ValueError(f"Unknown entity: {entity_name}")
 
         candidate = deepcopy(specification)
-
         updated_entity = next(
             item
             for item in candidate["entities"]
             if item.get("name") == entity_name
         )
 
-        existing_population = updated_entity.get(
-            "population",
-            {},
-        )
+        existing_population = entity.get("population", {})
+        previous_count = existing_population.get("count")
+
+        if previous_count == count:
+            return updated_entity
 
         updated_entity["population"] = {
             "count": count,
-            "scaling": existing_population.get(
-                "scaling",
-                "SCALABLE",
-            ),
+            "scaling": existing_population.get("scaling", "SCALABLE"),
         }
 
         self._specification_repository.save(
@@ -796,15 +841,21 @@ class SpecificationService:
                 owner_user_id=data_model.owner_user_id,
                 actor_user_id=actor_user_id,
                 activity_type=ActivityType.ENTITY_UPDATED,
-                title="Entity updated",
+                title="Updated Entity population",
                 description=(
-                    f"Updated population for entity '{entity_name}'"
+                    f"Updated population for entity '{entity_name}' "
+                    f"from {previous_count} to {count}"
                 ),
                 data_model_id=data_model_id,
                 metadata={
                     "entity_name": entity_name,
-                    "operation": "UPDATE_POPULATION",
-                    "population": count,
+                    "changes": [
+                        {
+                            "field": "population",
+                            "from": previous_count,
+                            "to": count,
+                        }
+                    ],
                 },
             )
 

@@ -73,11 +73,24 @@ class CreateEntityRequest(BaseModel):
 
 
 class UpdateEntityRequest(BaseModel):
-    """Request to update the editable details of a FORGE entity."""
+    """Request to update editable details and population of a FORGE entity."""
 
     model_config = ConfigDict(extra="forbid")
 
     description: str = Field(default="", max_length=500)
+
+    population: int | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    @field_validator("population", mode="before")
+    @classmethod
+    def validate_population(cls, value: object) -> object:
+        """Reject booleans as population counts."""
+        if isinstance(value, bool):
+            raise ValueError("population must be an integer.")
+        return value
 
 
 class UpdateEntityPopulationScalingRequest(BaseModel):

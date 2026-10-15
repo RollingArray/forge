@@ -42,6 +42,9 @@ from app.models.specification_foreign_key_model import (
 )
 from app.models.specification_model import SpecificationModel
 from app.services.data_model_access_service import DataModelAccessService
+from app.services.activity_service import ActivityService
+from app.constants.activity import ActivityType
+from app.repositories.json_data_model_repository import JsonDataModelRepository
 from app.services.population_service import PopulationService
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
@@ -56,6 +59,8 @@ population_service = PopulationService()
 specification_service = SpecificationService()
 specification_validation_service = SpecificationValidationService()
 data_model_access_service = DataModelAccessService()
+activity_service = ActivityService()
+data_model_repository = JsonDataModelRepository()
 
 
 @router.get(
@@ -120,7 +125,32 @@ async def validate_specification(
             detail="Data model not found.",
         )
 
-    return specification_validation_service.validate(specification)
+    result = specification_validation_service.validate(specification)
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is not None:
+        findings = result.get("findings", [])
+        failed = not result.get("passed", False)
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=(
+                ActivityType.MODEL_VALIDATION_FAILED
+                if failed
+                else ActivityType.MODEL_VALIDATED
+            ),
+            title=(
+                "Specification validation failed"
+                if failed
+                else "Specification validated"
+            ),
+            description=(
+                f"Validation completed with {len(findings)} finding(s)."
+            ),
+            data_model_id=data_model_id,
+        )
+    return result
 
 
 @router.get(

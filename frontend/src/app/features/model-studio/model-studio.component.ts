@@ -289,35 +289,17 @@ export class ModelStudioComponent {
       return;
     }
 
-    const savePopulation = (): void => {
-      const currentPopulation = currentEntity.population?.count;
-
-      if (currentPopulation === entity.population) {
-        this.closeEntityDialog();
-        this.loadSpecification(dataModelId);
-        return;
-      }
-
-      this.specificationService
-        .updateEntityPopulation(dataModelId, currentEntity.name, entity.population)
-        .subscribe({
-          next: () => {
-            this.closeEntityDialog();
-            this.loadSpecification(dataModelId);
-          },
-          error: (error: { error?: { detail?: string } }) => {
-            this.errorMessage.set(
-              error.error?.detail ?? 'Failed to update entity population.',
-            );
-          },
-        });
-    };
-
     this.specificationService
-      .updateEntity(dataModelId, currentEntity.name, entity.description)
+      .updateEntity(
+        dataModelId,
+        currentEntity.name,
+        entity.description,
+        entity.population,
+      )
       .subscribe({
         next: () => {
-          savePopulation();
+          this.closeEntityDialog();
+          this.loadSpecification(dataModelId);
         },
         error: (error: { error?: { detail?: string } }) => {
           this.errorMessage.set(
@@ -326,7 +308,6 @@ export class ModelStudioComponent {
         },
       });
   }
-
 
   openIdentityDialog(): void {
     if (!this.selectedEntity()) {

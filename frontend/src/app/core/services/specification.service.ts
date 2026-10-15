@@ -45,6 +45,7 @@ interface CreateEntityRequest {
 
 interface UpdateEntityRequest {
   description: string;
+  population: number;
 }
 
 interface CreateFieldRequest {
@@ -240,10 +241,11 @@ export class SpecificationService {
     dataModelId: string,
     entityName: string,
     description: string,
+    population: number,
   ): Observable<ForgeSpecificationEntity> {
     return this.http.put<ForgeSpecificationEntity>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/specification/entities/${encodeURIComponent(entityName)}`,
-      { description } satisfies UpdateEntityRequest,
+      { description, population } satisfies UpdateEntityRequest,
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
