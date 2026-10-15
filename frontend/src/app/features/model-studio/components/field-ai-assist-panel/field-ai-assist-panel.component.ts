@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { AIFieldProposal } from '../../../../core/interfaces/ai-field-proposal.interface';
 
@@ -30,31 +25,75 @@ export class FieldAiAssistPanelComponent {
   readonly examples = [
     {
       label: 'Unique identifier',
-      prompt: 'Create a unique identifier for aerospace components.',
+      prompt: 'Create a unique identifier for each aerospace component.',
     },
     {
       label: 'Meaningful text',
-      prompt: 'Create a field containing realistic aerospace component descriptions.',
+      prompt: 'Generate realistic descriptions of aerospace components.',
     },
     {
       label: 'Patterned code',
-      prompt: 'Create a component code using the pattern COMP-####.',
+      prompt: 'Create component codes following the pattern COMP-####.',
     },
     {
-      label: 'Integer range',
-      prompt: 'Create a quantity field with values from 1 to 100.',
+      label: 'Random string',
+      prompt: 'Generate random 12-character alphanumeric codes.',
+    },
+    {
+      label: 'Text with length limits',
+      prompt: 'Generate alphanumeric reference strings between 8 and 16 characters.',
+    },
+    {
+      label: 'Whole number range',
+      prompt: 'Generate quantities between 1 and 100.',
     },
     {
       label: 'Decimal range',
-      prompt: 'Create a component weight between 0.1 and 500.',
+      prompt: 'Generate component weights between 0.1 and 500.',
+    },
+    {
+      label: 'Normally distributed values',
+      prompt: 'Generate measurements centered around 50 using a normal distribution.',
     },
     {
       label: 'Yes / No',
-      prompt: 'Create a field indicating whether the component is active.',
+      prompt: 'Create a Boolean field indicating whether a component is active.',
     },
     {
-      label: 'Category',
-      prompt: 'Create a lifecycle status with Active, Retired and Obsolete values.',
+      label: 'Fixed choices',
+      prompt: 'Assign lifecycle status from Active, Retired and Obsolete.',
+    },
+    {
+      label: 'Unique meaningful text',
+      prompt: 'Generate distinct, realistic descriptions for aerospace components.',
+    },
+    {
+      label: 'Controlled vocabulary',
+      prompt: 'Generate material categories using Titanium, Aluminum and Steel.',
+    },
+    {
+      label: 'Bounded measurement',
+      prompt: 'Generate operating temperatures between 10 and 150 degrees Celsius.',
+    },
+    {
+      label: 'Narrow numeric range',
+      prompt: 'Generate inspection scores between 95 and 100.',
+    },
+    {
+      label: 'Structured reference',
+      prompt: 'Generate supplier references following the pattern SUP-AAA-####.',
+    },
+    {
+      label: 'Engineering classification',
+      prompt: 'Classify components as Structural, Electrical, Hydraulic or Avionics.',
+    },
+    {
+      label: 'Quality status',
+      prompt: 'Assign inspection outcomes from Accepted, Rework and Rejected.',
+    },
+    {
+      label: 'Maintenance interval',
+      prompt: 'Generate maintenance intervals between 50 and 5000 operating hours.',
     },
   ];
 
