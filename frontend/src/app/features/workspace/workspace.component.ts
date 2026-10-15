@@ -26,6 +26,7 @@ import { Metric } from '../../core/interfaces/metric.interface';
 import { Template } from '../../core/interfaces/template.interface';
 
 import { WorkspaceService } from '../../core/services/workspace.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 import {
   DataModelDialogComponent,
@@ -65,6 +66,7 @@ export class WorkspaceComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceService = inject(WorkspaceService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly metrics = signal<Metric[]>([]);
   readonly dataModels = signal<DataModel[]>([]);
@@ -171,6 +173,18 @@ export class WorkspaceComponent {
         this.closeDataModelDialog();
         this.loadWorkspace();
 
+        if (editingDataModel) {
+          this.notificationService.success(
+            'Data Model updated',
+            'The Data Model was updated successfully.',
+          );
+        } else {
+          this.notificationService.success(
+            'Data Model created',
+            'The Data Model was created successfully.',
+          );
+        }
+
         if (!editingDataModel && response.data_model_id) {
           void this.router.navigate([
             '/workspace',
@@ -207,6 +221,10 @@ export class WorkspaceComponent {
           this.closeDataModelDialog();
           this.selectedDataModel.set(null);
           this.loadWorkspace();
+          this.notificationService.success(
+            'Data Model deleted',
+            'The Data Model was deleted successfully.',
+          );
         },
         error: (error) => {
           this.savingDataModel.set(false);
