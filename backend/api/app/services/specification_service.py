@@ -1244,8 +1244,20 @@ class SpecificationService:
                     "Foreign key already exists."
                 )
 
-        candidate = deepcopy(specification)
+        changes = [
+            {
+                "field": field_name,
+                "from": deepcopy(existing.get(field_name)),
+                "to": deepcopy(updated_foreign_key.get(field_name)),
+            }
+            for field_name in ("source", "target")
+            if existing.get(field_name) != updated_foreign_key.get(field_name)
+        ]
 
+        if not changes:
+            return updated_foreign_key
+
+        candidate = deepcopy(specification)
         candidate["foreign_keys"] = [
             updated_foreign_key
             if foreign_key == existing
@@ -1274,8 +1286,9 @@ class SpecificationService:
                 ),
                 data_model_id=data_model_id,
                 metadata={
-                    "previous": existing,
-                    "current": updated_foreign_key,
+                    "entity_name": updated_foreign_key["source"]["entity"],
+                    "key_name": updated_foreign_key["name"],
+                    "changes": changes,
                 },
             )
 

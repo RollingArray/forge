@@ -581,7 +581,7 @@
         <button
           type="button"
           class="save-button"
-          [disabled]="!canSave() || deleteBusy()"
+          [disabled]="!canSave() || deleteBusy() || !!existingForeignKey()"
           (click)="save()"
         >
           <span class="material-symbols-outlined">link</span>
