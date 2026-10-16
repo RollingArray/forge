@@ -7,9 +7,13 @@
   (click)="select()"
 >
   <span class="choice-icon">
-    <span class="material-symbols-outlined">
-      {{ icon() }}
-    </span>
+    @if (visualText()) {
+      <span class="choice-visual-text">{{ visualText() }}</span>
+    } @else {
+      <span class="material-symbols-outlined">
+        {{ icon() }}
+      </span>
+    }
   </span>
 
   <span class="choice-copy">

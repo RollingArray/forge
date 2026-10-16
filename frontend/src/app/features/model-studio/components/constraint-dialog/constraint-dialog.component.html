@@ -120,8 +120,18 @@
           <div>
             <span>Which field should this rule apply to?</span>
 
-            <small> Choose one of the fields defined for this entity. </small>
+            <small>
+              @if (existingConstraint()) {
+                The field cannot be changed when editing a constraint.
+              } @else {
+                Choose one of the fields defined for this entity.
+              }
+            </small>
           </div>
+
+          @if (existingConstraint()) {
+            <span class="material-symbols-outlined" title="Field locked during editing" aria-label="Field locked">lock</span>
+          }
         </div>
 
         <div class="choice-grid field-grid">
@@ -131,6 +141,7 @@
               [title]="availableField.name"
               [description]="availableField.type"
               [selected]="field() === availableField.name"
+              [disabled]="!!existingConstraint()"
               (selectedChange)="selectField(availableField.name)"
             />
           }
@@ -142,74 +153,57 @@
           <div>
             <span>How should the value be restricted?</span>
 
-            <small> Choose the comparison that best describes your rule. </small>
+            <small>
+              @if (existingConstraint()) {
+                The comparison operator cannot be changed when editing a constraint.
+              } @else {
+                Choose the comparison that best describes your rule.
+              }
+            </small>
           </div>
+
+          @if (existingConstraint()) {
+            <span class="material-symbols-outlined" title="Comparison operator locked during editing" aria-label="Comparison operator locked">lock</span>
+          }
         </div>
 
         <div class="operator-grid">
-          @if (availableOperatorOptions().length > 0) {
-            @for (option of availableOperatorOptions(); track option.operator) {
-              <button
-                type="button"
-                class="operator-card"
-                [class.selected]="operator() === option.operator"
-                (click)="selectOperator(option.operator)"
-              >
-                <div class="operator-top">
-                  <span class="operator-icon">
-                    <span class="material-symbols-outlined">
-                      {{
-                        option.operator === '>' || option.operator === '>='
-                          ? 'keyboard_arrow_up'
-                          : option.operator === '<' || option.operator === '<='
-                            ? 'keyboard_arrow_down'
-                            : option.operator === '=='
-                              ? 'check'
-                              : 'block'
-                      }}
-                    </span>
-                  </span>
-
-                  <span class="operator-symbol">
-                    {{
-                      option.operator === '=='
-                        ? '='
-                        : option.operator === '!='
-                          ? '≠'
-                          : option.operator
-                    }}
-                  </span>
-                </div>
-
-                <strong class="operator-label">
-                  {{
-                    option.operator === '>='
-                      ? 'Greater or equal'
-                      : option.operator === '<='
-                        ? 'Less or equal'
-                        : option.label
-                  }}
-                </strong>
-
-                <span class="operator-example">
-                  {{
-                    option.operator === '=='
-                      ? 'Exact match'
-                      : option.operator === '!='
-                        ? 'Must be different'
-                        : '0 · 1 · 10 · 100'
-                  }}
-                </span>
-              </button>
-            }
-          } @else {
+          @for (option of availableOperatorOptions(); track option.operator) {
+            <app-choice-card
+              icon="rule"
+              [visualText]="
+                option.operator === '=='
+                  ? '='
+                  : option.operator === '!='
+                    ? '≠'
+                    : option.operator
+              "
+              [title]="
+                option.operator === '>='
+                  ? 'Greater or equal'
+                  : option.operator === '<='
+                    ? 'Less or equal'
+                    : option.label
+              "
+              [description]="option.description"
+              [example]="
+                option.operator === '=='
+                  ? 'Exact match'
+                  : option.operator === '!='
+                    ? 'Must be different'
+                    : '0 · 1 · 10 · 100'
+              "
+              [selected]="operator() === option.operator"
+              [disabled]="!!existingConstraint()"
+              (selectedChange)="selectOperator(option.operator)"
+            />
+          } @empty {
             <div class="operator-empty-state">
               <span class="material-symbols-outlined">info</span>
 
               <div>
-                <strong> Constraints are not supported for this field </strong>
-
-                <span> Choose a numeric or categorical field to define a constraint. </span>
+                <strong>Constraints are not supported for this field</strong>
+                <span>Choose a numeric or categorical field to define a constraint.</span>
               </div>
             </div>
           }

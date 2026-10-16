@@ -124,6 +124,20 @@
   gap: 4px;
 }
 
+.choice-section-heading:has(> .material-symbols-outlined) {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.choice-section-heading > .material-symbols-outlined {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #6852b4;
+  font-size: 18px;
+}
+
 .choice-section-heading > div {
   display: flex;
   flex-direction: column;

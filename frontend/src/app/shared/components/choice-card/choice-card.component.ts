@@ -14,6 +14,7 @@ import {
 })
 export class ChoiceCardComponent {
   readonly icon = input.required<string>();
+  readonly visualText = input<string>('');
   readonly title = input.required<string>();
   readonly description = input.required<string>();
   readonly example = input<string>('');

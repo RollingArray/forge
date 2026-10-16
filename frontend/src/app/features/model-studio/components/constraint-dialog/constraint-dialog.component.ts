@@ -103,32 +103,32 @@ export class ConstraintDialogComponent {
     {
       operator: '>',
       label: 'Greater than',
-      description: 'Value must be greater than the comparison value.',
+      description: 'Must be greater than the comparison value.',
     },
     {
       operator: '>=',
       label: 'Greater than or equal',
-      description: 'Value must be greater than or equal to the comparison value.',
+      description: 'Must be at least the comparison value.',
     },
     {
       operator: '<',
       label: 'Less than',
-      description: 'Value must be less than the comparison value.',
+      description: 'Must be less than the comparison value.',
     },
     {
       operator: '<=',
       label: 'Less than or equal',
-      description: 'Value must be less than or equal to the comparison value.',
+      description: 'Must not exceed the comparison value.',
     },
     {
       operator: '==',
       label: 'Equal to',
-      description: 'Value must equal the comparison value.',
+      description: 'Must match the comparison value.',
     },
     {
       operator: '!=',
       label: 'Not equal to',
-      description: 'Value must not equal the comparison value.',
+      description: 'Must differ from the comparison value.',
     },
   ];
 
@@ -311,14 +311,21 @@ export class ConstraintDialogComponent {
       return;
     }
 
-    this.field.set(proposal.field);
-    this.operator.set(proposal.operator);
+    if (!this.existingConstraint()) {
+      this.field.set(proposal.field);
+      this.operator.set(proposal.operator);
+    }
+
     this.value.set(String(proposal.value));
 
     this.aiResponse.set(null);
   }
 
   selectField(fieldName: string): void {
+    if (this.existingConstraint()) {
+      return;
+    }
+
     this.field.set(fieldName);
     this.value.set('');
 
@@ -336,6 +343,7 @@ export class ConstraintDialogComponent {
 
   selectOperator(operator: ConstraintOperator): void {
     if (
+      this.existingConstraint() ||
       !this.availableOperatorOptions().some(
         (option) => option.operator === operator,
       )
