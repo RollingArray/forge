@@ -22,6 +22,7 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { ForgeConstraint } from '../../../../core/interfaces/forge-constraint.interface';
 import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
@@ -440,6 +441,12 @@ export class ConstraintDialogComponent {
         this.field.set('');
         this.operator.set('>=');
         this.value.set('');
+
+        const firstField = this.entity().fields[0];
+        if (firstField) {
+          untracked(() => this.selectField(firstField.name));
+        }
+
         return;
       }
 
