@@ -2054,6 +2054,19 @@ class SpecificationService:
                     "Constraint already exists."
                 )
 
+        changes = [
+            {
+                "field": field,
+                "from": existing.get(field),
+                "to": updated.get(field),
+            }
+            for field in ("entity", "field", "operator", "value")
+            if existing.get(field) != updated.get(field)
+        ]
+
+        if not changes:
+            return existing
+
         candidate = deepcopy(specification)
         candidate["constraints"][existing_index] = updated
 
@@ -2080,6 +2093,7 @@ class SpecificationService:
                 metadata={
                     "previous": existing,
                     "updated": updated,
+                    "changes": changes,
                 },
             )
 
