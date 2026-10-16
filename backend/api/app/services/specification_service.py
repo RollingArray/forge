@@ -1740,6 +1740,25 @@ class SpecificationService:
             "target_participation": request.target_participation,
         }
 
+        changes = [
+            {
+                "field": field,
+                "from": existing.get(field),
+                "to": updated_relationship.get(field),
+            }
+            for field in (
+                "source",
+                "target",
+                "type",
+                "source_participation",
+                "target_participation",
+            )
+            if existing.get(field) != updated_relationship.get(field)
+        ]
+
+        if not changes:
+            return existing
+
         candidate = deepcopy(specification)
 
         candidate["relationships"] = [
@@ -1774,6 +1793,7 @@ class SpecificationService:
                     "previous": existing,
                     "updated": updated_relationship,
                     "foreign_key": foreign_key.get("name"),
+                    "changes": changes,
                 },
             )
 
