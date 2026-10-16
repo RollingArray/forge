@@ -325,6 +325,13 @@ class SpecificationService:
                 + ", ".join(unknown_fields)
             )
 
+        current_identity = entity.get("identity") or {}
+        previous_fields = list(current_identity.get("fields") or [])
+        updated_fields = list(fields)
+
+        if previous_fields == updated_fields:
+            return entity
+
         candidate = deepcopy(specification)
 
         candidate_entity = next(
@@ -334,7 +341,7 @@ class SpecificationService:
         )
 
         candidate_entity["identity"] = {
-            "fields": list(fields),
+            "fields": updated_fields,
         }
 
         self._specification_repository.save(
@@ -359,8 +366,15 @@ class SpecificationService:
                 data_model_id=data_model_id,
                 metadata={
                     "entity_name": entity_name,
-                    "identity_fields": list(fields),
-                    "composite": len(fields) > 1,
+                    "identity_fields": updated_fields,
+                    "composite": len(updated_fields) > 1,
+                    "changes": [
+                        {
+                            "field": "identity.fields",
+                            "from": previous_fields,
+                            "to": updated_fields,
+                        }
+                    ],
                 },
             )
 
