@@ -713,8 +713,20 @@ export class ModelStudioComponent {
       return;
     }
 
+    const currentEntity = (this.specification()?.entities ?? [])
+      .find((entity) => entity.name === entityName);
+
+    const isUpdatingIdentity =
+      (currentEntity?.identity?.fields?.length ?? 0) > 0;
+
     this.specificationService.updateEntityIdentity(dataModelId, entityName, fields).subscribe({
       next: () => {
+        this.notificationService.success(
+          isUpdatingIdentity ? 'Identity updated' : 'Identity saved',
+          isUpdatingIdentity
+            ? 'The entity identity was updated successfully.'
+            : 'The entity identity was saved successfully.',
+        );
         this.closeIdentityDialog();
         this.loadSpecification(dataModelId);
       },
