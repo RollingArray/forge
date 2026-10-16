@@ -5,6 +5,7 @@ Purpose: Deterministic generation planning for FORGE.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 
@@ -418,6 +419,7 @@ def _build_relationship_groups(
 def _parse_constraint(
     constraint: dict,
     entity_names: set[str],
+    field_types_by_entity: dict[str, dict[str, str]],
 ) -> ConstraintDefinition:
     entity = constraint.get("entity")
     field = constraint.get("field")
@@ -449,17 +451,50 @@ def _parse_constraint(
             f"{entity}.{field}: constraint must contain a value."
         )
 
+    field_type = field_types_by_entity.get(entity, {}).get(field)
+    supported_operators = {
+        "INTEGER": {">", ">=", "<", "<="},
+        "DECIMAL": {">", ">=", "<", "<="},
+        "CATEGORICAL": {"==", "!="},
+    }
+    if field_type is None:
+        raise GenerationPlanningError(
+            f"{entity}.{field}: constraint field was not found."
+        )
+    if operator not in supported_operators.get(field_type, set()):
+        raise GenerationPlanningError(
+            f"{entity}.{field}: operator {operator!r} is not supported "
+            f"for {field_type} fields."
+        )
+
+    value = constraint["value"]
+    if field_type in {"INTEGER", "DECIMAL"}:
+        try:
+            if isinstance(value, bool):
+                raise ValueError("Boolean values are not numeric.")
+            number = float(value)
+            if not math.isfinite(number):
+                raise ValueError("Value must be finite.")
+            if field_type == "INTEGER" and not number.is_integer():
+                raise ValueError("Value must be an integer.")
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise GenerationPlanningError(
+                f"{entity}.{field}: comparison value must be a valid "
+                f"{field_type.lower()}."
+            ) from exc
+
     return ConstraintDefinition(
         entity=entity,
         field=field,
         operator=operator,
-        value=constraint["value"],
+        value=value,
     )
 
 
 def _build_constraints(
     specification: dict,
     entity_names: set[str],
+    field_types_by_entity: dict[str, dict[str, str]],
 ) -> tuple[ConstraintDefinition, ...]:
     constraints = specification.get("constraints", [])
 
@@ -483,6 +518,7 @@ def _build_constraints(
             _parse_constraint(
                 constraint,
                 entity_names,
+                field_types_by_entity,
             )
         )
 
@@ -577,9 +613,22 @@ class GenerationPlanner:
             relationships,
         )
 
+        field_types_by_entity = {
+            entity["name"]: {
+                field["name"]: str(field.get("type", "")).strip().upper()
+                for field in entity.get("fields", [])
+                if isinstance(field, dict)
+                and isinstance(field.get("name"), str)
+            }
+            for entity in entities
+            if isinstance(entity, dict)
+            and isinstance(entity.get("name"), str)
+        }
+
         constraints = _build_constraints(
             specification,
             entity_names,
+            field_types_by_entity,
         )
 
         entity_plans = _build_entity_plans(
