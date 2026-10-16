@@ -6,6 +6,7 @@ The canonical specification is authoritative.
 No LLM or UI logic belongs in this service.
 """
 
+import math
 from typing import Any
 
 
@@ -70,6 +71,7 @@ class SpecificationValidationService:
             entity_names.add(name)
 
         fields_by_entity: dict[str, set[str]] = {}
+        field_types_by_entity: dict[str, dict[str, str]] = {}
 
         for entity in entities:
             self._validate_entity(
@@ -78,6 +80,15 @@ class SpecificationValidationService:
                 fields_by_entity=fields_by_entity,
                 add=add,
             )
+            entity_name = str(entity.get("name", "")).strip()
+            if entity_name:
+                field_types_by_entity[entity_name] = {
+                    str(field.get("name", "")).strip(): str(
+                        field.get("type", "")
+                    ).strip().upper()
+                    for field in entity.get("fields", [])
+                    if str(field.get("name", "")).strip()
+                }
 
         version = str(specification.get("version", "")).strip()
 
@@ -168,6 +179,7 @@ class SpecificationValidationService:
             specification=specification,
             entity_names=entity_names,
             fields_by_entity=fields_by_entity,
+            field_types_by_entity=field_types_by_entity,
             add=add,
         )
 
@@ -762,27 +774,55 @@ class SpecificationValidationService:
         specification: dict[str, Any],
         entity_names: set[str],
         fields_by_entity: dict[str, set[str]],
+        field_types_by_entity: dict[str, dict[str, str]],
         add,
     ) -> None:
+        supported_operators = {
+            "INTEGER": {">", ">=", "<", "<="},
+            "DECIMAL": {">", ">=", "<", "<="},
+            "CATEGORICAL": {"==", "!="},
+        }
+
         for constraint in specification.get("constraints", []):
             entity = str(constraint.get("entity", "")).strip()
             field = str(constraint.get("field", "")).strip()
             operator = constraint.get("operator")
-
+            value = constraint.get("value")
+            field_type = field_types_by_entity.get(entity, {}).get(field)
             valid = (
                 bool(entity)
                 and bool(field)
                 and entity in entity_names
                 and field in fields_by_entity.get(entity, set())
-                and operator in {">", ">=", "<", "<=", "==", "!="}
+                and operator in supported_operators.get(field_type, set())
+                and "value" in constraint
             )
+            reason = (
+                "references a missing entity or field, uses an unsupported "
+                "operator for its field type, or omits its comparison value."
+            )
+
+            if valid and field_type in {"INTEGER", "DECIMAL"}:
+                try:
+                    if isinstance(value, bool):
+                        raise ValueError("Boolean values are not numeric.")
+                    number = float(value)
+                    if not math.isfinite(number):
+                        raise ValueError("Value must be finite.")
+                    if field_type == "INTEGER" and not number.is_integer():
+                        raise ValueError("Value must be an integer.")
+                except (TypeError, ValueError, OverflowError):
+                    valid = False
+                    reason = (
+                        f"comparison value must be a valid {field_type.lower()}."
+                    )
 
             if valid:
                 add(
                     "passed",
                     "Constraint",
                     "Constraint is valid",
-                    f"{entity}.{field} {operator} {constraint.get('value', '')}".strip(),
+                    f"{entity}.{field} {operator} {value}".strip(),
                     entity,
                     field,
                 )
@@ -791,7 +831,7 @@ class SpecificationValidationService:
                     "error",
                     "Constraint",
                     "Invalid constraint",
-                    f"{entity or 'Unknown'}.{field or 'Unknown'} references a missing entity, field, or unsupported operator.",
+                    f"{entity or 'Unknown'}.{field or 'Unknown'} {reason}",
                     entity or None,
                     field or None,
                 )

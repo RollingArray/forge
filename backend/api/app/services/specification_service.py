@@ -1870,7 +1870,7 @@ class SpecificationService:
         supported_operators = {
             "INTEGER": {">", ">=", "<", "<="},
             "DECIMAL": {">", ">=", "<", "<="},
-            "CATEGORICAL": {">", ">=", "<", "<=", "==", "!="},
+            "CATEGORICAL": {"==", "!="},
         }
 
         operators = supported_operators.get(field_type)
