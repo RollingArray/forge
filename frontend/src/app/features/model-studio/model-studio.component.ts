@@ -673,6 +673,10 @@ export class ModelStudioComponent {
         })
         .subscribe({
           next: () => {
+            this.notificationService.success(
+              'Relationship updated',
+              'The relationship was updated successfully.',
+            );
             this.closeRelationshipDialog();
             this.loadSpecification(dataModelId);
           },
@@ -694,6 +698,10 @@ export class ModelStudioComponent {
       })
       .subscribe({
         next: () => {
+          this.notificationService.success(
+            'Relationship created',
+            'The relationship was created successfully.',
+          );
           this.closeRelationshipDialog();
           this.loadSpecification(dataModelId);
         },
