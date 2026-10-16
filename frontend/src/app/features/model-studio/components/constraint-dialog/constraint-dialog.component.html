@@ -261,7 +261,8 @@
 
             <input
               id="constraint-value"
-              type="text"
+              [type]="selectedField()?.type === 'INTEGER' || selectedField()?.type === 'DECIMAL' ? 'number' : 'text'"
+              [attr.step]="selectedField()?.type === 'INTEGER' ? '1' : selectedField()?.type === 'DECIMAL' ? 'any' : null"
               [value]="value()"
               placeholder="e.g. 18, 500"
               autocomplete="off"

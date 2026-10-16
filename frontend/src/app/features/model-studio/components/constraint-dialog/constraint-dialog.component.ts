@@ -231,7 +231,21 @@ export class ConstraintDialogComponent {
         );
     }
 
-    return true;
+    const fieldType = this.selectedField()?.type;
+    const comparisonValue = this.value().trim();
+
+    if (fieldType === 'INTEGER') {
+      return /^[+-]?\d+$/.test(comparisonValue);
+    }
+
+    if (fieldType === 'DECIMAL') {
+      return (
+        comparisonValue !== '' &&
+        Number.isFinite(Number(comparisonValue))
+      );
+    }
+
+    return false;
   });
 
   readonly aiOnline = computed(
