@@ -122,7 +122,8 @@
         [disabled]="selectedFields().length === 0"
         (click)="save()"
       >
-        Save Identity
+        <span class="material-symbols-outlined">key</span>
+        {{ identityFields().length > 0 ? 'Save Changes' : 'Save Identity' }}
       </button>
     </div>
   </div>
