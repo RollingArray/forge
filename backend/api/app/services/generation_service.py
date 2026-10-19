@@ -517,8 +517,6 @@ class GenerationService:
                     else 1.0
                 )
 
-                self._job_store.save(job)
-
                 existing_entities = (
                     existing_checkpoint.get("entities") or {}
                 )
@@ -572,6 +570,9 @@ class GenerationService:
                         else 1,
                     ),
                 )
+
+                # Persist UI-facing progress only after the durable checkpoint.
+                self._job_store.save(job)
 
                 entity_progress = next(
                     (
