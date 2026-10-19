@@ -557,6 +557,7 @@ class GenerationExecutor:
                         status="STARTED",
                         chunk_number=chunk_number,
                     ),
+                    persist=False,
                 )
 
                 if self._event_broker is not None:
@@ -792,6 +793,7 @@ class GenerationExecutor:
                         field_name=field_name,
                         chunk_number=chunk_number,
                     ),
+                    persist=False,
                 )
 
                 if self._event_broker is not None:
