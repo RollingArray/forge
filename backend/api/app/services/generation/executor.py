@@ -74,7 +74,9 @@ class GenerationExecutor:
         self._artifact_writer = (
             artifact_writer
             if artifact_writer is not None
-            else GenerationArtifactWriter()
+            else GenerationArtifactWriter(
+                checkpoint_store=self._checkpoint_store,
+            )
         )
 
     def has_existing_checkpoint(

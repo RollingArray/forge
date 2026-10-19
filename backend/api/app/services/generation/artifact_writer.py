@@ -9,13 +9,23 @@ import csv
 from pathlib import Path
 from typing import Any, Sequence
 
+from app.services.generation_checkpoint_store import GenerationCheckpointStore
+
 
 class GenerationArtifactWriter:
     """Persist generated entity data as chunked and consolidated CSV artifacts."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        checkpoint_store: GenerationCheckpointStore | None = None,
+    ) -> None:
         self._data_directory = (
             Path(__file__).resolve().parents[3] / "data"
+        )
+        self._checkpoint_store = (
+            checkpoint_store
+            if checkpoint_store is not None
+            else GenerationCheckpointStore()
         )
 
     def initialize_job(
@@ -81,7 +91,50 @@ class GenerationArtifactWriter:
             / "chunks"
         )
 
-        chunk_paths = sorted(chunks_directory.glob("chunk_*.csv"))
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+        if checkpoint is None:
+            raise ValueError(
+                f"Cannot consolidate {entity_name}: generation checkpoint "
+                f"is missing for job {job_id}."
+            )
+
+        entities = checkpoint.get("entities")
+        if not isinstance(entities, dict):
+            raise ValueError(
+                f"Invalid checkpoint entities for job {job_id}."
+            )
+
+        entity_checkpoint = entities.get(entity_name, {})
+        if not isinstance(entity_checkpoint, dict):
+            raise ValueError(
+                f"Invalid checkpoint state for entity {entity_name}."
+            )
+
+        completed_chunks = entity_checkpoint.get("completed_chunks", [])
+        if (
+            not isinstance(completed_chunks, list)
+            or any(
+                isinstance(number, bool)
+                or not isinstance(number, int)
+                or number < 1
+                for number in completed_chunks
+            )
+            or len(completed_chunks) != len(set(completed_chunks))
+        ):
+            raise ValueError(
+                f"Invalid committed chunk list for entity {entity_name}."
+            )
+
+        committed_chunk_numbers = set(completed_chunks)
+        chunk_paths = []
+        for chunk_path in chunks_directory.glob("chunk_*.csv"):
+            suffix = chunk_path.stem.removeprefix("chunk_")
+            if suffix.isdigit() and int(suffix) in committed_chunk_numbers:
+                chunk_paths.append(chunk_path)
+        chunk_paths.sort()
 
         consolidated_path = (
             self._job_directory(data_model_id, job_id)
@@ -90,6 +143,7 @@ class GenerationArtifactWriter:
         )
 
         if not chunk_paths:
+            consolidated_path.unlink(missing_ok=True)
             return 0
 
         total_rows = 0
