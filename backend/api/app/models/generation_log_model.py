@@ -50,6 +50,38 @@ class GenerationLogEntry(BaseModel):
     throughput_rows_per_second: float | None = None
     peak_memory_mb: float | None = None
 
+    error_type: str | None = None
+    error_message: str | None = None
+    traceback: str | None = None
+
+
+class GenerationLogEntryResponse(BaseModel):
+    """Public generation activity entry without internal traceback details."""
+
+    sequence: int
+    timestamp: str | None = None
+    entity_name: str | None = None
+    stage: GenerationLogStage
+    status: GenerationLogStatus
+    field_name: str | None = None
+    chunk_number: int | None = None
+    call_number: int | None = None
+    requested_count: int | None = None
+    generated_rows: int | None = None
+    elapsed_seconds: float | None = None
+    throughput_rows_per_second: float | None = None
+    peak_memory_mb: float | None = None
+    error_type: str | None = None
+    error_message: str | None = None
+
+
+class GenerationLogResponse(BaseModel):
+    """Public durable generation history for one job."""
+
+    data_model_id: str
+    job_id: str
+    entries: list[GenerationLogEntryResponse] = Field(default_factory=list)
+
 
 class GenerationLogDocument(BaseModel):
     """

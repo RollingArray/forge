@@ -18,8 +18,10 @@ from app.models.generation_model import (
     GenerationArtifactPreviewResponse,
     GenerationArtifactResponse,
     GenerationJobResponse,
+    GenerationJobStatus,
     GenerationReadinessResponse,
 )
+from app.models.generation_log_model import GenerationLogEntryResponse, GenerationLogResponse
 from app.core.ai_settings import load_ai_configuration
 from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
@@ -161,6 +163,53 @@ async def get_generation_job(
         )
 
     return job
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/log",
+    response_model=GenerationLogResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_log(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationLogResponse:
+    """Return durable generation activity without internal tracebacks."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    document = generation_service.get_generation_log(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job or log not found.",
+        )
+
+    return GenerationLogResponse(
+        data_model_id=document.data_model_id,
+        job_id=document.job_id,
+        entries=[
+            GenerationLogEntryResponse.model_validate(
+                entry.model_dump(
+                    mode="json",
+                    exclude_none=True,
+                )
+            )
+            for entry in document.entries
+        ],
+    )
 
 
 @router.get(
@@ -520,11 +569,12 @@ async def start_generation_job(
             detail="Generation job not found.",
         )
 
-    background_tasks.add_task(
-        generation_service.execute_job,
-        data_model_id,
-        job_id,
-    )
+    if job.status == GenerationJobStatus.RUNNING:
+        background_tasks.add_task(
+            generation_service.execute_job,
+            data_model_id,
+            job_id,
+        )
 
     return job
 
