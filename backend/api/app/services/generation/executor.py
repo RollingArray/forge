@@ -99,15 +99,15 @@ class GenerationExecutor:
 
         entity_state = checkpoint.get("entities", {}).get(entity_name, {})
 
-        committed_chunks = entity_state.get(
-            "committed_chunks",
+        completed_chunks = entity_state.get(
+            "completed_chunks",
             [],
         )
 
-        if not committed_chunks:
+        if not completed_chunks:
             return 1
 
-        committed_chunk_set = {int(chunk) for chunk in committed_chunks}
+        committed_chunk_set = {int(chunk) for chunk in completed_chunks}
 
         next_chunk = 1
 
@@ -174,15 +174,15 @@ class GenerationExecutor:
 
         entity_state = checkpoint.get("entities", {}).get(entity_name, {})
 
-        committed_chunks = entity_state.get(
-            "committed_chunks",
+        completed_chunks = entity_state.get(
+            "completed_chunks",
             [],
         )
 
-        committed_chunk_set = {int(chunk) for chunk in committed_chunks}
+        completed_chunk_set = {int(chunk) for chunk in completed_chunks}
 
         return all(
-            chunk_number in committed_chunk_set
+            chunk_number in completed_chunk_set
             for chunk_number in range(1, total_chunks + 1)
         )
 
