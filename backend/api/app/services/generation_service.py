@@ -193,6 +193,37 @@ class GenerationService:
 
         return job
 
+    def _publish_terminal_event(
+        self,
+        job: GenerationJobResponse,
+        *,
+        valid: bool,
+        error_count: int,
+    ) -> None:
+        """Publish the existing terminal event for any completed job outcome."""
+
+        self._event_broker.publish(
+            data_model_id=job.data_model_id,
+            job_id=job.job_id,
+            event_type="GENERATION_COMPLETED",
+            data={
+                "job_id": job.job_id,
+                "status": job.status.value,
+                "generated_rows": job.total_generated_rows,
+                "expected_rows": job.total_target_rows,
+                "elapsed_seconds": job.elapsed_seconds,
+                "throughput_rows_per_second": (
+                    job.total_generated_rows / job.elapsed_seconds
+                    if job.elapsed_seconds and job.elapsed_seconds > 0
+                    else None
+                ),
+                "peak_memory_mb": job.peak_memory_mb,
+                "valid": valid,
+                "error_count": error_count,
+                "progress": job.progress,
+            },
+        )
+
     def start_job(
         self,
         data_model_id: str,
@@ -219,7 +250,28 @@ class GenerationService:
         )
 
         if specification is None:
-            return None
+            job.status = GenerationJobStatus.FAILED
+            job.error = "Data model specification not found."
+            job.started_at = datetime.now(timezone.utc)
+            job.completed_at = job.started_at
+            self._job_store.save(job)
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="FAILED",
+                    status="FAILED",
+                    error_type="SpecificationNotFoundError",
+                    error_message=job.error,
+                ),
+            )
+            self._publish_terminal_event(
+                job,
+                valid=False,
+                error_count=1,
+            )
+            return job
 
         self._generation_log_store.append(
             data_model_id=data_model_id,
@@ -235,9 +287,36 @@ class GenerationService:
         job.started_at = datetime.now(timezone.utc)
         self._job_store.save(job)
 
-        plan = self._generation_planner.build(
-            specification=specification,
-        )
+        try:
+            plan = self._generation_planner.build(
+                specification=specification,
+            )
+        except Exception as exc:
+            import traceback
+
+            job.status = GenerationJobStatus.FAILED
+            job.error = str(exc)
+            job.completed_at = datetime.now(timezone.utc)
+            self._job_store.save(job)
+
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="FAILED",
+                    status="FAILED",
+                    error_type=type(exc).__name__,
+                    error_message=str(exc),
+                    traceback=traceback.format_exc(),
+                ),
+            )
+            self._publish_terminal_event(
+                job,
+                valid=False,
+                error_count=1,
+            )
+            return job
 
         job.status = GenerationJobStatus.RUNNING
         self._job_store.save(job)
@@ -309,6 +388,22 @@ class GenerationService:
             job.error = "Data model not found."
             job.completed_at = datetime.now(timezone.utc)
             self._job_store.save(job)
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="FAILED",
+                    status="FAILED",
+                    error_type="SpecificationNotFoundError",
+                    error_message=job.error,
+                ),
+            )
+            self._publish_terminal_event(
+                job,
+                valid=False,
+                error_count=1,
+            )
             return
 
         try:
@@ -600,6 +695,7 @@ class GenerationService:
                     job_id=job_id,
                     quality=result.quality.model_dump(),
                 )
+                job.quality = result.quality
 
             job.status = result.status
             job.validation = result.validation
@@ -655,13 +751,20 @@ class GenerationService:
 
             self._job_store.save(job)
 
+            terminal_stage = (
+                "COMPLETED"
+                if job.status == GenerationJobStatus.COMPLETED
+                else "FAILED"
+            )
+            terminal_status = terminal_stage
+
             self._generation_log_store.append(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
                 entry=GenerationLogEntry(
                     sequence=0,
-                    stage="COMPLETED",
-                    status="COMPLETED",
+                    stage=terminal_stage,
+                    status=terminal_status,
                     generated_rows=job.total_generated_rows,
                     elapsed_seconds=job.elapsed_seconds,
                     throughput_rows_per_second=(
@@ -670,29 +773,19 @@ class GenerationService:
                         else None
                     ),
                     peak_memory_mb=job.peak_memory_mb,
+                    error_type=(
+                        "GenerationValidationError"
+                        if job.status == GenerationJobStatus.FAILED
+                        else None
+                    ),
+                    error_message=job.error,
                 )
             )
 
-            self._event_broker.publish(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                event_type="GENERATION_COMPLETED",
-                data={
-                    "job_id": job.job_id,
-                    "status": job.status.value,
-                    "generated_rows": job.total_generated_rows,
-                    "expected_rows": job.total_target_rows,
-                    "elapsed_seconds": job.elapsed_seconds,
-                    "throughput_rows_per_second": (
-                        job.total_generated_rows / job.elapsed_seconds
-                        if job.elapsed_seconds and job.elapsed_seconds > 0
-                        else None
-                    ),
-                    "peak_memory_mb": job.peak_memory_mb,
-                    "valid": result.validation.valid,
-                    "error_count": result.validation.error_count,
-                    "progress": job.progress,
-                },
+            self._publish_terminal_event(
+                job,
+                valid=result.validation.valid,
+                error_count=result.validation.error_count,
             )
 
         except Exception as exc:
@@ -733,8 +826,35 @@ class GenerationService:
                     sequence=0,
                     stage="FAILED",
                     status="FAILED",
+                    error_type=type(exc).__name__,
+                    error_message=str(exc),
+                    traceback=traceback.format_exc(),
                 )
             )
+            self._publish_terminal_event(
+                job,
+                valid=False,
+                error_count=1,
+            )
+
+    def get_generation_log(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ):
+        """Return durable generation history for an existing job."""
+
+        job = self.get_job(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+        if job is None or job.data_model_id != data_model_id:
+            return None
+
+        return self._generation_log_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
     def get_job(
         self,

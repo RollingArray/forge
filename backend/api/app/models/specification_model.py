@@ -22,7 +22,7 @@ class SpecificationModel(BaseModel):
     generation: dict[str, Any]
     entities: list[dict[str, Any]]
     relationships: list[dict[str, Any]]
-    foreign_keys: list[dict[str, Any]]
+    foreign_keys: list[dict[str, Any]] = []
     constraints: list[dict[str, Any]]
     dependencies: list[dict[str, Any]]
     statistical_behavior: list[dict[str, Any]]
