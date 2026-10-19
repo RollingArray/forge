@@ -340,14 +340,28 @@ class GenerationService:
             },
         )
 
-        self._checkpoint_store.save(
+        existing_checkpoint = self._checkpoint_store.get(
             data_model_id=job.data_model_id,
             job_id=job.job_id,
-            seed=checkpoint["seed"],
-            entities=checkpoint["entities"],
-            specification_hash=checkpoint["specification_hash"],
-            chunk_size=checkpoint["chunk_size"],
         )
+
+        if existing_checkpoint is not None:
+            self._checkpoint_store.validate_identity(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                specification_hash=checkpoint["specification_hash"],
+                seed=seed,
+                chunk_size=chunk_size,
+            )
+        else:
+            self._checkpoint_store.save(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                seed=checkpoint["seed"],
+                entities=checkpoint["entities"],
+                specification_hash=checkpoint["specification_hash"],
+                chunk_size=checkpoint["chunk_size"],
+            )
 
         self._generation_log_store.append(
             data_model_id=job.data_model_id,
