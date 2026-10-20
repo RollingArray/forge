@@ -150,15 +150,14 @@ class GenerationExecutor:
         data_model_id: str,
         job_id: str,
         entity_name: str,
-        generated_rows: int,
     ) -> int:
-        committed_rows = self._get_committed_rows(
+        # Chunk callbacks have already persisted the current committed total.
+        # Adding this invocation's generated_rows would count those rows twice.
+        return self._get_committed_rows(
             data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         )
-
-        return committed_rows + max(generated_rows, 0)
 
     def _is_entity_fully_committed(
         self,
@@ -920,7 +919,6 @@ class GenerationExecutor:
                     data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
-                    generated_rows=generated_rows,
                 )
                 if is_resuming
                 else generated_rows

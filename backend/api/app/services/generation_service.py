@@ -4,7 +4,10 @@ Purpose: FORGE generation planning and readiness service.
 """
 
 from datetime import datetime, timezone
+import csv
+from pathlib import Path
 from math import ceil
+from threading import Lock, Thread
 from uuid import uuid4
 
 import psutil
@@ -29,6 +32,7 @@ from app.services.generation.quality import GenerationQualityService
 from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation_checkpoint_store import (
     GenerationCheckpointStore,
+    compute_specification_hash,
 )
 from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_quality_store import GenerationQualityStore
@@ -82,6 +86,370 @@ class GenerationService:
             else GenerationLogStore()
         )
         self._jobs: dict[str, GenerationJobResponse] = {}
+        self._active_workers: set[tuple[str, str]] = set()
+        self._worker_lock = Lock()
+
+    def _get_or_load_job(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse | None:
+        """Return a cached job or load its persisted representation."""
+
+        job = self._jobs.get(job_id)
+        if job is None:
+            job = self._job_store.get(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+        if job is None or job.data_model_id != data_model_id:
+            return None
+
+        self._jobs[job_id] = job
+        return job
+
+    def _reconcile_recovery_checkpoint(
+        self,
+        *,
+        data_model_id: str,
+        job: GenerationJobResponse,
+        specification: dict,
+    ) -> dict:
+        """Reconcile persisted progress against committed chunk artifacts."""
+
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+        )
+        if checkpoint is None:
+            raise ValueError(
+                f"Cannot recover job '{job.job_id}': checkpoint is missing."
+            )
+
+        seed = (specification.get("generation") or {}).get("seed", 42)
+        chunk_size = checkpoint.get("chunk_size")
+        if (
+            chunk_size != 50
+            or any(entity.chunk_size != chunk_size for entity in job.entities)
+        ):
+            raise ValueError("Recovery requires the supported 50-row chunk contract.")
+
+        expected_hash = compute_specification_hash(specification)
+        self._checkpoint_store.validate_identity(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+            specification_hash=expected_hash,
+            seed=seed,
+            chunk_size=chunk_size,
+        )
+
+        states = checkpoint.get("entities")
+        targets = {entity.entity_name: entity.target_rows for entity in job.entities}
+        if not isinstance(states, dict) or set(states) != set(targets):
+            raise ValueError("Checkpoint entities do not match the generation job.")
+
+        artifact_root = (
+            Path(__file__).resolve().parents[2]
+            / "data" / "data_model" / data_model_id
+            / "generation" / job.job_id / "generated"
+        )
+
+        # Only an entity explicitly marked RUNNING may lose its final chunk.
+        active = next(
+            (entity for entity in job.entities
+             if entity.status == GenerationEntityStatus.RUNNING),
+            None,
+        )
+        if active is None:
+            active = next(
+                (entity for entity in job.entities
+                 if entity.generated_rows < entity.target_rows),
+                None,
+            )
+
+        repaired_states = {}
+        retained_counts = {}
+
+        for entity in job.entities:
+            name = entity.entity_name
+            state = states[name]
+            if not isinstance(state, dict) or state.get("target_rows") != entity.target_rows:
+                raise ValueError(f"Invalid checkpoint target for '{name}'.")
+
+            raw_chunks = state.get("completed_chunks", [])
+            if not isinstance(raw_chunks, list):
+                raw_chunks = []
+
+            committed = {
+                number for number in raw_chunks
+                if isinstance(number, int)
+                and not isinstance(number, bool)
+                and 1 <= number <= ceil(entity.target_rows / chunk_size)
+            }
+
+            chunks_dir = artifact_root / name / "chunks"
+            prefix = 0
+            max_chunks = ceil(entity.target_rows / chunk_size)
+
+            for number in range(1, max_chunks + 1):
+                if number not in committed:
+                    break
+                chunk_path = chunks_dir / f"chunk_{number:06d}.csv"
+                if not chunk_path.is_file():
+                    break
+
+                expected_rows = min(
+                    chunk_size,
+                    entity.target_rows - (number - 1) * chunk_size,
+                )
+                try:
+                    with chunk_path.open(
+                        "r", newline="", encoding="utf-8"
+                    ) as handle:
+                        reader = csv.DictReader(handle)
+                        if not reader.fieldnames:
+                            break
+                        actual_rows = sum(1 for _ in reader)
+                except (OSError, UnicodeError, csv.Error):
+                    break
+
+                if actual_rows != expected_rows:
+                    break
+                prefix = number
+
+            # Discard the last committed chunk of the interrupted entity.
+            if entity is active and prefix:
+                prefix -= 1
+
+            retained_counts[name] = prefix
+            repaired = dict(state)
+            repaired["target_rows"] = entity.target_rows
+            repaired["completed_chunks"] = list(range(1, prefix + 1))
+            repaired["committed_rows"] = min(
+                prefix * chunk_size, entity.target_rows
+            )
+            repaired_states[name] = repaired
+
+
+        # Persist checkpoint first; startup reconciliation is safe to repeat.
+        self._checkpoint_store.save(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+            seed=seed,
+            entities=repaired_states,
+            specification_hash=expected_hash,
+            chunk_size=chunk_size,
+        )
+
+        # Cleanup is deliberately after the atomic checkpoint save.
+        for entity in job.entities:
+            name = entity.entity_name
+            prefix = retained_counts[name]
+            chunks_dir = artifact_root / name / "chunks"
+            if chunks_dir.is_dir():
+                for file_path in chunks_dir.glob("chunk_*.csv"):
+                    try:
+                        number = int(file_path.stem.removeprefix("chunk_"))
+                    except ValueError:
+                        continue
+                    if number > prefix:
+                        file_path.unlink()
+
+            consolidated = artifact_root / f"{name}.csv"
+            if (
+                prefix * chunk_size < entity.target_rows
+                and consolidated.exists()
+            ):
+                consolidated.unlink()
+
+        for entity in job.entities:
+            prefix = retained_counts[entity.entity_name]
+            rows = min(prefix * chunk_size, entity.target_rows)
+            entity.generated_rows = rows
+            entity.completed_chunks = prefix
+            entity.total_chunks = ceil(entity.target_rows / chunk_size)
+            entity.chunks = [
+                chunk for chunk in entity.chunks
+                if chunk.chunk_number <= prefix
+            ]
+
+            if rows >= entity.target_rows:
+                entity.status = GenerationEntityStatus.COMPLETED
+            elif entity is active:
+                entity.status = GenerationEntityStatus.RUNNING
+            else:
+                entity.status = GenerationEntityStatus.NOT_STARTED
+
+        job.total_generated_rows = sum(
+            entity.generated_rows for entity in job.entities
+        )
+        job.progress = (
+            job.total_generated_rows / job.total_target_rows
+            if job.total_target_rows else 1.0
+        )
+        self._job_store.save(job)
+        self._jobs[job.job_id] = job
+        return self._validate_recovery_checkpoint(
+            data_model_id=data_model_id,
+            job=job,
+            specification=specification,
+        )
+
+    def _validate_recovery_checkpoint(
+        self,
+        *,
+        data_model_id: str,
+        job: GenerationJobResponse,
+        specification: dict,
+    ) -> dict:
+        """Validate durable recovery state without changing persisted data."""
+
+        if job.data_model_id != data_model_id:
+            raise ValueError(
+                "Persisted generation job belongs to a different data model."
+            )
+
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+        )
+        if checkpoint is None:
+            raise ValueError(
+                f"Cannot resume job '{job.job_id}': checkpoint is missing."
+            )
+
+        seed = (specification.get("generation") or {}).get("seed", 42)
+        chunk_size = job.entities[0].chunk_size if job.entities else 50
+        if chunk_size != 50 or any(
+            entity.chunk_size != chunk_size for entity in job.entities
+        ):
+            raise ValueError(
+                "Persisted generation job does not use the supported "
+                "50-row chunk contract."
+            )
+
+        plan = self._generation_planner.build(specification=specification)
+        plan_targets = {
+            entity.entity_name: entity.target_rows
+            for entity in plan.entities
+        }
+        job_targets = {
+            entity.entity_name: entity.target_rows
+            for entity in job.entities
+        }
+        if plan_targets != job_targets:
+            raise ValueError(
+                "Rebuilt generation plan does not match persisted job targets."
+            )
+
+        self._checkpoint_store.validate_identity(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+            specification_hash=compute_specification_hash(specification),
+            seed=seed,
+            chunk_size=chunk_size,
+        )
+
+        checkpoint_entities = checkpoint.get("entities")
+        if not isinstance(checkpoint_entities, dict):
+            raise ValueError("Checkpoint entity state is invalid.")
+
+        expected_targets = {
+            entity.entity_name: entity.target_rows
+            for entity in job.entities
+        }
+        if set(checkpoint_entities) != set(expected_targets):
+            raise ValueError(
+                "Checkpoint entities do not match the persisted generation job."
+            )
+
+        entity_progress_total = sum(
+            entity.generated_rows for entity in job.entities
+        )
+        if entity_progress_total != job.total_generated_rows:
+            raise ValueError(
+                "Persisted job aggregate row count does not match its "
+                "entity-level progress."
+            )
+
+        if job.total_generated_rows > job.total_target_rows:
+            raise ValueError(
+                "Persisted job generated rows exceed its target row count."
+            )
+
+        for entity_name, target_rows in expected_targets.items():
+            entity_checkpoint = checkpoint_entities[entity_name]
+            if not isinstance(entity_checkpoint, dict):
+                raise ValueError(
+                    f"Checkpoint state is invalid for entity '{entity_name}'."
+                )
+            if entity_checkpoint.get("target_rows") != target_rows:
+                raise ValueError(
+                    f"Checkpoint target rows do not match for entity "
+                    f"'{entity_name}'."
+                )
+
+            completed_chunks = entity_checkpoint.get("completed_chunks")
+            if (
+                not isinstance(completed_chunks, list)
+                or any(
+                    not isinstance(number, int)
+                    or isinstance(number, bool)
+                    or number < 1
+                    for number in completed_chunks
+                )
+                or len(completed_chunks) != len(set(completed_chunks))
+            ):
+                raise ValueError(
+                    f"Checkpoint committed chunks are invalid for entity "
+                    f"'{entity_name}'."
+                )
+
+            total_chunks = (
+                ceil(target_rows / chunk_size) if target_rows > 0 else 0
+            )
+            if any(number > total_chunks for number in completed_chunks):
+                raise ValueError(
+                    f"Checkpoint contains an out-of-range chunk for entity "
+                    f"'{entity_name}'."
+                )
+
+            expected_chunk_numbers = list(range(1, len(completed_chunks) + 1))
+            if sorted(completed_chunks) != expected_chunk_numbers:
+                raise ValueError(
+                    f"Checkpoint committed chunks are not contiguous for "
+                    f"entity '{entity_name}'."
+                )
+
+            committed_rows = entity_checkpoint.get("committed_rows", 0)
+            derived_committed_rows = min(
+                len(completed_chunks) * chunk_size,
+                target_rows,
+            )
+            if (
+                not isinstance(committed_rows, int)
+                or isinstance(committed_rows, bool)
+                or committed_rows < 0
+                or committed_rows > target_rows
+                or committed_rows != derived_committed_rows
+            ):
+                raise ValueError(
+                    f"Checkpoint committed row count is invalid for entity "
+                    f"'{entity_name}'."
+                )
+
+            if committed_rows != sum(
+                entity_progress.generated_rows
+                for entity_progress in job.entities
+                if entity_progress.entity_name == entity_name
+            ):
+                raise ValueError(
+                    f"Checkpoint committed rows do not match persisted job "
+                    f"progress for entity '{entity_name}'."
+                )
+
+        return checkpoint
 
     def get_readiness(
         self,
@@ -224,6 +592,39 @@ class GenerationService:
             },
         )
 
+    def recover_interrupted_jobs(self) -> int:
+        """Reconcile and schedule persisted RUNNING jobs after startup."""
+
+        scheduled = 0
+        for persisted_job in self._job_store.list_running():
+            try:
+                job = self.start_job(
+                    data_model_id=persisted_job.data_model_id,
+                    job_id=persisted_job.job_id,
+                )
+                if job is None or job.status != GenerationJobStatus.RUNNING:
+                    continue
+
+                worker = Thread(
+                    target=self.execute_job,
+                    kwargs={
+                        "data_model_id": job.data_model_id,
+                        "job_id": job.job_id,
+                    },
+                    name=f"generation-recovery-{job.job_id}",
+                    daemon=True,
+                )
+                worker.start()
+                scheduled += 1
+            except Exception as exc:
+                # One invalid job must not prevent other jobs from recovering.
+                print(
+                    f"Generation recovery skipped job "
+                    f"{persisted_job.job_id}: {exc}"
+                )
+
+        return scheduled
+
     def start_job(
         self,
         data_model_id: str,
@@ -231,18 +632,53 @@ class GenerationService:
     ) -> GenerationJobResponse | None:
         """Prepare a generation job for asynchronous execution."""
 
-        job = self._jobs.get(job_id)
+        job = self._get_or_load_job(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if job is None:
             return None
 
-        if job.data_model_id != data_model_id:
-            return None
+        worker_key = (data_model_id, job_id)
+        with self._worker_lock:
+            if worker_key in self._active_workers:
+                raise ValueError(
+                    f"Generation job '{job_id}' already has a scheduled "
+                    "or active worker."
+                )
+
+        if job.status == GenerationJobStatus.RUNNING:
+            specification = self._specification_service.get_specification(
+                data_model_id=data_model_id,
+            )
+            if specification is None:
+                raise ValueError(
+                    "Cannot resume generation: data model specification "
+                    "was not found."
+                )
+
+            self._reconcile_recovery_checkpoint(
+                data_model_id=data_model_id,
+                job=job,
+                specification=specification,
+            )
+
+            with self._worker_lock:
+                if worker_key in self._active_workers:
+                    raise ValueError(
+                        f"Generation job '{job_id}' already has a scheduled "
+                        "or active worker."
+                    )
+                self._active_workers.add(worker_key)
+
+            return job
 
         if job.status != GenerationJobStatus.CREATED:
             raise ValueError(
                 f"Generation job '{job_id}' cannot be started from "
-                f"status '{job.status}'."
+                f"status '{job.status}'. Only CREATED jobs and validated "
+                "interrupted RUNNING jobs can be started."
             )
 
         specification = self._specification_service.get_specification(
@@ -360,18 +796,50 @@ class GenerationService:
                 chunk_size=checkpoint["chunk_size"],
             )
 
-        job.status = GenerationJobStatus.RUNNING
-        self._job_store.save(job)
+        with self._worker_lock:
+            if worker_key in self._active_workers:
+                raise ValueError(
+                    f"Generation job '{job_id}' already has a scheduled "
+                    "or active worker."
+                )
+            self._active_workers.add(worker_key)
 
-        self._generation_log_store.append(
-            data_model_id=job.data_model_id,
-            job_id=job.job_id,
-            entry=GenerationLogEntry(
-                sequence=0,
-                stage="PREPARING",
-                status="COMPLETED",
-            ),
-        )
+        previous_status = job.status
+        job.status = GenerationJobStatus.RUNNING
+
+        try:
+            self._job_store.save(job)
+            self._generation_log_store.append(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                entry=GenerationLogEntry(
+                    sequence=0,
+                    stage="PREPARING",
+                    status="COMPLETED",
+                ),
+            )
+        except Exception:
+            with self._worker_lock:
+                self._active_workers.discard(worker_key)
+
+            # Preserve RUNNING if it was already persisted and only the log
+            # append failed. This leaves the job eligible for validated recovery.
+            try:
+                persisted_job = self._job_store.get(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                )
+            except Exception:
+                persisted_job = None
+
+            if persisted_job is None or persisted_job.status != GenerationJobStatus.RUNNING:
+                job.status = previous_status
+                try:
+                    self._job_store.save(job)
+                except Exception:
+                    # Preserve the original start-transition failure.
+                    pass
+            raise
 
         return job
 
@@ -380,9 +848,34 @@ class GenerationService:
         data_model_id: str,
         job_id: str,
     ) -> None:
-        """Execute a started generation job in the background."""
+        """Execute a started or explicitly resumed generation job."""
 
-        job = self._jobs.get(job_id)
+        worker_key = (data_model_id, job_id)
+        with self._worker_lock:
+            if worker_key not in self._active_workers:
+                return
+
+        try:
+            self._execute_job_reserved(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+        finally:
+            with self._worker_lock:
+                self._active_workers.discard(worker_key)
+
+    def _execute_job_reserved(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+    ) -> None:
+        """Run generation using the reservation acquired by start_job."""
+
+        job = self._get_or_load_job(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if job is None:
             return
@@ -466,18 +959,51 @@ class GenerationService:
                     or {}
                 )
 
-                previously_committed_rows = (
+                existing_entity_checkpoint = (
                     existing_checkpoint
                     .get("entities", {})
                     .get(entity_name, {})
-                    .get("committed_rows", 0)
+                )
+                completed_chunks_for_entity = list(
+                    existing_entity_checkpoint.get("completed_chunks", [])
                 )
 
-                if not isinstance(previously_committed_rows, int):
-                    previously_committed_rows = 0
+                if chunk_number not in completed_chunks_for_entity:
+                    completed_chunks_for_entity.append(chunk_number)
+                    completed_chunks_for_entity.sort()
 
-                durable_generated_rows = (
-                    previously_committed_rows + len(_chunk_rows)
+                entity_target_rows = next(
+                    (
+                        item.target_rows
+                        for item in job.entities
+                        if item.entity_name == entity_name
+                    ),
+                    None,
+                )
+                chunk_size = existing_checkpoint.get("chunk_size", 50)
+
+                if (
+                    entity_target_rows is None
+                    or not isinstance(chunk_size, int)
+                    or isinstance(chunk_size, bool)
+                    or chunk_size <= 0
+                    or any(
+                        not isinstance(number, int)
+                        or isinstance(number, bool)
+                        or number < 1
+                        for number in completed_chunks_for_entity
+                    )
+                    or len(completed_chunks_for_entity)
+                    != len(set(completed_chunks_for_entity))
+                ):
+                    raise ValueError(
+                        f"Cannot account for committed chunks of entity "
+                        f"'{entity_name}'."
+                    )
+
+                durable_generated_rows = min(
+                    len(completed_chunks_for_entity) * chunk_size,
+                    entity_target_rows,
                 )
 
                 for entity_progress in job.entities:
@@ -547,19 +1073,13 @@ class GenerationService:
                         or {}
                     )
 
-                    completed_chunks = list(
-                        existing_entity.get(
-                            "completed_chunks",
-                            [],
+                    completed_chunks = (
+                        completed_chunks_for_entity
+                        if entity.entity_name == entity_name
+                        else list(
+                            existing_entity.get("completed_chunks", [])
                         )
                     )
-
-                    if (
-                        entity.entity_name == entity_name
-                        and chunk_number not in completed_chunks
-                    ):
-                        completed_chunks.append(chunk_number)
-                        completed_chunks.sort()
 
                     entities[entity.entity_name] = {
                         "target_rows": entity.target_rows,
@@ -768,9 +1288,12 @@ class GenerationService:
 
             self._job_store.save(job)
 
+            is_successful_completion = (
+                job.status == GenerationJobStatus.COMPLETED
+            )
             terminal_stage = (
                 "COMPLETED"
-                if job.status == GenerationJobStatus.COMPLETED
+                if is_successful_completion
                 else "FAILED"
             )
             terminal_status = terminal_stage
@@ -831,20 +1354,101 @@ class GenerationService:
                 cause = cause.__cause__
                 depth += 1
 
-            job.status = GenerationJobStatus.FAILED
+            from app.services.generation.artifact_writer import (
+                GenerationArtifactWriter,
+            )
+
+            usable_rows = 0
+            recovered_rows: dict[str, int] = {}
+            checkpoint = self._checkpoint_store.get(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+            )
+            checkpoint_entities = (
+                checkpoint.get("entities", {})
+                if isinstance(checkpoint, dict)
+                else {}
+            )
+
+            artifact_writer = GenerationArtifactWriter(
+                checkpoint_store=self._checkpoint_store,
+            )
+
+            if isinstance(checkpoint_entities, dict):
+                for entity_name in checkpoint_entities:
+                    try:
+                        row_count = artifact_writer.consolidate_entity(
+                            data_model_id=job.data_model_id,
+                            job_id=job.job_id,
+                            entity_name=entity_name,
+                        )
+                        if row_count > 0:
+                            recovered_rows[entity_name] = row_count
+                            usable_rows += row_count
+                    except Exception as recovery_exc:
+                        print(
+                            f"[GENERATION ARTIFACT RECOVERY FAILURE] "
+                            f"job_id={job.job_id} entity={entity_name} "
+                            f"error_type={type(recovery_exc).__name__} "
+                            f"error={recovery_exc}",
+                            flush=True,
+                        )
+
+            job.total_generated_rows = usable_rows
+            job.progress = (
+                min(usable_rows / job.total_target_rows, 1.0)
+                if job.total_target_rows > 0
+                else 0.0
+            )
+            job.status = (
+                GenerationJobStatus.PARTIALLY_COMPLETED
+                if usable_rows > 0
+                else GenerationJobStatus.FAILED
+            )
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)
+
+            for entity in job.entities:
+                recovered = recovered_rows.get(entity.entity_name, 0)
+                entity.generated_rows = recovered
+                entity.status = (
+                    GenerationEntityStatus.COMPLETED
+                    if recovered >= entity.target_rows
+                    else GenerationEntityStatus.FAILED
+                )
+                entity.completed_chunks = (
+                    ceil(recovered / entity.chunk_size)
+                    if recovered > 0 and entity.chunk_size > 0
+                    else 0
+                )
+
             self._job_store.save(job)
 
+            is_partial = (
+                job.status == GenerationJobStatus.PARTIALLY_COMPLETED
+            )
             self._generation_log_store.append(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
                 entry=GenerationLogEntry(
                     sequence=0,
-                    stage="FAILED",
-                    status="FAILED",
+                    stage=(
+                        "CHUNK_COMMITTED"
+                        if is_partial
+                        else "FAILED"
+                    ),
+                    status=(
+                        "COMPLETED"
+                        if is_partial
+                        else "FAILED"
+                    ),
+                    generated_rows=usable_rows,
                     error_type=type(exc).__name__,
-                    error_message=str(exc),
+                    error_message=(
+                        f"Generation stopped with usable output: {exc}"
+                        if is_partial
+                        else str(exc)
+                    ),
                     traceback=traceback.format_exc(),
                 )
             )
