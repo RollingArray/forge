@@ -115,11 +115,13 @@ class GenerationRunService:
             evidence=validation.evidence.to_dict(),
         )
 
-        status = (
-            GenerationJobStatus.COMPLETED
-            if validation.valid
-            else GenerationJobStatus.FAILED
-        )
+        all_rows_generated = run.generated_rows == run.target_rows
+        if validation.valid and all_rows_generated:
+            status = GenerationJobStatus.COMPLETED
+        elif run.generated_rows > 0:
+            status = GenerationJobStatus.PARTIALLY_COMPLETED
+        else:
+            status = GenerationJobStatus.FAILED
 
         quality = self._quality_service.build_quality_profile(
             specification=specification,

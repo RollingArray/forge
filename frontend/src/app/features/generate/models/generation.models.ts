@@ -25,6 +25,7 @@ export type GenerationJobStatus =
   | 'QUEUED'
   | 'RUNNING'
   | 'COMPLETED'
+  | 'PARTIALLY_COMPLETED'
   | 'FAILED'
   | 'CANCELLED';
 

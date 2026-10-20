@@ -5,9 +5,11 @@ Purpose: FORGE generation API endpoints.
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
 from csv import DictReader
 from pathlib import Path
-from collections.abc import AsyncIterator
+
+
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
@@ -30,6 +32,12 @@ from app.services.generation_event_broker import GenerationEventBroker
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
 from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
+
+
+def _count_csv_data_rows(path: Path) -> int:
+    with path.open("r", newline="", encoding="utf-8") as file:
+        return sum(1 for _ in DictReader(file))
+
 
 
 router = APIRouter(
@@ -298,6 +306,7 @@ async def stream_generation_events(
 
         if job.status in {
             "COMPLETED",
+            "PARTIALLY_COMPLETED",
             "FAILED",
             "CANCELLED",
         }:
@@ -393,7 +402,7 @@ async def list_generation_artifacts(
             GenerationArtifactResponse(
                 entity_name=entity.entity_name,
                 filename=path.name,
-                rows=entity.generated_rows,
+                rows=_count_csv_data_rows(path),
                 size_bytes=path.stat().st_size,
             )
         )
