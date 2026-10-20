@@ -14,11 +14,13 @@
         ? 'Generation in progress'
         : generationJob()?.status === 'COMPLETED'
           ? 'Generation completed'
-          : generationJob()?.status === 'FAILED'
-            ? 'Generation failed'
-            : generationReadiness()?.ready
-              ? 'Generation is ready'
-              : 'Generation is not ready'
+          : generationJob()?.status === 'PARTIALLY_COMPLETED'
+            ? 'Generation partially completed'
+            : generationJob()?.status === 'FAILED'
+              ? 'Generation failed'
+              : generationReadiness()?.ready
+                ? 'Generation is ready'
+                : 'Generation is not ready'
   "
   [actionBarDescription]="
     generationLoading()
@@ -27,16 +29,18 @@
         ? 'Synthetic data is currently being generated.'
         : generationJob()?.status === 'COMPLETED'
           ? 'Generated data is ready for review.'
-          : generationJob()?.status === 'FAILED'
-            ? 'Generation could not be completed. Review the execution details.'
-            : generationReadiness()?.ready
-              ? 'Review the generation workspace before starting execution.'
-              : 'Resolve the generation readiness issues before continuing.'
+          : generationJob()?.status === 'PARTIALLY_COMPLETED'
+            ? 'Some generated data is available to review and download.'
+            : generationJob()?.status === 'FAILED'
+              ? 'Generation could not be completed. Review the execution details.'
+              : generationReadiness()?.ready
+                ? 'Review the generation workspace before starting execution.'
+                : 'Resolve the generation readiness issues before continuing.'
   "
   [secondaryLabel]="'Back to Population'"
   [secondaryIcon]="'arrow_back'"
   [primaryLabel]="
-    generationJob()?.status === 'COMPLETED'
+    generationJob()?.status === 'COMPLETED' || generationJob()?.status === 'PARTIALLY_COMPLETED'
       ? 'Continue to Results'
       : generationJob()?.status === 'RUNNING'
         ? 'Generation in Progress'
@@ -48,7 +52,10 @@
   "
   [primaryIcon]="'arrow_forward'"
   [primaryDisabled]="
-    generationLoading() || (generationJob() !== null && generationJob()?.status !== 'COMPLETED')
+    generationLoading() ||
+    (generationJob() !== null &&
+      generationJob()?.status !== 'COMPLETED' &&
+      generationJob()?.status !== 'PARTIALLY_COMPLETED')
   "
   (stepSelected)="selectStep($event)"
   (secondaryAction)="backToPopulation()"
@@ -70,29 +77,44 @@
               ? 'Loading generation'
               : generationError()
                 ? 'Generation failed'
-                : (generationJob()?.status ??
-                  (generationReadiness()?.ready ? 'Ready to generate' : 'Not ready'))
+                : generationJob()?.status
+                  ? formatStatusLabel(generationJob()!.status)
+                  : generationReadiness()?.ready
+                    ? 'Ready to generate'
+                    : 'Not ready'
           "
           [description]="
-            generationError()
-              ? generationError()!
-              : generationLoading()
-                ? 'Loading the canonical specification and generation plan.'
-                : generationReadiness()?.ready
-                  ? 'Generation readiness checks have passed.'
-                  : 'Review generation readiness and resolve any outstanding requirements.'
+            generationLoading()
+              ? 'Loading the canonical specification and generation plan.'
+              : generationJob()?.status === 'RUNNING'
+                ? 'Generation is in progress. Entity progress and committed checkpoints are being updated.'
+                : generationJob()?.status === 'PARTIALLY_COMPLETED'
+                  ? 'Generation stopped before all requested rows were produced. Review and download available output, or resume the job.'
+                  : generationJob()?.status === 'COMPLETED'
+                    ? 'All requested rows were generated and the job completed successfully.'
+                    : generationJob()?.status === 'FAILED'
+                      ? (generationJob()?.error ??
+                        'Generation failed. Review the execution details.')
+                      : generationJob()?.status === 'CANCELLED'
+                        ? 'Generation was cancelled. Review available output before continuing.'
+                        : generationError()
+                          ? generationError()!
+                          : generationReadiness()?.ready
+                            ? 'Generation readiness checks have passed.'
+                            : 'Review generation readiness and resolve any outstanding requirements.'
           "
           [status]="
             generationLoading()
               ? 'info'
-              : generationError()
-                ? 'error'
-                : generationJob()?.status === 'COMPLETED'
-                  ? 'success'
-                  : generationJob()?.status === 'FAILED'
-                    ? 'error'
-                    : generationJob()?.status === 'RUNNING'
-                      ? 'info'
+              : generationJob()?.status === 'COMPLETED'
+                ? 'success'
+                : generationJob()?.status === 'FAILED' || generationError()
+                  ? 'error'
+                  : generationJob()?.status === 'RUNNING'
+                    ? 'info'
+                    : generationJob()?.status === 'PARTIALLY_COMPLETED' ||
+                        generationJob()?.status === 'CANCELLED'
+                      ? 'warning'
                       : generationReadiness()?.ready
                         ? 'success'
                         : 'warning'
@@ -100,6 +122,16 @@
         />
         <app-metric-grid [columns]="4" [metrics]="generationMetrics()" />
       </app-workspace-section>
+    </app-workflow-row>
+
+    <app-workflow-row [columns]="1" class="generation-execution-row">
+      <app-generation-checkpoint
+        [checkpoint]="generationCheckpoint()"
+        [loading]="generationCheckpointLoading()"
+        [canResume]="generationJob()?.status === 'RUNNING'"
+        [resuming]="generationActionLoading()"
+        (resumeRequested)="resumeGeneration()"
+      />
     </app-workflow-row>
 
     <app-workflow-row [columns]="'40-60'" class="generation-execution-row">
@@ -123,12 +155,5 @@
         [isGenerating]="isGenerating()"
       />
     </aside>
-
-    <app-workflow-row [columns]="1" class="generation-execution-row">
-      <app-generation-checkpoint
-        [checkpoint]="generationCheckpoint()"
-        [loading]="generationCheckpointLoading()"
-      />
-    </app-workflow-row>
   </section>
 </app-workflow-page>

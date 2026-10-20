@@ -1,3 +1,4 @@
+import { formatStatusLabel } from '../../../../shared/utils/status-label.util';
 import { WorkspaceScrollAreaComponent } from '../../../../shared/components/workspace-scroll-area/workspace-scroll-area.component';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import {
@@ -96,18 +97,10 @@ export class EntityGenerationProgressComponent
     switch (entity.status) {
       case 'NOT_STARTED':
         return 'Waiting';
-      case 'QUEUED':
-        return 'Queued';
       case 'RUNNING':
         return 'Generating';
-      case 'COMPLETED':
-        return 'Completed';
-      case 'FAILED':
-        return 'Failed';
-      case 'CANCELLED':
-        return 'Cancelled';
       default:
-        return entity.status;
+        return formatStatusLabel(entity.status);
     }
   }
 

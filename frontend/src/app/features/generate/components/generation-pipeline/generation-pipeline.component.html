@@ -37,7 +37,7 @@
           <span class="pipeline-status">
             <span class="status-indicator"></span>
 
-            {{ node.status === 'NOT_STARTED' ? 'Waiting' : node.status }}
+            {{ node.status === 'NOT_STARTED' ? 'Waiting' : formatStatusLabel(node.status) }}
           </span>
         </div>
 

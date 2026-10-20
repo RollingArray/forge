@@ -1,3 +1,4 @@
+import { formatStatusLabel } from '../../shared/utils/status-label.util';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -47,6 +48,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerateComponent {
+  readonly formatStatusLabel = formatStatusLabel;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly generationService = inject(GenerationService);
@@ -133,6 +136,7 @@ export class GenerateComponent {
   readonly generationCheckpoint = this.executionStore.generationCheckpoint;
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);
+  readonly generationActionLoading = signal(false);
 
   readonly pipelineNodes = computed(() =>
     this.pipelineMapper.fromReadiness(
@@ -263,12 +267,55 @@ export class GenerateComponent {
   }
 
   handlePrimaryAction(): void {
-    if (this.generationJob() === null) {
+    const job = this.generationJob();
+
+    if (job === null) {
       this.startGeneration();
       return;
     }
 
-    this.continueToResults();
+    if (
+      job.status === 'COMPLETED' ||
+      job.status === 'PARTIALLY_COMPLETED'
+    ) {
+      this.continueToResults();
+    }
+  }
+
+  resumeGeneration(): void {
+    const job = this.generationJob();
+
+    if (
+      !this.dataModelId ||
+      !job ||
+      job.status !== 'RUNNING' ||
+      this.generationActionLoading()
+    ) {
+      return;
+    }
+
+    this.generationError.set(null);
+    this.generationActionLoading.set(true);
+
+    this.generationService
+      .startGenerationJob(this.dataModelId, job.job_id)
+      .subscribe({
+        next: (resumedJob) => {
+          this.executionStore.setJob(resumedJob);
+          this.executionStore.connect(this.dataModelId, resumedJob.job_id);
+          this.loadGenerationCheckpoint(resumedJob.job_id);
+          this.generationActionLoading.set(false);
+        },
+        error: (error) => {
+          this.generationActionLoading.set(false);
+          this.generationError.set(
+            error?.error?.detail ??
+              error?.message ??
+              'Generation could not be resumed. Check the saved checkpoint and try again.',
+          );
+          this.loadExistingGenerationJob(job.job_id);
+        },
+      });
   }
 
   startGeneration(): void {
@@ -351,7 +398,12 @@ export class GenerateComponent {
   }
 
   private isTerminalGenerationStatus(status: GenerationJobResponse['status']): boolean {
-    return status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED';
+    return (
+      status === 'COMPLETED' ||
+      status === 'PARTIALLY_COMPLETED' ||
+      status === 'FAILED' ||
+      status === 'CANCELLED'
+    );
   }
 
   continueToResults(): void {

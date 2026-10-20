@@ -1,3 +1,4 @@
+import { formatStatusLabel } from '../../../../shared/utils/status-label.util';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
@@ -22,6 +23,8 @@ import { GenerationPipelineNode } from '../../../../core/interfaces/generation-p
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerationPipelineComponent {
+  readonly formatStatusLabel = formatStatusLabel;
+
   readonly nodes = input<GenerationPipelineNode[]>([]);
   readonly loading = input(false);
   readonly ready = input(false);
@@ -62,21 +65,10 @@ export class GenerationPipelineComponent {
     switch (dependency.status) {
       case 'COMPLETED':
         return 'Generated';
-
       case 'RUNNING':
         return 'Generating';
-
-      case 'QUEUED':
-        return 'Queued';
-
-      case 'FAILED':
-        return 'Failed';
-
-      case 'CANCELLED':
-        return 'Cancelled';
-
       default:
-        return 'Waiting';
+        return formatStatusLabel(dependency.status);
     }
   }
 
