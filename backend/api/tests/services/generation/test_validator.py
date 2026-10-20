@@ -6,6 +6,9 @@ from pathlib import Path
 from app.services.generation.artifact_reader import (
     GenerationArtifactReader,
 )
+from app.services.generation_checkpoint_store import (
+    GenerationCheckpointStore,
+)
 from app.services.generation.validator import (
     GenerationValidator,
 )
@@ -51,8 +54,50 @@ def _validator(tmp_path: Path) -> GenerationValidator:
     reader = GenerationArtifactReader()
     reader._data_directory = tmp_path
 
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = tmp_path
+
+    reader._checkpoint_store = checkpoint_store
+
     return GenerationValidator(
         artifact_reader=reader,
+    )
+
+
+def _commit_chunks(
+    *,
+    root: Path,
+    job_id: str,
+    specification: dict,
+) -> None:
+    entities = {}
+    generated_root = root / "generation" / job_id / "generated"
+
+    for entity in specification.get("entities", []):
+        entity_name = entity["name"]
+        chunk_directory = (
+            generated_root / entity_name / "chunks"
+        )
+        chunk_numbers = sorted(
+            int(path.stem.removeprefix("chunk_"))
+            for path in chunk_directory.glob("chunk_*.csv")
+            if path.stem.removeprefix("chunk_").isdigit()
+        )
+
+        entities[entity_name] = {
+            "target_rows": entity.get("population", {}).get("count", 0),
+            "completed_chunks": chunk_numbers,
+        }
+
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = root
+
+    checkpoint_store.save(
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+        seed=1,
+        entities=entities,
+        chunk_size=100,
     )
 
 
@@ -100,8 +145,15 @@ def test_validation_counts_committed_rows(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
@@ -145,8 +197,15 @@ def test_validation_detects_duplicate_identity(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
@@ -203,8 +262,15 @@ def test_validation_converts_numeric_csv_values_for_constraints(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
@@ -257,8 +323,15 @@ def test_validation_detects_constraint_violation(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
@@ -344,8 +417,15 @@ def test_validation_accepts_valid_foreign_key(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
@@ -426,8 +506,15 @@ def test_validation_detects_orphan_foreign_key(
         ],
     }
 
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
     result = _validator(tmp_path).validate(
         specification=specification,
+        data_model_id="TEST-MODEL",
         job_id=job_id,
     )
 
