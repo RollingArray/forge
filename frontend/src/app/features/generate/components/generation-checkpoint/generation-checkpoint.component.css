@@ -216,3 +216,69 @@
     padding: 14px;
   }
 }
+
+.checkpoint-message-row {
+  display: block;
+}
+
+.checkpoint-message-row .checkpoint-message {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.checkpoint-message-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.checkpoint-message .generation-resume-button {
+  margin-left: auto;
+}
+
+.generation-resume-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  align-self: center;
+  flex: 0 0 auto;
+  min-height: 42px;
+  margin-left: auto;
+  padding: 0 16px;
+  border: 1px solid #6b4ce6;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, #5b3df5 0%, #7448f5 100%);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.generation-resume-button .material-symbols-outlined {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.generation-resume-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.generation-resume-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 700px) {
+  .checkpoint-message-row {
+    flex-direction: column;
+  }
+
+  .generation-resume-button {
+    align-self: flex-end;
+  }
+}

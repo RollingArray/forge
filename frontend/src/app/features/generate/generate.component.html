@@ -104,6 +104,9 @@
                             : 'Review generation readiness and resolve any outstanding requirements.'
           "
           [status]="
+            generationJob()?.status === 'INTERRUPTED'
+              ? 'warning'
+              : (
             generationLoading()
               ? 'info'
               : generationJob()?.status === 'COMPLETED'
@@ -118,6 +121,7 @@
                       : generationReadiness()?.ready
                         ? 'success'
                         : 'warning'
+                )
           "
         />
         <app-metric-grid [columns]="4" [metrics]="generationMetrics()" />
@@ -128,10 +132,7 @@
       <app-generation-checkpoint
         [checkpoint]="generationCheckpoint()"
         [loading]="generationCheckpointLoading()"
-        [canResume]="
-          generationJob()?.status === 'RUNNING' ||
-          generationJob()?.status === 'PARTIALLY_COMPLETED'
-        "
+        [canResume]="generationJob()?.status === 'INTERRUPTED'"
         [resuming]="generationActionLoading()"
         (resumeRequested)="resumeGeneration()"
       />

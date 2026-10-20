@@ -1,26 +1,4 @@
 <app-workspace-section>
-  <section
-    class="generation-recovery-control"
-    *ngIf="canResume()"
-    aria-label="Generation recovery controls"
-  >
-    <div>
-      <strong>Generation control</strong>
-      <p>
-        Resume this job from its validated checkpoint if its worker stopped.
-        The existing job and saved progress will be retained.
-      </p>
-    </div>
-    <button
-      type="button"
-      class="generation-resume-button"
-      [disabled]="resuming()"
-      (click)="resumeRequested.emit()"
-    >
-      {{ resuming() ? 'Checking recovery…' : 'Resume Generation' }}
-    </button>
-  </section>
-
   <app-workspace-header
     eyebrow="GENERATION RECOVERY"
     title="Checkpoints &amp; recovery"
@@ -31,7 +9,8 @@
     class="checkpoint-state"
     *ngIf="checkpoint() as currentCheckpoint; else checkpointUnavailable"
   >
-    <div class="checkpoint-message" [class.has-progress]="hasSavedProgress()">
+    <div class="checkpoint-message-row">
+      <div class="checkpoint-message" [class.has-progress]="hasSavedProgress()">
       <div class="checkpoint-message-icon">
         <span class="material-symbols-outlined">
           {{ hasSavedProgress() ? 'verified' : 'save' }}
@@ -57,6 +36,20 @@
           </p>
         </ng-template>
       </div>
+
+        <button
+          *ngIf="canResume()"
+          type="button"
+          class="generation-resume-button"
+          [disabled]="resuming()"
+          (click)="resumeRequested.emit()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">
+            {{ resuming() ? 'progress_activity' : 'play_arrow' }}
+          </span>
+          <span>{{ resuming() ? 'Resuming…' : 'Resume Generation' }}</span>
+        </button>
+    </div>
     </div>
 
     <div class="checkpoint-summary">
