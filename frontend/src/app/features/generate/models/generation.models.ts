@@ -24,6 +24,7 @@ export type GenerationJobStatus =
   | 'PLANNING'
   | 'QUEUED'
   | 'RUNNING'
+  | 'INTERRUPTED'
   | 'COMPLETED'
   | 'PARTIALLY_COMPLETED'
   | 'FAILED'

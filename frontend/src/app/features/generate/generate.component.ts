@@ -288,7 +288,7 @@ export class GenerateComponent {
     if (
       !this.dataModelId ||
       !job ||
-      job.status !== 'RUNNING' ||
+      job.status !== 'INTERRUPTED' ||
       this.generationActionLoading()
     ) {
       return;
