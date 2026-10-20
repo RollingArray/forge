@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GenerationCheckpoint } from '../../../../core/interfaces/generation-checkpoint.interface';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
@@ -16,6 +16,9 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
 export class GenerationCheckpointComponent {
   readonly checkpoint = input<GenerationCheckpoint | null>(null);
   readonly loading = input(false);
+  readonly canResume = input(false);
+  readonly resuming = input(false);
+  readonly resumeRequested = output<void>();
 
   readonly savedBatchCount = computed(() =>
     Object.values(this.checkpoint()?.entities ?? {}).reduce(

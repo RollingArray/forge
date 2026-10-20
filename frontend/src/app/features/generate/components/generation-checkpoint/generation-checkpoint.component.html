@@ -1,4 +1,26 @@
 <app-workspace-section>
+  <section
+    class="generation-recovery-control"
+    *ngIf="canResume()"
+    aria-label="Generation recovery controls"
+  >
+    <div>
+      <strong>Generation control</strong>
+      <p>
+        Resume this job from its validated checkpoint if its worker stopped.
+        The existing job and saved progress will be retained.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="generation-resume-button"
+      [disabled]="resuming()"
+      (click)="resumeRequested.emit()"
+    >
+      {{ resuming() ? 'Checking recovery…' : 'Resume Generation' }}
+    </button>
+  </section>
+
   <app-workspace-header
     eyebrow="GENERATION RECOVERY"
     title="Checkpoints &amp; recovery"

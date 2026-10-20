@@ -128,7 +128,10 @@
       <app-generation-checkpoint
         [checkpoint]="generationCheckpoint()"
         [loading]="generationCheckpointLoading()"
-        [canResume]="generationJob()?.status === 'RUNNING'"
+        [canResume]="
+          generationJob()?.status === 'RUNNING' ||
+          generationJob()?.status === 'PARTIALLY_COMPLETED'
+        "
         [resuming]="generationActionLoading()"
         (resumeRequested)="resumeGeneration()"
       />

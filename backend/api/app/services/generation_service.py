@@ -648,7 +648,10 @@ class GenerationService:
                     "or active worker."
                 )
 
-        if job.status == GenerationJobStatus.RUNNING:
+        if job.status in {
+            GenerationJobStatus.RUNNING,
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+        }:
             specification = self._specification_service.get_specification(
                 data_model_id=data_model_id,
             )
@@ -678,7 +681,8 @@ class GenerationService:
             raise ValueError(
                 f"Generation job '{job_id}' cannot be started from "
                 f"status '{job.status}'. Only CREATED jobs and validated "
-                "interrupted RUNNING jobs can be started."
+                "interrupted RUNNING or PARTIALLY_COMPLETED jobs "
+                "can be resumed."
             )
 
         specification = self._specification_service.get_specification(
