@@ -318,9 +318,6 @@ class GenerationService:
             )
             return job
 
-        job.status = GenerationJobStatus.RUNNING
-        self._job_store.save(job)
-
         seed = specification.get("generation", {}).get("seed", 42)
         chunk_size = (
             job.entities[0].chunk_size
@@ -362,6 +359,9 @@ class GenerationService:
                 specification_hash=checkpoint["specification_hash"],
                 chunk_size=checkpoint["chunk_size"],
             )
+
+        job.status = GenerationJobStatus.RUNNING
+        self._job_store.save(job)
 
         self._generation_log_store.append(
             data_model_id=job.data_model_id,
@@ -441,7 +441,9 @@ class GenerationService:
                 ),
                 validator=GenerationValidator(),
                 quality_service=GenerationQualityService(
-                    artifact_reader=GenerationArtifactReader(),
+                    artifact_reader=GenerationArtifactReader(
+                        checkpoint_store=self._checkpoint_store,
+                    ),
                 ),
             )
 

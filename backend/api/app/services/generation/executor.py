@@ -69,7 +69,9 @@ class GenerationExecutor:
         self._artifact_reader = (
             artifact_reader
             if artifact_reader is not None
-            else GenerationArtifactReader()
+            else GenerationArtifactReader(
+                checkpoint_store=self._checkpoint_store,
+            )
         )
         self._artifact_writer = (
             artifact_writer
