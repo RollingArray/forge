@@ -593,37 +593,45 @@ class GenerationService:
         )
 
     def recover_interrupted_jobs(self) -> int:
-        """Reconcile and schedule persisted RUNNING jobs after startup."""
+        """Validate persisted RUNNING jobs without starting workers."""
 
-        scheduled = 0
+        recovered = 0
         for persisted_job in self._job_store.list_running():
             try:
-                job = self.start_job(
-                    data_model_id=persisted_job.data_model_id,
+                data_model_id = persisted_job.data_model_id
+                job = self._get_or_load_job(
+                    data_model_id=data_model_id,
                     job_id=persisted_job.job_id,
                 )
                 if job is None or job.status != GenerationJobStatus.RUNNING:
                     continue
 
-                worker = Thread(
-                    target=self.execute_job,
-                    kwargs={
-                        "data_model_id": job.data_model_id,
-                        "job_id": job.job_id,
-                    },
-                    name=f"generation-recovery-{job.job_id}",
-                    daemon=True,
+                specification = self._specification_service.get_specification(
+                    data_model_id=data_model_id,
                 )
-                worker.start()
-                scheduled += 1
+                if specification is None:
+                    raise ValueError(
+                        "Data model specification was not found."
+                    )
+
+                self._reconcile_recovery_checkpoint(
+                    data_model_id=data_model_id,
+                    job=job,
+                    specification=specification,
+                )
+
+                job.status = GenerationJobStatus.INTERRUPTED
+                job.error = None
+                self._job_store.save(job)
+                self._jobs[job.job_id] = job
+                recovered += 1
             except Exception as exc:
-                # One invalid job must not prevent other jobs from recovering.
                 print(
                     f"Generation recovery skipped job "
                     f"{persisted_job.job_id}: {exc}"
                 )
 
-        return scheduled
+        return recovered
 
     def start_job(
         self,
@@ -648,10 +656,7 @@ class GenerationService:
                     "or active worker."
                 )
 
-        if job.status in {
-            GenerationJobStatus.RUNNING,
-            GenerationJobStatus.PARTIALLY_COMPLETED,
-        }:
+        if job.status == GenerationJobStatus.INTERRUPTED:
             specification = self._specification_service.get_specification(
                 data_model_id=data_model_id,
             )
@@ -674,6 +679,14 @@ class GenerationService:
                         "or active worker."
                     )
                 self._active_workers.add(worker_key)
+                job.status = GenerationJobStatus.RUNNING
+                job.error = None
+                try:
+                    self._job_store.save(job)
+                except Exception:
+                    self._active_workers.discard(worker_key)
+                    raise
+                self._jobs[job.job_id] = job
 
             return job
 
@@ -681,8 +694,7 @@ class GenerationService:
             raise ValueError(
                 f"Generation job '{job_id}' cannot be started from "
                 f"status '{job.status}'. Only CREATED jobs and validated "
-                "interrupted RUNNING or PARTIALLY_COMPLETED jobs "
-                "can be resumed."
+                "INTERRUPTED jobs can be resumed."
             )
 
         specification = self._specification_service.get_specification(

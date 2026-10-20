@@ -14,7 +14,7 @@ from app.api.ai import router as ai_router
 from app.api.data_models import router as data_models_router
 from app.api.data_model_access import router as data_model_access_router
 from app.api.specification import router as specification_router
-from app.api.generation import router as generation_router
+from app.api.generation import generation_service, router as generation_router
 from app.api.workspace import router as workspace_router
 from app.api.users import router as users_router
 
@@ -24,6 +24,17 @@ app = FastAPI(
     version="0.1.0",
     description="Backend API for the FORGE synthetic data generation platform.",
 )
+
+
+@app.on_event("startup")
+async def recover_generation_jobs() -> None:
+    """Mark validated persisted RUNNING jobs as INTERRUPTED."""
+    recovered = generation_service.recover_interrupted_jobs()
+    if recovered:
+        print(
+            f"Generation startup recovery: marked {recovered} job(s) "
+            "INTERRUPTED; no workers were started."
+        )
 
 app.add_middleware(
     CORSMiddleware,
