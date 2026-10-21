@@ -7,9 +7,8 @@
 .metric-card {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.96) 0%,
-    rgba(255, 250, 248, 0.94) 52%,
-    rgba(243, 238, 255, 0.94) 100%
+    var(--forge-surface) 0%,
+    var(--forge-surface-active) 100%
   );
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -72,12 +71,14 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
+  border: 1px solid var(--forge-border-active);
   background: linear-gradient(
-    145deg,
-    rgba(237, 233, 255, 0.98) 0%,
-    rgba(225, 218, 255, 0.92) 100%
+    135deg,
+    var(--forge-icon-gradient-start) 0%,
+    var(--forge-icon-gradient-end) 58%,
+    var(--forge-icon-gradient-highlight) 100%
   );
-  color: var(--forge-primary);
+  color: var(--forge-icon-foreground);
   font-size: 28px;
 }
 
