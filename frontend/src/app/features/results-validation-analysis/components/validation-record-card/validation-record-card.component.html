@@ -1,0 +1,45 @@
+<article class="record-card">
+  <header class="record-card-heading">
+    <span class="record-entity-icon" aria-hidden="true">
+      <span class="material-symbols-outlined">database</span>
+    </span>
+    <h4>{{ record().label }}</h4>
+  </header>
+
+  <dl>
+    @for (detail of record().details; track detail.label) {
+      <div>
+        <dt>
+          <span class="record-detail-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">{{
+              detail.label.toLowerCase().includes('requested')
+                ? 'playlist_add'
+                : detail.label.toLowerCase().includes('generated')
+                  ? 'task_alt'
+                  : detail.label.toLowerCase().includes('difference')
+                    ? 'difference'
+                    : detail.label.toLowerCase().includes('missing')
+                      ? 'search_off'
+                      : detail.label.toLowerCase().includes('invalid')
+                        ? 'report_problem'
+                        : detail.label.toLowerCase().includes('duplicate')
+                          ? 'content_copy'
+                          : detail.label.toLowerCase().includes('error')
+                            ? 'error'
+                            : detail.label.toLowerCase().includes('violation')
+                              ? 'gpp_bad'
+                              : 'fact_check'
+            }}</span>
+          </span>
+          <span>{{ detail.label }}</span>
+        </dt>
+        <dd>
+          <span
+            class="record-detail-value"
+            [class.record-detail-value-success]="detail.value === 'Yes'"
+          >{{ detail.value }}</span>
+        </dd>
+      </div>
+    }
+  </dl>
+</article>

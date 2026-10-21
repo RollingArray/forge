@@ -1,0 +1,12 @@
+<details class="record-details">
+  <summary>
+    View records ({{ records().length }})
+    <span class="material-symbols-outlined">expand_more</span>
+  </summary>
+
+  <div class="record-list">
+    @for (record of records(); track record.label) {
+      <app-validation-record-card [record]="record" />
+    }
+  </div>
+</details>

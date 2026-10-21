@@ -1,0 +1,132 @@
+:host {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.check-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 18px;
+}
+
+.check-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.check-icon {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 13px;
+}
+
+.check-icon .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.check-icon[data-status="passed"] {
+  background: var(--forge-success-soft);
+  color: var(--forge-success-strong);
+}
+
+.check-icon[data-status="review"] {
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+}
+
+.check-icon[data-status="not-checked"] {
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
+}
+
+.check-status {
+  max-width: 75%;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.check-icon[data-status="passed"] + .check-status {
+  color: var(--forge-success-strong);
+  background: var(--forge-success-soft);
+}
+
+.check-icon[data-status="review"] + .check-status {
+  color: var(--forge-error-strong);
+  background: var(--forge-error-soft);
+}
+
+.check-panel h3 {
+  margin: 2px 0 0;
+  color: var(--forge-text-heading);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.check-description {
+  min-height: 36px;
+  margin: -3px 0 5px;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.check-metrics dt {
+  min-width: 0;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.check-metrics dd {
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.metric-value-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--forge-success-strong);
+  background: var(--forge-success-soft);
+  font-weight: 750;
+}
+.check-metrics {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0;
+  margin: 0;
+}
+
+.check-metrics > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--forge-border-row);
+  padding: 10px 0;
+}

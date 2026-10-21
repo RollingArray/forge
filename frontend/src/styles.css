@@ -7,6 +7,10 @@
   --forge-primary: #5149d1;
   --forge-primary-soft: #f0efff;
   --forge-primary-strong: #4038a8;
+  --forge-icon-gradient-start: var(--forge-primary-strong);
+  --forge-icon-gradient-end: var(--forge-primary);
+  --forge-icon-gradient-highlight: var(--forge-accent-purple-border-strong);
+  --forge-icon-foreground: var(--forge-surface);
 
   /* Text */
   --forge-text: #344054;
@@ -41,6 +45,14 @@
   --forge-error: #f04438;
   --forge-error-soft: #fef3f2;
   --forge-error-strong: #d92d20;
+
+  /* Glass surfaces and shadows */
+  --forge-glass-border: rgba(255, 255, 255, 0.78);
+  --forge-glass-surface-start: rgba(255, 255, 255, 0.76);
+  --forge-glass-surface-end: rgba(255, 255, 255, 0.48);
+  --forge-shadow-glass: rgba(63, 54, 108, 0.055);
+  --forge-shadow-success: rgb(18 183 106 / 20%);
+  --forge-shadow-error: rgb(217 45 32 / 18%);
 
   /* UI */
   --forge-spinner-track: #d9d6f2;

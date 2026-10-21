@@ -197,6 +197,21 @@ export class ResultsComponent {
       });
   }
 
+  viewValidationDetails(): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'data-model',
+      'results',
+      this.jobId,
+      'validation-analysis',
+    ]);
+  }
+
   viewQualityDetails(): void {
     if (!this.dataModelId || !this.jobId) {
       return;

@@ -1,0 +1,38 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="DATA MODEL"
+    [title]="modelName()"
+    [summary]="modelDescription()"
+    [state]="validation().valid ? 'Valid' : 'Issues Found'"
+  />
+
+  <div class="validation-overview">
+    <div class="forge-card validation-status" [attr.data-valid]="validation().valid">
+      <div class="validation-status-icon" [attr.data-valid]="validation().valid">
+        <span class="material-symbols-outlined">
+          {{ validation().valid ? 'verified' : 'warning' }}
+        </span>
+      </div>
+
+      <div class="validation-status-content">
+        <strong>
+          {{ validation().valid ? 'Validation passed' : 'Validation requires attention' }}
+        </strong>
+
+        <span>
+          {{ validation().generated_rows | number }}
+          of
+          {{ validation().expected_rows | number }}
+          requested rows generated
+        </span>
+
+        <div class="validation-job-id">
+          <span class="job-id-label">JOB ID</span>
+          <code>{{ jobId() }}</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-metric-grid [columns]="3" [metrics]="metrics()" />
+</app-workspace-section>

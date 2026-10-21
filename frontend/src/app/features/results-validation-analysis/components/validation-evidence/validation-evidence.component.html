@@ -1,0 +1,22 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="VALIDATION EVIDENCE"
+    title="Deterministic checks"
+    summary="Review check outcomes, measured values, and the records included in each validation category."
+  />
+
+  <app-workspace-scroll-area>
+    <div class="evidence-grid">
+      @for (check of checks(); track check.key) {
+        <app-validation-check-card [check]="check" />
+      } @empty {
+        <section class="state-card">
+          <div class="state-content">
+            <h2>No detailed evidence available</h2>
+            <p>This job did not persist detailed validation evidence.</p>
+          </div>
+        </section>
+      }
+    </div>
+  </app-workspace-scroll-area>
+</app-workspace-section>

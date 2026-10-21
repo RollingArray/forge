@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+}
+
+app-workspace-section {
+  height: auto;
+}
+
+.validation-overview {
+  flex: 0 0 auto;
+  margin-bottom: 16px;
+}
+
+.validation-job-id {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--forge-border);
+}
+
+.job-id-label {
+  color: var(--forge-text-secondary);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.validation-job-id code {
+  overflow-wrap: anywhere;
+  color: var(--forge-text-heading);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.validation-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--forge-success);
+  border-radius: 10px;
+  background: var(--forge-success-soft);
+}
+
+.validation-status[data-valid="false"] {
+  border-color: var(--forge-error);
+  background: var(--forge-error-soft);
+}
+
+.validation-status-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--forge-surface);
+  background: linear-gradient(
+    135deg,
+    var(--forge-success-strong),
+    var(--forge-success)
+  );
+  box-shadow: 0 4px 10px var(--forge-shadow-success);
+}
+
+.validation-status-icon[data-valid="false"] {
+  background: linear-gradient(
+    135deg,
+    var(--forge-error-strong),
+    var(--forge-error)
+  );
+  box-shadow: 0 4px 10px var(--forge-shadow-error);
+}
+
+.validation-status-icon .material-symbols-outlined {
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.validation-status-content {
+  min-width: 0;
+}
+
+.validation-status-content > strong {
+  display: block;
+  color: var(--forge-success-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.validation-status[data-valid="false"] .validation-status-content > strong {
+  color: var(--forge-error-strong);
+}
+
+.validation-status-content > span {
+  display: block;
+  margin-top: 5px;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+}
+
+.job-metadata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--forge-border);
+  border-radius: 9px;
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+}
+
+.job-metadata > .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.job-metadata-label {
+  font-weight: 700;
+}
+
+.job-metadata code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--forge-text-heading);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}

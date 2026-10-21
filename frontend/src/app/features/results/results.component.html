@@ -22,7 +22,10 @@
     [dataModelName]="dataModelName()"
   />
 
-  <app-results-validation [validation]="generationJob()?.validation ?? null" />
+  <app-results-validation
+    [validation]="generationJob()?.validation ?? null"
+    (viewDetails)="viewValidationDetails()"
+  />
   <app-results-quality-summary
     [quality]="generationJob()?.quality ?? null"
     (viewDetails)="viewQualityDetails()"

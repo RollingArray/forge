@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
@@ -14,18 +10,15 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
 @Component({
   selector: 'app-results-validation',
   standalone: true,
-  imports: [
-    CommonModule,
-    MetricGridComponent,
-    WorkspaceSectionComponent,
-    WorkspaceHeaderComponent,
-  ],
+  imports: [CommonModule, MetricGridComponent, WorkspaceSectionComponent, WorkspaceHeaderComponent],
   templateUrl: './results-validation.component.html',
   styleUrl: './results-validation.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultsValidationComponent {
   readonly validation = input<GenerationValidationSummary | null>(null);
+
+  readonly viewDetails = output<void>();
 
   readonly metrics = (): MetricCardData[] => [
     {

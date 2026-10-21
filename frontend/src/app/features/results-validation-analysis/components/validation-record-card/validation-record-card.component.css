@@ -1,0 +1,125 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.record-card dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.record-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 14px;
+  background: var(--forge-surface-active);
+}
+
+.record-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.record-entity-icon {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--forge-icon-gradient-start) 0%, var(--forge-icon-gradient-end) 58%, var(--forge-icon-gradient-highlight) 100%);
+  color: var(--forge-icon-foreground);
+}
+
+.record-entity-icon .material-symbols-outlined {
+  font-size: 23px;
+}
+
+.record-card-heading h4 {
+  min-width: 0;
+  margin: 0;
+  color: var(--forge-primary-strong);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.record-card dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  align-items: start;
+  column-gap: 12px;
+  border-top: 1px solid var(--forge-border-row);
+  padding: 10px 0 10px 10px;
+}
+
+
+.record-detail-icon {
+  display: inline-grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--forge-icon-gradient-start) 0%,
+    var(--forge-icon-gradient-end) 58%,
+    var(--forge-icon-gradient-highlight) 100%
+  );
+  color: var(--forge-icon-gradient-highlight);
+}
+
+.record-detail-icon .material-symbols-outlined {
+  color: var(--forge-icon-foreground);
+  font-size: 16px;
+}
+
+.record-card dt {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.record-card dt > span:last-child {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.record-card dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.record-detail-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.record-detail-value-success {
+  min-width: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--forge-success-soft);
+  color: var(--forge-success-strong);
+  font-weight: 750;
+}

@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.record-details {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--forge-border);
+}
+
+.record-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  color: var(--forge-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.record-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.record-details summary .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 20px;
+  transition: transform 160ms ease;
+}
+
+.record-details[open] summary .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+
+.record-list {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow: auto;
+  margin-top: 14px;
+  padding: 2px 3px 2px 0;
+}

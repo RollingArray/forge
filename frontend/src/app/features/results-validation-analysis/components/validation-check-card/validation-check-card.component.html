@@ -1,0 +1,41 @@
+<section class="check-panel forge-card">
+  <div class="check-heading">
+    <span class="check-icon" [attr.data-status]="check().status">
+      <span class="material-symbols-outlined">
+        {{
+          check().status === 'passed'
+            ? 'check_circle'
+            : check().status === 'review'
+              ? 'priority_high'
+              : 'info'
+        }}
+      </span>
+    </span>
+    <span class="check-status" [attr.data-status]="check().status">
+      {{ check().statusLabel }}
+    </span>
+  </div>
+
+  <h3>{{ check().title }}</h3>
+  <p class="check-description">{{ check().description }}</p>
+
+  @if (check().metrics.length) {
+    <dl class="check-metrics">
+      @for (metric of check().metrics; track metric.label) {
+        <div>
+          <dt>{{ metric.label }}</dt>
+          <dd>
+            <span
+              class="metric-value"
+              [class.metric-value-success]="metric.value === 'Yes'"
+            >{{ metric.value }}</span>
+          </dd>
+        </div>
+      }
+    </dl>
+  }
+
+  @if (check().records.length) {
+    <app-validation-record-list [records]="check().records" />
+  }
+</section>

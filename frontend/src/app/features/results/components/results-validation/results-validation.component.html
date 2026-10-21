@@ -31,13 +31,8 @@
 
   <app-metric-grid [columns]="3" [metrics]="metrics()" />
 
-  <button
-    type="button"
-    class="validation-details-button"
-    disabled
-    title="Detailed validation analysis will be available here."
-  >
+  <button type="button" class="validation-details-button" (click)="viewDetails.emit()">
     <span>Detailed validation analysis</span>
-    <span class="coming-soon">Coming soon</span>
+    <span class="material-symbols-outlined">arrow_forward</span>
   </button>
 </app-workspace-section>

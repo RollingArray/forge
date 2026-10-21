@@ -1,0 +1,73 @@
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  pageIcon="verified"
+  pageTitle="Detailed Validation Analysis"
+  pageDescription="Review deterministic validation evidence for the generated dataset."
+  progressLabel="5 of 5 steps"
+  actionBarTitle="Generation validation analysis"
+  actionBarDescription="Review check results and recorded findings for this generation job."
+  secondaryLabel="Back to Results"
+  secondaryIcon="arrow_back"
+  primaryLabel="Analysis Details"
+  primaryIcon="fact_check"
+  [primaryDisabled]="true"
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToResults()"
+  (primaryAction)="backToResults()"
+>
+  <app-workflow-row [columns]="1"> </app-workflow-row>
+
+  @if (loading()) {
+    <section class="state-card loading-state">
+      <div class="loading-spinner"></div>
+      <div class="state-content">
+        <span class="state-eyebrow">LOADING VALIDATION</span>
+        <h2>Loading validation analysis</h2>
+        <p>Retrieving the validation evidence saved with this generation job.</p>
+      </div>
+    </section>
+  } @else if (loadError()) {
+    <section class="state-card error-state">
+      <div class="state-icon">!</div>
+      <div class="state-content">
+        <span class="state-eyebrow">VALIDATION ERROR</span>
+        <h2>Analysis could not be loaded</h2>
+        <p>{{ loadError() }}</p>
+      </div>
+    </section>
+  } @else if (validation(); as result) {
+    <app-workflow-row [columns]="1">
+      <app-results-validation-summary
+        [validation]="result"
+        [modelName]="modelName()"
+        [modelDescription]="modelDescription()"
+        [jobId]="jobId"
+      />
+    </app-workflow-row>
+
+    <app-validation-evidence [checks]="evidenceSections()" />
+
+    <app-workflow-row [columns]="1">
+      <app-validation-findings
+        [findings]="filteredFindings()"
+        [filters]="toolbarFilters()"
+        [searchValue]="searchTerm()"
+        (searchValueChange)="updateSearch($event)"
+        (filterChange)="setFindingFilter($event)"
+      />
+    </app-workflow-row>
+
+    <div class="specification-meta">
+      <span><strong>Generation job</strong> {{ jobId }}</span>
+      <span><strong>Validation checks</strong> {{ evidenceSections().length }} categories</span>
+    </div>
+  } @else {
+    <section class="state-card error-state">
+      <div class="state-content">
+        <h2>Validation summary unavailable</h2>
+        <p>This generation job does not contain a validation summary.</p>
+      </div>
+    </section>
+  }
+</app-workflow-page>
