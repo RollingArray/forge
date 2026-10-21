@@ -427,19 +427,30 @@
 }
 
 .foreign-key-card {
-  border: 1px solid #ddd5f1;
-  background: #faf8ff;
+  border: 1px solid var(--forge-border-active);
+  background: var(--forge-surface-active);
 }
 
 .foreign-key-icon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 9px;
-  background: #ffffff;
-  color: #654db9;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 11px;
+  background: linear-gradient(
+    135deg,
+    var(--forge-icon-gradient-start) 0%,
+    var(--forge-icon-gradient-end) 58%,
+    var(--forge-icon-gradient-highlight) 100%
+  );
+  color: var(--forge-icon-foreground);
+}
+
+.foreign-key-icon .material-symbols-outlined {
+  color: var(--forge-icon-foreground);
+  font-size: 21px;
 }
 
 .foreign-key-content {
@@ -853,10 +864,10 @@
 
 .mapping-card {
   overflow: hidden;
-  border: 1px solid #e4e0eb;
+  border: 1px solid var(--forge-border-active);
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgb(54 45 75 / 5%);
+  background: var(--forge-surface);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--forge-primary-strong) 5%, transparent);
 }
 
 .mapping-card-header {
@@ -865,7 +876,11 @@
   align-items: center;
   gap: 12px;
   padding: 18px 20px;
-  background: #faf9fc;
+  background: linear-gradient(
+    110deg,
+    var(--forge-surface-active) 0%,
+    var(--forge-surface-active-end) 100%
+  );
 }
 
 .mapping-entity {
@@ -875,8 +890,13 @@
   gap: 4px;
 }
 
+.mapping-entity.target {
+  align-items: flex-end;
+  text-align: right;
+}
+
 .mapping-entity span {
-  color: #8a8490;
+  color: var(--forge-text-secondary);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -884,8 +904,9 @@
 }
 
 .mapping-entity strong {
+  max-width: 100%;
   overflow: hidden;
-  color: #37343e;
+  color: var(--forge-text-heading);
   font-size: 15px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -896,13 +917,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6850c9;
+  color: var(--forge-primary);
   font-size: 17px;
 }
 
 .mapping-divider {
   height: 1px;
-  background: #ebe8f0;
+  background: var(--forge-border-subtle);
 }
 
 .mapping-labels {
@@ -910,11 +931,15 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 56px;
   padding: 14px 20px 8px;
-  color: #8a8490;
+  color: var(--forge-text-secondary);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.mapping-labels span:last-child {
+  text-align: right;
 }
 
 .mapping-rows {
@@ -933,22 +958,26 @@
 
 .mapping-field {
   display: flex;
+  min-width: 0;
   min-height: 46px;
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  border: 1px solid #e7e3ed;
+  border: 1px solid var(--forge-border);
   border-radius: 10px;
-  background: #faf9fc;
+  background: var(--forge-surface-subtle);
 }
 
 .mapping-field .material-symbols-outlined {
-  color: #6850c9;
+  flex: 0 0 auto;
+  color: var(--forge-primary);
   font-size: 17px;
 }
 
 .mapping-field strong {
-  color: #37343e;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--forge-text-heading);
   font-size: 14px;
   font-weight: 650;
 }
@@ -957,7 +986,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6850c9;
+  color: var(--forge-primary);
   font-size: 17px;
 }
 
@@ -966,13 +995,66 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #ebe8f0;
-  background: #faf9fc;
-  color: #6d6875;
+  border-top: 1px solid var(--forge-border-subtle);
+  background: var(--forge-surface-active);
+  color: var(--forge-text-secondary);
   font-size: 13px;
 }
 
 .mapping-confirmation .material-symbols-outlined {
-  color: #4f8a68;
+  color: var(--forge-success-strong);
   font-size: 17px;
+}
+
+
+/* Entity labels and values stay aligned across the mapping header. */
+.mapping-entity-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.mapping-entity-icon {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--forge-border-active);
+  border-radius: 9px;
+  background: linear-gradient(
+    135deg,
+    var(--forge-icon-gradient-start) 0%,
+    var(--forge-icon-gradient-end) 58%,
+    var(--forge-icon-gradient-highlight) 100%
+  );
+  color: var(--forge-icon-foreground);
+}
+
+.mapping-entity-icon .material-symbols-outlined {
+  color: var(--forge-icon-foreground);
+  font-size: 18px;
+}
+
+@media (max-width: 560px) {
+  .mapping-card-header {
+    grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .mapping-entity-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .mapping-entity-label {
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .mapping-entity strong {
+    font-size: 13px;
+  }
 }
