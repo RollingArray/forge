@@ -18,6 +18,7 @@ class FavoriteRepository(ABC):
         resource_type: FavoriteResourceType,
         data_model_id: str,
         job_id: str | None = None,
+        entity_name: str | None = None,
     ) -> Favorite:
         """Create a favorite or return the user's existing matching favorite."""
         raise NotImplementedError

@@ -87,6 +87,7 @@ def _to_response(favorite: Favorite) -> FavoriteResponseModel | None:
         data_model_id=favorite.data_model_id,
         data_model_name=data_model.name,
         job_id=favorite.job_id,
+        entity_name=favorite.entity_name,
         status=job_status,
         created_at=favorite.created_at,
     )
@@ -147,6 +148,7 @@ async def create_favorite(
         resource_type=request.resource_type,
         data_model_id=request.data_model_id,
         job_id=request.job_id,
+        entity_name=request.entity_name,
     )
 
     response = _to_response(favorite)

@@ -18,6 +18,7 @@ class CreateFavoriteRequestModel(BaseModel):
     resource_type: FavoriteResourceType
     data_model_id: str
     job_id: str | None = None
+    entity_name: str | None = None
 
     @model_validator(mode="after")
     def validate_resource_reference(self):
@@ -30,6 +31,12 @@ class CreateFavoriteRequestModel(BaseModel):
         elif self.job_id is not None:
             raise ValueError("job_id is only valid for job-specific resources.")
 
+        if self.resource_type == FavoriteResourceType.GENERATED_TABLE:
+            if self.entity_name is None or not self.entity_name.strip():
+                raise ValueError("entity_name is required for generated tables.")
+        elif self.entity_name is not None:
+            raise ValueError("entity_name is only valid for generated tables.")
+
         return self
 
 
@@ -41,5 +48,6 @@ class FavoriteResponseModel(BaseModel):
     data_model_id: str
     data_model_name: str
     job_id: str | None
+    entity_name: str | None = None
     status: str | None = None
     created_at: datetime

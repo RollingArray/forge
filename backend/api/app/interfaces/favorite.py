@@ -19,6 +19,7 @@ class FavoriteResourceType(StrEnum):
     GENERATION_RESULTS = "generation_results"
     VALIDATION_ANALYSIS = "validation_analysis"
     QUALITY_ANALYSIS = "quality_analysis"
+    GENERATED_TABLE = "generated_table"
 
     # Temporary compatibility for existing callers and persisted records.
     DATA_MODEL = "data_model"
@@ -30,6 +31,7 @@ JOB_RESOURCE_TYPES = frozenset({
     FavoriteResourceType.GENERATION_RESULTS,
     FavoriteResourceType.VALIDATION_ANALYSIS,
     FavoriteResourceType.QUALITY_ANALYSIS,
+    FavoriteResourceType.GENERATED_TABLE,
     FavoriteResourceType.EXECUTION,
 })
 
@@ -43,4 +45,5 @@ class Favorite:
     resource_type: FavoriteResourceType
     data_model_id: str
     job_id: str | None
+    entity_name: str | None
     created_at: datetime

@@ -49,6 +49,7 @@ class JsonFavoriteRepository(FavoriteRepository):
         resource_type: FavoriteResourceType,
         data_model_id: str,
         job_id: str | None = None,
+        entity_name: str | None = None,
     ) -> Favorite:
         """Create a favorite or return an existing matching favorite."""
 
@@ -62,6 +63,12 @@ class JsonFavoriteRepository(FavoriteRepository):
         elif job_id is not None:
             raise ValueError("job_id is only valid for job-specific resources.")
 
+        if resource_type == FavoriteResourceType.GENERATED_TABLE:
+            if entity_name is None or not entity_name.strip():
+                raise ValueError("entity_name is required for generated tables.")
+        elif entity_name is not None:
+            raise ValueError("entity_name is only valid for generated tables.")
+
         path = self._path_for_user(user_id)
         with _lock_for(path):
             data = self._read_data(path)
@@ -71,6 +78,7 @@ class JsonFavoriteRepository(FavoriteRepository):
                     record["resource_type"] == resource_type.value
                     and record["data_model_id"] == data_model_id
                     and record.get("job_id") == job_id
+                    and record.get("entity_name") == entity_name
                 ):
                     return self._to_favorite(record, user_id)
 
@@ -80,6 +88,7 @@ class JsonFavoriteRepository(FavoriteRepository):
                 resource_type=resource_type,
                 data_model_id=data_model_id,
                 job_id=job_id,
+                entity_name=entity_name,
                 created_at=datetime.now(timezone.utc),
             )
             data["favorites"].append(self._to_record(favorite))
@@ -163,6 +172,7 @@ class JsonFavoriteRepository(FavoriteRepository):
             "resource_type": favorite.resource_type.value,
             "data_model_id": favorite.data_model_id,
             "job_id": favorite.job_id,
+            "entity_name": favorite.entity_name,
             "created_at": favorite.created_at.isoformat(),
         }
 
@@ -176,5 +186,6 @@ class JsonFavoriteRepository(FavoriteRepository):
             resource_type=FavoriteResourceType(record["resource_type"]),
             data_model_id=record["data_model_id"],
             job_id=record.get("job_id"),
+            entity_name=record.get("entity_name"),
             created_at=datetime.fromisoformat(record["created_at"]),
         )
