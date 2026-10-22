@@ -37,6 +37,7 @@ export class ArtifactPreviewComponent {
   readonly error = input<string | null>(null);
 
   readonly downloadRequested = output<GenerationArtifact>();
+  readonly viewDataRequested = output<GenerationArtifact>();
 
   readonly searchTerm = signal('');
 
@@ -69,6 +70,13 @@ export class ArtifactPreviewComponent {
 
   updateSearchTerm(value: string): void {
     this.searchTerm.set(value);
+  }
+
+  viewFullData(): void {
+    const artifact = this.artifact();
+    if (artifact) {
+      this.viewDataRequested.emit(artifact);
+    }
   }
 
   download(): void {

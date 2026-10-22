@@ -48,5 +48,10 @@
       (searchValueChange)="updateSearchTerm($event)"
       (toolbarAction)="download()"
     />
+    <div class="full-data-action">
+      <button type="button" [disabled]="!artifact()" (click)="viewFullData()">
+        View full dataset <span aria-hidden="true">→</span>
+      </button>
+    </div>
   }
 </app-workspace-section>

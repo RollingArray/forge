@@ -175,6 +175,22 @@ export class ResultsComponent {
       });
   }
 
+  viewFullData(artifact: GenerationArtifact): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    void this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'data-model',
+      'results',
+      this.jobId,
+      'data',
+      artifact.entity_name,
+    ]);
+  }
+
   downloadArtifact(artifact: GenerationArtifact): void {
     this.generationService
       .downloadGenerationArtifact(

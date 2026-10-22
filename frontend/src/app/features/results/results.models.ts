@@ -35,3 +35,15 @@ export interface GenerationValidationSummary {
   warnings: string[];
   evidence: Record<string, unknown>;
 }
+
+
+export interface GenerationArtifactDataPage {
+  entity_name: string;
+  filename: string;
+  columns: string[];
+  rows: Record<string, string | null>[];
+  total_rows: number;
+  offset: number;
+  limit: number;
+  search: string;
+}
