@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.favorite-card {
+  display: flex;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid var(--forge-border);
+  border-radius: 16px;
+  background: var(--forge-surface);
+  box-shadow: 0 5px 18px var(--forge-shadow-glass);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.favorite-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--forge-border-active);
+  box-shadow: 0 12px 26px var(--forge-shadow-glass);
+}
+
+.remove-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.card-topline {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.resource-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--forge-primary);
+  background: color-mix(in srgb, var(--forge-primary) 10%, var(--forge-surface));
+}
+
+.resource-icon[data-category="planning"] {
+  color: var(--forge-success-strong);
+  background: color-mix(in srgb, var(--forge-success) 12%, var(--forge-surface));
+}
+
+.resource-icon[data-category="generation"] {
+  color: var(--forge-primary-strong);
+  background: color-mix(in srgb, var(--forge-primary) 9%, var(--forge-surface));
+}
+
+.resource-icon[data-category="results-analysis"] {
+  color: var(--forge-warning-strong);
+  background: color-mix(in srgb, var(--forge-warning) 13%, var(--forge-surface));
+}
+
+.resource-icon .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.resource-type {
+  min-width: 0;
+  color: var(--forge-text-eyebrow);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .065em;
+  line-height: 1.5;
+}
+
+.favorite-card h3 {
+  overflow-wrap: anywhere;
+  margin: 18px 0 5px;
+  color: var(--forge-text-heading);
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 750;
+}
+
+.model-name,
+.resource-detail {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.resource-detail {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.status-pill {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--forge-success) 24%, var(--forge-border));
+  border-radius: 7px;
+  color: var(--forge-success-strong);
+  background: var(--forge-success-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 15px;
+}
+
+.saved-date {
+  color: var(--forge-text-muted);
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-card {
+    transition: none;
+  }
+
+  .favorite-card:hover {
+    transform: none;
+  }
+}

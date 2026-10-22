@@ -1,0 +1,52 @@
+<app-content-card padding="0">
+  <article class="favorite-card" [attr.data-category]="categoryId()">
+    <div class="card-topline">
+      <div class="resource-icon" [attr.data-category]="categoryId()">
+        <span class="material-symbols-outlined" aria-hidden="true">
+          {{ definition().icon }}
+        </span>
+      </div>
+
+      <span class="resource-type">
+        {{ definition().label | uppercase }}
+      </span>
+
+      <div class="remove-action">
+        <app-forge-button
+          [label]="removing() ? 'Removing...' : 'Remove'"
+          [icon]="removing() ? 'hourglass_top' : 'star'"
+          variant="secondary"
+          [disabled]="busy()"
+          [ariaLabel]="'Remove ' + definition().label + ' from favorites'"
+          title="Remove favorite"
+          (clicked)="remove.emit(favorite())"
+        />
+      </div>
+    </div>
+
+    <h3>{{ definition().label }}</h3>
+    <p class="model-name">{{ favorite().data_model_name }}</p>
+
+    @if (definition().requiresJobId && favorite().job_id) {
+      <p class="resource-detail">Job · {{ favorite().job_id }}</p>
+
+      @if (favorite().status) {
+        <span class="status-pill">{{ favorite().status }}</span>
+      }
+    }
+
+    <div class="card-footer">
+      <span class="saved-date">
+        Saved {{ favorite().created_at | date:'mediumDate' }}
+      </span>
+
+      <app-forge-button
+        label="Open"
+        icon="arrow_forward"
+        variant="primary"
+        [ariaLabel]="'Open ' + definition().label"
+        (clicked)="open.emit(favorite())"
+      />
+    </div>
+  </article>
+</app-content-card>

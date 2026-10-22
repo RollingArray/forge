@@ -1,0 +1,29 @@
+<div class="collection-toolbar">
+  <app-workspace-header
+    eyebrow="YOUR COLLECTION"
+    [title]="totalCount() + ' saved ' + (totalCount() === 1 ? 'destination' : 'destinations')"
+    summary="Across your workflow areas"
+  />
+
+  <label class="favorites-search">
+    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+    <input
+      type="search"
+      aria-label="Search favorites"
+      placeholder="Search favorites..."
+      [value]="query()"
+      (input)="queryChange.emit($any($event.target).value)"
+    />
+    @if (query()) {
+      <button
+        type="button"
+        class="clear-search"
+        aria-label="Clear search"
+        title="Clear search"
+        (click)="queryChange.emit('')"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    }
+  </label>
+</div>

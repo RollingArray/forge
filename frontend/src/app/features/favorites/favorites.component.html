@@ -1,0 +1,97 @@
+<main class="favorites-page">
+  <app-workflow-page-header
+    icon="star"
+    title="Favorites"
+    description="Your important FORGE destinations, organized by workflow area."
+    progress="Saved resources"
+  />
+
+  <app-workflow-content>
+    @if (error()) {
+      <div class="error-message" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <span>{{ error() }}</span>
+        <button type="button" (click)="loadFavorites()">Retry</button>
+      </div>
+    }
+
+    @if (loading()) {
+      <app-content-card padding="32px">
+        <section class="state-panel" aria-live="polite">
+          <span class="material-symbols-outlined state-icon" aria-hidden="true">hourglass_top</span>
+          <h2>Loading your favorites</h2>
+          <p>Gathering your saved FORGE destinations.</p>
+        </section>
+      </app-content-card>
+    } @else if (favorites().length === 0) {
+      <app-content-card padding="32px">
+        <section class="state-panel empty-state">
+          <div class="empty-icon">
+            <span class="material-symbols-outlined" aria-hidden="true">star_outline</span>
+          </div>
+          <h2>Your favorites will appear here</h2>
+          <p>Save a FORGE destination to return to it quickly.</p>
+          <button class="primary-button" type="button" (click)="routerNavigateWorkspace()">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Explore workspace
+          </button>
+        </section>
+      </app-content-card>
+    } @else {
+      <app-workspace-section>
+        <app-favorites-collection-toolbar
+          [totalCount]="favorites().length"
+          [query]="searchQuery()"
+          (queryChange)="searchQuery.set($event)"
+        />
+      </app-workspace-section>
+
+      @if (filteredFavorites().length === 0) {
+        <app-content-card padding="28px">
+          <section class="state-panel">
+            <span class="material-symbols-outlined state-icon" aria-hidden="true">search_off</span>
+            <h2>No favorites match your search</h2>
+            <p>Try another resource, model name, job ID or status.</p>
+            <button type="button" class="primary-button" (click)="searchQuery.set('')">
+              Clear search
+            </button>
+          </section>
+        </app-content-card>
+      } @else {
+
+      @for (category of categories; track category.id) {
+        @if (favoritesFor(category.resourceTypes).length > 0) {
+          <app-workspace-section>
+            <app-workspace-header
+              [eyebrow]="'FAVORITES · ' + category.title.toUpperCase()"
+              [title]="category.title"
+              [summary]="category.description"
+              [state]="
+                favoritesFor(category.resourceTypes).length +
+                (favoritesFor(category.resourceTypes).length === 1 ? ' item' : ' items')
+              "
+            />
+
+            <app-content-grid [columns]="3">
+              @for (
+                favorite of favoritesFor(category.resourceTypes);
+                track trackFavorite($index, favorite)
+              ) {
+                <app-favorite-card
+                  [favorite]="favorite"
+                  [definition]="resourceDefinitions[favorite.resource_type]"
+                  [categoryId]="category.id"
+                  [removing]="removingFavoriteId() === favorite.favorite_id"
+                  [busy]="removingFavoriteId() !== null"
+                  (open)="openFavorite($event)"
+                  (remove)="removeFavorite($event)"
+                />
+              }
+            </app-content-grid>
+          </app-workspace-section>
+        }
+      }
+      }
+    }
+  </app-workflow-content>
+</main>
