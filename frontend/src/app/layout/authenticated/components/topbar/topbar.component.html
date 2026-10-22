@@ -21,6 +21,20 @@
 
   <div class="topbar-actions">
 
+    @if (currentResource(); as resource) {
+      <app-forge-button
+        [label]="currentFavorite() ? favoriteLabel + ' Favorited' : 'Add ' + favoriteLabel + ' to Favorites'"
+        icon="star"
+        variant="primary"
+        [disabled]="favoriteBusy()"
+        [ariaLabel]="currentFavorite() ? 'Remove ' + favoriteLabel + ' from Favorites' : 'Add ' + favoriteLabel + ' to Favorites'"
+        [title]="currentFavorite() ? 'Remove from Favorites' : 'Add to Favorites'"
+        (clicked)="toggleFavorite()"
+      />
+    }
+
+
+
     <button
       type="button"
       class="topbar-button"
