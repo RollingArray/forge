@@ -1,0 +1,64 @@
+<main class="activity-feed-page">
+  <app-workflow-page-header
+    icon="history"
+    title="Activity Feed"
+    description="A chronological view of activity across your workspace."
+    progress="Workspace activity"
+  />
+
+  <app-workflow-content>
+    @if (error() && activities().length === 0) {
+      <div class="error-message" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <span>{{ error() }}</span>
+        <button type="button" (click)="retry()">Retry</button>
+      </div>
+    }
+
+    @if (loading()) {
+      <app-content-card padding="32px">
+        <section class="state-panel" aria-live="polite">
+          <span class="material-symbols-outlined state-icon" aria-hidden="true">hourglass_top</span>
+          <h2>Loading activity</h2>
+          <p>Gathering the latest workspace events.</p>
+        </section>
+      </app-content-card>
+    } @else if (activities().length === 0 && !error()) {
+      <app-content-card padding="32px">
+        <section class="state-panel empty-state">
+          <div class="empty-icon">
+            <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          </div>
+          <h2>No activity yet</h2>
+          <p>Your workspace activity will appear here as you work in FORGE.</p>
+        </section>
+      </app-content-card>
+    } @else if (activities().length > 0) {
+      <section class="feed-list" aria-label="Workspace activity events">
+        @for (activity of activities(); track $index) {
+          <article class="forge-card feed-event-card">
+            <app-activity-item [activity]="activity" />
+          </article>
+        }
+      </section>
+
+      @if (error()) {
+        <div class="error-message" role="alert">
+          <span>{{ error() }}</span>
+          <button type="button" (click)="retry()">Retry</button>
+        </div>
+      } @else if (loadingMore()) {
+        <div class="feed-status" role="status" aria-live="polite">
+          <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
+          Loading more activity…
+        </div>
+      } @else if (!hasMore()) {
+        <div class="feed-status">
+          You're all caught up
+        </div>
+      }
+
+      <div #feedSentinel class="feed-sentinel" aria-hidden="true"></div>
+    }
+  </app-workflow-content>
+</main>

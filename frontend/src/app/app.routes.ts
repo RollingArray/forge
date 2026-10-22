@@ -14,6 +14,7 @@ import { LoginComponent } from './features/login/login.component';
 import { MagicLinkVerifyComponent } from './features/login/magic-link-verify.component';
 import { WorkspaceComponent } from './features/workspace/workspace.component';
 import { FavoritesComponent } from './features/favorites/favorites.component';
+import { ActivityFeedComponent } from './features/activity-feed/activity-feed.component';
 import { ModelStudioComponent } from './features/model-studio/model-studio.component';
 import { ModelValidationComponent } from './features/model-validation/model-validation.component';
 import { PopulationComponent } from './features/population/population.component';
@@ -50,6 +51,10 @@ export const routes: Routes = [
       {
         path: 'workspace/favorites',
         component: FavoritesComponent,
+      },
+      {
+        path: 'workspace/activity',
+        component: ActivityFeedComponent,
       },
       {
         path: 'workspace/ui-kit-design-system',

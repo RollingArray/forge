@@ -119,26 +119,14 @@ export class SidebarComponent {
       icon: 'folder_open',
       items: [
         {
-          label: 'Recent',
-          icon: 'schedule',
-          action: '',
-          availability: 'soon',
-        },
-        {
           label: 'Favorites',
           icon: 'star',
           action: 'favorites',
         },
         {
-          label: 'Specification Library',
-          icon: 'library_books',
-          action: '',
-          availability: 'soon',
-        },
-        {
           label: 'Activity Feed',
           icon: 'history',
-          action: 'recent-activity',
+          action: 'activity-feed',
         },
       ],
     },
@@ -316,6 +304,7 @@ export class SidebarComponent {
     return (
       url === '/workspace' ||
       url === '/workspace/favorites' ||
+      url === '/workspace/activity' ||
       url === '/workspace/ui-kit-design-system'
     );
   }
@@ -338,6 +327,9 @@ export class SidebarComponent {
 
       case 'favorites':
         return url === '/workspace/favorites';
+
+      case 'activity-feed':
+        return url === '/workspace/activity';
 
       case 'model-studio':
         return segments.at(-1) === 'model-studio';
@@ -405,10 +397,8 @@ export class SidebarComponent {
         });
         break;
 
-      case 'recent-activity':
-        void this.router.navigate(['/workspace'], {
-          fragment: 'recent-activity',
-        });
+      case 'activity-feed':
+        void this.router.navigate(['/workspace/activity']);
         break;
 
       case 'model-studio':

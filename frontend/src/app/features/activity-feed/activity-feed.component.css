@@ -1,0 +1,220 @@
+/* Activity Feed — uses the shared FORGE glass-card design system. */
+
+:host {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.activity-feed-page {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  color: var(--forge-text);
+  background: var(--forge-surface);
+}
+
+app-workflow-content {
+  --workflow-content-right-reserve: 24px;
+  min-height: 0;
+}
+
+.feed-list {
+  display: flex;
+  width: 100%;
+  max-width: 1120px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto;
+}
+
+.feed-event-card {
+  box-sizing: border-box;
+  height: auto;
+  padding: 15px 20px;
+  border: 1px solid color-mix(in srgb, var(--forge-border) 72%, transparent);
+  border-radius: 12px;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.feed-event-card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 24px rgba(105, 77, 60, 0.075),
+    0 18px 32px rgba(225, 174, 139, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.feed-event-card app-activity-item {
+  display: block;
+  min-width: 0;
+}
+
+.feed-event-card .activity-item {
+  gap: 14px;
+  padding: 0;
+}
+
+.feed-event-card .activity-icon {
+  flex-basis: 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+
+.feed-event-card .activity-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.feed-event-card .activity-action {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.feed-event-card .activity-description {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.feed-event-card .activity-dataModel {
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+.feed-event-card .activity-time {
+  margin-top: 6px;
+  font-size: 10px;
+}
+
+.state-panel {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 260px;
+  padding: 28px;
+  text-align: center;
+}
+
+.state-icon {
+  color: var(--forge-primary);
+  font-size: 30px;
+}
+
+.empty-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  color: var(--forge-primary);
+  background: color-mix(in srgb, var(--forge-primary) 10%, var(--forge-surface));
+}
+
+.empty-icon .material-symbols-outlined {
+  font-size: 30px;
+}
+
+.state-panel h2 {
+  margin: 18px 0 8px;
+  color: var(--forge-text-heading);
+  font-size: 20px;
+}
+
+.state-panel p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--forge-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--forge-error) 30%, var(--forge-border));
+  border-radius: 12px;
+  color: var(--forge-error-strong);
+  background: color-mix(in srgb, var(--forge-error) 5%, var(--forge-surface));
+  font-size: 13px;
+}
+
+.error-message button {
+  margin-left: auto;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--forge-error-strong);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.error-message button:hover {
+  background: color-mix(in srgb, var(--forge-error) 9%, var(--forge-surface));
+}
+
+.error-message button:focus-visible {
+  outline: 2px solid var(--forge-primary);
+  outline-offset: 3px;
+}
+
+.feed-status {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+}
+
+.feed-sentinel {
+  width: 100%;
+  height: 1px;
+}
+
+@media (max-width: 760px) {
+  .feed-list {
+    gap: 9px;
+  }
+
+  .feed-event-card {
+    padding: 13px 14px;
+  }
+
+  .feed-event-card .activity-item {
+    gap: 10px;
+  }
+
+  .state-panel {
+    padding: 22px;
+  }
+
+  .state-panel h2 {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-event-card {
+    transition: none;
+  }
+
+  .feed-event-card:hover {
+    transform: none;
+  }
+}
