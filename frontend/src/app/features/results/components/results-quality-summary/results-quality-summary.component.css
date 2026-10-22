@@ -15,23 +15,57 @@ app-workspace-section .forge-card {
 .quality-details-button {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-top: 14px;
-  padding: 11px 13px;
-  border: 1px solid var(--forge-border);
-  border-radius: 9px;
-  color: var(--forge-text-secondary);
-  background: var(--forge-surface-subtle);
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 34px;
+  margin: 14px 0 0 auto;
+  padding: 0 12px;
+  border: 1px solid var(--forge-primary);
+  border-radius: 8px;
+  background: var(--forge-primary);
+  color: var(--forge-surface);
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: not-allowed;
-  opacity: 0.8;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
 }
 
-.quality-details-button .coming-soon {
-  color: var(--forge-text-muted);
-  font-size: 10px;
-  font-weight: 600;
+.quality-details-button:hover {
+  background: var(--forge-primary-strong);
+  transform: translateY(-1px);
+}
+
+.quality-details-button:focus-visible {
+  outline: 2px solid var(--forge-primary);
+  outline-offset: 3px;
+}
+
+.quality-details-button .analysis-action-label {
+  flex: 1 1 auto;
+}
+
+.quality-details-button .analysis-action-arrow {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.quality-details-button:hover .analysis-action-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quality-details-button,
+  .quality-details-button .analysis-action-arrow {
+    transition: none;
+  }
+
+  .quality-details-button:hover {
+    transform: none;
+  }
 }

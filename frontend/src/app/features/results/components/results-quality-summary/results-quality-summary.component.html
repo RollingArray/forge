@@ -13,11 +13,12 @@
 
   <button
     type="button"
-    class="quality-details-button"
-    disabled
-    title="Detailed quality analysis will be available here."
+    class="forge-card toolbar-action toolbar-action-primary toolbar-action-with-label quality-details-button"
+    (click)="viewDetails.emit()"
+    title="Open detailed quality analysis"
   >
-    <span>Detailed quality analysis</span>
-    <span class="coming-soon">Coming soon</span>
+    <span class="analysis-action-icon material-symbols-outlined" aria-hidden="true">query_stats</span>
+    <span class="analysis-action-label">Detailed quality analysis</span>
+    <span class="analysis-action-arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
   </button>
 </app-workspace-section>
