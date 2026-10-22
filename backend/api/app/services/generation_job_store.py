@@ -41,6 +41,41 @@ class GenerationJobStore:
         )
         temporary_path.replace(path)
 
+    def list_for_data_model(
+        self,
+        data_model_id: str,
+    ) -> list[GenerationJobResponse]:
+        """Return persisted generation jobs for one data model."""
+
+        jobs: list[GenerationJobResponse] = []
+        jobs_root = self._root / data_model_id / "generation"
+
+        if not jobs_root.is_dir():
+            return jobs
+
+        for job_path in jobs_root.glob("*/job.json"):
+            try:
+                job = GenerationJobResponse.model_validate_json(
+                    job_path.read_text(encoding="utf-8")
+                )
+            except Exception:
+                continue
+
+            if (
+                job.data_model_id == data_model_id
+                and job_path == self._job_path(
+                    job.data_model_id,
+                    job.job_id,
+                )
+            ):
+                jobs.append(job)
+
+        return sorted(
+            jobs,
+            key=lambda job: job.created_at,
+            reverse=True,
+        )
+
     def list_running(self) -> list[GenerationJobResponse]:
         """Discover persisted RUNNING jobs across all data models."""
 

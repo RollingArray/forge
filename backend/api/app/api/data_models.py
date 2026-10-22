@@ -19,6 +19,14 @@ from app.models.data_model_list_item_model import DataModelListItemModel
 from app.models.workspace_activity_model import WorkspaceActivityModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.data_model_service import DataModelService
+from app.models.execution_context_model import (
+    ExecutionContextDataModel,
+    ExecutionContextJobModel,
+    ExecutionContextResponse,
+)
+from app.models.generation_model import GenerationJobStatus
+from app.api.generation import generation_service
+
 
 
 router = APIRouter(
@@ -207,3 +215,47 @@ async def get_data_models(
         )
 
     return response
+
+@router.get(
+    "/execution-context",
+    response_model=ExecutionContextResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_execution_context(
+    user: AuthUser = Depends(get_authenticated_user),
+) -> ExecutionContextResponse:
+    """Return minimal visible model and job context for navigation."""
+
+    visible_models = data_model_service.get_data_models(
+        owner_user_id=user.user_id,
+    )
+    response_models: list[ExecutionContextDataModel] = []
+
+    for data_model in visible_models:
+        if not data_model_access_service.can_view_results(
+            data_model_id=data_model.data_model_id,
+            user_id=user.user_id,
+        ):
+            continue
+
+        jobs = generation_service.list_jobs(data_model.data_model_id)
+
+        response_models.append(
+            ExecutionContextDataModel(
+                data_model_id=data_model.data_model_id,
+                name=data_model.name,
+                jobs=[
+                    ExecutionContextJobModel(
+                        job_id=job.job_id,
+                        status=job.status,
+                        progress=job.progress,
+                        total_target_rows=job.total_target_rows,
+                        total_generated_rows=job.total_generated_rows,
+                        created_at=job.created_at,
+                    )
+                    for job in jobs
+                ],
+            )
+        )
+
+    return ExecutionContextResponse(data_models=response_models)

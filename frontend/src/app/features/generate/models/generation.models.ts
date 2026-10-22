@@ -53,6 +53,25 @@ export interface GenerationEntityProgress {
   peak_memory_mb?: number | null;
 }
 
+export interface ExecutionContextJob {
+  job_id: string;
+  status: GenerationJobStatus;
+  progress: number;
+  total_target_rows: number;
+  total_generated_rows: number;
+  created_at: string;
+}
+
+export interface ExecutionContextDataModel {
+  data_model_id: string;
+  name: string;
+  jobs: ExecutionContextJob[];
+}
+
+export interface ExecutionContextResponse {
+  data_models: ExecutionContextDataModel[];
+}
+
 export interface GenerationJobResponse {
   data_model_id: string;
   job_id: string;

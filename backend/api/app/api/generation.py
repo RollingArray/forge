@@ -142,6 +142,29 @@ async def create_generation_job(
     return job
 
 @router.get(
+    "/{data_model_id}/generation",
+    response_model=list[GenerationJobResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def list_generation_jobs(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> list[GenerationJobResponse]:
+    """List generation jobs for a data model the user can generate."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    return generation_service.list_jobs(data_model_id=data_model_id)
+
+
+@router.get(
     "/{data_model_id}/generation/{job_id}",
     response_model=GenerationJobResponse,
     status_code=status.HTTP_200_OK,

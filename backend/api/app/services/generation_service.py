@@ -1493,6 +1493,31 @@ class GenerationService:
             job_id=job_id,
         )
 
+    def list_jobs(
+        self,
+        data_model_id: str,
+    ) -> list[GenerationJobResponse]:
+        """Return persisted generation jobs for one data model."""
+
+        jobs = self._job_store.list_for_data_model(data_model_id)
+
+        for job in jobs:
+            validation = self._validation_store.get(
+                data_model_id=data_model_id,
+                job_id=job.job_id,
+            )
+            if validation is not None:
+                job.validation = validation
+
+            quality = self._quality_store.get(
+                data_model_id=data_model_id,
+                job_id=job.job_id,
+            )
+            if quality is not None:
+                job.quality = quality
+
+        return jobs
+
     def get_job(
         self,
         data_model_id: str,

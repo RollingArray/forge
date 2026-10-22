@@ -17,6 +17,7 @@ import {
   GenerationEntityCompletedEvent,
   GenerationSemanticCallStartedEvent,
   GenerationJobResponse,
+  ExecutionContextResponse,
   GenerationReadiness,
   GenerationSseEvent,
 } from '../models/generation.models';
@@ -76,6 +77,26 @@ export class GenerationService {
     );
   }
 
+
+  getExecutionContext(): Observable<ExecutionContextResponse> {
+    return this.http.get<ExecutionContextResponse>(
+      `${this.apiBaseUrl}/data-models/execution-context`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingDataModels,
+        ),
+      },
+    );
+  }
+
+  listGenerationJobs(
+    dataModelId: string,
+  ): Observable<GenerationJobResponse[]> {
+    return this.http.get<GenerationJobResponse[]>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation`,
+    );
+  }
 
   getGenerationJob(
     dataModelId: string,
