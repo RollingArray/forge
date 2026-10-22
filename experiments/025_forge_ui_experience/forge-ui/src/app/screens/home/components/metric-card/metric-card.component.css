@@ -2,14 +2,6 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-
-  min-height: 108px;
-  padding: 16px 18px;
-
-  border: 1px solid #e7e9f0;
-  border-radius: 11px;
-
-  background: #ffffff;
 }
 
 .metric-icon {
