@@ -9,6 +9,8 @@
     @if (summary()) {
       <span>{{ summary() }}</span>
     }
+
+    <ng-content select="[toolbar-summary-extra]"></ng-content>
   </div>
 
   <div class="toolbar-actions">
@@ -73,5 +75,6 @@
         }
       </button>
     }
+    <ng-content select="[toolbar-extra-controls]"></ng-content>
   </div>
 </div>
