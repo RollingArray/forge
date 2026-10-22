@@ -19,6 +19,7 @@ import { ModelValidationComponent } from './features/model-validation/model-vali
 import { PopulationComponent } from './features/population/population.component';
 import { GenerateComponent } from './features/generate/generate.component';
 import { ResultsComponent } from './features/results/results.component';
+import { GeneratedFileDataComponent } from './features/generated-file-data/generated-file-data.component';
 import { ResultsValidationAnalysisComponent } from './features/results-validation-analysis/results-validation-analysis.component';
 import { ResultsQualityAnalysisComponent } from './features/results-quality-analysis/results-quality-analysis.component';
 import { UiKitDesignSystemComponent } from './features/ui-kit-design-system/ui-kit-design-system.component';
@@ -73,6 +74,10 @@ export const routes: Routes = [
       {
         path: 'workspace/:dataModelId/data-model/generate/:jobId',
         component: GenerateComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/data-model/results/:jobId/data/:entityName',
+        component: GeneratedFileDataComponent,
       },
       {
         path: 'workspace/:dataModelId/data-model/results/:jobId/validation-analysis',

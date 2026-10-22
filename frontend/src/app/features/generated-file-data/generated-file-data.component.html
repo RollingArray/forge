@@ -1,0 +1,96 @@
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  [pageIcon]="'table_view'"
+  [pageTitle]="'Generated Data'"
+  [pageDescription]="'Explore, search, and inspect your generated records.'"
+  [progressLabel]="''"
+  [actionBarIcon]="'table_view'"
+  [actionBarTitle]="'Generated Dataset'"
+  [actionBarDescription]="'Review the records and data available in this completed generation job.'"
+  [secondaryLabel]="'Back to Results'"
+  [secondaryIcon]="'arrow_back'"
+  [primaryLabel]="'Dataset Loaded'"
+  [primaryIcon]="'check'"
+  [primaryDisabled]="true"
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToResults()"
+>
+  <app-workspace-section>
+    <app-workspace-header
+      eyebrow="GENERATED DATASET"
+      [title]="page()?.filename || entityName"
+      [summary]="(totalRows() | number: '1.0-0') + ' total records'"
+      [state]="loading() ? 'Loading' : error() ? 'Error' : 'Generated'"
+    />
+
+    <app-workspace-table-toolbar
+      [showSearch]="true"
+      searchPlaceholder="Search values across the dataset..."
+      [searchValue]="searchTerm()"
+      [actions]="[]"
+      (searchValueChange)="updateSearch($event)"
+    >
+      <div toolbar-summary-extra class="dataset-toolbar-controls">
+        <label class="page-size-field" title="Rows per page">
+          <span>Rows</span>
+          <select
+            aria-label="Rows per page"
+            [value]="pageSize()"
+            (change)="changePageSize($any($event.target).value)"
+          >
+            @for (size of pageSizes; track size) {
+              <option [value]="size">{{ size }}</option>
+            }
+          </select>
+        </label>
+
+        <span class="dataset-page-indicator">
+          {{ currentPage() | number }} / {{ pageCount() | number }}
+        </span>
+
+        <div class="pagination-actions">
+          <button
+            type="button"
+            class="dataset-pagination-button"
+            aria-label="Previous page"
+            title="Previous page"
+            [disabled]="!canGoPrevious() || loading()"
+            (click)="previousPage()"
+          >
+            <span class="material-symbols-outlined">chevron_left</span>
+            <span>Previous</span>
+          </button>
+
+          <button
+            type="button"
+            class="dataset-pagination-button"
+            aria-label="Next page"
+            title="Next page"
+            [disabled]="!canGoNext() || loading()"
+            (click)="nextPage()"
+          >
+            <span>Next</span>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </app-workspace-table-toolbar>
+
+    @if (error()) {
+      <div class="dataset-state dataset-error" role="alert">{{ error() }}</div>
+    } @else if (loading() && !page()) {
+      <div class="dataset-state" aria-live="polite">Loading generated rows…</div>
+    } @else {
+      <app-workspace-simple-table
+        [columns]="columns()"
+        [rows]="rows()"
+        [rowKey]="rowKey()"
+        [height]="'min(58vh, 620px)'"
+        [showSearch]="false"
+        [summary]="null"
+        emptyMessage="No rows match your search."
+      />
+    }
+  </app-workspace-section>
+</app-workflow-page>
