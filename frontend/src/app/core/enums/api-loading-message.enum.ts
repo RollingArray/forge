@@ -14,6 +14,7 @@
 
 export enum ApiLoadingMessage {
   LoadingWorkspace = 'Loading workspace...',
+  LoadingActivityFeed = 'Loading activity feed...',
   LoadingFavorites = 'Loading favorites...',
   CreatingFavorite = 'Adding favorite...',
   DeletingFavorite = 'Removing favorite...',

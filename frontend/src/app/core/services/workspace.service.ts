@@ -125,6 +125,47 @@ export class WorkspaceService {
     );
   }
 
+  getActivityPage(
+    offset: number,
+    limit: number,
+  ): Observable<{
+    activities: Activity[];
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  }> {
+    return this.http
+      .get<{
+        activities: ActivityResponse[];
+        offset: number;
+        limit: number;
+        has_more: boolean;
+      }>(`${this.apiBaseUrl}/workspace/activity`, {
+        params: { offset, limit },
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingActivityFeed,
+        ),
+      })
+      .pipe(
+        map((response) => ({
+          activities: response.activities.map((activity) => ({
+            action: activity.action,
+            description: activity.description,
+            dataModel: activity.data_model,
+            actor: activity.actor,
+            target: activity.target,
+            time: activity.time,
+            icon: activity.icon,
+            accent: activity.accent,
+          })),
+          offset: response.offset,
+          limit: response.limit,
+          hasMore: response.has_more,
+        })),
+      );
+  }
+
   createDataModel(
     request: CreateDataModelRequest,
   ): Observable<DataModelResponse> {
