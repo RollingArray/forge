@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
 from app.models.workspace_metrics_model import WorkspaceMetricsModel
 from app.models.workspace_template_model import WorkspaceTemplateModel
-from app.models.workspace_activity_model import WorkspaceActivityModel
+from app.models.workspace_activity_model import (
+    WorkspaceActivityModel,
+    WorkspaceActivityPageModel,
+)
 from app.services.workspace_service import WorkspaceService
 
 
@@ -57,26 +60,56 @@ async def get_workspace_templates() -> list[WorkspaceTemplateModel]:
 
 @router.get(
     "/activity",
-    response_model=list[WorkspaceActivityModel],
+    response_model=list[WorkspaceActivityModel] | WorkspaceActivityPageModel,
     status_code=status.HTTP_200_OK,
 )
 async def get_workspace_activity(
+    offset: int | None = Query(default=None, ge=0),
+    limit: int | None = Query(default=None, ge=1, le=100),
     user: AuthUser = Depends(get_authenticated_user),
-) -> list[WorkspaceActivityModel]:
-    activities = workspace_service.get_activity(
+) -> list[WorkspaceActivityModel] | WorkspaceActivityPageModel:
+    if offset is None and limit is None:
+        activities = workspace_service.get_activity(
+            owner_user_id=user.user_id,
+        )
+        return [
+            WorkspaceActivityModel(
+                action=activity.action,
+                description=activity.description,
+                data_model=activity.data_model,
+                actor=activity.actor,
+                target=activity.target,
+                time=activity.time,
+                icon=activity.icon,
+                accent=activity.accent,
+            )
+            for activity in activities
+        ]
+
+    page_offset = 0 if offset is None else offset
+    page_limit = 25 if limit is None else limit
+
+    activities, has_more = workspace_service.get_activity_page(
         owner_user_id=user.user_id,
+        offset=page_offset,
+        limit=page_limit,
     )
 
-    return [
-        WorkspaceActivityModel(
-            action=activity.action,
-            description=activity.description,
-            data_model=activity.data_model,
-            actor=activity.actor,
-            target=activity.target,
-            time=activity.time,
-            icon=activity.icon,
-            accent=activity.accent,
-        )
-        for activity in activities
-    ]
+    return WorkspaceActivityPageModel(
+        activities=[
+            WorkspaceActivityModel(
+                action=activity.action,
+                description=activity.description,
+                data_model=activity.data_model,
+                actor=activity.actor,
+                target=activity.target,
+                time=activity.time,
+                icon=activity.icon,
+                accent=activity.accent,
+            )
+            for activity in activities
+        ],
+        offset=page_offset,
+        limit=page_limit,
+        has_more=has_more,
+    )

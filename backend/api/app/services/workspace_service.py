@@ -164,19 +164,25 @@ class WorkspaceService:
             ),
         ]
 
-    def get_activity(
+    def get_activity_page(
         self,
         owner_user_id: str,
-    ) -> list[WorkspaceActivity]:
-        """Return recent activity across all Data Models visible to the user."""
+        offset: int = 0,
+        limit: int = 25,
+    ) -> tuple[list[WorkspaceActivity], bool]:
+        """Return a page of visible workspace activity and whether more exists."""
 
-        # Workspace-level activity such as sign-in is scoped to the
-        # authenticated user.
+        if offset < 0:
+            raise ValueError("offset must be zero or greater.")
+        if limit < 1 or limit > 100:
+            raise ValueError("limit must be between 1 and 100.")
+
+        # Workspace-level activity such as sign-in is scoped to the user.
         activities_by_id = {
             activity.activity_id: activity
             for activity in self._activity_service.get_recent(
                 owner_user_id=owner_user_id,
-                limit=50,
+                limit=offset + limit + 1,
             )
         }
 
@@ -201,15 +207,15 @@ class WorkspaceService:
             )
 
             if data_model is not None:
-                visible_data_model_ids.add(
-                    data_model.data_model_id,
-                )
+                visible_data_model_ids.add(data_model.data_model_id)
 
-        # Add all activity belonging to visible Data Models.
+        # Fetch enough records from each source to build the requested
+        # globally sorted page and its has-more sentinel.
+        fetch_limit = offset + limit + 1
         for data_model_id in visible_data_model_ids:
             for activity in self._activity_service.get_by_data_model_id(
                 data_model_id=data_model_id,
-                limit=50,
+                limit=fetch_limit,
             ):
                 activities_by_id[activity.activity_id] = activity
 
@@ -217,15 +223,32 @@ class WorkspaceService:
             activities_by_id.values(),
             key=lambda activity: activity.timestamp,
             reverse=True,
-        )[:10]
+        )
+
+        page_with_sentinel = activities[offset : offset + limit + 1]
+        has_more = len(page_with_sentinel) > limit
+        page = page_with_sentinel[:limit]
 
         return [
             self._to_workspace_activity(
                 activity=activity,
                 viewer_user_id=owner_user_id,
             )
-            for activity in activities
-        ]
+            for activity in page
+        ], has_more
+
+    def get_activity(
+        self,
+        owner_user_id: str,
+    ) -> list[WorkspaceActivity]:
+        """Return the ten most recent activities for the workspace dashboard."""
+
+        activities, _ = self.get_activity_page(
+            owner_user_id=owner_user_id,
+            offset=0,
+            limit=10,
+        )
+        return activities
 
     def _to_workspace_activity(
 
