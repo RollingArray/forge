@@ -79,7 +79,7 @@ export class FavoritesComponent {
       title: 'Results & Analysis',
       description: 'Review generated data and quality findings.',
       icon: 'analytics',
-      resourceTypes: ['generation_results', 'validation_analysis', 'quality_analysis'],
+      resourceTypes: ['generation_results', 'generated_table', 'validation_analysis', 'quality_analysis'],
     },
   ] as const;
 
@@ -95,6 +95,7 @@ export class FavoritesComponent {
       const searchableText = [
         resourceLabel,
         favorite.data_model_name,
+        favorite.entity_name,
         favorite.job_id,
         favorite.status,
         favorite.resource_type,
@@ -145,6 +146,7 @@ export class FavoritesComponent {
       resourceType: favorite.resource_type,
       dataModelId: favorite.data_model_id,
       ...(favorite.job_id ? { jobId: favorite.job_id } : {}),
+      ...(favorite.entity_name ? { entityName: favorite.entity_name } : {}),
     };
     const route = resolveResourceRoute(reference);
 

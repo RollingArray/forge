@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <h3>{{ definition().label }}</h3>
+    <h3>{{ favorite().resource_type === 'generated_table' ? (favorite().entity_name || definition().label) : definition().label }}</h3>
     <p class="model-name">{{ favorite().data_model_name }}</p>
 
     @if (definition().requiresJobId && favorite().job_id) {
