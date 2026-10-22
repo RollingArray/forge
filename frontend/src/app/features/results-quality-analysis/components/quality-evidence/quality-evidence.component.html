@@ -1,0 +1,47 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="RECORDED MEASUREMENTS"
+    title="Quality evidence"
+    summary="Inspect the values recorded for each quality dimension."
+  />
+
+  <app-content-grid [columns]="1">
+    @for (section of sections(); track section.key) {
+      <app-content-card [padding]="0">
+        <details class="evidence-card">
+          <summary>
+            <span class="section-marker" aria-hidden="true">
+              <span class="material-symbols-outlined">{{ iconFor(section.title) }}</span>
+            </span>
+            <span class="section-heading">
+              <strong>{{ section.title }}</strong>
+              <span>{{ section.description }}</span>
+            </span>
+            <span class="section-count">{{ section.items.length }} values</span>
+            <span class="expand-indicator" aria-hidden="true">+</span>
+          </summary>
+
+          @if (section.items.length) {
+            <div class="evidence-items">
+              @for (item of section.items; track item.label) {
+                <div class="evidence-item">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty-evidence">No detailed measurements were recorded for this dimension.</p>
+          }
+        </details>
+      </app-content-card>
+    } @empty {
+      <app-content-card>
+        <section class="empty-evidence-state">
+          <strong>No detailed evidence available</strong>
+          <p>This generation job did not persist detailed quality evidence.</p>
+        </section>
+      </app-content-card>
+    }
+  </app-content-grid>
+</app-workspace-section>

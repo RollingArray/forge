@@ -1,0 +1,62 @@
+<app-workflow-page
+  [steps]="steps"
+  [activeStep]="activeStep"
+  pageIcon="query_stats"
+  pageTitle="Detailed Quality Analysis"
+  pageDescription="Explore recorded quality measurements for the generated dataset."
+  progressLabel="5 of 5 steps"
+  actionBarTitle="Generation quality analysis"
+  actionBarDescription="Review quality metrics and evidence recorded for this generation job."
+  secondaryLabel="Back to Results"
+  secondaryIcon="arrow_back"
+  primaryLabel="Quality Evidence"
+  primaryIcon="query_stats"
+  [primaryDisabled]="true"
+  (stepSelected)="selectStep($event)"
+  (secondaryAction)="backToResults()"
+  (primaryAction)="backToResults()"
+>
+  @if (loading()) {
+    <section class="state-card loading-state">
+      <div class="loading-spinner"></div>
+      <div class="state-content">
+        <span class="state-eyebrow">LOADING QUALITY</span>
+        <h2>Loading quality analysis</h2>
+        <p>Retrieving the quality profile saved with this generation job.</p>
+      </div>
+    </section>
+  } @else if (loadError()) {
+    <section class="state-card error-state">
+      <div class="state-icon">!</div>
+      <div class="state-content">
+        <span class="state-eyebrow">QUALITY ERROR</span>
+        <h2>Analysis could not be loaded</h2>
+        <p>{{ loadError() }}</p>
+      </div>
+    </section>
+  } @else if (quality()) {
+    <app-workflow-row [columns]="1">
+      <app-results-quality-analysis-summary
+        [metrics]="metrics()"
+        [jobId]="jobId"
+        [modelName]="modelName()"
+        [modelDescription]="modelDescription()"
+      />
+    </app-workflow-row>
+
+    <app-quality-evidence [sections]="evidenceSections()" />
+
+    <div class="specification-meta">
+      <span><strong>Generation job</strong> {{ jobId }}</span>
+      <span><strong>Quality dimensions</strong> {{ evidenceSections().length }}</span>
+    </div>
+  } @else {
+    <section class="state-card error-state">
+      <div class="state-content">
+        <span class="state-eyebrow">QUALITY UNAVAILABLE</span>
+        <h2>No quality profile available</h2>
+        <p>This generation job does not contain a quality profile. Other generation results remain available.</p>
+      </div>
+    </section>
+  }
+</app-workflow-page>

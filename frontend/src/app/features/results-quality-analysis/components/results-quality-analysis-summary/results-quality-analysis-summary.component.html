@@ -1,0 +1,9 @@
+<app-workspace-section>
+  <app-workspace-header eyebrow="DATA MODEL" [title]="modelName()" [summary]="modelDescription()" />
+
+  <app-metric-grid [columns]="3" [metrics]="metrics()" />
+
+  <div class="summary-meta">
+    <span><strong>Generation job</strong> {{ jobId() }}</span>
+  </div>
+</app-workspace-section>
