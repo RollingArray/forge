@@ -1,0 +1,15 @@
+<button
+  type="button"
+  class="forge-button"
+  [class.forge-button--primary]="variant() === 'primary'"
+  [class.forge-button--secondary]="variant() === 'secondary'"
+  [disabled]="disabled()"
+  [attr.aria-label]="ariaLabel() || label()"
+  [attr.title]="title()"
+  (click)="clicked.emit()"
+>
+  @if (icon()) {
+    <span class="material-symbols-outlined" aria-hidden="true">{{ icon() }}</span>
+  }
+  <span>{{ label() }}</span>
+</button>
