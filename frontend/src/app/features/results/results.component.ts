@@ -217,20 +217,14 @@ export class ResultsComponent {
       return;
     }
 
-    this.router.navigate(
-      [
-        '/workspace',
-        this.dataModelId,
-        'data-model',
-        'results',
-        'quality',
-      ],
-      {
-        queryParams: {
-          jobId: this.jobId,
-        },
-      },
-    );
+    this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'data-model',
+      'results',
+      this.jobId,
+      'quality-analysis',
+    ]);
   }
 
   backToGenerate(): void {
