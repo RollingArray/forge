@@ -56,6 +56,24 @@
   overflow: hidden;
 }
 
+/*
+ * Workflow route sizing contract.
+ * Keep routed workflow hosts within the available application viewport
+ * so their shared content can scroll without displacing the action bar.
+ */
+.application-content > app-model-studio,
+.application-content > app-model-validation,
+.application-content > app-population,
+.application-content > app-generate,
+.application-content > app-results,
+.application-content > app-results-quality-analysis,
+.application-content > app-results-validation-analysis {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .application-content > router-outlet {
   flex: 0 0 auto;
 }
