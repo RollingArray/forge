@@ -121,5 +121,14 @@
     </button>
   </div>
 
+  @if (isExecutionSelectorOpen()) {
+    <app-execution-selector-dialog
+      [open]="isExecutionSelectorOpen()"
+      [destination]="executionSelectorDestination()"
+      (closed)="isExecutionSelectorOpen.set(false)"
+      (selectionConfirmed)="confirmExecutionSelection($event)"
+    />
+  }
+
   <app-user-profile [open]="isProfileModalOpen()" (closed)="isProfileModalOpen.set(false)" />
 </aside>

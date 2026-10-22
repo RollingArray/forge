@@ -31,10 +31,18 @@ export class WorkspaceNavigationGroupComponent {
   readonly selected = output<string>();
 
   selectItem(item: WorkspaceNavigationItem): void {
+    console.debug('[EXECUTION SELECTOR DEBUG] Navigation click', {
+      label: item.label,
+      action: item.action,
+      availability: item.availability,
+    });
+
     if (item.availability === 'soon' || !item.action) {
+      console.debug('[EXECUTION SELECTOR DEBUG] Click ignored');
       return;
     }
 
+    console.debug('[EXECUTION SELECTOR DEBUG] Emitting action', item.action);
     this.selected.emit(item.action);
   }
 }

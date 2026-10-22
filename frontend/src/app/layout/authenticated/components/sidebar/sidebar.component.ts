@@ -11,6 +11,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { WorkspaceService } from '../../../../core/services/workspace.service';
@@ -19,6 +20,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { QuickActionsComponent } from '../../../../features/workspace/components/quick-actions/quick-actions.component';
 import { UserProfileComponent } from '../../../../shared/components/user-profile/user-profile.component';
+import { ExecutionSelectorDialogComponent } from '../../../../shared/components/execution-selector-dialog/execution-selector-dialog.component';
 import {
   WorkspaceNavigationGroup,
   WorkspaceNavigationGroupComponent,
@@ -27,7 +29,14 @@ import {
 @Component({
   selector: 'app-forge-sidebar',
   standalone: true,
-  imports: [QuickActionsComponent, UserProfileComponent, WorkspaceNavigationGroupComponent],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    QuickActionsComponent,
+    UserProfileComponent,
+    WorkspaceNavigationGroupComponent,
+    ExecutionSelectorDialogComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css',
@@ -40,6 +49,8 @@ export class SidebarComponent {
 
   private readonly sessionUser = this.authService.getSession()?.user;
 
+
+
   readonly currentDataModelName = signal<string | null>(null);
   readonly currentDataModelDescription = signal<string | null>(null);
 
@@ -48,6 +59,10 @@ export class SidebarComponent {
   readonly userInitials = signal(this.getUserInitials(this.sessionUser?.displayName || 'User'));
 
   readonly isProfileModalOpen = signal(false);
+  readonly isExecutionSelectorOpen = signal(false);
+  readonly executionSelectorDestination = signal<
+    'executions' | 'generated-data' | 'quality-analysis' | 'validation-analysis'
+  >('executions');
 
   readonly workspaceNavigationGroups: readonly WorkspaceNavigationGroup[] = [
     {
@@ -80,26 +95,22 @@ export class SidebarComponent {
         {
           label: 'Executions',
           icon: 'play_circle',
-          action: '',
-          availability: 'soon',
+          action: 'executions',
         },
         {
           label: 'Generated Data',
           icon: 'database',
-          action: '',
-          availability: 'soon',
+          action: 'generated-data',
         },
         {
-          label: 'Execution History',
-          icon: 'history',
-          action: '',
-          availability: 'soon',
-        },
-        {
-          label: 'Metrics & Analytics',
+          label: 'Quality Analysis',
           icon: 'monitoring',
-          action: '',
-          availability: 'soon',
+          action: 'quality-analysis',
+        },
+        {
+          label: 'Validation Analysis',
+          icon: 'fact_check',
+          action: 'validation-analysis',
         },
       ],
     },
@@ -257,6 +268,50 @@ export class SidebarComponent {
     });
   }
 
+  openExecutionSelector(
+    destination:
+      | 'executions'
+      | 'generated-data'
+      | 'quality-analysis'
+      | 'validation-analysis',
+  ): void {
+    this.executionSelectorDestination.set(destination);
+    this.isExecutionSelectorOpen.set(true);
+  }
+
+  confirmExecutionSelection(selection: {
+    dataModelId: string;
+    jobId: string;
+    destination: 'executions' | 'generated-data' | 'quality-analysis' | 'validation-analysis';
+  }): void {
+    const { dataModelId, jobId, destination } = selection;
+    const route =
+      destination === 'executions'
+        ? ['workspace', dataModelId, 'data-model', 'generate', jobId]
+        : destination === 'generated-data'
+          ? ['workspace', dataModelId, 'data-model', 'results', jobId]
+          : destination === 'quality-analysis'
+            ? [
+                'workspace',
+                dataModelId,
+                'data-model',
+                'results',
+                jobId,
+                'quality-analysis',
+              ]
+            : [
+                'workspace',
+                dataModelId,
+                'data-model',
+                'results',
+                jobId,
+                'validation-analysis',
+              ];
+
+    this.isExecutionSelectorOpen.set(false);
+    void this.router.navigate(route);
+  }
+
   isWorkspaceContext(): boolean {
     const url = this.currentUrl().split('?')[0].split('#')[0];
     return url === '/workspace' || url === '/workspace/ui-kit-design-system';
@@ -291,7 +346,24 @@ export class SidebarComponent {
         return segments.includes('generate');
 
       case 'results':
-        return segments.includes('results');
+      case 'generated-data':
+        return (
+          segments.includes('results') &&
+          !segments.includes('quality-analysis') &&
+          !segments.includes('validation-analysis')
+        );
+
+      case 'executions':
+        return (
+          segments.includes('generate') &&
+          segments.at(-1) !== 'generate'
+        );
+
+      case 'quality-analysis':
+        return segments.includes('quality-analysis');
+
+      case 'validation-analysis':
+        return segments.includes('validation-analysis');
 
       default:
         return false;
@@ -299,6 +371,7 @@ export class SidebarComponent {
   }
 
   select(action: string): void {
+
     const url = this.currentUrl().split('?')[0].split('#')[0];
     const segments = url.split('/').filter(Boolean);
     const workspaceIndex = segments.indexOf('workspace');
@@ -350,6 +423,13 @@ export class SidebarComponent {
         if (dataModelId && dataModelId !== 'ui-kit-design-system') {
           void this.router.navigate(['/workspace', dataModelId, 'data-model', 'generate']);
         }
+        break;
+
+      case 'executions':
+      case 'generated-data':
+      case 'quality-analysis':
+      case 'validation-analysis':
+        this.openExecutionSelector(action);
         break;
 
       case 'results': {

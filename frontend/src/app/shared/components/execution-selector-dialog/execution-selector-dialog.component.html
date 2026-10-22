@@ -1,0 +1,150 @@
+<app-form-dialog
+  [title]="
+    destination() === 'executions'
+      ? 'Open Execution'
+      : destination() === 'generated-data'
+        ? 'Open Generated Data'
+        : destination() === 'quality-analysis'
+          ? 'Open Quality Analysis'
+          : 'Open Validation Analysis'
+  "
+  subtitle="Browse your data models and select a generation run."
+  icon="account_tree"
+  width="860px"
+  (closed)="closed.emit()"
+>
+  <div dialog-body class="execution-selector">
+    @if (loadingModels()) {
+      <div class="execution-selector-message" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+        <span>Loading your execution workspace…</span>
+      </div>
+    } @else if (error() && models().length === 0) {
+      <div class="execution-selector-message execution-selector-message-error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (models().length === 0) {
+      <div class="execution-selector-empty-state">
+        <span class="material-symbols-outlined" aria-hidden="true">database</span>
+        <strong>No data models available</strong>
+        <span>Data models with generation jobs will appear here.</span>
+      </div>
+    } @else {
+      <app-content-grid [columns]="1">
+        @for (model of models(); track model.data_model_id) {
+          <app-content-card [padding]="0">
+            <section class="execution-selector-model">
+            <header class="execution-selector-model-header">
+              <span class="execution-selector-model-icon material-symbols-outlined" aria-hidden="true">database</span>
+              <div class="execution-selector-model-info">
+                <h4>{{ model.name }}</h4>
+                <span class="execution-selector-model-id">{{ model.data_model_id }}</span>
+              </div>
+              <span class="execution-selector-job-count">
+                {{ model.jobs.length }} {{ model.jobs.length === 1 ? 'job' : 'jobs' }}
+              </span>
+            </header>
+
+            @if (model.jobs.length === 0) {
+              <div class="execution-selector-model-empty">
+                <span class="material-symbols-outlined" aria-hidden="true">hourglass_empty</span>
+                No generation jobs for this model yet.
+              </div>
+            } @else {
+              <div class="execution-selector-jobs">
+                @for (job of model.jobs; track job.job_id) {
+                  <label
+                    class="execution-selector-job"
+                    [class.selected]="modelId() === model.data_model_id && jobId() === job.job_id"
+                  >
+                    <input
+                      type="radio"
+                      name="execution-selector-job"
+                      [value]="job.job_id"
+                      [checked]="modelId() === model.data_model_id && jobId() === job.job_id"
+                      (change)="selectJob(model.data_model_id, job.job_id)"
+                    />
+                    <span class="execution-selector-job-main">
+                      <span class="execution-selector-job-topline">
+                        <span class="execution-selector-job-id">{{ job.job_id }}</span>
+                        <span
+                          class="execution-selector-status"
+                          [attr.data-status]="job.status.toLowerCase()"
+                        >
+                          <span class="execution-selector-status-dot"></span>
+                          {{ job.status.replace('_', ' ') }}
+                        </span>
+                      </span>
+                      <span class="execution-selector-job-meta">
+                        <span class="material-symbols-outlined" aria-hidden="true">table_rows</span>
+                        {{ job.total_generated_rows | number }} of {{ job.total_target_rows | number }} rows
+                        <span class="execution-selector-meta-divider">·</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                        {{ job.created_at | date:'medium' }}
+                      </span>
+                      <span class="execution-selector-progress-track">
+                        <span
+                          class="execution-selector-progress-value"
+                          [style.width.%]="job.progress * 100"
+                        ></span>
+                      </span>
+                      <span class="execution-selector-progress-label">
+                        {{ job.progress * 100 | number:'1.0-0' }}% complete
+                      </span>
+                    </span>
+                    <span class="execution-selector-job-select-icon material-symbols-outlined" aria-hidden="true">
+                      {{ modelId() === model.data_model_id && jobId() === job.job_id ? 'check_circle' : 'radio_button_unchecked' }}
+                    </span>
+                  </label>
+                }
+              </div>
+            }
+            </section>
+          </app-content-card>
+        }
+      </app-content-grid>
+    }
+
+    @if (error() && models().length > 0) {
+      <p class="execution-selector-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <div dialog-footer class="execution-selector-footer">
+    <span class="execution-selector-selection-hint">
+      @if (jobId()) {
+        @for (model of models(); track model.data_model_id) {
+          @if (model.data_model_id === modelId()) {
+            <span
+              class="material-symbols-outlined"
+              aria-hidden="true"
+            >check_circle</span>
+            <span class="execution-selector-selection-details">
+              <strong>{{ model.name }}</strong>
+              <small>Job: {{ jobId() }}</small>
+            </span>
+          }
+        }
+      } @else {
+        <span>Select a generation job to continue</span>
+      }
+    </span>
+    <button
+      type="button"
+      class="execution-selector-cancel"
+      (click)="closed.emit()"
+    >
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="execution-selector-open"
+      [disabled]="loadingModels() || !modelId() || !jobId()"
+      (click)="confirmSelection()"
+    >
+      Open destination
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+    </button>
+  </div>
+</app-form-dialog>
