@@ -10,5 +10,6 @@ export type ResourceType =
   | 'generation'
   | 'generation_execution'
   | 'generation_results'
+  | 'generated_table'
   | 'validation_analysis'
   | 'quality_analysis';

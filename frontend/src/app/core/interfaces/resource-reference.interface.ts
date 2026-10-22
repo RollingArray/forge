@@ -9,4 +9,5 @@ export interface ResourceReference {
   resourceType: ResourceType;
   dataModelId: string;
   jobId?: string;
+  entityName?: string;
 }

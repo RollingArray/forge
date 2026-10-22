@@ -93,6 +93,22 @@ export const RESOURCE_DEFINITIONS: Readonly<
     requiresJobId: true,
     buildRoute: (reference) => buildJobRoute(reference, 'results'),
   },
+  generated_table: {
+    type: 'generated_table',
+    label: 'Generated Table',
+    icon: 'table_chart',
+    requiresJobId: true,
+    buildRoute: (reference) => {
+      if (!reference.entityName?.trim()) {
+        return null;
+      }
+
+      const baseRoute = buildJobRoute(reference, 'results');
+      return baseRoute
+        ? [...baseRoute, 'data', reference.entityName]
+        : null;
+    },
+  },
   validation_analysis: {
     type: 'validation_analysis',
     label: 'Validation Analysis',
@@ -165,6 +181,16 @@ export function resolveResourceReferenceFromUrl(
     segments[2] === 'data-model' &&
     segments[3] === 'results' &&
     segments[4] &&
+    segments[5] === 'data' &&
+    segments[6] &&
+    segments.length === 7
+  ) {
+    resourceType = 'generated_table';
+    jobId = segments[4];
+  } else if (
+    segments[2] === 'data-model' &&
+    segments[3] === 'results' &&
+    segments[4] &&
     segments[5] === 'validation-analysis' &&
     segments.length === 6
   ) {
@@ -189,6 +215,7 @@ export function resolveResourceReferenceFromUrl(
     resourceType,
     dataModelId,
     ...(jobId ? { jobId } : {}),
+    ...(resourceType === 'generated_table' ? { entityName: segments[6] } : {}),
   };
 
   return RESOURCE_DEFINITIONS[resourceType].buildRoute(reference)

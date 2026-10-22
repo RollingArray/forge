@@ -11,6 +11,7 @@ export interface Favorite {
   data_model_id: string;
   data_model_name: string;
   job_id: string | null;
+  entity_name: string | null;
   status: string | null;
   created_at: string;
 }
@@ -19,4 +20,5 @@ export interface CreateFavoriteRequest {
   resource_type: ResourceType;
   data_model_id: string;
   job_id?: string;
+  entity_name?: string;
 }
