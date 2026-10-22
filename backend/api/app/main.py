@@ -17,6 +17,7 @@ from app.api.specification import router as specification_router
 from app.api.generation import generation_service, router as generation_router
 from app.api.workspace import router as workspace_router
 from app.api.users import router as users_router
+from app.api.favorites import router as favorites_router
 
 
 app = FastAPI(
@@ -84,6 +85,11 @@ app.include_router(
 
 app.include_router(
     users_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    favorites_router,
     prefix="/api/v1",
 )
 
