@@ -24,8 +24,9 @@
     <nav class="navigation workspace-navigation" aria-label="FORGE Workspace navigation">
       <button
         type="button"
-        class="navigation-item workspace-home active"
-        aria-current="page"
+        class="navigation-item workspace-home"
+        [class.active]="isActive('workspace')"
+        [attr.aria-current]="isActive('workspace') ? 'page' : null"
         (click)="select('workspace')"
       >
         <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
@@ -33,7 +34,11 @@
       </button>
 
       @for (group of workspaceNavigationGroups; track group.title) {
-        <app-workspace-navigation-group [group]="group" (selected)="select($event)" />
+        <app-workspace-navigation-group
+          [group]="group"
+          [activeAction]="isActive('favorites') ? 'favorites' : null"
+          (selected)="select($event)"
+        />
       }
     </nav>
   } @else {

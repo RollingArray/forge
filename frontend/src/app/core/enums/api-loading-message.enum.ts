@@ -14,6 +14,9 @@
 
 export enum ApiLoadingMessage {
   LoadingWorkspace = 'Loading workspace...',
+  LoadingFavorites = 'Loading favorites...',
+  CreatingFavorite = 'Adding favorite...',
+  DeletingFavorite = 'Removing favorite...',
   CreatingDataModel = 'Creating Data Model...',
   GeneratingDataModelWithAI = 'Generating Data Model with FORGE AI...',
   GeneratingEntityProposalWithAI = 'Generating entity proposal with FORGE AI...',

@@ -127,8 +127,7 @@ export class SidebarComponent {
         {
           label: 'Favorites',
           icon: 'star',
-          action: '',
-          availability: 'soon',
+          action: 'favorites',
         },
         {
           label: 'Specification Library',
@@ -314,7 +313,11 @@ export class SidebarComponent {
 
   isWorkspaceContext(): boolean {
     const url = this.currentUrl().split('?')[0].split('#')[0];
-    return url === '/workspace' || url === '/workspace/ui-kit-design-system';
+    return (
+      url === '/workspace' ||
+      url === '/workspace/favorites' ||
+      url === '/workspace/ui-kit-design-system'
+    );
   }
 
   isDataModelContext(): boolean {
@@ -332,6 +335,9 @@ export class SidebarComponent {
     switch (section) {
       case 'workspace':
         return url === '/workspace' || url === '/workspace/ui-kit-design-system';
+
+      case 'favorites':
+        return url === '/workspace/favorites';
 
       case 'model-studio':
         return segments.at(-1) === 'model-studio';
@@ -381,6 +387,10 @@ export class SidebarComponent {
       case 'workspace':
       case 'data-models':
         void this.router.navigate(['/workspace']);
+        break;
+
+      case 'favorites':
+        void this.router.navigate(['/workspace/favorites']);
         break;
 
       case 'create-data-model':
