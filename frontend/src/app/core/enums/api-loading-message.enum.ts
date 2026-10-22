@@ -46,6 +46,7 @@ export enum ApiLoadingMessage {
   LoadingGenerationCheckpoint = 'Loading generation checkpoint...',
   LoadingGeneratedFiles = 'Loading generated files...',
   LoadingArtifactPreview = 'Loading artifact preview...',
+  LoadingGeneratedFileData = 'Loading generated file data...',
   LoadingSpecification = 'Loading Data Model specification...',
   ValidatingDataModel = 'Validating Data Model...',
   CreatingEntity = 'Adding entity to Data Model...',

@@ -1,11 +1,12 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { SseService } from '../../../core/services/sse.service';
 import { GenerationCheckpoint } from '../../../core/interfaces/generation-checkpoint.interface';
 import {
   GenerationArtifact,
   GenerationArtifactPreview,
+  GenerationArtifactDataPage,
 } from '../../results/results.models';
 import { environment } from '../../../../environments/environment';
 import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
@@ -223,6 +224,32 @@ export class GenerationService {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
           ApiLoadingMessage.LoadingArtifactPreview,
+        ),
+      },
+    );
+  }
+
+
+  getGenerationArtifactData(
+    dataModelId: string,
+    jobId: string,
+    entityName: string,
+    offset: number,
+    limit: number,
+    search: string,
+  ): Observable<GenerationArtifactDataPage> {
+    const params = new HttpParams()
+      .set('offset', offset)
+      .set('limit', limit)
+      .set('search', search);
+
+    return this.http.get<GenerationArtifactDataPage>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/artifacts/${encodeURIComponent(entityName)}/data`,
+      {
+        params,
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGeneratedFileData,
         ),
       },
     );

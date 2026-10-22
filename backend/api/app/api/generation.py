@@ -18,6 +18,7 @@ from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
 from app.models.generation_model import (
     GenerationArtifactPreviewResponse,
+    GenerationArtifactPageResponse,
     GenerationArtifactResponse,
     GenerationJobResponse,
     GenerationJobStatus,
@@ -481,7 +482,7 @@ async def preview_generation_artifact(
             detail="Generated artifact not found.",
         )
 
-    preview_limit = 100
+    preview_limit = 10
     rows: list[dict[str, object]] = []
     columns: list[str] = []
     total_rows = 0
@@ -507,6 +508,134 @@ async def preview_generation_artifact(
         rows=rows,
         total_rows=total_rows,
         preview_rows=len(rows),
+    )
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/artifacts/{entity_name}/data",
+    response_model=GenerationArtifactPageResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_artifact_data(
+    data_model_id: str,
+    job_id: str,
+    entity_name: str,
+    offset: int = 0,
+    limit: int = 100,
+    search: str = "",
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationArtifactPageResponse:
+    """Return a bounded page of rows from one generated CSV artifact."""
+
+    if offset < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="offset must be zero or greater.",
+        )
+
+    if limit < 1 or limit > 200:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="limit must be between 1 and 200.",
+        )
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    try:
+        path = artifact_writer.get_entity_csv_path(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            entity_name=entity_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if not path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generated artifact not found.",
+        )
+
+    normalized_search = search.strip().casefold()
+    rows: list[dict[str, object]] = []
+    columns: list[str] = []
+    matching_rows = 0
+    page_end = offset + limit
+
+    entity_progress = next(
+        (
+            entity
+            for entity in job.entities
+            if entity.entity_name == entity_name
+        ),
+        None,
+    )
+
+    with path.open("r", newline="", encoding="utf-8") as file:
+        reader = DictReader(file)
+        columns = reader.fieldnames or []
+
+        for row in reader:
+            if normalized_search and not any(
+                normalized_search in str(value or "").casefold()
+                for value in row.values()
+            ):
+                continue
+
+            if normalized_search:
+                if offset <= matching_rows < page_end:
+                    rows.append(dict(row))
+                matching_rows += 1
+                continue
+
+            if offset <= matching_rows < page_end:
+                rows.append(dict(row))
+
+            matching_rows += 1
+
+            if matching_rows >= page_end:
+                break
+
+    total_rows = (
+        matching_rows
+        if normalized_search
+        else (
+            entity_progress.generated_rows
+            if entity_progress is not None
+            else matching_rows
+        )
+    )
+
+    return GenerationArtifactPageResponse(
+        entity_name=entity_name,
+        filename=path.name,
+        columns=columns,
+        rows=rows,
+        total_rows=total_rows,
+        offset=offset,
+        limit=limit,
+        search=normalized_search,
     )
 
 

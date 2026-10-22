@@ -190,6 +190,19 @@ class GenerationArtifactPreviewResponse(BaseModel):
     preview_rows: int = Field(ge=0)
 
 
+class GenerationArtifactPageResponse(BaseModel):
+    """One bounded page of rows from a generated CSV artifact."""
+
+    entity_name: str
+    filename: str
+    columns: list[str] = Field(default_factory=list)
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+    total_rows: int = Field(ge=0)
+    offset: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    search: str = ""
+
+
 class GenerationEntityResult(BaseModel):
     entity_name: str
     target_rows: int = Field(ge=0)
