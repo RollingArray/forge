@@ -86,11 +86,10 @@ export class GeneratedFileDataComponent {
   readonly pageSize = signal(50);
   readonly pageSizes = [25, 50, 100, 200];
 
-  readonly columns = computed<readonly WorkspaceSimpleTableColumn<Record<string, unknown>>[]>(
-    () => (this.page()?.columns ?? []).map((column) => ({
+  readonly columns = computed<readonly WorkspaceSimpleTableColumn<Record<string, unknown>>[]>(() =>
+    (this.page()?.columns ?? []).map((column) => ({
       key: column,
       label: column,
-      width: 'minmax(140px, max-content)',
     })),
   );
 

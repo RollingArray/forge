@@ -119,6 +119,7 @@
 
 .simple-table-row {
   min-height: 48px;
+  align-items: center;
 
   border-bottom: 1px solid var(--forge-border-subtle);
 
@@ -131,11 +132,16 @@
 }
 
 .simple-table-row > span {
+  display: block;
   min-width: 0;
-  overflow: hidden;
+  height: auto;
+  padding-block: 8px;
+  overflow: visible;
 
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.45;
 }
 
 .align-left {

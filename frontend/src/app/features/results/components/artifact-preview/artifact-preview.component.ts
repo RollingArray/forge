@@ -47,7 +47,6 @@ export class ArtifactPreviewComponent {
     (this.preview()?.columns ?? []).map((column) => ({
       key: column,
       label: column,
-      width: 'minmax(120px, max-content)',
     })),
   );
 
