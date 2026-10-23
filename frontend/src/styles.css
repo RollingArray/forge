@@ -63,6 +63,14 @@
     "Segoe UI",
     Arial,
     sans-serif;
+  --forge-font-size-body: 13px;
+  --forge-font-size-label: 12px;
+  --forge-font-size-control: 14px;
+  --forge-font-size-table-header: 11px;
+  --forge-font-size-table-cell: 13px;
+  --forge-table-header-gradient-end: #9560f7;
+  --forge-table-header-highlight: rgb(255 255 255 / 55%);
+  --forge-control-height: 44px;
   --forge-accent-purple-border-strong: #9a87cf;
 }
 
