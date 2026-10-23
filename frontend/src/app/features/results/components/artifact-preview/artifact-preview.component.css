@@ -85,26 +85,6 @@
   padding-top: 12px;
 }
 
-.full-data-action button {
+.full-data-action app-forge-button {
   display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid var(--forge-border);
-  border-radius: 9px;
-  background: var(--forge-surface);
-  color: var(--forge-text-primary);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.full-data-action button:hover:not(:disabled) {
-  background: var(--forge-surface-subtle);
-}
-
-.full-data-action button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

@@ -37,21 +37,26 @@
       [toolbarActions]="[
         {
           id: 'download',
+          useForgeButton: true,
           icon: 'download',
           label: 'Download Data',
           variant: 'primary',
           disabled: !artifact(),
           tooltip: 'Download the complete generated file'
+        },
+        {
+          id: 'view-full-dataset',
+          useForgeButton: true,
+          icon: 'arrow_forward',
+          label: 'View full dataset',
+          variant: 'default',
+          disabled: !artifact(),
+          tooltip: 'Open the complete dataset'
         }
       ]"
       emptyMessage="No preview rows match your search."
       (searchValueChange)="updateSearchTerm($event)"
-      (toolbarAction)="download()"
+      (toolbarAction)="handleToolbarAction($event)"
     />
-    <div class="full-data-action">
-      <button type="button" [disabled]="!artifact()" (click)="viewFullData()">
-        View full dataset <span aria-hidden="true">→</span>
-      </button>
-    </div>
   }
 </app-workspace-section>

@@ -31,14 +31,12 @@
 
   <app-metric-grid [columns]="3" [metrics]="metrics()" />
 
-  <button
-    type="button"
-    class="forge-card toolbar-action toolbar-action-primary toolbar-action-with-label validation-details-button"
-    (click)="viewDetails.emit()"
+  <app-forge-button
+    class="validation-details-action"
+    label="Detailed validation analysis"
+    icon="verified"
+    variant="primary"
     title="Open detailed validation analysis"
-  >
-    <span class="analysis-action-icon material-symbols-outlined" aria-hidden="true">verified</span>
-    <span class="analysis-action-label">Detailed validation analysis</span>
-    <span class="analysis-action-arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-  </button>
+    (clicked)="viewDetails.emit()"
+  />
 </app-workspace-section>

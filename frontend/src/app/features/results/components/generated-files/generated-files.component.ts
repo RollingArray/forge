@@ -8,6 +8,7 @@ import {
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ForgeButtonComponent } from '../../../../shared/components/forge-button/forge-button.component';
 
 import { GenerationArtifact } from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
@@ -26,6 +27,7 @@ import {
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
     WorkspaceSimpleTableComponent,
+    ForgeButtonComponent,
   ],
   templateUrl: './generated-files.component.html',
   styleUrl: './generated-files.component.css',
@@ -64,7 +66,7 @@ export class GeneratedFilesComponent {
       { key: 'filename', label: 'File Name', width: 'minmax(180px, 1fr)', template: filenameTemplate },
       { key: 'rows', label: 'Rows', type: 'number', width: '80px', align: 'right' },
       { key: 'size_bytes', label: 'Size', width: '90px', align: 'right', template: sizeTemplate },
-      { key: 'entity_name', label: 'Actions', width: '64px', align: 'center', template: downloadTemplate },
+      { key: 'entity_name', label: 'Actions', width: '96px', align: 'center', template: downloadTemplate },
     ];
   });
 
@@ -84,11 +86,7 @@ export class GeneratedFilesComponent {
     this.artifactSelected.emit(artifact);
   }
 
-  downloadArtifact(
-    event: MouseEvent,
-    artifact: GenerationArtifact,
-  ): void {
-    event.stopPropagation();
+  downloadArtifact(artifact: GenerationArtifact): void {
     this.downloadRequested.emit(artifact);
   }
 

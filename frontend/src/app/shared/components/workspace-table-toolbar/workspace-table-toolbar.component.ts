@@ -4,6 +4,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { ForgeButtonComponent } from '../forge-button/forge-button.component';
 
 export interface WorkspaceToolbarFilter {
   id: string;
@@ -20,12 +21,14 @@ export interface WorkspaceToolbarAction {
   label?: string;
   variant?: 'default' | 'primary' | 'danger';
   disabled?: boolean;
+  useForgeButton?: boolean;
   tooltip?: string;
 }
 
 @Component({
   selector: 'app-workspace-table-toolbar',
   standalone: true,
+  imports: [ForgeButtonComponent],
   templateUrl: './workspace-table-toolbar.component.html',
   styleUrl: './workspace-table-toolbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ForgeButtonComponent } from '../../../../shared/components/forge-button/forge-button.component';
 
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
@@ -10,7 +11,7 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
 @Component({
   selector: 'app-results-validation',
   standalone: true,
-  imports: [CommonModule, MetricGridComponent, WorkspaceSectionComponent, WorkspaceHeaderComponent],
+  imports: [CommonModule, MetricGridComponent, WorkspaceSectionComponent, WorkspaceHeaderComponent, ForgeButtonComponent],
   templateUrl: './results-validation.component.html',
   styleUrl: './results-validation.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

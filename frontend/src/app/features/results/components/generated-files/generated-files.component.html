@@ -12,14 +12,15 @@
 </ng-template>
 
 <ng-template #downloadTemplate let-row="row">
-  <button
-    type="button"
-    class="file-download"
-    (click)="downloadArtifact($event, row)"
-    aria-label="Download generated file"
-  >
-    <span class="material-symbols-outlined">download</span>
-  </button>
+  <app-forge-button
+    label="Download"
+    icon="download"
+    variant="secondary"
+    ariaLabel="Download generated file"
+    title="Download generated file"
+    (click)="$event.stopPropagation()"
+    (clicked)="downloadArtifact(row)"
+  />
 </ng-template>
 
 <app-workspace-section>

@@ -5,6 +5,7 @@ import {
   output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ForgeButtonComponent } from '../../../../shared/components/forge-button/forge-button.component';
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
 
@@ -20,6 +21,7 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
     MetricGridComponent,
     WorkspaceSectionComponent,
     WorkspaceHeaderComponent,
+    ForgeButtonComponent,
   ],
   templateUrl: './results-quality-summary.component.html',
   styleUrl: './results-quality-summary.component.css',

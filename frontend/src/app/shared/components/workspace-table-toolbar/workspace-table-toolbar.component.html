@@ -55,25 +55,37 @@
     }
 
     @for (toolbarAction of actions(); track toolbarAction.id) {
-      <button
-        type="button"
-        class="forge-card toolbar-action"
-        [class.toolbar-action-primary]="toolbarAction.variant === 'primary'"
-        [class.toolbar-action-danger]="toolbarAction.variant === 'danger'"
-        [class.toolbar-action-with-label]="toolbarAction.label"
-        [disabled]="toolbarAction.disabled"
-        [attr.aria-label]="toolbarAction.label || toolbarAction.tooltip || toolbarAction.id"
-        [attr.title]="toolbarAction.tooltip || toolbarAction.label || toolbarAction.id"
-        (click)="onAction(toolbarAction)"
-      >
-        <span class="material-symbols-outlined">
-          {{ toolbarAction.icon }}
-        </span>
+      @if (toolbarAction.useForgeButton) {
+        <app-forge-button
+          [label]="toolbarAction.label || toolbarAction.id"
+          [icon]="toolbarAction.icon"
+          [variant]="toolbarAction.variant === 'primary' ? 'primary' : 'secondary'"
+          [disabled]="!!toolbarAction.disabled"
+          [ariaLabel]="toolbarAction.label || toolbarAction.tooltip || toolbarAction.id"
+          [title]="toolbarAction.tooltip || toolbarAction.label || toolbarAction.id"
+          (clicked)="onAction(toolbarAction)"
+        />
+      } @else {
+        <button
+          type="button"
+          class="forge-card toolbar-action"
+          [class.toolbar-action-primary]="toolbarAction.variant === 'primary'"
+          [class.toolbar-action-danger]="toolbarAction.variant === 'danger'"
+          [class.toolbar-action-with-label]="toolbarAction.label"
+          [disabled]="toolbarAction.disabled"
+          [attr.aria-label]="toolbarAction.label || toolbarAction.tooltip || toolbarAction.id"
+          [attr.title]="toolbarAction.tooltip || toolbarAction.label || toolbarAction.id"
+          (click)="onAction(toolbarAction)"
+        >
+          <span class="material-symbols-outlined">
+            {{ toolbarAction.icon }}
+          </span>
 
-        @if (toolbarAction.label) {
-          <span>{{ toolbarAction.label }}</span>
-        }
-      </button>
+          @if (toolbarAction.label) {
+            <span>{{ toolbarAction.label }}</span>
+          }
+        </button>
+      }
     }
     <ng-content select="[toolbar-extra-controls]"></ng-content>
   </div>

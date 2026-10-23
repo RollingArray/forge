@@ -78,6 +78,14 @@ export class ArtifactPreviewComponent {
     }
   }
 
+  handleToolbarAction(actionId: string): void {
+    if (actionId === 'download') {
+      this.download();
+    } else if (actionId === 'view-full-dataset') {
+      this.viewFullData();
+    }
+  }
+
   download(): void {
     const artifact = this.artifact();
 

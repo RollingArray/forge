@@ -68,53 +68,8 @@ app-workspace-section .forge-card {
   font-size: 11px;
 }
 
-.validation-details-button,
-.quality-details-button {
+.validation-details-action {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   width: fit-content;
-  min-height: 34px;
   margin: 14px 0 0 auto;
-  padding: 0 12px;
-  border: 1px solid var(--forge-primary);
-  border-radius: 8px;
-  background: var(--forge-primary);
-  color: var(--forge-surface);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 650;
-  text-align: center;
-  cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
-}
-
-.validation-details-button:hover,
-.quality-details-button:hover {
-  background: var(--forge-primary-strong);
-  transform: translateY(-1px);
-}
-
-.validation-details-button:focus-visible,
-.quality-details-button:focus-visible {
-  outline: 2px solid var(--forge-primary);
-  outline-offset: 3px;
-}
-
-.analysis-action-label {
-  flex: 1 1 auto;
-}
-
-.analysis-action-arrow {
-  flex: 0 0 auto;
-  color: inherit;
-  font-size: 18px;
-  line-height: 1;
-  transition: transform 160ms ease;
-}
-
-.validation-details-button:hover .analysis-action-arrow,
-.quality-details-button:hover .analysis-action-arrow {
-  transform: translateX(3px);
 }
