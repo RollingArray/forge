@@ -23,35 +23,21 @@
   <div class="action-buttons">
 
     @if (secondaryLabel()) {
-      <button
-        type="button"
-        class="secondary-button"
-        (click)="handleSecondaryAction()"
-      >
-        <span class="material-symbols-outlined">
-          {{ secondaryIcon() }}
-        </span>
-
-        <span>
-          {{ secondaryLabel() }}
-        </span>
-      </button>
+      <app-forge-button
+        [label]="secondaryLabel()"
+        [icon]="secondaryIcon()"
+        variant="secondary"
+        (clicked)="handleSecondaryAction()"
+      />
     }
 
-    <button
-      type="button"
-      class="primary-button"
+    <app-forge-button
+      [label]="primaryLabel()"
+      [icon]="primaryIcon()"
+      variant="primary"
       [disabled]="primaryDisabled()"
-      (click)="handlePrimaryAction()"
-    >
-      <span>
-        {{ primaryLabel() }}
-      </span>
-
-      <span class="material-symbols-outlined">
-        {{ primaryIcon() }}
-      </span>
-    </button>
+      (clicked)="handlePrimaryAction()"
+    />
 
   </div>
 

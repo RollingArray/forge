@@ -18,10 +18,12 @@ import {
   input,
   output,
 } from '@angular/core';
+import { ForgeButtonComponent } from '../forge-button/forge-button.component';
 
 @Component({
   selector: 'app-workflow-action-bar',
   standalone: true,
+  imports: [ForgeButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workflow-action-bar.component.html',
   styleUrl: './workflow-action-bar.component.css',
