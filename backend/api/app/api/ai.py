@@ -12,7 +12,10 @@ Email: ranjoy.sen@collins.com
 ============================================================================
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.authentication_dependency import get_authenticated_user
+from app.interfaces.auth_user import AuthUser
 
 from app.core.ai_settings import load_ai_configuration
 from app.models.ai_capability_model import AICapabilityModel
@@ -49,12 +52,17 @@ from app.models.ai_semantic_preview_model import (
     AISemanticPreviewRequestModel,
 )
 from app.services.ai_service import AIService
+from app.services.data_model_access_service import DataModelAccessService
 from app.services.ollama_ai_provider import OllamaAIProvider
 
 router = APIRouter(
     prefix="/ai",
     tags=["AI"],
+    dependencies=[Depends(get_authenticated_user)],
 )
+
+data_model_access_service = DataModelAccessService()
+
 
 _ai_service = AIService(
     provider=OllamaAIProvider(
@@ -148,8 +156,18 @@ def propose_entity(
 )
 def propose_identity(
     request: AIIdentityProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIIdentityProposalResponseModel:
     """Generate an AI proposal for a FORGE entity identity."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_identity(
@@ -183,8 +201,18 @@ def propose_identity(
 )
 def propose_relationship(
     request: AIRelationshipProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIRelationshipProposalResponseModel:
     """Generate an AI proposal for a FORGE relationship."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_relationship(
@@ -217,8 +245,18 @@ def propose_relationship(
 )
 def propose_foreign_key(
     request: AIForeignKeyProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIForeignKeyProposalResponseModel:
     """Generate an AI proposal for a FORGE foreign key."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_foreign_key(
@@ -251,8 +289,18 @@ def propose_foreign_key(
 )
 def propose_constraint(
     request: AIConstraintProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIConstraintProposalResponseModel:
     """Generate an AI proposal for a FORGE field constraint."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_constraint(
@@ -285,8 +333,18 @@ def propose_constraint(
 )
 def propose_field(
     request: AIFieldProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIFieldProposalResponseModel:
     """Generate an AI proposal for a FORGE field definition."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_field(
