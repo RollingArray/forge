@@ -36,6 +36,7 @@ class AIForeignKeyProposalRequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     data_model_id: str = Field(min_length=1)
+    regenerate: bool = False
 
     mode: Literal["CREATE", "EDIT"]
     entities: list[dict[str, Any]] = Field(min_length=2)

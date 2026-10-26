@@ -42,6 +42,7 @@ export interface AIFieldProposalResponse {
 
 export interface AIFieldProposalRequest {
   dataModelId: string;
+  regenerate?: boolean;
   mode: 'CREATE' | 'EDIT';
   entityName: string;
   request: string;

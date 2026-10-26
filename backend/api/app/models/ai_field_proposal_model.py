@@ -69,6 +69,7 @@ class AIFieldProposalRequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     data_model_id: str = Field(min_length=1)
+    regenerate: bool = False
 
     mode: Literal["CREATE", "EDIT"]
     entity_name: str = Field(min_length=1)

@@ -9,6 +9,7 @@ class AIEntityProposalRequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     data_model_id: str = Field(min_length=1)
+    regenerate: bool = False
     prompt: str = Field(min_length=1, max_length=2000)
 
     @field_validator("prompt", mode="before")

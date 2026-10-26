@@ -95,6 +95,7 @@ export class AIService {
         '/api/v1/ai/fields/propose',
         {
           data_model_id: request.dataModelId,
+          regenerate: request.regenerate ?? false,
           mode: request.mode,
           entity_name: request.entityName,
           request: request.request,
@@ -116,6 +117,7 @@ export class AIService {
       '/api/v1/ai/identity/propose',
       {
         data_model_id: request.dataModelId,
+        regenerate: request.regenerate ?? false,
         mode: request.mode,
         entity_name: request.entityName,
         fields: request.fields,
@@ -154,6 +156,7 @@ export class AIService {
         '/api/v1/ai/relationships/propose',
         {
           data_model_id: request.dataModelId,
+          regenerate: request.regenerate ?? false,
           mode: request.mode,
           entities: request.entities,
           request: request.request,
@@ -206,6 +209,7 @@ export class AIService {
         '/api/v1/ai/foreign-keys/propose',
         {
           data_model_id: request.dataModelId,
+          regenerate: request.regenerate ?? false,
           mode: request.mode,
           entities: request.entities,
           request: request.request,
@@ -241,6 +245,7 @@ export class AIService {
       '/api/v1/ai/constraints/propose',
       {
         data_model_id: request.dataModelId,
+        regenerate: request.regenerate ?? false,
         mode: request.mode,
         entities: request.entities,
         request: request.request,
@@ -255,10 +260,41 @@ export class AIService {
     );
   }
 
-  proposeEntity(dataModelId: string, prompt: string): Observable<AIEntityProposal> {
+  recordProposalActivity(
+    dataModelId: string,
+    proposalType:
+      | 'entity'
+      | 'identity'
+      | 'relationship'
+      | 'foreign key'
+      | 'constraint'
+      | 'field',
+    action: 'ACCEPTED' | 'REGENERATED' | 'DISMISSED',
+  ): Observable<void> {
+    return this.http.post<void>(
+      '/api/v1/ai/proposals/activity',
+      {
+        data_model_id: dataModelId,
+        proposal_type: proposalType,
+        action,
+      },
+      {
+        context: new HttpContext().set(
+          API_LOADING_SKIP,
+          true,
+        ),
+      },
+    );
+  }
+
+  proposeEntity(
+    dataModelId: string,
+    prompt: string,
+    regenerate = false,
+  ): Observable<AIEntityProposal> {
     return this.http.post<AIEntityProposal>(
       '/api/v1/ai/entities/propose',
-      { data_model_id: dataModelId, prompt },
+      { data_model_id: dataModelId, prompt, regenerate },
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
@@ -268,11 +304,24 @@ export class AIService {
     );
   }
 
-  suggestDataModel(prompt: string): Observable<AIDataModelProposal> {
+  recordDataModelProposalAccepted(): Observable<void> {
+    return this.http.post<void>(
+      '/api/v1/ai/data-models/proposals/activity',
+      { action: 'ACCEPTED' },
+      {
+        context: new HttpContext().set(API_LOADING_SKIP, true),
+      },
+    );
+  }
+
+  suggestDataModel(
+    prompt: string,
+    regenerate = false,
+  ): Observable<AIDataModelProposal> {
     return this.http
       .post<AIDataModelProposalResponse>(
         '/api/v1/ai/data-models/suggest',
-        { prompt },
+        { prompt, regenerate },
         {
           context: new HttpContext().set(
             API_LOADING_MESSAGE,

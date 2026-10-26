@@ -31,6 +31,7 @@ export interface AIConstraintProposalResponse {
 
 export interface AIConstraintProposalRequest {
   dataModelId: string;
+  regenerate?: boolean;
   mode: 'CREATE' | 'EDIT';
   entities: Array<Record<string, unknown>>;
   request: string;

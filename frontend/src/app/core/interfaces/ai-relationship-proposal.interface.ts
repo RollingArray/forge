@@ -36,6 +36,7 @@ export interface AIRelationshipProposalResponse {
 
 export interface AIRelationshipProposalRequest {
   dataModelId: string;
+  regenerate?: boolean;
   mode: 'CREATE' | 'EDIT';
   entities: Array<Record<string, unknown>>;
   request: string;

@@ -30,6 +30,7 @@ export interface AIForeignKeyEntity {
 
 export interface AIForeignKeyProposalRequest {
   dataModelId: string;
+  regenerate?: boolean;
   mode: 'CREATE' | 'EDIT';
   entities: AIForeignKeyEntity[];
   request: string;

@@ -22,6 +22,7 @@ class AIDataModelSuggestionRequestModel(BaseModel):
         min_length=1,
         max_length=4000,
     )
+    regenerate: bool = False
 
 
 class AIDataModelProposalModel(BaseModel):
