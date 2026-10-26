@@ -35,6 +35,7 @@ export class IdentityDialogComponent {
 
   readonly closed = output<void>();
   readonly saved = output<string[]>();
+  readonly proposalAccepted = output<void>();
 
   readonly selectedFields = signal<string[]>([]);
   readonly searchTerm = signal('');
@@ -86,7 +87,7 @@ export class IdentityDialogComponent {
     );
   }
 
-  handleAiGenerate(request: string): void {
+  handleAiGenerate(request: string, regenerate = false): void {
     const trimmedRequest = request.trim();
 
     if (!trimmedRequest || this.aiGenerating()) {
@@ -103,6 +104,7 @@ export class IdentityDialogComponent {
     this.aiService
       .proposeIdentity({
       dataModelId: this.dataModelId(),
+        regenerate,
         mode: this.identityFields().length > 0 ? 'EDIT' : 'CREATE',
         entityName: this.entity().name,
         fields: this.entity().fields.map((field) => ({
@@ -135,7 +137,19 @@ export class IdentityDialogComponent {
   }
 
   regenerateAiProposal(): void {
-    this.handleAiGenerate(this.aiPrompt());
+    this.handleAiGenerate(this.aiPrompt(), true);
+  }
+
+  private recordProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId(),
+      'identity',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
   }
 
   useAiProposal(): void {
@@ -146,6 +160,8 @@ export class IdentityDialogComponent {
     }
 
     this.selectedFields.set([...proposal.fields]);
+    this.proposalAccepted.emit();
+    this.recordProposalAccepted();
   }
 
   save(): void {

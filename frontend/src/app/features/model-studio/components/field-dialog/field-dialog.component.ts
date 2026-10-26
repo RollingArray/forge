@@ -74,6 +74,7 @@ export class FieldDialogComponent {
   readonly entityName = input.required<string>();
 
   readonly saved = output<FieldDraft>();
+  readonly proposalAccepted = output<void>();
   readonly closed = output<void>();
   readonly deleteRequested = output<void>();
   readonly deleteBusy = input(false);
@@ -515,7 +516,7 @@ export class FieldDialogComponent {
     this.generator.set('');
   }
 
-  handleAiGenerate(prompt?: string): void {
+  handleAiGenerate(prompt?: string, regenerate = false): void {
     const request = (prompt ?? this.aiPrompt()).trim();
 
     if (!request || this.aiGenerating()) {
@@ -532,6 +533,7 @@ export class FieldDialogComponent {
     this.aiService
       .proposeField({
         dataModelId: this.dataModelId(),
+        regenerate,
         mode: this.isEditMode ? 'EDIT' : 'CREATE',
         entityName: this.entityName(),
         request,
@@ -570,7 +572,19 @@ export class FieldDialogComponent {
   }
 
   regenerateAiProposal(): void {
-    this.handleAiGenerate();
+    this.handleAiGenerate(undefined, true);
+  }
+
+  private recordProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId(),
+      'field',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
   }
 
   useAiProposal(): void {
@@ -585,6 +599,8 @@ export class FieldDialogComponent {
     }
 
     this.applyAiProposal(proposal);
+    this.proposalAccepted.emit();
+    this.recordProposalAccepted();
   }
 
   private applyAiProposal(proposal: AIFieldProposal): void {

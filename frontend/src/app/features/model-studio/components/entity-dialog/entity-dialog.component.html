@@ -25,7 +25,7 @@
               decisionTitle="AI proposes. You decide."
               decisionDescription="Review the proposed entity and apply it when you are ready."
               (generate)="requestAiProposal($event)"
-              (regenerate)="requestAiProposal(aiPrompt())"
+              (regenerate)="requestAiProposal(aiPrompt(), true)"
               (exampleSelected)="aiPrompt.set($event)"
             >
               <div ai-result>
@@ -55,7 +55,7 @@
                         type="button"
                         class="entity-regenerate-button"
                         [disabled]="aiLoading()"
-                        (click)="requestAiProposal(aiPrompt())"
+                        (click)="requestAiProposal(aiPrompt(), true)"
                       >
                         <span class="material-symbols-outlined">refresh</span>
                         Regenerate

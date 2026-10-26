@@ -78,6 +78,7 @@ export class ConstraintDialogComponent {
     input<ForgeConstraint | null>(null);
 
   readonly saved = output<ConstraintDraft>();
+  readonly proposalAccepted = output<void>();
   readonly closed = output<void>();
   readonly deleteRequested = output<void>();
   readonly deleteBusy = input(false);
@@ -272,7 +273,7 @@ export class ConstraintDialogComponent {
     this.aiResponse.set(null);
   }
 
-  generateWithAi(): void {
+  generateWithAi(regenerate = false): void {
     const request = this.aiPrompt().trim();
 
     if (!request || this.aiGenerating()) {
@@ -285,6 +286,7 @@ export class ConstraintDialogComponent {
     this.aiService
       .proposeConstraint({
         dataModelId: this.dataModelId(),
+        regenerate,
         mode: 'CREATE',
         entities: [
           {
@@ -318,7 +320,19 @@ export class ConstraintDialogComponent {
   }
 
   regenerateAi(): void {
-    this.generateWithAi();
+    this.generateWithAi(true);
+  }
+
+  private recordProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId(),
+      'constraint',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
   }
 
   applyAiProposal(): void {
@@ -334,6 +348,8 @@ export class ConstraintDialogComponent {
     }
 
     this.value.set(String(proposal.value));
+    this.proposalAccepted.emit();
+    this.recordProposalAccepted();
 
     this.aiResponse.set(null);
   }

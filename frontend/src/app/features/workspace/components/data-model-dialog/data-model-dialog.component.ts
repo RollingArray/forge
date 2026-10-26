@@ -165,17 +165,20 @@ export class DataModelDialogComponent {
     this.closed.emit();
   }
 
-  handleAiGenerate(prompt: string): void {
-    if (this.aiGenerating()) {
+  handleAiGenerate(prompt: string, regenerate = false): void {
+    const normalizedPrompt = prompt.trim();
+
+    if (!normalizedPrompt || this.aiGenerating()) {
       return;
     }
 
+    this.aiPrompt.set(normalizedPrompt);
     this.aiGenerating.set(true);
     this.aiGenerationError.set(null);
     this.aiProposal.set(null);
 
     this.aiService
-      .suggestDataModel(prompt)
+      .suggestDataModel(normalizedPrompt, regenerate)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (proposal) => {
@@ -200,11 +203,19 @@ export class DataModelDialogComponent {
     this.name.set(proposal.name);
     this.description.set(proposal.description);
     this.tags.set([...proposal.suggestedTags]);
+
+    this.aiService.recordDataModelProposalAccepted().subscribe({
+      error: (error: unknown) => {
+        console.warn(
+          '[FORGE] Unable to record AI Data Model proposal acceptance.',
+          error,
+        );
+      },
+    });
   }
 
   regenerateAiProposal(): void {
-    this.aiProposal.set(null);
-    this.aiGenerationError.set(null);
+    this.handleAiGenerate(this.aiPrompt(), true);
   }
 
   private loadAiCapabilities(): void {

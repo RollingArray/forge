@@ -196,7 +196,19 @@ export class ModelStudioComponent {
     this.entityDialogOpen.set(true);
   }
 
-  requestEntityAiProposal(prompt: string): void {
+  recordEntityProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId,
+      'entity',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
+  }
+
+  requestEntityAiProposal(prompt: string, regenerate = false): void {
     if (this.entityAiLoading()) {
       return;
     }
@@ -205,7 +217,7 @@ export class ModelStudioComponent {
     this.entityAiError.set(null);
     this.entityAiProposal.set(null);
 
-    this.aiService.proposeEntity(this.dataModelId, prompt).subscribe({
+    this.aiService.proposeEntity(this.dataModelId, prompt, regenerate).subscribe({
       next: (proposal) => {
         this.entityAiProposal.set(proposal);
         this.entityAiLoading.set(false);

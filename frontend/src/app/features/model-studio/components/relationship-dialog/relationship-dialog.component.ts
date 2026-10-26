@@ -86,6 +86,7 @@ export class RelationshipDialogComponent {
     input<ForgeSpecificationRelationship | null>(null);
 
   readonly saved = output<RelationshipDraft>();
+  readonly proposalAccepted = output<void>();
   readonly closed = output<void>();
   readonly deleteRequested = output<void>();
   readonly deleteBusy = input(false);
@@ -305,7 +306,7 @@ export class RelationshipDialogComponent {
     this.aiResponse.set(null);
   }
 
-  generateWithAi(): void {
+  generateWithAi(regenerate = false): void {
     const request = this.aiPrompt().trim();
 
     if (!request || this.aiGenerating()) {
@@ -318,6 +319,7 @@ export class RelationshipDialogComponent {
     this.aiService
       .proposeRelationship({
         dataModelId: this.dataModelId(),
+        regenerate,
         mode: this.existingRelationship() ? 'EDIT' : 'CREATE',
         entities: this.entities().map((entity) => ({
           name: entity.name,
@@ -359,7 +361,19 @@ export class RelationshipDialogComponent {
   }
 
   regenerateAi(): void {
-    this.generateWithAi();
+    this.generateWithAi(true);
+  }
+
+  private recordProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId(),
+      'relationship',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
   }
 
   applyAiProposal(): void {
@@ -374,6 +388,8 @@ export class RelationshipDialogComponent {
     this.relationshipType.set(proposal.type);
     this.sourceParticipation.set(proposal.sourceParticipation);
     this.targetParticipation.set(proposal.targetParticipation);
+    this.proposalAccepted.emit();
+    this.recordProposalAccepted();
 
     this.aiResponse.set(null);
   }

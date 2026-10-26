@@ -62,6 +62,7 @@ export class ForeignKeyDialogComponent {
   readonly existingForeignKey = input<ForgeForeignKey | null>(null);
 
   readonly saved = output<ForeignKeyDraft>();
+  readonly proposalAccepted = output<void>();
   readonly closed = output<void>();
   readonly deleteRequested = output<void>();
   readonly deleteBusy = input(false);
@@ -257,7 +258,7 @@ export class ForeignKeyDialogComponent {
     this.aiResponse.set(null);
   }
 
-  generateWithAi(): void {
+  generateWithAi(regenerate = false): void {
     const request = this.aiPrompt().trim();
 
     if (!request || this.aiGenerating()) {
@@ -270,6 +271,7 @@ export class ForeignKeyDialogComponent {
     this.aiService
       .proposeForeignKey({
         dataModelId: this.dataModelId(),
+        regenerate,
         mode: 'CREATE',
         entities: this.entities().map((entity) => ({
           name: entity.name,
@@ -301,7 +303,19 @@ export class ForeignKeyDialogComponent {
   }
 
   regenerateAi(): void {
-    this.generateWithAi();
+    this.generateWithAi(true);
+  }
+
+  private recordProposalAccepted(): void {
+    this.aiService.recordProposalActivity(
+      this.dataModelId(),
+      'foreign key',
+      'ACCEPTED',
+    ).subscribe({
+      error: (error: unknown) => {
+        console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
+      },
+    });
   }
 
   applyAiProposal(): void {
@@ -313,6 +327,8 @@ export class ForeignKeyDialogComponent {
 
     this.sourceEntity.set(proposal.sourceEntity);
     this.targetEntity.set(proposal.targetEntity);
+    this.proposalAccepted.emit();
+    this.recordProposalAccepted();
 
     this.aiResponse.set(null);
   }
