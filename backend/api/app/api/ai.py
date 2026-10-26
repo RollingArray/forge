@@ -13,6 +13,9 @@ Email: ranjoy.sen@collins.com
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.authentication_dependency import get_authenticated_user
 from app.interfaces.auth_user import AuthUser
@@ -52,6 +55,9 @@ from app.models.ai_semantic_preview_model import (
     AISemanticPreviewRequestModel,
 )
 from app.services.ai_service import AIService
+from app.constants.activity import ActivityType
+from app.repositories.json_data_model_repository import JsonDataModelRepository
+from app.services.activity_service import ActivityService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.ollama_ai_provider import OllamaAIProvider
 
@@ -62,6 +68,140 @@ router = APIRouter(
 )
 
 data_model_access_service = DataModelAccessService()
+
+
+class AIDataModelProposalActivityRequestModel(BaseModel):
+    """Record acceptance of a workspace-level AI Data Model proposal."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["ACCEPTED"]
+
+
+class AIProposalActivityRequestModel(BaseModel):
+    """Record a user decision about an AI-generated proposal."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    data_model_id: str = Field(min_length=1)
+    proposal_type: Literal[
+        "entity",
+        "identity",
+        "relationship",
+        "foreign key",
+        "constraint",
+        "field",
+    ]
+    action: Literal["ACCEPTED", "REGENERATED", "DISMISSED"]
+
+
+activity_service = ActivityService()
+data_model_repository = JsonDataModelRepository()
+
+
+def _record_ai_proposal_activity(
+    user: AuthUser,
+    data_model_id: str,
+    proposal_type: str,
+    regenerated: bool = False,
+) -> None:
+    """Persist a successfully generated AI proposal in workspace activity."""
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+
+    if data_model is None:
+        return
+
+    try:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=(
+                ActivityType.AI_PROPOSAL_REGENERATED
+                if regenerated
+                else ActivityType.AI_PROPOSAL_GENERATED
+            ),
+            title=(
+                f"AI regenerated {proposal_type} proposal"
+                if regenerated
+                else f"AI generated {proposal_type} proposal"
+            ),
+            description=(
+                f"FORGE AI regenerated a {proposal_type} proposal."
+                if regenerated
+                else f"FORGE AI generated a {proposal_type} proposal."
+            ),
+            data_model_id=data_model_id,
+            metadata={
+                "operation": (
+                    "REGENERATE_AI_PROPOSAL" if regenerated else "GENERATE_AI_PROPOSAL"
+                ),
+                "proposal_type": proposal_type,
+                "outcome": ("REGENERATED" if regenerated else "GENERATED"),
+            },
+        )
+    except Exception:
+        # Activity telemetry must not turn a successful AI response into a failure.
+        return
+
+
+@router.post("/proposals/activity", status_code=status.HTTP_204_NO_CONTENT)
+def record_ai_proposal_activity(
+    request: AIProposalActivityRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Record an authenticated user decision for an AI proposal."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=request.data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    activity_type = {
+        "ACCEPTED": ActivityType.AI_PROPOSAL_ACCEPTED,
+        "REGENERATED": ActivityType.AI_PROPOSAL_REGENERATED,
+        "DISMISSED": ActivityType.AI_PROPOSAL_DISMISSED,
+    }[request.action]
+
+    try:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=activity_type,
+            title=f"AI {request.action.lower()} {request.proposal_type} proposal",
+            description=(
+                f"User {request.action.lower()} an AI "
+                f"{request.proposal_type} proposal."
+            ),
+            data_model_id=request.data_model_id,
+            metadata={
+                "operation": {
+                    "ACCEPTED": "ACCEPT_AI_PROPOSAL",
+                    "REGENERATED": "REGENERATE_AI_PROPOSAL",
+                    "DISMISSED": "DISMISS_AI_PROPOSAL",
+                }[request.action],
+                "proposal_type": request.proposal_type,
+                "outcome": request.action,
+            },
+        )
+    except Exception:
+        # Telemetry must not interfere with the user's model-studio workflow.
+        return
 
 
 _ai_service = AIService(
@@ -152,6 +292,13 @@ def propose_entity(
             detail=str(exc),
         ) from exc
 
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="entity",
+        regenerated=request.regenerate,
+    )
+
     return AIEntityProposalModel(
         name=proposal.name,
         description=proposal.description,
@@ -198,6 +345,13 @@ def propose_identity(
             detail=str(exc),
         ) from exc
 
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="identity",
+        regenerated=request.regenerate,
+    )
+
     return AIIdentityProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
@@ -241,6 +395,13 @@ def propose_relationship(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="relationship",
+        regenerated=request.regenerate,
+    )
 
     return AIRelationshipProposalResponseModel(
         status=proposal.status,
@@ -286,6 +447,13 @@ def propose_foreign_key(
             detail=str(exc),
         ) from exc
 
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="foreign key",
+        regenerated=request.regenerate,
+    )
+
     return AIForeignKeyProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
@@ -329,6 +497,13 @@ def propose_constraint(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="constraint",
+        regenerated=request.regenerate,
+    )
 
     return AIConstraintProposalResponseModel(
         status=proposal.status,
@@ -374,6 +549,13 @@ def propose_field(
             detail=str(exc),
         ) from exc
 
+    _record_ai_proposal_activity(
+        user=user,
+        data_model_id=request.data_model_id,
+        proposal_type="field",
+        regenerated=request.regenerate,
+    )
+
     return AIFieldProposalResponseModel(
         status=proposal.status,
         message=proposal.message,
@@ -387,6 +569,7 @@ def propose_field(
 )
 def suggest_data_model(
     request: AIDataModelSuggestionRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIDataModelProposalModel:
     """Generate an AI proposal for a new FORGE Data Model."""
 
@@ -400,9 +583,70 @@ def suggest_data_model(
             detail=str(exc),
         ) from exc
 
+    try:
+        activity_service.record(
+            owner_user_id=user.user_id,
+            actor_user_id=user.user_id,
+            activity_type=(
+                ActivityType.AI_PROPOSAL_REGENERATED
+                if request.regenerate
+                else ActivityType.AI_PROPOSAL_GENERATED
+            ),
+            title=(
+                "AI data model proposal regenerated"
+                if request.regenerate
+                else "AI data model proposal generated"
+            ),
+            description=(
+                "FORGE AI regenerated a data model proposal."
+                if request.regenerate
+                else "FORGE AI generated a data model proposal."
+            ),
+            metadata={
+                "operation": (
+                    "REGENERATE_AI_PROPOSAL"
+                    if request.regenerate
+                    else "GENERATE_AI_PROPOSAL"
+                ),
+                "proposal_type": "data model",
+                "outcome": ("REGENERATED" if request.regenerate else "GENERATED"),
+            },
+        )
+    except Exception:
+        # Activity telemetry must not turn a successful AI response into a failure.
+        pass
+
     return AIDataModelProposalModel(
         name=proposal.name,
         description=proposal.description,
         suggested_tags=proposal.suggested_tags,
         reasoning=proposal.reasoning,
     )
+
+
+@router.post(
+    "/data-models/proposals/activity",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def record_data_model_proposal_activity(
+    request: AIDataModelProposalActivityRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> None:
+    """Record that the user chose to use a new Data Model proposal."""
+
+    try:
+        activity_service.record(
+            owner_user_id=user.user_id,
+            actor_user_id=user.user_id,
+            activity_type=ActivityType.AI_PROPOSAL_ACCEPTED,
+            title="AI data model proposal accepted",
+            description="Used an AI-generated data model proposal.",
+            metadata={
+                "operation": "ACCEPT_AI_PROPOSAL",
+                "proposal_type": "data model",
+                "outcome": "ACCEPTED",
+            },
+        )
+    except Exception:
+        # Activity telemetry must not interfere with proposal use.
+        return
