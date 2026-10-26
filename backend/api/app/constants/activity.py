@@ -53,6 +53,7 @@ class ActivityType(StrEnum):
 
     GENERATION_STARTED = "GENERATION_STARTED"
     GENERATION_COMPLETED = "GENERATION_COMPLETED"
+    GENERATION_PARTIALLY_COMPLETED = "GENERATION_PARTIALLY_COMPLETED"
     GENERATION_FAILED = "GENERATION_FAILED"
     GENERATION_CANCELLED = "GENERATION_CANCELLED"
 
@@ -191,6 +192,10 @@ ACTIVITY_PRESENTATION: dict[ActivityType, ActivityPresentation] = {
     ActivityType.GENERATION_COMPLETED: ActivityPresentation(
         icon="check_circle",
         accent="green",
+    ),
+    ActivityType.GENERATION_PARTIALLY_COMPLETED: ActivityPresentation(
+        icon="warning",
+        accent="orange",
     ),
     ActivityType.GENERATION_FAILED: ActivityPresentation(
         icon="error",

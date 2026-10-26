@@ -15,6 +15,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.core.authentication_dependency import get_authenticated_user
+from app.constants.activity import ActivityType
+from app.repositories.json_data_model_repository import JsonDataModelRepository
+from app.services.activity_service import ActivityService
 from app.interfaces.auth_user import AuthUser
 from app.models.generation_model import (
     GenerationArtifactPreviewResponse,
@@ -60,8 +63,86 @@ generation_service = GenerationService(
 )
 
 data_model_access_service = DataModelAccessService()
+activity_service = ActivityService()
+data_model_repository = JsonDataModelRepository()
 artifact_writer = GenerationArtifactWriter()
 checkpoint_store = GenerationCheckpointStore()
+
+
+def _execute_generation_job_and_record_activity(
+    data_model_id: str,
+    job_id: str,
+    actor_user_id: str,
+) -> None:
+    """Execute a generation job and record its persisted terminal outcome."""
+
+    try:
+        generation_service.execute_job(data_model_id, job_id)
+    except Exception:
+        # The worker normally persists its own terminal status. If an
+        # unexpected exception escapes, inspect that persisted status rather
+        # than manufacturing a completion or failure activity.
+        pass
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+    if job is None:
+        return
+
+    terminal_types = {
+        GenerationJobStatus.COMPLETED,
+        GenerationJobStatus.PARTIALLY_COMPLETED,
+        GenerationJobStatus.FAILED,
+    }
+    if job.status not in terminal_types:
+        return
+
+    data_model = data_model_repository.get_by_id_any(data_model_id)
+    if data_model is None:
+        return
+
+    is_failed = job.status == GenerationJobStatus.FAILED
+    is_partial = job.status == GenerationJobStatus.PARTIALLY_COMPLETED
+
+    activity_type = (
+        ActivityType.GENERATION_FAILED
+        if is_failed
+        else ActivityType.GENERATION_PARTIALLY_COMPLETED
+        if is_partial
+        else ActivityType.GENERATION_COMPLETED
+    )
+    title = (
+        "Generation failed"
+        if is_failed
+        else "Generation partially completed"
+        if is_partial
+        else "Generation completed"
+    )
+    description = (
+        f"Generation for data model '{data_model.name}' "
+        f"{'failed' if is_failed else 'partially completed' if is_partial else 'completed'}: "
+        f"{job.total_generated_rows} of {job.total_target_rows} rows generated."
+    )
+
+    activity_service.record(
+        owner_user_id=data_model.owner_user_id,
+        actor_user_id=actor_user_id,
+        activity_type=activity_type,
+        title=title,
+        description=description,
+        data_model_id=data_model_id,
+        job_id=job.job_id,
+        metadata={
+            "status": job.status.value,
+            "generated_rows": job.total_generated_rows,
+            "requested_rows": job.total_target_rows,
+            "progress": job.progress,
+            "elapsed_seconds": job.elapsed_seconds,
+            "error": job.error,
+        },
+    )
 
 
 @router.get(
@@ -686,6 +767,26 @@ async def download_generation_artifact(
             detail="Generated artifact not found.",
         )
 
+    data_model = data_model_repository.get_by_id_any(data_model_id)
+    if data_model is not None:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=ActivityType.DATASET_EXPORTED,
+            title="Dataset exported",
+            description=(
+                f"Exported generated dataset '{path.name}' "
+                f"for data model '{data_model.name}'"
+            ),
+            data_model_id=data_model_id,
+            job_id=job_id,
+            metadata={
+                "entity_name": entity_name,
+                "filename": path.name,
+                "format": "csv",
+            },
+        )
+
     return FileResponse(
         path=path,
         media_type="text/csv",
@@ -713,6 +814,12 @@ async def start_generation_job(
             detail="Data model not found.",
         )
 
+    previous_job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+    previous_status = previous_job.status if previous_job is not None else None
+
     try:
         job = generation_service.start_job(
             data_model_id=data_model_id,
@@ -731,11 +838,58 @@ async def start_generation_job(
         )
 
     if job.status == GenerationJobStatus.RUNNING:
+        if previous_status in {
+            GenerationJobStatus.CREATED,
+            GenerationJobStatus.INTERRUPTED,
+        }:
+            data_model = data_model_repository.get_by_id_any(data_model_id)
+            if data_model is not None:
+                activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=current_user.user_id,
+                    activity_type=ActivityType.GENERATION_STARTED,
+                    title="Generation started",
+                    description=(
+                        f"Started generation for data model '{data_model.name}'"
+                    ),
+                    data_model_id=data_model_id,
+                    job_id=job.job_id,
+                    metadata={
+                        "status": job.status.value,
+                        "requested_rows": job.total_target_rows,
+                        "resumed": (
+                            previous_status == GenerationJobStatus.INTERRUPTED
+                        ),
+                    },
+                )
+
         background_tasks.add_task(
-            generation_service.execute_job,
+            _execute_generation_job_and_record_activity,
             data_model_id,
             job_id,
+            current_user.user_id,
         )
+    elif job.status == GenerationJobStatus.FAILED:
+        data_model = data_model_repository.get_by_id_any(data_model_id)
+        if data_model is not None:
+            activity_service.record(
+                owner_user_id=data_model.owner_user_id,
+                actor_user_id=current_user.user_id,
+                activity_type=ActivityType.GENERATION_FAILED,
+                title="Generation failed",
+                description=(
+                    f"Generation for data model '{data_model.name}' failed "
+                    f"before execution: {job.error or 'Unknown error'}"
+                ),
+                data_model_id=data_model_id,
+                job_id=job.job_id,
+                metadata={
+                    "status": job.status.value,
+                    "requested_rows": job.total_target_rows,
+                    "generated_rows": job.total_generated_rows,
+                    "error": job.error,
+                },
+            )
 
     return job
 
