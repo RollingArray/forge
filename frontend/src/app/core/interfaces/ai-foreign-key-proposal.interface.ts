@@ -29,6 +29,7 @@ export interface AIForeignKeyEntity {
 }
 
 export interface AIForeignKeyProposalRequest {
+  dataModelId: string;
   mode: 'CREATE' | 'EDIT';
   entities: AIForeignKeyEntity[];
   request: string;

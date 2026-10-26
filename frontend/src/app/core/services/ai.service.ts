@@ -94,6 +94,7 @@ export class AIService {
       }>(
         '/api/v1/ai/fields/propose',
         {
+          data_model_id: request.dataModelId,
           mode: request.mode,
           entity_name: request.entityName,
           request: request.request,
@@ -114,6 +115,7 @@ export class AIService {
     return this.http.post<AIIdentityProposalResponse>(
       '/api/v1/ai/identity/propose',
       {
+        data_model_id: request.dataModelId,
         mode: request.mode,
         entity_name: request.entityName,
         fields: request.fields,
@@ -151,6 +153,7 @@ export class AIService {
       .post<AIRelationshipProposalApiResponse>(
         '/api/v1/ai/relationships/propose',
         {
+          data_model_id: request.dataModelId,
           mode: request.mode,
           entities: request.entities,
           request: request.request,
@@ -202,6 +205,7 @@ export class AIService {
       .post<AIForeignKeyProposalApiResponse>(
         '/api/v1/ai/foreign-keys/propose',
         {
+          data_model_id: request.dataModelId,
           mode: request.mode,
           entities: request.entities,
           request: request.request,
@@ -236,6 +240,7 @@ export class AIService {
     return this.http.post<AIConstraintProposalResponse>(
       '/api/v1/ai/constraints/propose',
       {
+        data_model_id: request.dataModelId,
         mode: request.mode,
         entities: request.entities,
         request: request.request,

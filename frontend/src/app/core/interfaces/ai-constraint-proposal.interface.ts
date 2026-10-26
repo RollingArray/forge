@@ -30,6 +30,7 @@ export interface AIConstraintProposalResponse {
 }
 
 export interface AIConstraintProposalRequest {
+  dataModelId: string;
   mode: 'CREATE' | 'EDIT';
   entities: Array<Record<string, unknown>>;
   request: string;

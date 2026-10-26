@@ -41,6 +41,7 @@ export interface AIFieldProposalResponse {
 }
 
 export interface AIFieldProposalRequest {
+  dataModelId: string;
   mode: 'CREATE' | 'EDIT';
   entityName: string;
   request: string;

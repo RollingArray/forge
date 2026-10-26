@@ -19,6 +19,7 @@ export interface AIIdentityProposalResponse {
 }
 
 export interface AIIdentityProposalRequest {
+  dataModelId: string;
   mode: 'CREATE' | 'EDIT';
   entityName: string;
   fields: Array<Record<string, unknown>>;
