@@ -205,7 +205,7 @@ export class ModelStudioComponent {
     this.entityAiError.set(null);
     this.entityAiProposal.set(null);
 
-    this.aiService.proposeEntity(prompt).subscribe({
+    this.aiService.proposeEntity(this.dataModelId, prompt).subscribe({
       next: (proposal) => {
         this.entityAiProposal.set(proposal);
         this.entityAiLoading.set(false);

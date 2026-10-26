@@ -126,8 +126,18 @@ def preview_semantic_values(
 )
 def propose_entity(
     request: AIEntityProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
 ) -> AIEntityProposalModel:
     """Generate an entity proposal for user review without saving it."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=request.data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
 
     try:
         proposal = _ai_service.propose_entity(prompt=request.prompt)

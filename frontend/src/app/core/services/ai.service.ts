@@ -255,10 +255,10 @@ export class AIService {
     );
   }
 
-  proposeEntity(prompt: string): Observable<AIEntityProposal> {
+  proposeEntity(dataModelId: string, prompt: string): Observable<AIEntityProposal> {
     return this.http.post<AIEntityProposal>(
       '/api/v1/ai/entities/propose',
-      { prompt },
+      { data_model_id: dataModelId, prompt },
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
