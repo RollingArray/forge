@@ -42,6 +42,7 @@ class ActivityType(StrEnum):
     CONSTRAINT_ADDED = "CONSTRAINT_ADDED"
     CONSTRAINT_UPDATED = "CONSTRAINT_UPDATED"
     CONSTRAINT_DELETED = "CONSTRAINT_DELETED"
+    POPULATION_PLAN_ACCEPTED = "POPULATION_PLAN_ACCEPTED"
 
     AI_PROPOSAL_GENERATED = "AI_PROPOSAL_GENERATED"
     AI_PROPOSAL_ACCEPTED = "AI_PROPOSAL_ACCEPTED"
@@ -160,6 +161,10 @@ ACTIVITY_PRESENTATION: dict[ActivityType, ActivityPresentation] = {
     ActivityType.CONSTRAINT_DELETED: ActivityPresentation(
         icon="rule",
         accent="red",
+    ),
+    ActivityType.POPULATION_PLAN_ACCEPTED: ActivityPresentation(
+        icon="check_circle",
+        accent="green",
     ),
     ActivityType.AI_PROPOSAL_GENERATED: ActivityPresentation(
         icon="auto_awesome",

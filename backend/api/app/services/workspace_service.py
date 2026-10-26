@@ -500,6 +500,34 @@ class WorkspaceService:
 
             return f"{actor_name} revoked access to '{data_model}'"
 
+        if activity_type == ActivityType.POPULATION_PLAN_ACCEPTED:
+            return f"{actor_name} accepted the population plan for '{data_model}'"
+
+        if activity_type in {
+            ActivityType.AI_PROPOSAL_GENERATED,
+            ActivityType.AI_PROPOSAL_ACCEPTED,
+            ActivityType.AI_PROPOSAL_REGENERATED,
+            ActivityType.AI_PROPOSAL_DISMISSED,
+        }:
+            proposal_type = metadata.get("proposal_type", "data")
+            if not isinstance(proposal_type, str) or not proposal_type.strip():
+                proposal_type = "data"
+
+            action = {
+                ActivityType.AI_PROPOSAL_GENERATED: "generated",
+                ActivityType.AI_PROPOSAL_ACCEPTED: "accepted",
+                ActivityType.AI_PROPOSAL_REGENERATED: "regenerated",
+                ActivityType.AI_PROPOSAL_DISMISSED: "dismissed",
+            }[activity_type]
+
+            if proposal_type.strip().lower() == "data model":
+                return f"{actor_name} {action} an AI data model proposal"
+
+            return (
+                f"{actor_name} {action} an AI {proposal_type} proposal "
+                f"for '{data_model}'"
+            )
+
         if activity_type == ActivityType.USER_SIGNED_IN:
             return f"{actor_name} signed in to FORGE"
 

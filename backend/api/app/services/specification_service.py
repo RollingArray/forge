@@ -797,12 +797,13 @@ class SpecificationService:
             self._activity_service.record(
                 owner_user_id=data_model.owner_user_id,
                 actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_UPDATED,
+                activity_type=ActivityType.POPULATION_PLAN_ACCEPTED,
                 title="Population plan accepted",
                 description="Accepted population plan for generation",
                 data_model_id=data_model_id,
                 metadata={
                     "operation": "ACCEPT_POPULATION_PLAN",
+                    "outcome": "ACCEPTED",
                     "entity_count": len(populations),
                     "total_population": sum(populations.values()),
                 },
