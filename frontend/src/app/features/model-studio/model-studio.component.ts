@@ -86,6 +86,9 @@ export class ModelStudioComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly aiService = inject(AIService);
 
+  readonly dataModelId =
+    this.route.snapshot.paramMap.get('dataModelId') ?? '';
+
   readonly specification = signal<ForgeSpecification | null>(null);
 
   readonly canvasEntities = signal<CanvasEntity[]>([]);
@@ -147,14 +150,12 @@ export class ModelStudioComponent {
     this.steps.find((step) => step.id === this.activeStep())?.number ?? 1;
 
   constructor() {
-    const dataModelId = this.route.snapshot.paramMap.get('dataModelId');
-
-    if (!dataModelId) {
+    if (!this.dataModelId) {
       this.errorMessage.set('Data Model ID is missing from the route.');
       return;
     }
 
-    this.loadSpecification(dataModelId);
+    this.loadSpecification(this.dataModelId);
   }
 
   isCompleted(stepNumber: number): boolean {

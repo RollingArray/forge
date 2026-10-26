@@ -30,6 +30,7 @@ import { IdentityAiAssistPanelComponent } from '../identity-ai-assist-panel/iden
 export class IdentityDialogComponent {
   private readonly aiService = inject(AIService);
 
+  readonly dataModelId = input.required<string>();
   readonly entity = input.required<ForgeSpecificationEntity>();
 
   readonly closed = output<void>();
@@ -101,6 +102,7 @@ export class IdentityDialogComponent {
 
     this.aiService
       .proposeIdentity({
+      dataModelId: this.dataModelId(),
         mode: this.identityFields().length > 0 ? 'EDIT' : 'CREATE',
         entityName: this.entity().name,
         fields: this.entity().fields.map((field) => ({

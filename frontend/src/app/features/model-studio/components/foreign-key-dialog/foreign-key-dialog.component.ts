@@ -55,6 +55,7 @@ export interface ForeignKeyDraft {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForeignKeyDialogComponent {
+  readonly dataModelId = input.required<string>();
   readonly entities = input<ForgeSpecificationEntity[]>([]);
   readonly foreignKeys = input<ForgeForeignKey[]>([]);
   readonly sourceEntityContext = input('');
@@ -268,6 +269,7 @@ export class ForeignKeyDialogComponent {
 
     this.aiService
       .proposeForeignKey({
+        dataModelId: this.dataModelId(),
         mode: 'CREATE',
         entities: this.entities().map((entity) => ({
           name: entity.name,

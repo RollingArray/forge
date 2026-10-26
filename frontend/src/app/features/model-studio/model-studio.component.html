@@ -83,6 +83,7 @@
 
   @if (fieldDialogOpen()) {
     <app-model-studio-field-dialog
+      [dataModelId]="dataModelId"
       [field]="editingField()"
       [entityName]="selectedEntity()"
       (saved)="handleFieldSaved($event)"
@@ -96,6 +97,7 @@
   @if (identityDialogOpen()) {
     @if (selectedEntityData(); as entity) {
       <app-model-studio-identity-dialog
+        [dataModelId]="dataModelId"
         [entity]="entity"
         (saved)="handleIdentitySaved($event)"
         (closed)="closeIdentityDialog()"
@@ -106,6 +108,7 @@
   @if (constraintDialogOpen()) {
     @if (selectedEntityData(); as entity) {
       <app-model-studio-constraint-dialog
+        [dataModelId]="dataModelId"
         [entity]="entity"
         [existingConstraint]="editingConstraint()"
         [deleteBusy]="constraintDeleteBusy()"
@@ -120,6 +123,7 @@
   @if (relationshipDialogOpen()) {
     @if (specification(); as specification) {
       <app-model-studio-relationship-dialog
+        [dataModelId]="dataModelId"
         [entities]="specification.entities"
         [foreignKeys]="specification.foreignKeys"
         [sourceEntityContext]="relationshipSourceEntity()"
@@ -136,6 +140,7 @@
   @if (foreignKeyDialogOpen()) {
     @if (specification(); as specification) {
       <app-model-studio-foreign-key-dialog
+        [dataModelId]="dataModelId"
         [entities]="specification.entities"
         [foreignKeys]="specification.foreignKeys"
         [sourceEntityContext]="foreignKeySourceEntity()"

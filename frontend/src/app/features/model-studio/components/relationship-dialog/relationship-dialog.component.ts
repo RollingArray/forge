@@ -78,6 +78,7 @@ interface RelationshipOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RelationshipDialogComponent {
+  readonly dataModelId = input.required<string>();
   readonly entities = input<ForgeSpecificationEntity[]>([]);
   readonly foreignKeys = input<ForgeForeignKey[]>([]);
   readonly sourceEntityContext = input('');
@@ -316,6 +317,7 @@ export class RelationshipDialogComponent {
 
     this.aiService
       .proposeRelationship({
+        dataModelId: this.dataModelId(),
         mode: this.existingRelationship() ? 'EDIT' : 'CREATE',
         entities: this.entities().map((entity) => ({
           name: entity.name,

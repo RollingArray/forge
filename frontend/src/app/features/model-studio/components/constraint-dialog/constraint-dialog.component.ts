@@ -71,6 +71,7 @@ interface ConstraintOperatorOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConstraintDialogComponent {
+  readonly dataModelId = input.required<string>();
   readonly entity = input.required<ForgeSpecificationEntity>();
 
   readonly existingConstraint =
@@ -283,6 +284,7 @@ export class ConstraintDialogComponent {
 
     this.aiService
       .proposeConstraint({
+        dataModelId: this.dataModelId(),
         mode: 'CREATE',
         entities: [
           {

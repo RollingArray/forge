@@ -69,6 +69,7 @@ export class FieldDialogComponent {
   private readonly aiService = inject(AIService);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly dataModelId = input.required<string>();
   readonly field = input<ForgeSpecificationField | null>(null);
   readonly entityName = input.required<string>();
 
@@ -530,6 +531,7 @@ export class FieldDialogComponent {
 
     this.aiService
       .proposeField({
+        dataModelId: this.dataModelId(),
         mode: this.isEditMode ? 'EDIT' : 'CREATE',
         entityName: this.entityName(),
         request,
