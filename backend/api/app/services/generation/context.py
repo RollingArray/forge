@@ -125,11 +125,12 @@ class GenerationContext:
         *,
         entity_name: str,
         identity_fields: tuple[str, ...],
-        key_space: set[tuple[Any, ...]],
+        key_space: list[tuple[Any, ...]] | set[tuple[Any, ...]],
     ) -> None:
-        """Restore an identity key space reconstructed from durable artifacts."""
+        """Restore deduplicated identity keys while preserving supplied order."""
 
-        normalized_key_space = set(key_space)
+        ordered_keys = list(dict.fromkeys(key_space))
+        normalized_key_space = set(ordered_keys)
 
         self.keys_by_entity.setdefault(
             entity_name,
@@ -139,7 +140,7 @@ class GenerationContext:
         self.indexed_keys_by_entity.setdefault(
             entity_name,
             {},
-        )[identity_fields] = list(normalized_key_space)
+        )[identity_fields] = ordered_keys
 
     def get_key_space(
         self,
