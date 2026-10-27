@@ -5,6 +5,8 @@ Purpose: Generate rows for one production FORGE entity.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import random
 from itertools import product
 from typing import Any, Callable
@@ -283,15 +285,19 @@ class EntityGenerator:
                 entity_name=foreign_key["parent_entity"],
                 fields=tuple(foreign_key["parent_fields"]),
             )
+            indexed_parent_keys = context.get_indexed_key_space(
+                entity_name=foreign_key["parent_entity"],
+                fields=tuple(foreign_key["parent_fields"]),
+            )
 
-            if not parent_keys:
+            if not parent_keys or not indexed_parent_keys:
                 raise EntityGenerationError(
                     "Cannot allocate identity for composite FK: "
                     f"{child_fields}"
                 )
 
             components.append(
-                (child_fields, list(parent_keys))
+                (child_fields, list(indexed_parent_keys))
             )
 
             covered_fields.update(child_fields)
@@ -316,15 +322,19 @@ class EntityGenerator:
                 entity_name=foreign_key["parent_entity"],
                 fields=tuple(foreign_key["parent_fields"]),
             )
+            indexed_parent_keys = context.get_indexed_key_space(
+                entity_name=foreign_key["parent_entity"],
+                fields=tuple(foreign_key["parent_fields"]),
+            )
 
-            if not parent_keys:
+            if not parent_keys or not indexed_parent_keys:
                 raise EntityGenerationError(
                     "Cannot allocate identity for FK: "
                     f"{child_field}"
                 )
 
             components.append(
-                (child_fields, list(parent_keys))
+                (child_fields, list(indexed_parent_keys))
             )
 
             covered_fields.add(child_field)
@@ -483,15 +493,17 @@ class EntityGenerator:
         *,
         field: dict[str, Any],
         target_rows: int,
-    ) -> list[Any]:
-        """Return the valid domain for a locally generated identity field."""
+    ) -> range | list[Any]:
+        """Return the validated domain for a locally generated identity field."""
 
         generation = field.get("generation") or {}
         identity = field.get("identity") or {}
 
         generation_strategy = generation.get("strategy")
         identity_strategy = identity.get("strategy")
+        distribution = generation.get("distribution")
         parameters = generation.get("parameters") or {}
+        field_name = field.get("name", "FIELD")
 
         if (
             field.get("type") == "IDENTIFIER"
@@ -499,79 +511,82 @@ class EntityGenerator:
         ):
             return range(1, target_rows + 1)
 
-        if (
-            generation_strategy == "RANDOM"
-            and generation.get("distribution") == "CATEGORICAL"
-        ):
+        if generation_strategy == "RANDOM" and distribution == "CATEGORICAL":
             values = parameters.get("values")
 
             if not isinstance(values, list) or not values:
                 raise EntityGenerationError(
-                    "Categorical identity field requires "
+                    f"Categorical identity field {field_name} requires "
                     "a non-empty values list."
                 )
 
-            return list(values)
+            # Identity capacity must reflect distinct candidate values.
+            # Preserve their order so deterministic allocation is unchanged.
+            unique_values = []
+            for value in values:
+                if value not in unique_values:
+                    unique_values.append(value)
 
-        if (
-            generation_strategy == "RANDOM"
-            and generation.get("distribution") == "CATEGORICAL"
-        ):
-            values = parameters.get("values")
-
-            if not isinstance(values, list) or not values:
-                raise EntityGenerationError(
-                    "Categorical identity field requires "
-                    "a non-empty values list."
-                )
-
-            return list(values)
+            return unique_values
 
         if (
             field.get("type") == "INTEGER"
             and generation_strategy == "RANDOM"
-            and generation.get("distribution") == "UNIFORM"
+            and distribution in {"UNIFORM", "DISCRETE_UNIFORM"}
         ):
             minimum = parameters.get("minimum")
             maximum = parameters.get("maximum")
 
-            if minimum is None or maximum is None:
+            if (
+                minimum is None
+                or maximum is None
+                or isinstance(minimum, bool)
+                or isinstance(maximum, bool)
+            ):
                 raise EntityGenerationError(
-                    "Uniform identity field requires "
-                    "minimum and maximum."
+                    f"Integer identity field {field_name} requires "
+                    "numeric minimum and maximum bounds."
                 )
 
-            if minimum > maximum:
+            try:
+                minimum_decimal = Decimal(str(minimum))
+                maximum_decimal = Decimal(str(maximum))
+            except (ArithmeticError, TypeError, ValueError):
                 raise EntityGenerationError(
-                    "Identity field minimum cannot exceed maximum."
+                    f"Integer identity field {field_name} has invalid bounds."
+                ) from None
+
+            if (
+                not minimum_decimal.is_finite()
+                or not maximum_decimal.is_finite()
+            ):
+                raise EntityGenerationError(
+                    f"Integer identity field {field_name} bounds must be finite."
                 )
 
-            return list(range(minimum, maximum + 1))
-
-        if (
-            field.get("type") == "INTEGER"
-            and generation_strategy == "RANDOM"
-            and generation.get("distribution") == "DISCRETE_UNIFORM"
-        ):
-            minimum = parameters.get("minimum")
-            maximum = parameters.get("maximum")
-
-            if minimum is None or maximum is None:
+            if (
+                minimum_decimal != minimum_decimal.to_integral_value()
+                or maximum_decimal != maximum_decimal.to_integral_value()
+            ):
                 raise EntityGenerationError(
-                    "Discrete uniform identity field requires "
-                    "minimum and maximum."
+                    f"Integer identity field {field_name} bounds "
+                    "must be whole numbers."
                 )
 
-            if minimum > maximum:
+            if minimum_decimal > maximum_decimal:
                 raise EntityGenerationError(
-                    "Identity field minimum cannot exceed maximum."
+                    f"Integer identity field {field_name} minimum "
+                    "cannot exceed maximum."
                 )
 
-            return list(range(minimum, maximum + 1))
+            return range(
+                int(minimum_decimal),
+                int(maximum_decimal) + 1,
+            )
 
         raise EntityGenerationError(
             "Unsupported locally generated identity field: "
-            f"{field.get('name')}"
+            f"{field_name}"
         )
 
     @staticmethod
