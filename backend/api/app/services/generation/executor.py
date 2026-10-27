@@ -202,7 +202,7 @@ class GenerationExecutor:
         if not identity_fields:
             return
 
-        key_space = self._artifact_reader.get_entity_key_space(
+        key_space = self._artifact_reader.get_ordered_entity_key_space(
             data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
@@ -212,7 +212,7 @@ class GenerationExecutor:
         if not key_space:
             return
 
-        typed_key_space = {
+        typed_key_space = list(dict.fromkeys(
             tuple(
                 convert_value(
                     value,
@@ -224,7 +224,7 @@ class GenerationExecutor:
                 )
             )
             for key in key_space
-        }
+        ))
 
         context.restore_key_space(
             entity_name=entity_name,
