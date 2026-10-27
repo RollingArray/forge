@@ -327,14 +327,6 @@ def propose_entity(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="entity",
-        regenerated=request.regenerate,
-    )
-
     response = AIEntityProposalModel(
         proposal_id=proposal_id,
         name=proposal.name,
@@ -348,6 +340,13 @@ def propose_entity(
         proposal_type="entity",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="entity",
+        regenerated=request.regenerate,
     )
     return response
 
@@ -392,14 +391,6 @@ def propose_identity(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="identity",
-        regenerated=request.regenerate,
-    )
-
     response = AIIdentityProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
@@ -412,6 +403,13 @@ def propose_identity(
         proposal_type="identity",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="identity",
+        regenerated=request.regenerate,
     )
     return response
 
@@ -455,14 +453,6 @@ def propose_relationship(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="relationship",
-        regenerated=request.regenerate,
-    )
-
     response = AIRelationshipProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
@@ -475,6 +465,13 @@ def propose_relationship(
         proposal_type="relationship",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="relationship",
+        regenerated=request.regenerate,
     )
     return response
 
@@ -518,14 +515,6 @@ def propose_foreign_key(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="foreign key",
-        regenerated=request.regenerate,
-    )
-
     response = AIForeignKeyProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
@@ -538,6 +527,13 @@ def propose_foreign_key(
         proposal_type="foreign key",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="foreign key",
+        regenerated=request.regenerate,
     )
     return response
 
@@ -581,14 +577,6 @@ def propose_constraint(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="constraint",
-        regenerated=request.regenerate,
-    )
-
     response = AIConstraintProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
@@ -601,6 +589,13 @@ def propose_constraint(
         proposal_type="constraint",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="constraint",
+        regenerated=request.regenerate,
     )
     return response
 
@@ -644,14 +639,6 @@ def propose_field(
 
     proposal_id = uuid4().hex
 
-    _record_ai_proposal_activity(
-        user=user,
-        proposal_id=proposal_id,
-        data_model_id=request.data_model_id,
-        proposal_type="field",
-        regenerated=request.regenerate,
-    )
-
     response = AIFieldProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
@@ -664,6 +651,13 @@ def propose_field(
         proposal_type="field",
         data_model_id=request.data_model_id,
         response=response,
+    )
+    _record_ai_proposal_activity(
+        user=user,
+        proposal_id=proposal_id,
+        data_model_id=request.data_model_id,
+        proposal_type="field",
+        regenerated=request.regenerate,
     )
     return response
 
