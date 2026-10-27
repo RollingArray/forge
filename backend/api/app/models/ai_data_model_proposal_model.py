@@ -28,6 +28,7 @@ class AIDataModelSuggestionRequestModel(BaseModel):
 class AIDataModelProposalModel(BaseModel):
     """Structured AI proposal for a FORGE Data Model."""
 
+    proposal_id: str = Field(min_length=1)
     name: str
     description: str
     suggested_tags: list[str]

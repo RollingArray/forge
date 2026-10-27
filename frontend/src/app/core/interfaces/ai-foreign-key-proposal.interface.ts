@@ -38,6 +38,7 @@ export interface AIForeignKeyProposalRequest {
 }
 
 export interface AIForeignKeyProposalResponse {
+  proposalId: string;
   status: AIForeignKeyProposalStatus;
   message: string;
   proposal: AIForeignKeyProposal | null;

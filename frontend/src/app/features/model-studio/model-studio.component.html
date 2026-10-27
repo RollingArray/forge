@@ -73,7 +73,7 @@
       [aiError]="entityAiError()"
       [aiProposal]="entityAiProposal()"
       (aiRequested)="requestEntityAiProposal($event.prompt, $event.regenerate)"
-      (proposalAccepted)="recordEntityProposalAccepted()"
+      (proposalAccepted)="recordEntityProposalAccepted($event)"
       (saved)="editingEntity() ? handleEntityUpdated($event) : handleEntityCreated($event)"
       (closed)="closeEntityDialog()"
       (deleteRequested)="confirmEntityDelete()"

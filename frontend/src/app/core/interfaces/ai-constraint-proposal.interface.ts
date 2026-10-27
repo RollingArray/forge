@@ -24,6 +24,7 @@ export interface AIConstraintProposal {
 }
 
 export interface AIConstraintProposalResponse {
+  proposalId: string;
   status: AIConstraintProposalStatus;
   message: string;
   proposal: AIConstraintProposal | null;

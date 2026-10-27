@@ -4,6 +4,7 @@
  */
 
 export interface AIDataModelProposal {
+  proposalId: string;
   name: string;
   description: string;
   suggestedTags: string[];

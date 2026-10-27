@@ -28,6 +28,7 @@ class AIEntityProposalModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
     population: int = Field(ge=0)

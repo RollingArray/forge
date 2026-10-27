@@ -308,6 +308,7 @@ export class ConstraintDialogComponent {
         },
         error: (error) => {
           this.aiResponse.set({
+            proposalId: '',
             status: 'UNSUPPORTED',
             message:
               error?.error?.detail ??
@@ -323,11 +324,12 @@ export class ConstraintDialogComponent {
     this.generateWithAi(true);
   }
 
-  private recordProposalAccepted(): void {
+  private recordProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId(),
       'constraint',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
@@ -336,9 +338,10 @@ export class ConstraintDialogComponent {
   }
 
   applyAiProposal(): void {
-    const proposal = this.aiResponse()?.proposal;
+    const response = this.aiResponse();
+    const proposal = response?.proposal;
 
-    if (!proposal) {
+    if (!proposal || !response?.proposalId) {
       return;
     }
 
@@ -349,7 +352,7 @@ export class ConstraintDialogComponent {
 
     this.value.set(String(proposal.value));
     this.proposalAccepted.emit();
-    this.recordProposalAccepted();
+    this.recordProposalAccepted(response.proposalId);
 
     this.aiResponse.set(null);
   }

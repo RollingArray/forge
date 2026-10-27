@@ -115,6 +115,7 @@ export class FieldDialogComponent {
   readonly aiPrompt = signal('');
   readonly aiGenerating = signal(false);
   readonly aiProposal = signal<AIFieldProposal | null>(null);
+  readonly aiProposalId = signal<string | null>(null);
   readonly aiProposalMessage = signal('');
   readonly aiProposalStatus = signal<
     'PROPOSE' | 'CLARIFY' | 'UNSUPPORTED' | null
@@ -526,6 +527,7 @@ export class FieldDialogComponent {
     this.aiPrompt.set(request);
     this.aiGenerating.set(true);
     this.aiProposal.set(null);
+    this.aiProposalId.set(null);
     this.aiProposalMessage.set('');
     this.aiProposalStatus.set(null);
     this.aiProposalError.set('');
@@ -551,6 +553,7 @@ export class FieldDialogComponent {
         next: (response) => {
           this.aiProposalStatus.set(response.status);
           this.aiProposalMessage.set(response.message);
+          this.aiProposalId.set(response.proposalId);
           this.aiProposal.set(response.proposal);
           this.aiGenerating.set(false);
         },
@@ -561,6 +564,7 @@ export class FieldDialogComponent {
           );
 
           this.aiProposal.set(null);
+          this.aiProposalId.set(null);
           this.aiProposalStatus.set(null);
           this.aiProposalMessage.set('');
           this.aiProposalError.set(
@@ -575,11 +579,12 @@ export class FieldDialogComponent {
     this.handleAiGenerate(undefined, true);
   }
 
-  private recordProposalAccepted(): void {
+  private recordProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId(),
       'field',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
@@ -593,14 +598,15 @@ export class FieldDialogComponent {
     }
 
     const proposal = this.aiProposal();
+    const proposalId = this.aiProposalId();
 
-    if (!proposal) {
+    if (!proposal || !proposalId) {
       return;
     }
 
     this.applyAiProposal(proposal);
     this.proposalAccepted.emit();
-    this.recordProposalAccepted();
+    this.recordProposalAccepted(proposalId);
   }
 
   private applyAiProposal(proposal: AIFieldProposal): void {

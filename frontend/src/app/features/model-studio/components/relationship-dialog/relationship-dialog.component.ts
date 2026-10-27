@@ -112,6 +112,7 @@ export class RelationshipDialogComponent {
   readonly aiGenerating = signal(false);
   readonly aiResponse =
     signal<{
+      proposalId: string;
       status: string;
       message: string;
       proposal: AIRelationshipProposal | null;
@@ -349,6 +350,7 @@ export class RelationshipDialogComponent {
         },
         error: (error) => {
           this.aiResponse.set({
+            proposalId: '',
             status: 'UNSUPPORTED',
             message:
               error?.error?.detail ??
@@ -364,11 +366,12 @@ export class RelationshipDialogComponent {
     this.generateWithAi(true);
   }
 
-  private recordProposalAccepted(): void {
+  private recordProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId(),
       'relationship',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
@@ -377,9 +380,10 @@ export class RelationshipDialogComponent {
   }
 
   applyAiProposal(): void {
-    const proposal = this.aiResponse()?.proposal;
+    const response = this.aiResponse();
+    const proposal = response?.proposal;
 
-    if (!proposal) {
+    if (!proposal || !response?.proposalId) {
       return;
     }
 
@@ -389,7 +393,7 @@ export class RelationshipDialogComponent {
     this.sourceParticipation.set(proposal.sourceParticipation);
     this.targetParticipation.set(proposal.targetParticipation);
     this.proposalAccepted.emit();
-    this.recordProposalAccepted();
+    this.recordProposalAccepted(response.proposalId);
 
     this.aiResponse.set(null);
   }

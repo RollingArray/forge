@@ -29,6 +29,7 @@ export interface AIRelationshipProposal {
 }
 
 export interface AIRelationshipProposalResponse {
+  proposalId: string;
   status: AIRelationshipProposalStatus;
   message: string;
   proposal: AIRelationshipProposal | null;

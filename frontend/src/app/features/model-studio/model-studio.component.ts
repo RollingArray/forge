@@ -196,11 +196,12 @@ export class ModelStudioComponent {
     this.entityDialogOpen.set(true);
   }
 
-  recordEntityProposalAccepted(): void {
+  recordEntityProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId,
       'entity',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);

@@ -13,6 +13,7 @@ export interface AIIdentityProposal {
 }
 
 export interface AIIdentityProposalResponse {
+  proposalId: string;
   status: AIIdentityProposalStatus;
   message: string;
   proposal: AIIdentityProposal | null;

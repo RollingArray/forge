@@ -49,7 +49,7 @@ export interface EntityDraft {
 export class EntityDialogComponent implements OnInit {
   readonly saved = output<EntityDraft>();
   readonly aiRequested = output<{ prompt: string; regenerate: boolean }>();
-  readonly proposalAccepted = output<void>();
+  readonly proposalAccepted = output<string>();
   readonly entity = input<ForgeSpecificationEntity | null>(null);
   readonly aiLoading = input(false);
   readonly aiError = input<string | null>(null);
@@ -147,7 +147,7 @@ export class EntityDialogComponent implements OnInit {
     this.name.set(proposal.name);
     this.description.set(proposal.description);
     this.population.set(proposal.population);
-    this.proposalAccepted.emit();
+    this.proposalAccepted.emit(proposal.proposalId);
   }
 
   requestAiProposal(

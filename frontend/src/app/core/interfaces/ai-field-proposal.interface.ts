@@ -35,6 +35,7 @@ export interface AIFieldProposal {
 }
 
 export interface AIFieldProposalResponse {
+  proposalId: string;
   status: AIFieldProposalStatus;
   message: string;
   proposal: AIFieldProposal | null;

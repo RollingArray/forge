@@ -60,6 +60,7 @@ class AIFieldProposalModel(BaseModel):
 class AIFieldProposalResponseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     status: FieldProposalStatus
     message: str = Field(min_length=1)
     proposal: AIFieldProposalModel | None = None

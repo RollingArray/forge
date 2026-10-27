@@ -42,6 +42,7 @@ export class IdentityDialogComponent {
 
   readonly aiGenerating = signal(false);
   readonly aiProposal = signal<AIIdentityProposal | null>(null);
+  readonly aiProposalId = signal<string | null>(null);
   readonly aiProposalStatus = signal<
     'PROPOSE' | 'CLARIFY' | 'UNSUPPORTED' | null
   >(null);
@@ -97,6 +98,7 @@ export class IdentityDialogComponent {
     this.aiPrompt.set(trimmedRequest);
     this.aiGenerating.set(true);
     this.aiProposal.set(null);
+    this.aiProposalId.set(null);
     this.aiProposalStatus.set(null);
     this.aiProposalMessage.set('');
     this.aiProposalError.set('');
@@ -122,6 +124,7 @@ export class IdentityDialogComponent {
         next: (response) => {
           this.aiProposalStatus.set(response.status);
           this.aiProposalMessage.set(response.message);
+          this.aiProposalId.set(response.proposalId);
           this.aiProposal.set(response.proposal);
           this.aiGenerating.set(false);
         },
@@ -140,11 +143,12 @@ export class IdentityDialogComponent {
     this.handleAiGenerate(this.aiPrompt(), true);
   }
 
-  private recordProposalAccepted(): void {
+  private recordProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId(),
       'identity',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
@@ -154,14 +158,15 @@ export class IdentityDialogComponent {
 
   useAiProposal(): void {
     const proposal = this.aiProposal();
+    const proposalId = this.aiProposalId();
 
-    if (!proposal) {
+    if (!proposal || !proposalId) {
       return;
     }
 
     this.selectedFields.set([...proposal.fields]);
     this.proposalAccepted.emit();
-    this.recordProposalAccepted();
+    this.recordProposalAccepted(proposalId);
   }
 
   save(): void {
@@ -181,6 +186,7 @@ export class IdentityDialogComponent {
   clearAiState(): void {
     this.aiGenerating.set(false);
     this.aiProposal.set(null);
+    this.aiProposalId.set(null);
     this.aiProposalStatus.set(null);
     this.aiProposalMessage.set('');
     this.aiProposalError.set('');

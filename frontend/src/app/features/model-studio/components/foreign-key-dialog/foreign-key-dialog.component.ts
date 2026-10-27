@@ -291,6 +291,7 @@ export class ForeignKeyDialogComponent {
         },
         error: (error) => {
           this.aiResponse.set({
+            proposalId: '',
             status: 'UNSUPPORTED',
             message:
               error?.error?.detail ??
@@ -306,11 +307,12 @@ export class ForeignKeyDialogComponent {
     this.generateWithAi(true);
   }
 
-  private recordProposalAccepted(): void {
+  private recordProposalAccepted(proposalId: string): void {
     this.aiService.recordProposalActivity(
       this.dataModelId(),
       'foreign key',
       'ACCEPTED',
+      proposalId,
     ).subscribe({
       error: (error: unknown) => {
         console.warn('[FORGE] Unable to record AI proposal acceptance.', error);
@@ -319,16 +321,17 @@ export class ForeignKeyDialogComponent {
   }
 
   applyAiProposal(): void {
-    const proposal = this.aiResponse()?.proposal;
+    const response = this.aiResponse();
+    const proposal = response?.proposal;
 
-    if (!proposal) {
+    if (!proposal || !response?.proposalId) {
       return;
     }
 
     this.sourceEntity.set(proposal.sourceEntity);
     this.targetEntity.set(proposal.targetEntity);
     this.proposalAccepted.emit();
-    this.recordProposalAccepted();
+    this.recordProposalAccepted(response.proposalId);
 
     this.aiResponse.set(null);
   }

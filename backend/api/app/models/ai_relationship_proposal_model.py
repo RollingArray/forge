@@ -43,6 +43,7 @@ class AIRelationshipProposalResponseModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     status: RelationshipProposalStatus
     message: str = Field(min_length=1)
     proposal: AIRelationshipProposalModel | None = None

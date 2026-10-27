@@ -25,6 +25,7 @@ class AIForeignKeyProposalResponseModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     status: ForeignKeyProposalStatus
     message: str = Field(min_length=1)
     proposal: AIForeignKeyProposalModel | None = None

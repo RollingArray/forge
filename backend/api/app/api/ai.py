@@ -14,6 +14,7 @@ Email: ranjoy.sen@collins.com
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Literal
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -76,6 +77,7 @@ class AIDataModelProposalActivityRequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     action: Literal["ACCEPTED"]
+    proposal_id: str = Field(min_length=1)
 
 
 class AIProposalActivityRequestModel(BaseModel):
@@ -93,6 +95,7 @@ class AIProposalActivityRequestModel(BaseModel):
         "field",
     ]
     action: Literal["ACCEPTED", "REGENERATED", "DISMISSED"]
+    proposal_id: str = Field(min_length=1)
 
 
 activity_service = ActivityService()
@@ -103,6 +106,7 @@ def _record_ai_proposal_activity(
     user: AuthUser,
     data_model_id: str,
     proposal_type: str,
+    proposal_id: str,
     regenerated: bool = False,
 ) -> None:
     """Persist a successfully generated AI proposal in workspace activity."""
@@ -139,6 +143,7 @@ def _record_ai_proposal_activity(
                     "REGENERATE_AI_PROPOSAL" if regenerated else "GENERATE_AI_PROPOSAL"
                 ),
                 "proposal_type": proposal_type,
+                "proposal_id": proposal_id,
                 "outcome": ("REGENERATED" if regenerated else "GENERATED"),
             },
         )
@@ -196,6 +201,7 @@ def record_ai_proposal_activity(
                     "DISMISSED": "DISMISS_AI_PROPOSAL",
                 }[request.action],
                 "proposal_type": request.proposal_type,
+                "proposal_id": request.proposal_id,
                 "outcome": request.action,
             },
         )
@@ -292,14 +298,18 @@ def propose_entity(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="entity",
         regenerated=request.regenerate,
     )
 
     return AIEntityProposalModel(
+        proposal_id=proposal_id,
         name=proposal.name,
         description=proposal.description,
         population=proposal.population,
@@ -345,14 +355,18 @@ def propose_identity(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="identity",
         regenerated=request.regenerate,
     )
 
     return AIIdentityProposalResponseModel(
+        proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
@@ -396,14 +410,18 @@ def propose_relationship(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="relationship",
         regenerated=request.regenerate,
     )
 
     return AIRelationshipProposalResponseModel(
+        proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
@@ -447,14 +465,18 @@ def propose_foreign_key(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="foreign key",
         regenerated=request.regenerate,
     )
 
     return AIForeignKeyProposalResponseModel(
+        proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
@@ -498,14 +520,18 @@ def propose_constraint(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="constraint",
         regenerated=request.regenerate,
     )
 
     return AIConstraintProposalResponseModel(
+        proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
@@ -549,14 +575,18 @@ def propose_field(
             detail=str(exc),
         ) from exc
 
+    proposal_id = uuid4().hex
+
     _record_ai_proposal_activity(
         user=user,
+        proposal_id=proposal_id,
         data_model_id=request.data_model_id,
         proposal_type="field",
         regenerated=request.regenerate,
     )
 
     return AIFieldProposalResponseModel(
+        proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
@@ -582,6 +612,8 @@ def suggest_data_model(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+    proposal_id = uuid4().hex
 
     try:
         activity_service.record(
@@ -609,6 +641,7 @@ def suggest_data_model(
                     else "GENERATE_AI_PROPOSAL"
                 ),
                 "proposal_type": "data model",
+                "proposal_id": proposal_id,
                 "outcome": ("REGENERATED" if request.regenerate else "GENERATED"),
             },
         )
@@ -617,6 +650,7 @@ def suggest_data_model(
         pass
 
     return AIDataModelProposalModel(
+        proposal_id=proposal_id,
         name=proposal.name,
         description=proposal.description,
         suggested_tags=proposal.suggested_tags,
@@ -644,6 +678,7 @@ def record_data_model_proposal_activity(
             metadata={
                 "operation": "ACCEPT_AI_PROPOSAL",
                 "proposal_type": "data model",
+                "proposal_id": request.proposal_id,
                 "outcome": "ACCEPTED",
             },
         )

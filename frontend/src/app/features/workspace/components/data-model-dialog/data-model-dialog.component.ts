@@ -204,7 +204,7 @@ export class DataModelDialogComponent {
     this.description.set(proposal.description);
     this.tags.set([...proposal.suggestedTags]);
 
-    this.aiService.recordDataModelProposalAccepted().subscribe({
+    this.aiService.recordDataModelProposalAccepted(proposal.proposalId).subscribe({
       error: (error: unknown) => {
         console.warn(
           '[FORGE] Unable to record AI Data Model proposal acceptance.',

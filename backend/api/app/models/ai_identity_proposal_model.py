@@ -33,6 +33,7 @@ class AIIdentityProposalResponseModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     status: IdentityProposalStatus
     message: str = Field(min_length=1)
     proposal: AIIdentityProposalModel | None = None

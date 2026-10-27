@@ -88,6 +88,7 @@ export class AIService {
   ): Observable<AIFieldProposalResponse> {
     return this.http
       .post<{
+        proposal_id: string;
         status: AIFieldProposalResponse['status'];
         message: string;
         proposal: AIFieldProposalResponse['proposal'];
@@ -107,13 +108,27 @@ export class AIService {
             ApiLoadingMessage.GeneratingFieldProposalWithAI,
           ),
         },
+      )
+      .pipe(
+        map((response): AIFieldProposalResponse => ({
+          proposalId: response.proposal_id,
+          status: response.status,
+          message: response.message,
+          proposal: response.proposal,
+        })),
       );
   }
 
   proposeIdentity(
     request: AIIdentityProposalRequest,
   ): Observable<AIIdentityProposalResponse> {
-    return this.http.post<AIIdentityProposalResponse>(
+    return this.http
+      .post<{
+        proposal_id: string;
+        status: AIIdentityProposalResponse['status'];
+        message: string;
+        proposal: AIIdentityProposalResponse['proposal'];
+      }>(
       '/api/v1/ai/identity/propose',
       {
         data_model_id: request.dataModelId,
@@ -130,6 +145,14 @@ export class AIService {
           ApiLoadingMessage.GeneratingIdentityProposalWithAI,
         ),
       },
+    )
+    .pipe(
+      map((response): AIIdentityProposalResponse => ({
+        proposalId: response.proposal_id,
+        status: response.status,
+        message: response.message,
+        proposal: response.proposal,
+      })),
     );
   }
 
@@ -138,6 +161,7 @@ export class AIService {
     request: AIRelationshipProposalRequest,
   ): Observable<AIRelationshipProposalResponse> {
     interface AIRelationshipProposalApiResponse {
+      proposal_id: string;
       status: AIRelationshipProposalResponse['status'];
       message: string;
       proposal: {
@@ -172,6 +196,7 @@ export class AIService {
       )
       .pipe(
         map((response): AIRelationshipProposalResponse => ({
+          proposalId: response.proposal_id,
           status: response.status,
           message: response.message,
           proposal: response.proposal
@@ -195,6 +220,7 @@ export class AIService {
     request: AIForeignKeyProposalRequest,
   ): Observable<AIForeignKeyProposalResponse> {
     interface AIForeignKeyProposalApiResponse {
+      proposal_id: string;
       status: AIForeignKeyProposalResponse['status'];
       message: string;
       proposal: {
@@ -225,6 +251,7 @@ export class AIService {
       )
       .pipe(
         map((response): AIForeignKeyProposalResponse => ({
+          proposalId: response.proposal_id,
           status: response.status,
           message: response.message,
           proposal: response.proposal
@@ -241,7 +268,13 @@ export class AIService {
   proposeConstraint(
     request: AIConstraintProposalRequest,
   ): Observable<AIConstraintProposalResponse> {
-    return this.http.post<AIConstraintProposalResponse>(
+    return this.http
+      .post<{
+        proposal_id: string;
+        status: AIConstraintProposalResponse['status'];
+        message: string;
+        proposal: AIConstraintProposalResponse['proposal'];
+      }>(
       '/api/v1/ai/constraints/propose',
       {
         data_model_id: request.dataModelId,
@@ -257,6 +290,14 @@ export class AIService {
           ApiLoadingMessage.GeneratingConstraintProposalWithAI,
         ),
       },
+    )
+    .pipe(
+      map((response): AIConstraintProposalResponse => ({
+        proposalId: response.proposal_id,
+        status: response.status,
+        message: response.message,
+        proposal: response.proposal,
+      })),
     );
   }
 
@@ -270,12 +311,14 @@ export class AIService {
       | 'constraint'
       | 'field',
     action: 'ACCEPTED' | 'REGENERATED' | 'DISMISSED',
+    proposalId: string,
   ): Observable<void> {
     return this.http.post<void>(
       '/api/v1/ai/proposals/activity',
       {
         data_model_id: dataModelId,
         proposal_type: proposalType,
+        proposal_id: proposalId,
         action,
       },
       {
@@ -292,7 +335,14 @@ export class AIService {
     prompt: string,
     regenerate = false,
   ): Observable<AIEntityProposal> {
-    return this.http.post<AIEntityProposal>(
+    return this.http
+      .post<{
+        proposal_id: string;
+        name: string;
+        description: string;
+        population: number;
+        reasoning: string;
+      }>(
       '/api/v1/ai/entities/propose',
       { data_model_id: dataModelId, prompt, regenerate },
       {
@@ -301,13 +351,22 @@ export class AIService {
           ApiLoadingMessage.GeneratingEntityProposalWithAI,
         ),
       },
+    )
+    .pipe(
+      map((response): AIEntityProposal => ({
+        proposalId: response.proposal_id,
+        name: response.name,
+        description: response.description,
+        population: response.population,
+        reasoning: response.reasoning,
+      })),
     );
   }
 
-  recordDataModelProposalAccepted(): Observable<void> {
+  recordDataModelProposalAccepted(proposalId: string): Observable<void> {
     return this.http.post<void>(
       '/api/v1/ai/data-models/proposals/activity',
-      { action: 'ACCEPTED' },
+      { action: 'ACCEPTED', proposal_id: proposalId },
       {
         context: new HttpContext().set(API_LOADING_SKIP, true),
       },
@@ -331,6 +390,7 @@ export class AIService {
       )
       .pipe(
         map((response) => ({
+          proposalId: response.proposal_id,
           name: response.name,
           description: response.description,
           suggestedTags: response.suggested_tags,

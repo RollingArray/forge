@@ -41,6 +41,7 @@ class AIConstraintProposalResponseModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    proposal_id: str = Field(min_length=1)
     status: ConstraintProposalStatus
     message: str = Field(min_length=1)
     proposal: AIConstraintProposalModel | None = None
