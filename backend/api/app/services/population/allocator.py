@@ -126,16 +126,13 @@ def allocate_population_target(
     """
     Allocate a dataset target using an explicit population driver.
 
-    The driver and entities structurally downstream from it form the
-    driver's scaling domain.
+    The selected driver identifies the user's chosen entry point, while
+    the whole model forms the target's scaling domain.
 
-    FIXED entities remain unchanged.
-
-    Unrelated entities retain their current populations.
-
-    Within the driver's scalable domain, current populations are used as
-    baseline weights so the existing structural shape is preserved while
-    the domain grows to satisfy the requested dataset target.
+    FIXED entities remain unchanged. All SCALABLE entities participate in
+    proportional allocation using their current populations as baseline
+    weights. The candidate is subsequently evaluated by the existing 023
+    planner for relationship and identity-capacity feasibility.
 
     The candidate is subsequently evaluated by the existing 023 planner.
     """
@@ -159,10 +156,10 @@ def allocate_population_target(
             f"Population driver '{driver}' does not exist in the specification."
         )
 
-    affected_entities = _find_affected_entities(
-        driver=driver,
-        relationships=relationships,
-    )
+    # The target represents the whole dataset, not only the driver's
+    # downstream relationship graph. Every entity participates in target
+    # distribution; FIXED populations are preserved by the allocation below.
+    affected_entities = set(entity_names)
 
     population_by_entity: dict[str, int] = {}
     scaling_by_entity: dict[str, str] = {}
