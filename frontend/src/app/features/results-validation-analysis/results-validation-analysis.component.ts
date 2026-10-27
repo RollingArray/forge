@@ -185,21 +185,27 @@ export class ResultsValidationAnalysisComponent {
       const hasIssues = issueCount !== null && issueCount > 0;
       const notChecked = records.length === 0 && metrics.length === 0;
 
-      const status: CheckStatus = notChecked
-        ? 'not-checked'
-        : hasIssues
-          ? 'review'
-          : explicitlyPassed || issueCount === 0 || issueCount !== null
-            ? 'passed'
-            : 'not-checked';
+      const isCoverage = key === 'coverage';
+      const status: CheckStatus = isCoverage
+        ? notChecked
+          ? 'not-checked'
+          : 'passed'
+        : notChecked
+          ? 'not-checked'
+          : hasIssues
+            ? 'review'
+            : explicitlyPassed || issueCount === 0 || issueCount !== null
+              ? 'passed'
+              : 'not-checked';
 
       return {
         key,
         title: definition.title,
         description: definition.description,
         status,
-        statusLabel:
-          status === 'passed'
+        statusLabel: isCoverage && !notChecked
+          ? 'Coverage available'
+          : status === 'passed'
             ? 'No issues reported'
             : status === 'review'
               ? 'Review required'
@@ -209,6 +215,194 @@ export class ResultsValidationAnalysisComponent {
         records,
       };
     });
+  });
+
+
+  readonly relationshipEvidenceCheck = computed<ValidationCheck | null>(() => {
+    const quality = this.asRecord(this.job()?.quality);
+    const evidence = this.asRecord(quality['relationship_fidelity']);
+    const groups = this.asRecord(evidence['relationships']);
+    const entries = Object.entries(groups);
+
+    if (entries.length === 0) {
+      return null;
+    }
+
+    const counts = {
+      measured: 0,
+      inconclusive: 0,
+      not_measurable: 0,
+      legacy: 0,
+    };
+
+    const readString = (value: unknown, fallback: string): string =>
+      typeof value === 'string' && value.trim() ? value : fallback;
+
+    const readFields = (value: unknown): string[] =>
+      Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string')
+        : [];
+
+    const records: ValidationCheck['records'] = entries.map(([key, raw]) => {
+      const group = this.asRecord(raw);
+      const relationshipType = readString(
+        group['relationship_type'],
+        'Unspecified',
+      );
+      const rawStatus = readString(group['measurement_status'], 'legacy');
+      const status = rawStatus in counts
+        ? rawStatus as keyof typeof counts
+        : 'legacy';
+
+      counts[status] += 1;
+
+      const source = readString(
+        group['source_entity'] ?? group['parent_entity'],
+        'Unknown entity',
+      );
+      const target = readString(
+        group['target_entity'] ?? group['child_entity'],
+        'Unknown entity',
+      );
+      const sourceFields = readFields(
+        group['source_fields'] ?? group['parent_fields'],
+      );
+      const targetFields = readFields(
+        group['target_fields'] ?? group['child_fields'],
+      );
+
+      const details: ValidationCheck['records'][number]['details'] = [
+        { label: 'Relationship type', value: relationshipType },
+        {
+          label: 'Source',
+          value: sourceFields.length
+            ? `${source} · ${sourceFields.join(', ')}`
+            : source,
+        },
+        {
+          label: 'Target',
+          value: targetFields.length
+            ? `${target} · ${targetFields.join(', ')}`
+            : target,
+        },
+        {
+          label: 'Evidence status',
+          value: status === 'measured'
+            ? 'Measured'
+            : status === 'inconclusive'
+              ? 'Inconclusive'
+              : status === 'not_measurable'
+                ? 'Not measurable'
+                : 'Saved legacy evidence',
+        },
+      ];
+
+      const suppressLegacyMetrics =
+        status === 'legacy' &&
+        ['MANY_TO_ONE', 'MANY_TO_MANY'].includes(
+          relationshipType.toUpperCase(),
+        );
+
+      if (suppressLegacyMetrics) {
+        details.push({
+          label: 'Measurement note',
+          value:
+            'Saved legacy evidence. Direction-sensitive orphan and cardinality metrics are suppressed; this job has not been remeasured.',
+        });
+      } else {
+        const metricKeys = [
+          'parent_rows_checked',
+          'parent_rows_with_null_key',
+          'parent_keys',
+          'duplicate_parent_key_rows',
+          'child_rows_checked',
+          'matched_child_rows',
+          'orphan_child_rows',
+          'null_reference_rows',
+          'partial_null_reference_rows',
+          'mandatory_child_reference_violations',
+          'participating_parent_keys',
+          'parents_without_children',
+          'parent_participation_rate',
+          'mandatory_parent_participation_violations',
+          'minimum_children_per_parent',
+          'maximum_children_per_parent',
+          'average_children_per_participating_parent',
+          'one_to_one_cardinality_violations',
+        ];
+
+        for (const key of metricKeys) {
+          const value = group[key];
+
+          if (
+            value === null ||
+            value === undefined ||
+            !['string', 'number', 'boolean'].includes(typeof value)
+          ) {
+            continue;
+          }
+
+          const formattedValue =
+            key === 'parent_participation_rate' && typeof value === 'number'
+              ? new Intl.NumberFormat('en', {
+                  style: 'percent',
+                  maximumFractionDigits: 2,
+                }).format(value)
+              : typeof value === 'boolean'
+                ? value ? 'Yes' : 'No'
+                : typeof value === 'number' && !Number.isInteger(value)
+                  ? value.toFixed(3)
+                  : String(value);
+
+          details.push({
+            label: this.friendlyLabel(key),
+            value: formattedValue,
+          });
+        }
+
+        const note = group['measurement_note'];
+        if (typeof note === 'string' && note.trim()) {
+          details.push({ label: 'Measurement note', value: note });
+        }
+      }
+
+      return {
+        label: key.replaceAll('_', ' ').replace(/\b\w/g, (character) =>
+          character.toUpperCase(),
+        ),
+        details,
+      };
+    });
+
+    const metrics: ValidationCheck['metrics'] = [
+      { label: 'Relationships analyzed', value: entries.length },
+      { label: 'Measured', value: counts.measured },
+      { label: 'Inconclusive', value: counts.inconclusive },
+      { label: 'Not measurable', value: counts.not_measurable },
+      { label: 'Saved legacy evidence', value: counts.legacy },
+    ];
+
+    const allMeasured = counts.measured === entries.length;
+
+    return {
+      key: 'relationship_fidelity',
+      title: 'Relationship Fidelity',
+      description:
+        'Reviews relationship measurements and per-relationship evidence saved with this generation job.',
+      status: allMeasured ? 'passed' : 'not-checked',
+      statusLabel: allMeasured
+        ? 'Measurements available'
+        : 'Evidence requires review',
+      issueCount: null,
+      metrics,
+      records,
+    };
+  });
+
+  readonly allEvidenceSections = computed<ValidationCheck[]>(() => {
+    const checks = this.evidenceSections();
+    const relationshipCheck = this.relationshipEvidenceCheck();
+    return relationshipCheck ? [...checks, relationshipCheck] : checks;
   });
 
   readonly toolbarFilters = computed<WorkspaceToolbarFilter[]>(() => [

@@ -1,0 +1,64 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="RELATIONSHIP FIDELITY"
+    title="Relationship Evidence"
+    summary="Inspect observed parent-child references, participation, and cardinality evidence. These measurements are evidence, not independent validation verdicts."
+  />
+
+  @if (records().length) {
+    <div class="relationship-grid">
+      @for (record of records(); track record.key) {
+        <app-content-card>
+          <article class="relationship-card">
+            <div class="relationship-card-heading">
+              <span class="relationship-index">{{ record.title }}</span>
+              <span class="relationship-status" [attr.data-status]="record.status">
+                {{ record.statusLabel }}
+              </span>
+            </div>
+
+            <h3>{{ record.source }}</h3>
+            <div class="relationship-connector">
+              <span class="material-symbols-outlined">link</span>
+              <span>{{ record.relationshipType.replaceAll('_', ' ') }}</span>
+            </div>
+            <h3>{{ record.target }}</h3>
+
+            @if (record.note) {
+              <p class="relationship-note">{{ record.note }}</p>
+            }
+
+            @if (record.metrics.length) {
+              <dl class="relationship-metrics">
+                @for (metric of record.metrics; track metric.label) {
+                  <div>
+                    <dt>{{ metric.label }}</dt>
+                    <dd>{{ metric.value }}</dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <p class="relationship-note">
+                No detailed metrics were saved for this relationship.
+              </p>
+            }
+
+            @if (record.status === 'legacy') {
+              <p class="relationship-footnote">
+                This job contains saved metrics from an earlier measurement format.
+                Direction and cardinality have not been re-evaluated for this saved job.
+              </p>
+            }
+          </article>
+        </app-content-card>
+      }
+    </div>
+  } @else {
+    <app-content-card>
+      <div class="relationship-empty">
+        <h3>No relationship evidence available</h3>
+        <p>This job does not contain saved relationship-fidelity measurements.</p>
+      </div>
+    </app-content-card>
+  }
+</app-workspace-section>

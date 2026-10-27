@@ -1,0 +1,141 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.relationship-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.relationship-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 12px;
+  padding: 18px;
+}
+
+.relationship-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.relationship-index {
+  color: var(--forge-text-eyebrow);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.relationship-status {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-subtle);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.relationship-status[data-status="measured"] {
+  color: var(--forge-success-strong);
+  background: var(--forge-success-soft);
+}
+
+.relationship-status[data-status="inconclusive"],
+.relationship-status[data-status="legacy"] {
+  color: var(--forge-text-secondary);
+  background: var(--forge-surface-subtle);
+}
+
+.relationship-status[data-status="not_measurable"] {
+  color: var(--forge-warning-strong);
+  background: var(--forge-warning-soft);
+}
+
+.relationship-card h3 {
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.relationship-connector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.relationship-connector .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.relationship-metrics {
+  display: grid;
+  gap: 0;
+  margin: 4px 0 0;
+}
+
+.relationship-metrics > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  border-top: 1px solid var(--forge-border-row);
+  padding: 9px 0;
+}
+
+.relationship-metrics dt {
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.relationship-metrics dd {
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.relationship-note,
+.relationship-footnote,
+.relationship-empty p {
+  margin: 0;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.relationship-footnote {
+  padding-top: 10px;
+  border-top: 1px solid var(--forge-border-row);
+}
+
+.relationship-empty {
+  padding: 20px;
+}
+
+.relationship-empty h3 {
+  margin: 0 0 8px;
+  color: var(--forge-text-heading);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .relationship-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
