@@ -58,6 +58,7 @@ from app.models.ai_semantic_preview_model import (
 from app.services.ai_service import AIService
 from app.constants.activity import ActivityType
 from app.repositories.json_data_model_repository import JsonDataModelRepository
+from app.repositories.json_ai_proposal_repository import JsonAIProposalRepository
 from app.services.activity_service import ActivityService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.ollama_ai_provider import OllamaAIProvider
@@ -100,6 +101,32 @@ class AIProposalActivityRequestModel(BaseModel):
 
 activity_service = ActivityService()
 data_model_repository = JsonDataModelRepository()
+ai_proposal_repository = JsonAIProposalRepository()
+
+
+def _persist_model_studio_proposal(
+    *,
+    proposal_id: str,
+    owner_user_id: str,
+    proposal_type: str,
+    data_model_id: str,
+    response: BaseModel,
+) -> None:
+    """Persist a complete Model Studio proposal response."""
+
+    try:
+        ai_proposal_repository.create(
+            proposal_id=proposal_id,
+            owner_user_id=owner_user_id,
+            proposal_type=proposal_type,
+            data_model_id=data_model_id,
+            payload=response.model_dump(mode="json"),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to persist the AI proposal.",
+        ) from exc
 
 
 def _record_ai_proposal_activity(
@@ -308,13 +335,21 @@ def propose_entity(
         regenerated=request.regenerate,
     )
 
-    return AIEntityProposalModel(
+    response = AIEntityProposalModel(
         proposal_id=proposal_id,
         name=proposal.name,
         description=proposal.description,
         population=proposal.population,
         reasoning=proposal.reasoning,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="entity",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -365,12 +400,20 @@ def propose_identity(
         regenerated=request.regenerate,
     )
 
-    return AIIdentityProposalResponseModel(
+    response = AIIdentityProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="identity",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -420,12 +463,20 @@ def propose_relationship(
         regenerated=request.regenerate,
     )
 
-    return AIRelationshipProposalResponseModel(
+    response = AIRelationshipProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="relationship",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -475,12 +526,20 @@ def propose_foreign_key(
         regenerated=request.regenerate,
     )
 
-    return AIForeignKeyProposalResponseModel(
+    response = AIForeignKeyProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="foreign key",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -530,12 +589,20 @@ def propose_constraint(
         regenerated=request.regenerate,
     )
 
-    return AIConstraintProposalResponseModel(
+    response = AIConstraintProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="constraint",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -585,12 +652,20 @@ def propose_field(
         regenerated=request.regenerate,
     )
 
-    return AIFieldProposalResponseModel(
+    response = AIFieldProposalResponseModel(
         proposal_id=proposal_id,
         status=proposal.status,
         message=proposal.message,
         proposal=proposal.proposal,
     )
+    _persist_model_studio_proposal(
+        proposal_id=proposal_id,
+        owner_user_id=user.user_id,
+        proposal_type="field",
+        data_model_id=request.data_model_id,
+        response=response,
+    )
+    return response
 
 
 @router.post(
@@ -614,6 +689,27 @@ def suggest_data_model(
         ) from exc
 
     proposal_id = uuid4().hex
+
+    response = AIDataModelProposalModel(
+        proposal_id=proposal_id,
+        name=proposal.name,
+        description=proposal.description,
+        suggested_tags=proposal.suggested_tags,
+        reasoning=proposal.reasoning,
+    )
+
+    try:
+        ai_proposal_repository.create(
+            proposal_id=proposal_id,
+            owner_user_id=user.user_id,
+            proposal_type="data_model",
+            payload=response.model_dump(mode="json"),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to persist the AI data model proposal.",
+        ) from exc
 
     try:
         activity_service.record(
@@ -649,13 +745,7 @@ def suggest_data_model(
         # Activity telemetry must not turn a successful AI response into a failure.
         pass
 
-    return AIDataModelProposalModel(
-        proposal_id=proposal_id,
-        name=proposal.name,
-        description=proposal.description,
-        suggested_tags=proposal.suggested_tags,
-        reasoning=proposal.reasoning,
-    )
+    return response
 
 
 @router.post(
