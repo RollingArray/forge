@@ -130,22 +130,42 @@ class GenerationArtifactReader:
     ) -> set[tuple[Any, ...]]:
         """Build an entity identity key space from committed artifacts."""
 
-        if not identity_fields:
-            return set()
+        return set(
+            self.get_ordered_entity_key_space(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entity_name=entity_name,
+                identity_fields=identity_fields,
+            )
+        )
 
-        key_space: set[tuple[Any, ...]] = set()
+    def get_ordered_entity_key_space(
+        self,
+        data_model_id: str,
+        job_id: str,
+        entity_name: str,
+        identity_fields: tuple[str, ...],
+    ) -> list[tuple[Any, ...]]:
+        """Build a deduplicated, ordered identity key space from committed artifacts."""
+
+        if not identity_fields:
+            return []
+
+        key_space: list[tuple[Any, ...]] = []
+        seen_keys: set[tuple[Any, ...]] = set()
 
         for row in self.iter_entity_chunks(
             data_model_id,
             job_id,
             entity_name,
         ):
-            key_space.add(
-                tuple(
-                    row[field]
-                    for field in identity_fields
-                )
+            key = tuple(
+                row[field]
+                for field in identity_fields
             )
+            if key not in seen_keys:
+                seen_keys.add(key)
+                key_space.append(key)
 
         return key_space
 
