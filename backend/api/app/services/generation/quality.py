@@ -76,8 +76,8 @@ class GenerationQualityService:
     ) -> int | None:
         """Return a directly declared finite domain size."""
 
-        generation = field.get("generation", {})
-        parameters = generation.get("parameters", {})
+        generation = field.get("generation") or {}
+        parameters = generation.get("parameters") or {}
         distribution = generation.get("distribution")
 
         values = parameters.get("values")
@@ -459,38 +459,104 @@ class GenerationQualityService:
 
         relationships: dict[str, Any] = {}
 
+        def is_missing_key_value(value: Any) -> bool:
+            return value is None or (
+                isinstance(value, str) and not value.strip()
+            )
+
         for index, group in enumerate(
             plan.relationship_groups,
             start=1,
         ):
-            parent_keys: set[tuple[str, ...]] = set()
+            relationship_type = group.relationship_type.upper()
+
+            if relationship_type == "MANY_TO_MANY":
+                relationships[f"relationship_group_{index}"] = {
+                    "measurement_status": "not_measurable",
+                    "measurement_note": (
+                        "A direct MANY_TO_MANY declaration does not "
+                        "establish a parent-key/child-FK mapping. "
+                        "Cardinality and participation require explicit "
+                        "association or junction evidence."
+                    ),
+                    "source_entity": group.parent_entity,
+                    "target_entity": group.child_entity,
+                    "source_fields": list(group.parent_fields),
+                    "target_fields": list(group.child_fields),
+                    "relationship_type": group.relationship_type,
+                    "source_participation": group.parent_participation,
+                    "target_participation": group.child_participation,
+                }
+                continue
+
+            if relationship_type == "MANY_TO_ONE":
+                parent_entity = group.child_entity
+                child_entity = group.parent_entity
+                parent_fields = group.child_fields
+                child_fields = group.parent_fields
+                parent_participation = group.child_participation
+                child_participation = group.parent_participation
+            else:
+                parent_entity = group.parent_entity
+                child_entity = group.child_entity
+                parent_fields = group.parent_fields
+                child_fields = group.child_fields
+                parent_participation = group.parent_participation
+                child_participation = group.child_participation
+
+            parent_key_counts: Counter[tuple[Any, ...]] = Counter()
+            parent_rows_checked = 0
+            parent_rows_with_null_key = 0
 
             for row in self._artifact_reader.iter_entity_chunks(
                 data_model_id=data_model_id,
                 job_id=job_id,
-                entity_name=group.parent_entity,
+                entity_name=parent_entity,
             ):
-                parent_keys.add(
-                    tuple(row[field] for field in group.parent_fields)
-                )
+                parent_rows_checked += 1
+                key = tuple(row[field] for field in parent_fields)
 
-            child_counts: Counter[tuple[str, ...]] = Counter()
+                if any(is_missing_key_value(value) for value in key):
+                    parent_rows_with_null_key += 1
+                    continue
+
+                parent_key_counts[key] += 1
+
+            parent_keys = set(parent_key_counts)
+            duplicate_parent_key_rows = sum(
+                count - 1
+                for count in parent_key_counts.values()
+                if count > 1
+            )
+
+            child_counts: Counter[tuple[Any, ...]] = Counter()
+            child_rows_checked = 0
+            null_reference_rows = 0
+            partial_null_reference_rows = 0
 
             for row in self._artifact_reader.iter_entity_chunks(
                 data_model_id=data_model_id,
                 job_id=job_id,
-                entity_name=group.child_entity,
+                entity_name=child_entity,
             ):
-                key = tuple(
-                    row[field]
-                    for field in group.child_fields
-                )
+                child_rows_checked += 1
+                key = tuple(row[field] for field in child_fields)
+                null_count = sum(is_missing_key_value(value) for value in key)
+
+                if null_count == len(key):
+                    null_reference_rows += 1
+                    continue
+
+                if null_count:
+                    partial_null_reference_rows += 1
+                    continue
+
                 child_counts[key] += 1
 
-            participating_parent_count = sum(
-                1
-                for key in parent_keys
-                if child_counts.get(key, 0) > 0
+            matched_child_rows = sum(
+                count
+                for key, count in child_counts.items()
+                if key in parent_keys
             )
 
             orphan_child_count = sum(
@@ -499,42 +565,105 @@ class GenerationQualityService:
                 if key not in parent_keys
             )
 
-            observed_counts = list(child_counts.values())
+            children_per_parent = [
+                child_counts.get(key, 0)
+                for key in parent_keys
+            ]
+            participating_parent_count = sum(
+                count > 0 for count in children_per_parent
+            )
+            parents_without_children = sum(
+                count == 0 for count in children_per_parent
+            )
+            one_to_one_cardinality_violations = (
+                sum(count > 1 for count in children_per_parent)
+                if relationship_type == "ONE_TO_ONE"
+                else None
+            )
+
+            measurement_notes = []
+            if not parent_keys:
+                measurement_notes.append(
+                    "No usable non-null parent keys were found."
+                )
+            if duplicate_parent_key_rows:
+                measurement_notes.append(
+                    "Duplicate parent keys make reference matching "
+                    "ambiguous."
+                )
+            if partial_null_reference_rows:
+                measurement_notes.append(
+                    "Partially null composite references were excluded "
+                    "from matched and orphan counts."
+                )
+
+            measurement_status = (
+                "inconclusive"
+                if not parent_keys or duplicate_parent_key_rows
+                else "measured"
+            )
 
             relationships[f"relationship_group_{index}"] = {
-                "parent_entity": group.parent_entity,
-                "child_entity": group.child_entity,
-                "parent_fields": list(group.parent_fields),
-                "child_fields": list(group.child_fields),
-                "relationship_type": group.relationship_type,
-                "parent_participation": group.parent_participation,
-                "child_participation": group.child_participation,
-                "composite": len(group.parent_fields) > 1,
-                "parent_keys": len(parent_keys),
-                "participating_parent_keys": (
-                    participating_parent_count
+                "measurement_status": measurement_status,
+                "measurement_note": (
+                    " ".join(measurement_notes)
+                    if measurement_notes
+                    else None
                 ),
+                "parent_entity": parent_entity,
+                "child_entity": child_entity,
+                "parent_fields": list(parent_fields),
+                "child_fields": list(child_fields),
+                "relationship_type": group.relationship_type,
+                "parent_participation": parent_participation,
+                "child_participation": child_participation,
+                "composite": len(group.parent_fields) > 1,
+                "parent_rows_checked": parent_rows_checked,
+                "parent_rows_with_null_key": parent_rows_with_null_key,
+                "parent_keys": len(parent_keys),
+                "duplicate_parent_key_rows": duplicate_parent_key_rows,
+                "child_rows_checked": child_rows_checked,
+                "child_rows": child_rows_checked,
+                "matched_child_rows": matched_child_rows,
+                "orphan_child_rows": orphan_child_count,
+                "null_reference_rows": null_reference_rows,
+                "partial_null_reference_rows": partial_null_reference_rows,
+                "mandatory_child_reference_violations": (
+                    null_reference_rows + partial_null_reference_rows
+                    if child_participation.upper() == "MANDATORY"
+                    else 0
+                ),
+                "participating_parent_keys": participating_parent_count,
+                "parents_without_children": parents_without_children,
                 "parent_participation_rate": (
                     participating_parent_count / len(parent_keys)
                     if parent_keys
-                    else 0.0
+                    else None
                 ),
-                "child_rows": sum(child_counts.values()),
-                "orphan_child_rows": orphan_child_count,
-                "minimum_children_per_parent": (
-                    min(observed_counts)
-                    if observed_counts
+                "mandatory_parent_participation_violations": (
+                    parents_without_children
+                    if parent_participation.upper() == "MANDATORY"
                     else 0
+                ),
+                "minimum_children_per_parent": (
+                    min(children_per_parent)
+                    if children_per_parent
+                    else None
                 ),
                 "maximum_children_per_parent": (
-                    max(observed_counts)
-                    if observed_counts
-                    else 0
+                    max(children_per_parent)
+                    if children_per_parent
+                    else None
                 ),
                 "average_children_per_participating_parent": (
-                    sum(observed_counts) / len(observed_counts)
-                    if observed_counts
-                    else 0.0
+                    sum(
+                        count for count in children_per_parent if count > 0
+                    ) / participating_parent_count
+                    if participating_parent_count
+                    else None
+                ),
+                "one_to_one_cardinality_violations": (
+                    one_to_one_cardinality_violations
                 ),
             }
 
@@ -559,9 +688,9 @@ class GenerationQualityService:
 
             for field in entity.get("fields", []):
                 field_name = field.get("name")
-                generation = field.get("generation", {})
+                generation = field.get("generation") or {}
                 distribution = generation.get("distribution")
-                parameters = generation.get("parameters", {})
+                parameters = generation.get("parameters") or {}
                 values = parameters.get("values")
 
                 if distribution != "CATEGORICAL" or not isinstance(
