@@ -1,0 +1,325 @@
+{
+  "version": "1.0.0",
+  "vocabulary_version": "1.0",
+  "model": {
+    "name": "forge_focused_generation_correctness",
+    "description": "Small deterministic fixture for inspecting scalar generation, identity uniqueness, composite identities, composite foreign keys, and referential integrity."
+  },
+  "generation": {
+    "seed": 20261027,
+    "scenario": "NORMAL"
+  },
+  "entities": [
+    {
+      "name": "CUSTOMER",
+      "population": {
+        "count": 3,
+        "scaling": "SCALABLE"
+      },
+      "fields": [
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "SEGMENT",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "DOMESTIC",
+                "EXPORT",
+                "WHOLESALE"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ACTIVE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        },
+        {
+          "name": "CREDIT_LIMIT",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 1000.0,
+              "maximum": 5000.0
+            }
+          }
+        },
+        {
+          "name": "REFERENCE_CODE",
+          "type": "STRING",
+          "generation": {
+            "strategy": "RANDOM",
+            "generator": "PATTERN",
+            "parameters": {
+              "pattern": "CUST-####"
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      }
+    },
+    {
+      "name": "PRODUCT",
+      "population": {
+        "count": 2,
+        "scaling": "SCALABLE"
+      },
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "PRODUCT_TYPE",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STANDARD",
+                "PREMIUM"
+              ]
+            }
+          }
+        },
+        {
+          "name": "UNIT_PRICE",
+          "type": "DECIMAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+              "minimum": 10.0,
+              "maximum": 100.0
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      }
+    },
+    {
+      "name": "PRODUCT_VARIANT",
+      "population": {
+        "count": 4,
+        "scaling": "SCALABLE"
+      },
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "VARIANT_CODE",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STD",
+                "PREM"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AVAILABLE",
+          "type": "BOOLEAN",
+          "generation": {
+            "strategy": "RANDOM"
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "PRODUCT_ID",
+          "VARIANT_CODE"
+        ]
+      }
+    },
+    {
+      "name": "ORDER_LINE",
+      "population": {
+        "count": 8,
+        "scaling": "SCALABLE"
+      },
+      "fields": [
+        {
+          "name": "PRODUCT_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "VARIANT_CODE",
+          "type": "CATEGORICAL",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {
+              "values": [
+                "STD",
+                "PREM"
+              ]
+            }
+          }
+        },
+        {
+          "name": "LINE_NO",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 2
+            }
+          }
+        },
+        {
+          "name": "CUSTOMER_ID",
+          "type": "IDENTIFIER",
+          "identity": {
+            "strategy": "SEQUENTIAL_ID"
+          }
+        },
+        {
+          "name": "QUANTITY",
+          "type": "INTEGER",
+          "generation": {
+            "strategy": "RANDOM",
+            "distribution": "DISCRETE_UNIFORM",
+            "parameters": {
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        }
+      ],
+      "identity": {
+        "fields": [
+          "PRODUCT_ID",
+          "VARIANT_CODE",
+          "LINE_NO"
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "PRODUCT.PRODUCT_ID",
+      "target": "PRODUCT_VARIANT.PRODUCT_ID",
+      "type": "ONE_TO_MANY",
+      "source_participation": "OPTIONAL",
+      "target_participation": "MANDATORY"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "name": "FK_PRODUCT_VARIANT_PRODUCT",
+      "source": {
+        "entity": "PRODUCT_VARIANT",
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      },
+      "target": {
+        "entity": "PRODUCT",
+        "fields": [
+          "PRODUCT_ID"
+        ]
+      }
+    },
+    {
+      "name": "FK_ORDER_LINE_VARIANT",
+      "source": {
+        "entity": "ORDER_LINE",
+        "fields": [
+          "PRODUCT_ID",
+          "VARIANT_CODE"
+        ]
+      },
+      "target": {
+        "entity": "PRODUCT_VARIANT",
+        "fields": [
+          "PRODUCT_ID",
+          "VARIANT_CODE"
+        ]
+      }
+    },
+    {
+      "name": "FK_ORDER_LINE_CUSTOMER",
+      "source": {
+        "entity": "ORDER_LINE",
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      },
+      "target": {
+        "entity": "CUSTOMER",
+        "fields": [
+          "CUSTOMER_ID"
+        ]
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "entity": "CUSTOMER",
+      "field": "CREDIT_LIMIT",
+      "operator": ">=",
+      "value": 1000.0
+    },
+    {
+      "entity": "CUSTOMER",
+      "field": "CREDIT_LIMIT",
+      "operator": "<=",
+      "value": 5000.0
+    },
+    {
+      "entity": "PRODUCT",
+      "field": "UNIT_PRICE",
+      "operator": ">=",
+      "value": 10.0
+    },
+    {
+      "entity": "PRODUCT",
+      "field": "UNIT_PRICE",
+      "operator": "<=",
+      "value": 100.0
+    }
+  ],
+  "dependencies": [],
+  "statistical_behavior": [],
+  "scenarios": []
+}
