@@ -23,6 +23,7 @@ class ValidationEvidence:
     domain_validity: dict[str, Any] = field(default_factory=dict)
     null_completeness: dict[str, Any] = field(default_factory=dict)
     coverage: dict[str, Any] = field(default_factory=dict)
+    rule_results: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Return machine-readable validation evidence."""
@@ -36,6 +37,7 @@ class ValidationEvidence:
             "domain_validity": self.domain_validity,
             "null_completeness": self.null_completeness,
             "coverage": self.coverage,
+            "rule_results": self.rule_results,
         }
 
 
@@ -877,6 +879,175 @@ class GenerationValidator:
                 )
             ),
         }
+
+        # ------------------------------------------------------------
+        # 9. Rule-level conformance outcomes
+        # ------------------------------------------------------------
+
+        rule_results: list[dict[str, Any]] = []
+
+        def record_rule(
+            rule_id: str,
+            category: str,
+            status: str,
+            *,
+            details: dict[str, Any] | None = None,
+        ) -> None:
+            rule_results.append({
+                "rule_id": rule_id,
+                "category": category,
+                "status": status,
+                "evaluated": status != "NOT_EVALUATED",
+                "details": details or {},
+            })
+
+        for entity_name, metric in completeness_entities.items():
+            record_rule(
+                f"population:{entity_name}",
+                "POPULATION",
+                "PASSED" if metric["complete"] else "FAILED",
+                details=metric,
+            )
+
+        for entity_name, metric in identity_entities.items():
+            if metric["rows_checked"] == 0:
+                status = "NOT_EVALUATED"
+            elif metric["duplicate_count"] or metric["missing_field_count"]:
+                status = "FAILED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"identity:{entity_name}",
+                "IDENTITY",
+                status,
+                details=metric,
+            )
+
+        for name, metric in constraint_metrics.items():
+            if metric["evaluation_error_count"]:
+                status = "NOT_EVALUATED"
+            elif metric["violation_count"] or metric["missing_field_count"]:
+                status = "FAILED"
+            elif metric["rows_checked"] == 0:
+                status = "NOT_EVALUATED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"constraint:{name}",
+                "CONSTRAINT",
+                status,
+                details=metric,
+            )
+
+        for entity_name, metric in schema_entities.items():
+            if metric["rows_checked"] == 0:
+                status = "NOT_EVALUATED"
+            elif metric["missing_fields"] or metric["unexpected_fields"]:
+                status = "FAILED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"schema:{entity_name}",
+                "SCHEMA",
+                status,
+                details=metric,
+            )
+
+        for field_id, metric in domain_fields.items():
+            if metric["conversion_error_count"]:
+                status = "NOT_EVALUATED"
+            elif metric["invalid_count"] or metric["missing_count"]:
+                status = "FAILED"
+            elif metric["rows_checked"] == 0:
+                status = "NOT_EVALUATED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"domain:{field_id}",
+                "DOMAIN",
+                status,
+                details=metric,
+            )
+
+        for name, metric in relationship_metrics.items():
+            if metric["missing_field_count"]:
+                status = "FAILED"
+            elif metric["invalid_reference_count"]:
+                status = "FAILED"
+            elif metric["source_rows_checked"] == 0:
+                status = "NOT_EVALUATED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"foreign_key:{name}",
+                "FOREIGN_KEY",
+                status,
+                details=metric,
+            )
+
+        # Declared relationship cardinality and participation are not
+        # evaluated by the foreign-key existence checks above.
+        for index, relationship in enumerate(
+            specification.get("relationships", []),
+            start=1,
+        ):
+            source_ref = relationship.get("source", f"relationship_{index}")
+            target_ref = relationship.get("target", "unknown_target")
+            relationship_type = relationship.get("type", "UNKNOWN")
+
+            record_rule(
+                f"relationship:{index}:{source_ref}->{target_ref}",
+                "RELATIONSHIP_CARDINALITY",
+                "NOT_EVALUATED",
+                details={
+                    "source": source_ref,
+                    "target": target_ref,
+                    "type": relationship_type,
+                    "source_participation": relationship.get(
+                        "source_participation"
+                    ),
+                    "target_participation": relationship.get(
+                        "target_participation"
+                    ),
+                    "reason": (
+                        "Foreign-key existence checks do not prove "
+                        "relationship cardinality or participation."
+                    ),
+                },
+            )
+
+        evidence.rule_results = rule_results
+
+        rule_status_counts = {
+            status: sum(
+                1 for result in rule_results
+                if result["status"] == status
+            )
+            for status in ("PASSED", "FAILED", "NOT_EVALUATED")
+        }
+
+        evidence.coverage.update({
+            "conformance_rules_reported": len(rule_results),
+            "conformance_rules_passed": rule_status_counts["PASSED"],
+            "conformance_rules_failed": rule_status_counts["FAILED"],
+            "conformance_rules_not_evaluated": (
+                rule_status_counts["NOT_EVALUATED"]
+            ),
+            "conformance_status": (
+                "NON_CONFORMANT"
+                if rule_status_counts["FAILED"]
+                else (
+                    "INCOMPLETE"
+                    if rule_status_counts["NOT_EVALUATED"]
+                    else "CONFORMANT"
+                )
+            ),
+        })
 
         return GenerationValidationResult(
             valid=not errors,
