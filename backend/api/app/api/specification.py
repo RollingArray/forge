@@ -131,7 +131,7 @@ async def validate_specification(
     )
     if data_model is not None:
         findings = result.get("findings", [])
-        failed = not result.get("passed", False)
+        failed = not result.get("can_continue", False)
         activity_service.record(
             owner_user_id=data_model.owner_user_id,
             actor_user_id=user.user_id,
