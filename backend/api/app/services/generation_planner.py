@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from decimal import Decimal
 
 
 class GenerationPlanningError(ValueError):
@@ -120,6 +121,276 @@ class GenerationPlan:
                 remaining.remove(entity_plan.entity_name)
 
         return tuple(order)
+
+
+def _validate_generation_configuration(
+    specification: dict,
+    entities: list,
+) -> None:
+    """Reject unsupported or malformed field-generation configurations."""
+
+    foreign_key_fields: set[tuple[str, str]] = set()
+    foreign_keys = specification.get("foreign_keys", [])
+
+    if foreign_keys is None:
+        foreign_keys = []
+
+    if isinstance(foreign_keys, list):
+        for foreign_key in foreign_keys:
+            if not isinstance(foreign_key, dict):
+                continue
+            source = foreign_key.get("source")
+            if not isinstance(source, dict):
+                continue
+            entity_name = source.get("entity")
+            fields = source.get("fields")
+            if isinstance(entity_name, str) and isinstance(fields, list):
+                foreign_key_fields.update(
+                    (entity_name, field_name)
+                    for field_name in fields
+                    if isinstance(field_name, str)
+                )
+
+    def fail(entity_name: str, field_name: str, reason: str) -> None:
+        raise GenerationPlanningError(
+            f"Invalid generation configuration for "
+            f"{entity_name}.{field_name}: {reason}"
+        )
+
+    def finite_number(value: object) -> Decimal | None:
+        if isinstance(value, bool) or value is None:
+            return None
+        try:
+            result = Decimal(str(value))
+        except (ArithmeticError, TypeError, ValueError):
+            return None
+        return result if result.is_finite() else None
+
+    for entity in entities:
+        if not isinstance(entity, dict):
+            continue
+        entity_name = entity.get("name", "<unknown>")
+        fields = entity.get("fields", [])
+        if not isinstance(fields, list):
+            fail(entity_name, "<fields>", "fields must be a list.")
+
+        field_names: list[str] = []
+        for field in fields:
+            if not isinstance(field, dict):
+                fail(entity_name, "<unknown>", "each field must be an object.")
+            name = field.get("name")
+            if not isinstance(name, str) or not name.strip():
+                fail(entity_name, "<unknown>", "field name must be non-empty.")
+            field_names.append(name)
+
+        if len(field_names) != len(set(field_names)):
+            fail(entity_name, "<fields>", "field names must be unique.")
+
+        entity_identity = entity.get("identity")
+        if entity_identity is not None:
+            if not isinstance(entity_identity, dict):
+                fail(entity_name, "<identity>", "identity must be an object.")
+
+            if "fields" in entity_identity:
+                identity_fields = entity_identity["fields"]
+                if (
+                    not isinstance(identity_fields, list)
+                    or not identity_fields
+                ):
+                    fail(
+                        entity_name, "<identity>",
+                        "identity.fields must be a non-empty list.",
+                    )
+
+                if any(
+                    not isinstance(name, str) or not name.strip()
+                    for name in identity_fields
+                ):
+                    fail(
+                        entity_name, "<identity>",
+                        "identity.fields must contain non-empty field names.",
+                    )
+
+                if len(identity_fields) != len(set(identity_fields)):
+                    fail(
+                        entity_name, "<identity>",
+                        "identity.fields must contain unique field names.",
+                    )
+
+                unknown_fields = [
+                    name for name in identity_fields
+                    if name not in field_names
+                ]
+                if unknown_fields:
+                    fail(
+                        entity_name, "<identity>",
+                        "identity.fields references unknown field(s): "
+                        + ", ".join(unknown_fields),
+                    )
+
+        for field in fields:
+            if not isinstance(field, dict):
+                fail(entity_name, "<unknown>", "each field must be an object.")
+
+            field_name = field.get("name")
+            if not isinstance(field_name, str) or not field_name.strip():
+                fail(entity_name, "<unknown>", "field name must be non-empty.")
+
+            field_type = field.get("type")
+            if field_type not in {
+                "IDENTIFIER", "STRING", "INTEGER",
+                "DECIMAL", "BOOLEAN", "CATEGORICAL",
+            }:
+                fail(entity_name, field_name, f"unsupported field type {field_type!r}.")
+
+            identity = field.get("identity")
+            generation = field.get("generation")
+
+            if identity is not None and not isinstance(identity, dict):
+                fail(entity_name, field_name, "identity must be an object.")
+            if generation is not None and not isinstance(generation, dict):
+                fail(entity_name, field_name, "generation must be an object.")
+
+            identity = identity or {}
+            generation = generation or {}
+
+            parameters = generation.get("parameters")
+            if parameters is not None and not isinstance(parameters, dict):
+                fail(entity_name, field_name, "parameters must be an object.")
+            parameters = parameters or {}
+
+            # FK assignment supplies values before scalar generation, but
+            # structural validation above still applies to these fields.
+            if (entity_name, field_name) in foreign_key_fields:
+                if field_type == "IDENTIFIER" and (
+                    identity.get("strategy") != "SEQUENTIAL_ID"
+                ):
+                    fail(
+                        entity_name, field_name,
+                        "IDENTIFIER requires SEQUENTIAL_ID.",
+                    )
+                continue
+
+            generator = generation.get("generator")
+            distribution = generation.get("distribution")
+
+            if field_type == "IDENTIFIER":
+                if identity.get("strategy") != "SEQUENTIAL_ID":
+                    fail(
+                        entity_name, field_name,
+                        "IDENTIFIER requires SEQUENTIAL_ID.",
+                    )
+                continue
+
+            if field_type == "BOOLEAN":
+                if generation.get("strategy") != "RANDOM":
+                    fail(entity_name, field_name, "BOOLEAN requires RANDOM.")
+                continue
+
+            if field_type == "STRING":
+                if generator == "RANDOM_STRING":
+                    minimum = parameters.get("minimum_length")
+                    maximum = parameters.get("maximum_length")
+                    charset = parameters.get("character_set")
+                    if (
+                        isinstance(minimum, bool)
+                        or not isinstance(minimum, int)
+                        or isinstance(maximum, bool)
+                        or not isinstance(maximum, int)
+                        or minimum < 1
+                        or maximum < minimum
+                    ):
+                        fail(
+                            entity_name, field_name,
+                            "RANDOM_STRING requires positive ordered integer "
+                            "minimum_length and maximum_length.",
+                        )
+                    if charset not in {"ALPHA", "DIGITS", "ALPHANUMERIC"}:
+                        fail(
+                            entity_name, field_name,
+                            "RANDOM_STRING requires a supported character_set.",
+                        )
+                elif generator == "PATTERN":
+                    pattern = parameters.get("pattern")
+                    if not isinstance(pattern, str) or not pattern.strip():
+                        fail(
+                            entity_name, field_name,
+                            "PATTERN requires a non-empty pattern.",
+                        )
+                elif generator == "SEMANTIC":
+                    description = parameters.get("description")
+                    mode = parameters.get("mode")
+                    if not isinstance(description, str) or not description.strip():
+                        fail(
+                            entity_name, field_name,
+                            "SEMANTIC requires a non-empty description.",
+                        )
+                    if mode not in {"UNIQUE", "VOCABULARY"}:
+                        fail(
+                            entity_name, field_name,
+                            "SEMANTIC mode must be UNIQUE or VOCABULARY.",
+                        )
+                else:
+                    fail(
+                        entity_name, field_name,
+                        "STRING requires RANDOM_STRING, PATTERN, or SEMANTIC.",
+                    )
+                continue
+
+            if field_type == "CATEGORICAL":
+                values = parameters.get("values")
+                if (
+                    generation.get("strategy") != "RANDOM"
+                    or distribution != "CATEGORICAL"
+                    or not isinstance(values, list)
+                    or not values
+                ):
+                    fail(
+                        entity_name, field_name,
+                        "CATEGORICAL requires RANDOM, CATEGORICAL distribution, "
+                        "and a non-empty values list.",
+                    )
+                continue
+
+            if field_type in {"INTEGER", "DECIMAL"}:
+                allowed = (
+                    {"UNIFORM", "DISCRETE_UNIFORM"}
+                    if field_type == "INTEGER"
+                    else {"UNIFORM"}
+                )
+                if (
+                    generation.get("strategy") != "RANDOM"
+                    or distribution not in allowed
+                ):
+                    fail(
+                        entity_name, field_name,
+                        f"{field_type} supports only RANDOM with distributions "
+                        f"{', '.join(sorted(allowed))}.",
+                    )
+
+                minimum = finite_number(parameters.get("minimum"))
+                maximum = finite_number(parameters.get("maximum"))
+                if minimum is None or maximum is None:
+                    fail(
+                        entity_name, field_name,
+                        "minimum and maximum must be finite numeric values.",
+                    )
+                if minimum > maximum:
+                    fail(
+                        entity_name, field_name,
+                        "minimum cannot exceed maximum.",
+                    )
+                if field_type == "INTEGER" and (
+                    minimum != minimum.to_integral_value()
+                    or maximum != maximum.to_integral_value()
+                ):
+                    fail(
+                        entity_name, field_name,
+                        "INTEGER bounds must be whole numbers.",
+                    )
+                continue
+
+            fail(entity_name, field_name, f"unsupported field type {field_type!r}.")
 
 
 def _get_entity_names(entities: list) -> set[str]:
@@ -598,6 +869,8 @@ class GenerationPlanner:
 
         entities = _require_entities(specification)
         entity_names = _get_entity_names(entities)
+
+        _validate_generation_configuration(specification, entities)
 
         dependencies = _build_foreign_key_dependencies(
             specification,
