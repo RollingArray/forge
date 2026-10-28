@@ -1,0 +1,14 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="REVIEW"
+    title="Assumptions to review"
+    summary="Review these assumptions before proceeding."
+    [state]="assumptions().length + ' assumptions'"
+  />
+
+  <ul>
+    @for (assumption of assumptions(); track $index) {
+      <li>{{ assumption }}</li>
+    }
+  </ul>
+</app-workspace-section>

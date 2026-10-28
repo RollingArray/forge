@@ -36,6 +36,7 @@ import {
 } from '../interfaces/ai-foreign-key-proposal.interface';
 import { AIDataModelProposalResponse } from '../interfaces/ai-data-model-proposal-response.interface';
 import { AIEntityProposal } from '../interfaces/ai-entity-proposal.interface';
+import { AIWholeSpecificationProposalResponse } from '../interfaces/ai-whole-specification-proposal.interface';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
 import { API_LOADING_SKIP } from '../tokens/api-loading-skip.token';
@@ -298,6 +299,21 @@ export class AIService {
         message: response.message,
         proposal: response.proposal,
       })),
+    );
+  }
+
+  proposeWholeSpecification(
+    prompt: string,
+  ): Observable<AIWholeSpecificationProposalResponse> {
+    return this.http.post<AIWholeSpecificationProposalResponse>(
+      '/api/v1/ai/specifications/propose',
+      { prompt },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.GeneratingWholeSpecificationWithAI,
+        ),
+      },
     );
   }
 

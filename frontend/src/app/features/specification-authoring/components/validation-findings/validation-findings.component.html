@@ -1,0 +1,36 @@
+<div class="validation-summary">
+  <div><strong>{{ findings().length }}</strong><span>Findings</span></div>
+  <div>
+    <strong>{{ canContinue() ? 'Ready to continue' : 'Review required' }}</strong>
+    <span>Current outcome</span>
+  </div>
+</div>
+
+@if (findings().length > 0) {
+  <div class="visual-finding-list">
+    @for (finding of findings(); track $index) {
+      <article class="visual-finding"
+        [class.finding-error]="asRecord(finding)['severity'] === 'error'"
+        [class.finding-warning]="asRecord(finding)['severity'] === 'warning'"
+        [class.finding-passed]="asRecord(finding)['severity'] === 'passed'">
+        <div class="visual-finding-heading">
+          <strong>{{ displayValue(asRecord(finding)['title']) }}</strong>
+          <span class="finding-severity">
+            {{ humanize(displayValue(asRecord(finding)['severity'])) }}
+          </span>
+        </div>
+        <p>{{ displayValue(asRecord(finding)['details']) }}</p>
+        @if (asRecord(finding)['entity'] || asRecord(finding)['field']) {
+          <span class="finding-location">
+            {{ displayValue(asRecord(finding)['entity']) }}{{ asRecord(finding)['field'] ? '.' + displayValue(asRecord(finding)['field']) : '' }}
+          </span>
+        }
+        @if (asRecord(finding)['category']) {
+          <span class="finding-category">{{ humanize(displayValue(asRecord(finding)['category'])) }}</span>
+        }
+      </article>
+    }
+  </div>
+} @else {
+  <p>No validation findings were returned.</p>
+}

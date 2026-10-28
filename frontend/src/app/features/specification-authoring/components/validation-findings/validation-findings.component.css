@@ -1,0 +1,73 @@
+.validation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.validation-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 130px;
+  padding: 12px;
+  border: 1px solid #e8e2f2;
+  border-radius: 10px;
+  background: #faf9fd;
+}
+
+.validation-summary strong {
+  color: #3a2d52;
+  font-size: 13px;
+}
+
+.validation-summary span {
+  color: #777185;
+  font-size: 10px;
+}
+
+.visual-finding-list {
+  display: grid;
+  gap: 9px;
+}
+
+.visual-finding {
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid #e7e2ef;
+  border-left: 4px solid #9c8ab9;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.visual-finding.finding-error {
+  border-left-color: #c43e50;
+}
+
+.visual-finding.finding-warning {
+  border-left-color: #bd8422;
+}
+
+.visual-finding.finding-passed {
+  border-left-color: #329365;
+}
+
+.visual-finding-heading strong {
+  color: #393047;
+  font-size: 12px;
+}
+
+.finding-severity,
+.finding-category {
+  color: #716782;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.visual-finding > p {
+  margin: 0;
+  color: #716d81;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

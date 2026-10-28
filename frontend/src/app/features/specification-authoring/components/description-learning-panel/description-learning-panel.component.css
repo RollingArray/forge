@@ -1,0 +1,66 @@
+/* PLM example and authoring guide */
+.authoring-navigation {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.authoring-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, rgba(150, 140, 175, 0.35));
+  border-radius: 9px;
+  color: var(--text-secondary, #c5bed6);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.authoring-back-button:hover:not(:disabled) {
+  color: var(--text-primary, #fff);
+  border-color: #a48af0;
+}
+
+.authoring-back-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.description-learning-panel {
+  margin: 0 0 20px;
+  padding: 15px;
+  border: 1px solid #e5def5;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #faf8ff 0%, #fff 78%);
+}
+.learning-panel-topline { display: flex; align-items: flex-start; gap: 11px; }
+.learning-icon {
+  display: grid; flex: 0 0 36px; width: 36px; height: 36px;
+  place-items: center; border-radius: 10px;
+  background: #eee8ff; color: #7053b6; font-size: 21px;
+}
+.learning-panel-copy h3 { margin: 1px 0 4px; color: #35294e; font-size: 13px; font-weight: 750; }
+.learning-panel-copy p { margin: 0; color: #746c84; font-size: 11px; line-height: 1.6; }
+.learning-panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 13px; }
+.example-button, .guide-toggle {
+  display: inline-flex; min-height: 34px; align-items: center; justify-content: center;
+  gap: 6px; padding: 7px 10px; border: 1px solid #ded5f1;
+  border-radius: 8px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.example-button { background: #6c50b1; border-color: #6c50b1; color: #fff; }
+.example-button:hover:not(:disabled) { background: #5c419b; }
+.example-button:disabled { cursor: not-allowed; opacity: .55; }
+.example-button .material-symbols-outlined, .guide-toggle .material-symbols-outlined { font-size: 16px; }
+.guide-toggle { background: #fff; color: #624d91; }
+.guide-toggle:hover { background: #f4efff; }
+.description-guide { display: grid; gap: 8px; margin-top: 13px; padding-top: 13px; border-top: 1px solid #eae4f5; }
+.description-guide p { margin: 0; color: #655d75; font-size: 11px; line-height: 1.6; }
+.description-guide strong { color: #3f3359; }
+.description-guide .guide-reassurance { padding: 10px; border-radius: 8px; background: #f0ebfb; color: #5f4b8c; }
+@media (max-width: 560px) {
+  .learning-panel-actions { align-items: stretch; flex-direction: column; }
+  .example-button, .guide-toggle { width: 100%; }
+}
