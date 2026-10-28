@@ -301,6 +301,13 @@ class GenerationQualityService:
         group_by_child: dict[str, list[Any]] = {}
 
         for group in plan.relationship_groups:
+            relationship_type = group.relationship_type.upper()
+
+            # These relationship types do not establish a child-side
+            # identity capacity from the group's parent key count.
+            if relationship_type in {"MANY_TO_ONE", "MANY_TO_MANY"}:
+                continue
+
             group_by_child.setdefault(
                 group.child_entity,
                 [],
@@ -319,6 +326,22 @@ class GenerationQualityService:
                 continue
 
             identity_field_set = set(identity_fields)
+
+            identities: set[tuple[Any, ...]] = set()
+
+            for row in self._artifact_reader.iter_entity_chunks(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entity_name=entity_name,
+            ):
+                identities.add(
+                    tuple(
+                        row[field]
+                        for field in identity_fields
+                    )
+                )
+
+            generated_unique_identities = len(identities)
 
             field_map = {
                 field.get("name"): field
@@ -381,6 +404,7 @@ class GenerationQualityService:
                 entities[entity_name] = {
                     "identity_fields": list(identity_fields),
                     "capacity_determinable": False,
+                    "generated_unique_identities": generated_unique_identities,
                 }
                 continue
 
@@ -407,6 +431,7 @@ class GenerationQualityService:
                 entities[entity_name] = {
                     "identity_fields": list(identity_fields),
                     "capacity_determinable": False,
+                    "generated_unique_identities": generated_unique_identities,
                 }
                 continue
 
@@ -414,27 +439,13 @@ class GenerationQualityService:
             for dimension in dimensions:
                 capacity *= dimension
 
-            identities: set[tuple[Any, ...]] = set()
-
-            for row in self._artifact_reader.iter_entity_chunks(
-                data_model_id=data_model_id,
-                job_id=job_id,
-                entity_name=entity_name,
-            ):
-                identities.add(
-                    tuple(
-                        row[field]
-                        for field in identity_fields
-                    )
-                )
-
             entities[entity_name] = {
                 "identity_fields": list(identity_fields),
                 "capacity_determinable": True,
                 "dimension_sizes": dimensions,
                 "dimension_sources": dimension_sources,
                 "identity_space_capacity": capacity,
-                "generated_unique_identities": len(identities),
+                "generated_unique_identities": generated_unique_identities,
                 "utilization_rate": (
                     len(identities) / capacity
                     if capacity
