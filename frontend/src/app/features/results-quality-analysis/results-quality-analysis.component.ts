@@ -74,6 +74,14 @@ export class ResultsQualityAnalysisComponent {
     () => this.job()?.quality ?? null,
   );
 
+  readonly populationFidelityProfile = computed<Record<string, unknown>>(
+    () => this.asRecord(this.quality()?.population_fidelity),
+  );
+
+  readonly distributionFidelityProfile = computed<Record<string, unknown>>(
+    () => this.asRecord(this.quality()?.distribution_fidelity),
+  );
+
   readonly metrics = computed<MetricCardData[]>(() => {
     const quality = this.quality();
     if (!quality) {
@@ -264,7 +272,7 @@ export class ResultsQualityAnalysisComponent {
       } else if (Array.isArray(value)) {
         items.push({
           label,
-          value: value.map((item) => this.formatValue(item)).join(', ') || 'No recorded values',
+          value: value.map((item) => this.formatValue(item, key)).join(', ') || 'No recorded values',
         });
       } else if (typeof value === 'object') {
         const nested = this.asRecord(value);
@@ -275,14 +283,14 @@ export class ResultsQualityAnalysisComponent {
           items.push({ label, value: 'No recorded details' });
         }
       } else {
-        items.push({ label, value: this.formatValue(value) });
+        items.push({ label, value: this.formatValue(value, key) });
       }
     }
 
     return items;
   }
 
-  private formatValue(value: unknown): string {
+  private formatValue(value: unknown, key?: string): string {
     if (value === null || value === undefined) {
       return 'Not available';
     }
@@ -290,7 +298,25 @@ export class ResultsQualityAnalysisComponent {
       return value ? 'Yes' : 'No';
     }
     if (typeof value === 'number') {
-      return Number.isFinite(value) ? value.toLocaleString('en-US') : 'Not available';
+      if (!Number.isFinite(value)) {
+        return 'Not available';
+      }
+
+      const percentageMetrics = new Set([
+        'fidelity_rate',
+        'missing_rate',
+        'category_coverage',
+        'expected_probability',
+        'observed_probability',
+        'absolute_probability_difference',
+        'maximum_absolute_probability_difference',
+      ]);
+
+      if (key && percentageMetrics.has(key)) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+
+      return value.toLocaleString('en-US');
     }
     if (typeof value === 'string') {
       return value || 'Empty';

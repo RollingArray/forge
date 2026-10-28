@@ -1,0 +1,85 @@
+<section aria-label="Distribution fidelity overview">
+  <app-metric-grid [columns]="4" [metrics]="metrics()" />
+  <app-workflow-row>&nbsp;</app-workflow-row>
+  <app-workflow-row [columns]="'95-105'">
+    <section class="forge-card field-selection-panel" aria-label="Field distribution selection">
+      <app-workspace-header
+        eyebrow="STEP 1"
+        title="Field distributions"
+        summary="Select a field to explore its observed and expected category probabilities."
+        [state]="fieldRows().length + ' fields'"
+      />
+
+      <app-workspace-simple-table
+        [columns]="fieldColumns"
+        [rows]="fieldRows()"
+        rowKey="key"
+        [selectable]="true"
+        [selectedRowKey]="selectedFieldKey()"
+        (rowSelected)="selectField($event)"
+        [height]="'min(52vh, 480px)'"
+        [showSearch]="false"
+        emptyMessage="No categorical distribution measurements were recorded."
+      />
+
+      @if (selectedField(); as field) {
+        <p class="selection-status">
+          <span class="selection-status-dot" aria-hidden="true"></span>
+          Selected: <strong>{{ field.entity }} · {{ field.field }}</strong>
+        </p>
+      } @else if (fieldRows().length) {
+        <p class="selection-instruction">
+          <span class="selection-instruction-icon" aria-hidden="true">↗</span>
+          Choose any row above to load its category breakdown here.
+        </p>
+      }
+    </section>
+
+    <section class="forge-card category-breakdown" aria-label="Selected field category breakdown">
+      <app-workspace-header
+        eyebrow="STEP 2"
+        title="Category breakdown"
+        [summary]="
+          selectedFieldSummary() ||
+          'Category-level observations appear here after you select a field.'
+        "
+        [state]="selectedField() ? selectedCategoryCount() : ''"
+      />
+
+      @if (selectedField()) {
+        <app-workspace-simple-table
+          [columns]="categoryColumns"
+          [rows]="selectedCategoryRows()"
+          rowKey="key"
+          [height]="'min(52vh, 480px)'"
+          [showSearch]="false"
+          emptyMessage="No category-level measurements were recorded for this field."
+        />
+        <p class="probability-legend">
+          <span class="legend-marker" aria-hidden="true"></span>
+          Observed probability compared with the specification's expected probability.
+        </p>
+      } @else if (fieldRows().length) {
+        <div class="detail-placeholder">
+          <div class="placeholder-icon" aria-hidden="true">↖</div>
+          <strong>Your category details will appear here</strong>
+          <p>Start by selecting a field from the table on the left.</p>
+        </div>
+      } @else {
+        <div class="distribution-empty">
+          <strong>No category breakdown available</strong>
+          <p>
+            This analysis includes fields with declared categorical distributions. Check the
+            specification and whether detailed quality evidence was recorded.
+          </p>
+        </div>
+      }
+    </section>
+  </app-workflow-row>
+
+  <p class="distribution-footnote">
+    Category coverage measures whether declared categories appeared in generated data. Probability
+    deviation measures the difference between observed and expected frequencies. These are distinct
+    indicators and do not, by themselves, establish overall statistical fidelity.
+  </p>
+</section>

@@ -74,6 +74,13 @@
   transform: rotate(45deg);
 }
 
+.population-evidence {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-top: 1px solid var(--forge-glass-border);
+}
+
 .evidence-items {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

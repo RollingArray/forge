@@ -1,0 +1,90 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.population-overview {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.chart-heading p {
+  margin: 0;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.entity-table-heading {
+  margin-bottom: 12px;
+}
+
+.entity-table-heading h3 {
+  margin: 0 0 5px;
+  color: var(--forge-text-heading);
+  font-size: 13px;
+}
+
+.entity-table-heading p {
+  margin: 0;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.chart-heading h3 {
+  margin: 0 0 5px;
+  color: var(--forge-text-heading);
+  font-size: 13px;
+}
+
+.entity-count {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--forge-glass-border);
+  border-radius: 7px;
+  color: var(--forge-text-secondary);
+  font-size: 10px;
+}
+
+app-chart {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.empty-chart {
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+}
+
+.interpretation {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--forge-primary);
+  border-radius: 0 8px 8px 0;
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.interpretation strong {
+  color: var(--forge-text-heading);
+}
+
+@media (max-width: 640px) {
+  .fidelity-result {
+    align-items: flex-end;
+  }
+}

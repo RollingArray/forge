@@ -21,7 +21,19 @@
             <span class="expand-indicator" aria-hidden="true">+</span>
           </summary>
 
-          @if (section.items.length) {
+          @if (section.key === 'population_fidelity') {
+            <div class="population-evidence">
+              <app-population-fidelity-visualization
+                [profile]="populationProfile()"
+              />
+            </div>
+          } @else if (section.key === 'distribution_fidelity') {
+            <div class="population-evidence">
+              <app-distribution-fidelity-visualization
+                [profile]="distributionProfile()"
+              />
+            </div>
+          } @else if (section.items.length) {
             <div class="evidence-items">
               @for (item of section.items; track item.label) {
                 <div class="evidence-item">

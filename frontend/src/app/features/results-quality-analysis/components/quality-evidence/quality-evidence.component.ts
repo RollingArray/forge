@@ -6,6 +6,8 @@ import { WorkspaceSectionComponent } from '../../../../shared/components/workspa
 import { ContentGridComponent } from '../../../../shared/components/content-grid/content-grid.component';
 import { ContentCardComponent } from '../../../../shared/components/content-card/content-card.component';
 import { QualityEvidenceSection } from '../../../../core/interfaces/quality-evidence-section.interface';
+import { PopulationFidelityVisualizationComponent } from '../population-fidelity-visualization/population-fidelity-visualization.component';
+import { DistributionFidelityVisualizationComponent } from '../distribution-fidelity-visualization/distribution-fidelity-visualization.component';
 
 @Component({
   selector: 'app-quality-evidence',
@@ -16,6 +18,8 @@ import { QualityEvidenceSection } from '../../../../core/interfaces/quality-evid
     WorkspaceSectionComponent,
     ContentGridComponent,
     ContentCardComponent,
+    PopulationFidelityVisualizationComponent,
+    DistributionFidelityVisualizationComponent,
   ],
   templateUrl: './quality-evidence.component.html',
   styleUrl: './quality-evidence.component.css',
@@ -23,6 +27,8 @@ import { QualityEvidenceSection } from '../../../../core/interfaces/quality-evid
 })
 export class QualityEvidenceComponent {
   readonly sections = input.required<readonly QualityEvidenceSection[]>();
+  readonly populationProfile = input.required<Record<string, unknown>>();
+  readonly distributionProfile = input.required<Record<string, unknown>>();
 
   readonly sectionIcons: Record<string, string> = {
     'Population Fidelity': 'database',

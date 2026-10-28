@@ -44,7 +44,11 @@
       />
     </app-workflow-row>
 
-    <app-quality-evidence [sections]="evidenceSections()" />
+    <app-quality-evidence
+      [sections]="evidenceSections()"
+      [populationProfile]="populationFidelityProfile()"
+      [distributionProfile]="distributionFidelityProfile()"
+    />
 
     <div class="specification-meta">
       <span><strong>Generation job</strong> {{ jobId }}</span>

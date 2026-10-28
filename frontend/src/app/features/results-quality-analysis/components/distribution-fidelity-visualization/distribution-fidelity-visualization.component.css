@@ -1,0 +1,126 @@
+:host {
+  display: block;
+  min-width: 0;
+  color: var(--text-primary, #242238);
+}
+
+.field-selection-panel,
+.category-breakdown {
+  min-width: 0;
+  align-content: start;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.selection-instruction,
+.selection-status,
+.probability-legend,
+.distribution-footnote,
+.distribution-empty p {
+  margin: 0;
+  color: var(--text-secondary, #6f6b80);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.selection-instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgb(105 85 223 / 18%);
+  border-radius: 0.6rem;
+  background: rgb(105 85 223 / 5%);
+  color: var(--text-primary, #39334f);
+}
+
+.selection-instruction-icon {
+  flex: 0 0 auto;
+  color: #6955df;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.selection-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selection-status strong {
+  overflow-wrap: anywhere;
+  color: var(--text-primary, #39334f);
+}
+
+.selection-status-dot,
+.legend-marker {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #6955df;
+}
+
+.detail-placeholder {
+  display: flex;
+  min-height: 15rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  border: 1px dashed var(--border-subtle, #d9d6e5);
+  border-radius: 0.75rem;
+  background: var(--surface-muted, #faf9fd);
+  text-align: center;
+}
+
+.placeholder-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.9rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: rgb(105 85 223 / 10%);
+  color: #6955df;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.detail-placeholder strong,
+.distribution-empty strong {
+  font-size: 0.9rem;
+}
+
+.detail-placeholder p,
+.distribution-empty p {
+  max-width: 22rem;
+  margin: 0.4rem 0 0;
+  color: var(--text-secondary, #6f6b80);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.distribution-empty {
+  padding: 1.25rem;
+  border: 1px dashed var(--border-subtle, #d9d6e5);
+  border-radius: 0.75rem;
+}
+
+.probability-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.distribution-footnote {
+  padding-top: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .detail-placeholder {
+    min-height: 10rem;
+  }
+}
