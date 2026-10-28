@@ -13,7 +13,8 @@ Email: ranjoy.sen@collins.com
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,20 @@ class AIDataModelProposal:
     description: str
     suggested_tags: list[str]
     reasoning: str
+
+
+@dataclass(frozen=True)
+class AIWholeSpecificationProposal:
+    """Represents a proposed canonical specification for user review."""
+
+    status: str
+    message: str
+    specification: dict[str, object] | None
+    assumptions: list[str]
+    clarification_questions: list[str]
+    reasoning: str
+    recommendations: list[dict[str, object]] = field(default_factory=list)
+    decision_items: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -118,6 +133,16 @@ class AIProvider(ABC):
         prompt: str,
     ) -> AIDataModelProposal:
         """Generate a structured Data Model proposal from user intent."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def propose_whole_specification(
+        self,
+        prompt: str,
+        canonical_version: str,
+        vocabulary_version: str,
+    ) -> AIWholeSpecificationProposal:
+        """Propose a complete canonical specification without persisting it."""
         raise NotImplementedError
 
     @abstractmethod

@@ -51,11 +51,22 @@ from app.models.ai_data_model_proposal_model import (
     AIDataModelProposalModel,
     AIDataModelSuggestionRequestModel,
 )
+from app.models.ai_whole_specification_proposal_model import (
+    AIWholeSpecificationProposalRequestModel,
+    AIWholeSpecificationProposalResponseModel,
+)
 from app.models.ai_semantic_preview_model import (
     AISemanticPreviewModel,
     AISemanticPreviewRequestModel,
 )
 from app.services.ai_service import AIService
+from app.repositories.json_specification_repository import (
+    FORGE_VERSION,
+    FORGE_VOCABULARY_VERSION,
+)
+from app.services.specification_validation_service import (
+    SpecificationValidationService,
+)
 from app.constants.activity import ActivityType
 from app.repositories.json_data_model_repository import JsonDataModelRepository
 from app.repositories.json_ai_proposal_repository import JsonAIProposalRepository
@@ -769,3 +780,73 @@ def record_data_model_proposal_activity(
     except Exception:
         # Activity telemetry must not interfere with proposal use.
         return
+
+
+_specification_validation_service = SpecificationValidationService()
+
+
+@router.post(
+    "/specifications/propose",
+    response_model=AIWholeSpecificationProposalResponseModel,
+)
+def propose_whole_specification(
+    request: AIWholeSpecificationProposalRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> AIWholeSpecificationProposalResponseModel:
+    """Propose and validate a canonical specification without saving it."""
+
+    del user  # Authentication is required; this endpoint does not mutate user data.
+
+    try:
+        proposal = _ai_service.propose_whole_specification(
+            prompt=request.prompt.strip(),
+            canonical_version=FORGE_VERSION,
+            vocabulary_version=FORGE_VOCABULARY_VERSION,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    validation: dict[str, object] = {
+        "can_continue": False,
+        "findings": [],
+    }
+
+    if proposal.status == "PROPOSE" and proposal.specification is not None:
+        validation = _specification_validation_service.validate(
+            proposal.specification,
+        )
+
+    response_status = proposal.status
+    response_message = proposal.message
+
+    if (
+        proposal.status == "PROPOSE"
+        and proposal.specification is not None
+        and not validation.get("can_continue", False)
+    ):
+        response_status = "INVALID"
+        response_message = (
+            f"{proposal.message} The generated specification failed "
+            "deterministic validation and needs correction before it can "
+            "proceed. Review the validation findings."
+        )
+
+    return AIWholeSpecificationProposalResponseModel(
+        status=response_status,
+        message=response_message,
+        specification=proposal.specification,
+        assumptions=proposal.assumptions,
+        clarification_questions=proposal.clarification_questions,
+        reasoning=proposal.reasoning,
+        validation=validation,
+        recommendations=proposal.recommendations,
+        decision_items=proposal.decision_items,
+    )

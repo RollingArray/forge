@@ -16,6 +16,7 @@ from typing import Callable
 
 from app.interfaces.ai_provider import (
     AIDataModelProposal,
+    AIWholeSpecificationProposal,
     AIEntityProposal,
     AIConstraintProposal,
     AIForeignKeyProposal,
@@ -43,6 +44,20 @@ class AIService:
         """Generate an entity proposal without persisting it."""
 
         return self._provider.propose_entity(prompt)
+
+    def propose_whole_specification(
+        self,
+        prompt: str,
+        canonical_version: str,
+        vocabulary_version: str,
+    ) -> AIWholeSpecificationProposal:
+        """Propose a canonical specification without persisting it."""
+
+        return self._provider.propose_whole_specification(
+            prompt=prompt,
+            canonical_version=canonical_version,
+            vocabulary_version=vocabulary_version,
+        )
 
     def suggest_data_model(
         self,
