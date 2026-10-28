@@ -710,24 +710,30 @@ class GenerationQualityService:
                 ):
                     continue
 
-                observed_counts = self._distribution_counts(
-                    data_model_id=data_model_id,
-                    job_id=job_id,
-                    entity_name=entity_name,
-                    field_name=field_name,
+                observed_counts, rows_total, missing_count = (
+                    self._distribution_counts(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                        entity_name=entity_name,
+                        field_name=field_name,
+                    )
                 )
 
                 observed_total = sum(observed_counts.values())
-                expected_probability = (
-                    1.0 / len(values)
-                    if values
-                    else 0.0
-                )
 
+                # Match random.choice(values): duplicate entries contribute
+                # additional probability to their stringified category.
+                configured_counts = Counter(str(value) for value in values)
+                configured_total = len(values)
                 value_metrics: dict[str, Any] = {}
+                probability_differences: list[float] = []
 
-                for value in values:
-                    value_string = str(value)
+                for value_string, configured_count in configured_counts.items():
+                    expected_probability = (
+                        configured_count / configured_total
+                        if configured_total
+                        else 0.0
+                    )
                     observed_count = observed_counts.get(
                         value_string,
                         0,
@@ -737,22 +743,48 @@ class GenerationQualityService:
                         if observed_total
                         else 0.0
                     )
+                    absolute_difference = abs(
+                        observed_probability - expected_probability
+                    )
+                    probability_differences.append(absolute_difference)
 
                     value_metrics[value_string] = {
                         "observed_count": observed_count,
                         "observed_probability": observed_probability,
                         "expected_probability": expected_probability,
-                        "absolute_probability_difference": abs(
-                            observed_probability
-                            - expected_probability
-                        ),
+                        "absolute_probability_difference": absolute_difference,
                     }
+
+                declared_category_count = len(configured_counts)
+                observed_category_count = sum(
+                    1
+                    for value_string in configured_counts
+                    if observed_counts.get(value_string, 0) > 0
+                )
 
                 fields[f"{entity_name}.{field_name}"] = {
                     "entity": entity_name,
                     "field": field_name,
                     "distribution": distribution,
                     "rows_observed": observed_total,
+                    "rows_total": rows_total,
+                    "missing_count": missing_count,
+                    "missing_rate": (
+                        missing_count / rows_total
+                        if rows_total
+                        else 0.0
+                    ),
+                    "declared_category_count": declared_category_count,
+                    "observed_category_count": observed_category_count,
+                    "category_coverage": (
+                        observed_category_count / declared_category_count
+                        if declared_category_count
+                        else 0.0
+                    ),
+                    "maximum_absolute_probability_difference": max(
+                        probability_differences,
+                        default=0.0,
+                    ),
                     "declared_values": [
                         str(value)
                         for value in values
@@ -798,16 +830,21 @@ class GenerationQualityService:
         job_id: str,
         entity_name: str,
         field_name: str,
-    ) -> Counter[str]:
+    ) -> tuple[Counter[str], int, int]:
         counts: Counter[str] = Counter()
+        rows_total = 0
+        missing_count = 0
 
         for row in self._artifact_reader.iter_entity_chunks(
             data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
         ):
+            rows_total += 1
             value = row.get(field_name)
-            if value not in (None, ""):
+            if value in (None, ""):
+                missing_count += 1
+            else:
                 counts[str(value)] += 1
 
-        return counts
+        return counts, rows_total, missing_count
