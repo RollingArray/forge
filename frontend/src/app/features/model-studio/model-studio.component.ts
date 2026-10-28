@@ -166,6 +166,14 @@ export class ModelStudioComponent {
     this.activeStep.set(step);
   }
 
+  openSpecificationAuthoring(): void {
+    void this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'specification-authoring',
+    ]);
+  }
+
   private loadSpecification(dataModelId: string): void {
     this.specificationService.getSpecification(dataModelId).subscribe({
       next: (specification) => {

@@ -390,7 +390,6 @@ export class SidebarComponent {
           queryParams: { quickAction: 'new-dataModel' },
         });
         break;
-
       case 'templates':
         void this.router.navigate(['/workspace'], {
           fragment: 'templates',
