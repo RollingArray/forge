@@ -7,7 +7,7 @@
 
   <app-workspace-scroll-area>
     <app-content-grid [columns]="3">
-      @for (check of checks(); track check.key) {
+      @for (check of visibleChecks(); track check.key) {
         <app-validation-check-card [check]="check" />
       } @empty {
         <app-content-card>

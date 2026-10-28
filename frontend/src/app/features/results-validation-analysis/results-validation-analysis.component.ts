@@ -148,6 +148,28 @@ export class ResultsValidationAnalysisComponent {
           value: typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (value as string | number),
         }));
 
+      const coverageData = this.asRecord(evidence['coverage']);
+      const declaredMetricByCheck: Record<string, [string, string]> = {
+        completeness: ['Entities declared', 'entities_declared'],
+        schema: ['Entities declared', 'entities_declared'],
+        primary_keys: ['Entities declared', 'entities_declared'],
+        foreign_keys: ['Relationships declared', 'relationships_declared'],
+        constraints: ['Rules declared', 'constraints_declared'],
+      };
+      const declaredMetric = declaredMetricByCheck[key];
+
+      if (declaredMetric) {
+        const [label, field] = declaredMetric;
+        const value = coverageData[field];
+
+        if (
+          typeof value === 'number' &&
+          !metrics.some((metric) => metric.label === label)
+        ) {
+          metrics.push({ label, value });
+        }
+      }
+
       const recordKey = ['entities', 'relationships', 'constraints', 'fields'].find(
         (name) => data[name] && typeof data[name] === 'object',
       );
