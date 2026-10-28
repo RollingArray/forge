@@ -499,6 +499,24 @@ export class SpecificationService {
     );
   }
 
+  saveSpecification(
+    dataModelId: string,
+    specification: Record<string, unknown>,
+  ): Observable<ForgeSpecification> {
+    return this.http
+      .put<SpecificationResponse>(
+        `${this.apiBaseUrl}/data-models/${dataModelId}/specification`,
+        specification,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.SavingSpecification,
+          ),
+        },
+      )
+      .pipe(map((response) => this.mapSpecification(response)));
+  }
+
   getSpecification(
     dataModelId: string,
   ): Observable<ForgeSpecification> {

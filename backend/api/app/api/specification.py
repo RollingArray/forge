@@ -96,6 +96,66 @@ async def get_specification(
     return SpecificationModel(**specification)
 
 
+@router.put(
+    "/{data_model_id}/specification",
+    response_model=SpecificationModel,
+    status_code=status.HTTP_200_OK,
+)
+async def save_specification(
+    data_model_id: str,
+    request: SpecificationModel,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> SpecificationModel:
+    """Validate and persist a reviewed canonical specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    candidate = request.model_dump(mode="python")
+    validation = specification_validation_service.validate(candidate)
+
+    if not validation.get("can_continue", False):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "message": "Specification contains validation errors and was not saved.",
+                "findings": validation.get("findings", []),
+            },
+        )
+
+    saved = specification_service.save_specification(
+        data_model_id=data_model_id,
+        specification=candidate,
+    )
+
+    if saved is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is not None:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=ActivityType.AI_PROPOSAL_ACCEPTED,
+            title="Specification saved",
+            description="A reviewed specification was validated and saved.",
+            data_model_id=data_model_id,
+        )
+
+    return SpecificationModel(**saved)
+
+
 @router.get(
     "/{data_model_id}/specification/validation",
     status_code=status.HTTP_200_OK,

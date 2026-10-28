@@ -87,6 +87,21 @@ class SpecificationService:
             model_description=data_model.description,
         )
 
+    def save_specification(
+        self,
+        data_model_id: str,
+        specification: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        """Persist a complete, previously validated canonical specification."""
+
+        if self.get_specification(data_model_id=data_model_id) is None:
+            return None
+
+        return self._specification_repository.save(
+            data_model_id=data_model_id,
+            specification=deepcopy(specification),
+        )
+
     def create_entity(
         self,
         data_model_id: str,

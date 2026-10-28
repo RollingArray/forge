@@ -1,0 +1,131 @@
+<main class="authoring-page">
+  <app-workflow-page-header
+    icon="auto_awesome"
+    title="Describe your Data Model"
+    description="Start with the business language you know. FORGE AI can turn a description or a pasted table into a draft specification for you to review."
+    progress="AI-assisted authoring"
+  />
+
+  <app-workflow-content>
+    <div class="authoring-content">
+      <div class="authoring-layout">
+        <app-authoring-input
+          [prompt]="prompt()"
+          [generating]="requestInProgress()"
+          [hasProposal]="proposal() !== null"
+          [errorMessage]="errorMessage()"
+          [showGuide]="showDescriptionGuide()"
+          (promptChange)="updatePrompt($event)"
+          (generate)="generateProposal($event)"
+          (clear)="clearDraft()"
+          (guideToggle)="toggleDescriptionGuide()"
+          (exampleSelected)="useOrderManagementExample()"
+        />
+
+        @if (proposal(); as result) {
+          <section class="proposal-section forge-card" aria-labelledby="proposal-heading">
+            <app-workspace-header
+              eyebrow="02 · REVIEW OUTPUT"
+              title="Specification proposal"
+              [summary]="result.message"
+              [state]="result.status"
+            />
+
+            @if (
+              result.status === 'CLARIFY' ||
+              result.status === 'INVALID' ||
+              result.status === 'UNSUPPORTED'
+            ) {
+              <div class="notice-panel">
+                <span class="material-symbols-outlined" aria-hidden="true">help</span>
+                <div>
+                  <strong>{{
+                    result.status === 'CLARIFY'
+                      ? 'More detail is needed'
+                      : result.status === 'INVALID'
+                        ? 'Draft needs correction'
+                        : 'Unsupported request'
+                  }}</strong>
+                  <p>{{ result.message }}</p>
+                </div>
+              </div>
+            }
+
+            @if (decisionItems().length > 0) {
+              <app-decision-support
+                [items]="decisionItems()"
+                [answers]="clarificationAnswers()"
+                [requestInProgress]="requestInProgress()"
+                [requiredDecisionsComplete]="requiredDecisionsComplete()"
+                (answerChange)="updateClarificationAnswer($event.id, $event.value)"
+                (useRecommendation)="applyDecisionRecommendation($event.id, $event.proposedValue)"
+                (updateMainDescription)="buildEnrichedDescription()"
+              />
+            }
+
+            @if (result.assumptions.length > 0) {
+              <app-assumptions-review [assumptions]="result.assumptions" />
+            }
+
+            @if (result.specification; as specification) {
+              <app-visual-specification [specification]="specification" />
+            }
+
+            <div class="result-card validation-card">
+              <div class="validation-heading">
+                <h3>Specification validation</h3>
+                <span [class.ready-label]="result.validation.can_continue">
+                  {{ result.validation.can_continue ? 'Can continue' : 'Not ready to continue' }}
+                </span>
+              </div>
+              <app-validation-findings
+                [findings]="result.validation.findings"
+                [canContinue]="result.validation.can_continue"
+              />
+              <p class="validation-footnote">
+                A successful AI proposal is not proof that the model is complete. Review the
+                findings and assumptions before using the specification.
+              </p>
+            </div>
+
+            <div class="proposal-footer">
+              <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+              Draft preview only — no Data Model has been created or modified.
+            </div>
+          </section>
+        } @else {
+          <section class="proposal-section proposal-empty" aria-label="Proposal results">
+            <div class="empty-state-icon">
+              <span class="material-symbols-outlined" aria-hidden="true">schema</span>
+            </div>
+            <h2>Your specification proposal will appear here</h2>
+            <p>
+              Describe your entities, fields, identifiers, relationships, and known rules on the
+              left, then generate a proposal to review the structure and resolve open decisions.
+            </p>
+            <div class="empty-state-note">
+              <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+              Draft preview only — your Data Models will not be changed.
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  </app-workflow-content>
+  <app-workflow-action-bar
+    icon="auto_awesome"
+    title="AI-assisted specification authoring"
+    description="Review the generated proposal, then save the validated specification."
+    secondaryLabel="Back to Model Studio"
+    secondaryIcon="arrow_back"
+    [primaryLabel]="saveInProgress() ? 'Saving…' : 'Save specification'"
+    [primaryDisabled]="
+      requestInProgress() ||
+      saveInProgress() ||
+      !proposal()?.specification ||
+      !proposal()?.validation?.can_continue
+    "
+    (secondaryAction)="returnToModelStudio()"
+    (primaryAction)="saveSpecification()"
+  />
+</main>
