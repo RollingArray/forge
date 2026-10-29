@@ -43,6 +43,17 @@ from app.repositories.json_specification_repository import (
 )
 
 
+def _build_foreign_key_name(
+    source_entity: str,
+    source_fields: list[str],
+    target_entity: str,
+) -> str:
+    """Build a deterministic name that distinguishes mappings to the same target."""
+
+    field_segment = "_".join(field.strip() for field in source_fields)
+    return f"FK_{source_entity}_{field_segment}_{target_entity}"
+
+
 class SpecificationService:
     """Provide business operations for FORGE specifications."""
 
@@ -138,11 +149,16 @@ class SpecificationService:
 
         if request.population is not None:
             entity["population"] = {
-                "count": request.population.count,
+                "count": (
+                    request.population.count
+                    if request.population.count is not None
+                    else 100
+                ),
                 "scaling": request.population.scaling.value,
             }
         else:
             entity["population"] = {
+                "count": 100,
                 "scaling": "SCALABLE",
             }
 
@@ -1082,9 +1098,10 @@ class SpecificationService:
             )
 
         foreign_key = {
-            "name": (
-                f"FK_{request.source_entity}_"
-                f"{request.target_entity}"
+            "name": _build_foreign_key_name(
+                request.source_entity,
+                request.source_fields,
+                request.target_entity,
             ),
             "source": {
                 "entity": request.source_entity,
@@ -1246,7 +1263,11 @@ class SpecificationService:
             )
 
         updated_foreign_key = {
-            "name": request.existing.name,
+            "name": _build_foreign_key_name(
+                new_request.source_entity,
+                new_request.source_fields,
+                new_request.target_entity,
+            ),
             "source": {
                 "entity": new_request.source_entity,
                 "fields": list(new_request.source_fields),
@@ -1280,7 +1301,7 @@ class SpecificationService:
                 "from": deepcopy(existing.get(field_name)),
                 "to": deepcopy(updated_foreign_key.get(field_name)),
             }
-            for field_name in ("source", "target")
+            for field_name in ("name", "source", "target")
             if existing.get(field_name) != updated_foreign_key.get(field_name)
         ]
 
@@ -1886,6 +1907,7 @@ class SpecificationService:
         supported_operators = {
             "INTEGER": {">", ">=", "<", "<="},
             "DECIMAL": {">", ">=", "<", "<="},
+            "STRING": {"==", "!="},
             "CATEGORICAL": {"==", "!="},
         }
 
