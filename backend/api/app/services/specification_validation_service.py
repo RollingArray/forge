@@ -556,15 +556,6 @@ class SpecificationValidationService:
                     "Foreign key name must be a non-empty string.",
                     source_entity or None,
                 )
-            elif name != expected_name:
-                valid = False
-                add(
-                    "error",
-                    "Foreign Key",
-                    "Invalid foreign key name",
-                    f"Foreign key name '{name}' does not match canonical name '{expected_name}'.",
-                    source_entity or None,
-                )
 
             if name and name in seen_names:
                 valid = False
@@ -780,6 +771,7 @@ class SpecificationValidationService:
         supported_operators = {
             "INTEGER": {">", ">=", "<", "<="},
             "DECIMAL": {">", ">=", "<", "<="},
+            "STRING": {"==", "!="},
             "CATEGORICAL": {"==", "!="},
         }
 

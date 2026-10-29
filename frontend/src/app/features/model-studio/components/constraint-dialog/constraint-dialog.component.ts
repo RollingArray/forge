@@ -140,6 +140,7 @@ export class ConstraintDialogComponent {
   > = {
     INTEGER: ['>', '>=', '<', '<='],
     DECIMAL: ['>', '>=', '<', '<='],
+    STRING: ['==', '!='],
     CATEGORICAL: ['==', '!='],
   };
 
@@ -221,7 +222,6 @@ export class ConstraintDialogComponent {
   readonly canSave = computed(() => {
     if (
       !this.field().trim() ||
-      !this.value().trim() ||
       !this.constraintsSupported()
     ) {
       return false;
@@ -236,6 +236,10 @@ export class ConstraintDialogComponent {
 
     const fieldType = this.selectedField()?.type;
     const comparisonValue = this.value().trim();
+
+    if (fieldType === 'STRING') {
+      return ['==', '!='].includes(this.operator());
+    }
 
     if (fieldType === 'INTEGER') {
       return /^[+-]?\d+$/.test(comparisonValue);

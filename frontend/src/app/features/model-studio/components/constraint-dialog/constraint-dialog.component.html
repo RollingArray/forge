@@ -286,7 +286,7 @@
         <div>
           <span>Constraint preview</span>
 
-          @if (field() && value()) {
+          @if (field() && (value() !== '' || selectedField()?.type === 'STRING')) {
             <strong>
               {{ entity().name }}.{{ field() }}
               {{ operator() }}
