@@ -861,6 +861,15 @@ def _build_entity_plans(
 class GenerationPlanner:
     """Build a deterministic, semantics-preserving generation plan."""
 
+    def validate_generation_configuration(
+        self,
+        specification: dict,
+    ) -> None:
+        """Validate field-generation settings without requiring populations."""
+
+        entities = _require_entities(specification)
+        _validate_generation_configuration(specification, entities)
+
     def build(
         self,
         specification: dict,
