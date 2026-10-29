@@ -24,6 +24,8 @@ def _write_chunk(
 ) -> None:
     directory = (
         root
+        / "data_model"
+        / "TEST-MODEL"
         / "generation"
         / job_id
         / "generated"
@@ -55,7 +57,7 @@ def _validator(tmp_path: Path) -> GenerationValidator:
     reader._data_directory = tmp_path
 
     checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = tmp_path
+    checkpoint_store._root = tmp_path / "data_model"
 
     reader._checkpoint_store = checkpoint_store
 
@@ -71,7 +73,10 @@ def _commit_chunks(
     specification: dict,
 ) -> None:
     entities = {}
-    generated_root = root / "generation" / job_id / "generated"
+    generated_root = (
+        root / "data_model" / "TEST-MODEL"
+        / "generation" / job_id / "generated"
+    )
 
     for entity in specification.get("entities", []):
         entity_name = entity["name"]
@@ -90,7 +95,7 @@ def _commit_chunks(
         }
 
     checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = root
+    checkpoint_store._root = root / "data_model"
 
     checkpoint_store.save(
         data_model_id="TEST-MODEL",

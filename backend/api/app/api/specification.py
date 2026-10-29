@@ -63,6 +63,8 @@ activity_service = ActivityService()
 data_model_repository = JsonDataModelRepository()
 
 
+
+
 @router.get(
     "/{data_model_id}/specification",
     response_model=SpecificationModel,
@@ -118,17 +120,9 @@ async def save_specification(
         )
 
     candidate = request.model_dump(mode="python")
-    validation = specification_validation_service.validate(candidate)
 
-    if not validation.get("can_continue", False):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "message": "Specification contains validation errors and was not saved.",
-                "findings": validation.get("findings", []),
-            },
-        )
-
+    # Semantic validation is available separately. Persist structurally valid
+    # specifications so users can correct semantic findings in Model Studio.
     saved = specification_service.save_specification(
         data_model_id=data_model_id,
         specification=candidate,

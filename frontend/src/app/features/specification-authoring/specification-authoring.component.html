@@ -51,17 +51,6 @@
               </div>
             }
 
-            @if (decisionItems().length > 0) {
-              <app-decision-support
-                [items]="decisionItems()"
-                [answers]="clarificationAnswers()"
-                [requestInProgress]="requestInProgress()"
-                [requiredDecisionsComplete]="requiredDecisionsComplete()"
-                (answerChange)="updateClarificationAnswer($event.id, $event.value)"
-                (useRecommendation)="applyDecisionRecommendation($event.id, $event.proposedValue)"
-                (updateMainDescription)="buildEnrichedDescription()"
-              />
-            }
 
             @if (result.assumptions.length > 0) {
               <app-assumptions-review [assumptions]="result.assumptions" />
@@ -115,17 +104,16 @@
   <app-workflow-action-bar
     icon="auto_awesome"
     title="AI-assisted specification authoring"
-    description="Review the generated proposal, then save the validated specification."
+    description="Save the generated specification, then review and refine it in Model Studio."
     secondaryLabel="Back to Model Studio"
     secondaryIcon="arrow_back"
-    [primaryLabel]="saveInProgress() ? 'Saving…' : 'Save specification'"
+    [primaryLabel]="saveInProgress() ? 'Saving…' : 'Save & open Model Studio'"
     [primaryDisabled]="
       requestInProgress() ||
       saveInProgress() ||
-      !proposal()?.specification ||
-      !proposal()?.validation?.can_continue
+      !proposal()?.specification
     "
     (secondaryAction)="returnToModelStudio()"
-    (primaryAction)="saveSpecification()"
+    (primaryAction)="acceptDraftAndContinue()"
   />
 </main>

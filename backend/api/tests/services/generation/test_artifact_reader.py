@@ -8,6 +8,9 @@ import pytest
 from app.services.generation.artifact_reader import (
     GenerationArtifactReader,
 )
+from app.services.generation_checkpoint_store import (
+    GenerationCheckpointStore,
+)
 
 
 def _write_chunk(
@@ -43,6 +46,31 @@ def _write_chunk(
         writer.writerows(rows)
 
 
+def _commit_test_checkpoint(
+    reader: GenerationArtifactReader,
+    *,
+    data_model_id: str,
+    job_id: str,
+    entity_name: str,
+    chunk_numbers: list[int],
+) -> None:
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = reader._data_directory
+    reader._checkpoint_store = checkpoint_store
+    checkpoint_store.save(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        seed=1,
+        entities={
+            entity_name: {
+                "target_rows": 0,
+                "completed_chunks": chunk_numbers,
+            },
+        },
+        chunk_size=100,
+    )
+
+
 def test_iter_entity_chunks_streams_rows_in_chunk_order(
     tmp_path: Path,
 ) -> None:
@@ -51,7 +79,7 @@ def test_iter_entity_chunks_streams_rows_in_chunk_order(
     reader._data_directory = tmp_path
 
     _write_chunk(
-        root=tmp_path / "generation" / "JOB-1",
+        root=tmp_path / "data_model" / "TEST-MODEL" / "generation" / "JOB-1",
         entity_name="CUSTOMER",
         chunk_number=2,
         rows=[
@@ -61,7 +89,7 @@ def test_iter_entity_chunks_streams_rows_in_chunk_order(
     )
 
     _write_chunk(
-        root=tmp_path / "generation" / "JOB-1",
+        root=tmp_path / "data_model" / "TEST-MODEL" / "generation" / "JOB-1",
         entity_name="CUSTOMER",
         chunk_number=1,
         rows=[
@@ -70,8 +98,17 @@ def test_iter_entity_chunks_streams_rows_in_chunk_order(
         ],
     )
 
+    _commit_test_checkpoint(
+        reader,
+        data_model_id="TEST-MODEL",
+        job_id="JOB-1",
+        entity_name="CUSTOMER",
+        chunk_numbers=[1, 2],
+    )
+
     rows = list(
         reader.iter_entity_chunks(
+            data_model_id="TEST-MODEL",
             job_id="JOB-1",
             entity_name="CUSTOMER",
         )
@@ -92,8 +129,17 @@ def test_iter_entity_chunks_returns_no_rows_when_no_chunks_exist(
 
     reader._data_directory = tmp_path
 
+    _commit_test_checkpoint(
+        reader,
+        data_model_id="TEST-MODEL",
+        job_id="JOB-1",
+        entity_name="CUSTOMER",
+        chunk_numbers=[],
+    )
+
     rows = list(
         reader.iter_entity_chunks(
+            data_model_id="TEST-MODEL",
             job_id="JOB-1",
             entity_name="CUSTOMER",
         )
@@ -120,6 +166,7 @@ def test_iter_entity_chunks_rejects_invalid_entity_name(
     ):
         list(
             reader.iter_entity_chunks(
+                data_model_id="TEST-MODEL",
                 job_id="JOB-1",
                 entity_name=entity_name,
             )
@@ -134,7 +181,7 @@ def test_get_entity_key_space_reconstructs_identity_keys_from_chunks(
     reader._data_directory = tmp_path
 
     _write_chunk(
-        root=tmp_path / "generation" / "JOB-1",
+        root=tmp_path / "data_model" / "TEST-MODEL" / "generation" / "JOB-1",
         entity_name="CUSTOMER",
         chunk_number=1,
         rows=[
@@ -150,7 +197,7 @@ def test_get_entity_key_space_reconstructs_identity_keys_from_chunks(
     )
 
     _write_chunk(
-        root=tmp_path / "generation" / "JOB-1",
+        root=tmp_path / "data_model" / "TEST-MODEL" / "generation" / "JOB-1",
         entity_name="CUSTOMER",
         chunk_number=2,
         rows=[
@@ -161,7 +208,16 @@ def test_get_entity_key_space_reconstructs_identity_keys_from_chunks(
         ],
     )
 
+    _commit_test_checkpoint(
+        reader,
+        data_model_id="TEST-MODEL",
+        job_id="JOB-1",
+        entity_name="CUSTOMER",
+        chunk_numbers=[1, 2],
+    )
+
     key_space = reader.get_entity_key_space(
+                    data_model_id="TEST-MODEL",
         job_id="JOB-1",
         entity_name="CUSTOMER",
         identity_fields=("CUSTOMER_ID",),

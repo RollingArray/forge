@@ -75,3 +75,6 @@ backend/api/data/data_model/
 
 # FORGE runtime AI proposal records
 /backend/api/data/ai_proposals/
+
+# Local working backups
+.forge-backups/

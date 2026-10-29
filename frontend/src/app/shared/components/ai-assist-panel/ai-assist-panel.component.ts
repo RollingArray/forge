@@ -51,6 +51,7 @@ export class AiAssistPanelComponent {
   );
 
   readonly generateLabel = input('Generate with FORGE AI');
+  readonly refineLabel = input<string | null>(null);
 
   readonly generating = input(false);
 
@@ -77,6 +78,7 @@ export class AiAssistPanelComponent {
   readonly prompt = model('');
 
   readonly generate = output<string>();
+  readonly refine = output<string>();
   readonly useProposal = output<AIDataModelProposal>();
   readonly regenerate = output<void>();
   readonly exampleSelected = output<string>();
@@ -91,6 +93,16 @@ export class AiAssistPanelComponent {
 
   regenerateProposal(): void {
     this.regenerate.emit();
+  }
+
+  refineSuggestion(): void {
+    const prompt = this.prompt().trim();
+
+    if (!prompt || this.generating()) {
+      return;
+    }
+
+    this.refine.emit(prompt);
   }
 
   generateSuggestion(): void {

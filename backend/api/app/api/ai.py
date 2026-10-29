@@ -55,6 +55,11 @@ from app.models.ai_whole_specification_proposal_model import (
     AIWholeSpecificationProposalRequestModel,
     AIWholeSpecificationProposalResponseModel,
 )
+from app.models.ai_prompt_refinement_model import (
+    AIPromptRefinementRequestModel,
+    AIPromptRefinementResponseModel,
+    AIPromptRefinementQuestionModel,
+)
 from app.models.ai_semantic_preview_model import (
     AISemanticPreviewModel,
     AISemanticPreviewRequestModel,
@@ -786,6 +791,55 @@ _specification_validation_service = SpecificationValidationService()
 
 
 @router.post(
+    "/specifications/refine-prompt",
+    response_model=AIPromptRefinementResponseModel,
+)
+def refine_specification_prompt(
+    request: AIPromptRefinementRequestModel,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> AIPromptRefinementResponseModel:
+    """Refine a business description without creating or saving a specification."""
+
+    del user  # Authentication is required; this operation does not persist data.
+
+    try:
+        refinement = _ai_service.refine_specification_prompt(
+            prompt=request.prompt.strip(),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return AIPromptRefinementResponseModel(
+        refined_prompt=refinement.refined_prompt,
+        completeness_status=refinement.completeness_status,
+        summary=refinement.summary,
+        understood_requirements=refinement.understood_requirements,
+        assumptions=refinement.assumptions,
+        open_questions=[
+            AIPromptRefinementQuestionModel(
+                id=question.id,
+                question=question.question,
+                answer_type=question.answer_type,
+                options=question.options,
+                suggested_answer=question.suggested_answer,
+                recommendation_rationale=question.recommendation_rationale,
+                required=question.required,
+            )
+            for question in refinement.open_questions
+        ],
+        missing_requirements=refinement.missing_requirements,
+    )
+
+
+@router.post(
     "/specifications/propose",
     response_model=AIWholeSpecificationProposalResponseModel,
 )
@@ -824,7 +878,9 @@ def propose_whole_specification(
             proposal.specification,
         )
 
-    response_status = proposal.status
+    # A successfully produced candidate remains a proposal even when
+    # deterministic validation finds errors. The validation payload carries
+    # readiness; save and generation workflows enforce their own gates.
     response_message = proposal.message
 
     if (
@@ -832,15 +888,13 @@ def propose_whole_specification(
         and proposal.specification is not None
         and not validation.get("can_continue", False)
     ):
-        response_status = "INVALID"
         response_message = (
-            f"{proposal.message} The generated specification failed "
-            "deterministic validation and needs correction before it can "
-            "proceed. Review the validation findings."
+            f"{proposal.message} The proposed specification needs correction "
+            "before it can proceed. Review the deterministic validation findings."
         )
 
     return AIWholeSpecificationProposalResponseModel(
-        status=response_status,
+        status=proposal.status,
         message=response_message,
         specification=proposal.specification,
         assumptions=proposal.assumptions,

@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -14,30 +13,19 @@ import { VisualSpecificationComponent } from './components/visual-specification/
 import { ValidationFindingsComponent } from './components/validation-findings/validation-findings.component';
 import { AuthoringInputComponent } from './components/authoring-input/authoring-input.component';
 import { WorkspaceHeaderComponent } from '../../shared/components/workspace-header/workspace-header.component';
-import { DecisionSupportComponent } from './components/decision-support/decision-support.component';
 import { AssumptionsReviewComponent } from './components/assumptions-review/assumptions-review.component';
 
 import { AIService } from '../../core/services/ai.service';
 import { SpecificationService } from '../../core/services/specification.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
-  AIWholeSpecificationDecisionItem,
   AIWholeSpecificationProposalResponse,
 } from '../../core/interfaces/ai-whole-specification-proposal.interface';
-
-type RecommendationReviewStatus = 'pending' | 'accepted' | 'rejected';
-
-interface RecommendationReviewState {
-  value: string;
-  draftValue: string;
-  status: RecommendationReviewStatus;
-  editing: boolean;
-}
 
 @Component({
   selector: 'app-specification-authoring',
   standalone: true,
-  imports: [WorkflowPageHeaderComponent, WorkflowContentComponent, WorkflowActionBarComponent, VisualSpecificationComponent, ValidationFindingsComponent, AuthoringInputComponent, WorkspaceHeaderComponent, DecisionSupportComponent, AssumptionsReviewComponent],
+  imports: [WorkflowPageHeaderComponent, WorkflowContentComponent, WorkflowActionBarComponent, VisualSpecificationComponent, ValidationFindingsComponent, AuthoringInputComponent, WorkspaceHeaderComponent, AssumptionsReviewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './specification-authoring.component.html',
   styleUrl: './specification-authoring.component.css',
@@ -56,9 +44,6 @@ export class SpecificationAuthoringComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly requestInProgress = signal(false);
   readonly saveInProgress = signal(false);
-  readonly recommendationReviews = signal<Record<string, RecommendationReviewState>>({});
-  readonly clarificationAnswers = signal<Record<string, string>>({});
-  readonly enrichedDescription = signal('');
   readonly showDescriptionGuide = signal(false);
 
   readonly orderManagementExampleDescription = `ORDER MANAGEMENT DATA MODEL
@@ -133,159 +118,13 @@ Use the requirements above as the source of truth. Do not silently add business 
 Treat this as a starting example. I may change the entities, fields, field types, allowed values, constraints, relationships, foreign keys, and requested populations to match my own system.`;
 
 
-  readonly decisionItems = computed(() => this.proposal()?.decision_items ?? []);
-
-
-
-  readonly requiredDecisionsComplete = computed(() =>
-    this.decisionItems()
-      .filter((item) => item.required)
-      .every((item) => (this.clarificationAnswers()[item.id] ?? '').trim().length > 0),
-  );
-
-
-  asRecord(value: unknown): Record<string, unknown> {
-    return value !== null && typeof value === 'object' && !Array.isArray(value)
-      ? value as Record<string, unknown>
-      : {};
-  }
-
-  asArray(value: unknown): unknown[] {
-    return Array.isArray(value) ? value : [];
-  }
-
-  displayValue(value: unknown): string {
-    if (value === null || value === undefined || value === '') {
-      return 'Not specified';
-    }
-    if (Array.isArray(value)) {
-      return value.map((item) => this.displayValue(item)).join(', ');
-    }
-    if (typeof value === 'object') {
-      return 'Configured';
-    }
-    return String(value);
-  }
-
-  populationCount(entity: unknown): string {
-    const population = this.asRecord(this.asRecord(entity)['population']);
-    const count = population['count'];
-    return count === null || count === undefined
-      ? 'Not specified'
-      : this.displayValue(count);
-  }
-
-  identityFields(entity: unknown): string {
-    const identity = this.asRecord(this.asRecord(entity)['identity']);
-    const fields = this.asArray(identity['fields']);
-    return fields.length
-      ? fields.map((field) => this.displayValue(field)).join(' + ')
-      : 'Identity needs review';
-  }
-
-  fieldIdentityStrategy(field: unknown): string {
-    const identity = this.asRecord(this.asRecord(field)['identity']);
-    return this.displayValue(identity['strategy'] ?? null);
-  }
-
-  fieldGenerationSummary(field: unknown): string {
-    const generation = this.asRecord(this.asRecord(field)['generation']);
-    if (!Object.keys(generation).length) {
-      return 'No field-level generation configuration';
-    }
-
-    const parts: string[] = [];
-    for (const key of ['strategy', 'distribution', 'generator']) {
-      const value = generation[key];
-      if (value !== null && value !== undefined) {
-        parts.push(`${this.humanize(key)}: ${this.displayValue(value)}`);
-      }
-    }
-
-    const parameters = this.asRecord(generation['parameters']);
-    for (const [key, value] of Object.entries(parameters)) {
-      parts.push(`${this.humanize(key)}: ${this.displayValue(value)}`);
-    }
-
-    return parts.join(' · ') || 'Generation configured';
-  }
-
-  recordTitle(item: unknown, fallback: string): string {
-    const record = this.asRecord(item);
-    for (const key of ['name', 'title', 'entity', 'field', 'id']) {
-      const value = record[key];
-      if (typeof value === 'string' && value.trim()) {
-        return value;
-      }
-    }
-    return fallback;
-  }
-
-  recordSummary(item: unknown): string {
-    const record = this.asRecord(item);
-
-    if ('source' in record && 'target' in record) {
-      const type = record['type'];
-      const participation = [
-        record['source_participation'],
-        record['target_participation'],
-      ].filter((value) => value !== undefined && value !== null);
-
-      return [
-        `${this.referenceText(record['source'])} → ${this.referenceText(record['target'])}`,
-        type ? this.displayValue(type) : '',
-        participation.length ? participation.map((value) => this.displayValue(value)).join(' / ') : '',
-      ].filter(Boolean).join(' · ');
-    }
-
-    if ('operator' in record && 'field' in record) {
-      const left = [
-        record['entity'] ? this.displayValue(record['entity']) : '',
-        this.displayValue(record['field']),
-      ].filter(Boolean).join('.');
-      return `${left} ${this.displayValue(record['operator'])} ${this.displayValue(record['value'])}`;
-    }
-
-    const ignored = new Set(['name', 'title', 'id']);
-    const parts = Object.entries(record)
-      .filter(([key, value]) =>
-        !ignored.has(key) &&
-        value !== null &&
-        value !== undefined &&
-        typeof value !== 'object',
-      )
-      .map(([key, value]) => `${this.humanize(key)}: ${this.displayValue(value)}`);
-
-    return parts.join(' · ') || 'Details available for review';
-  }
-
-  referenceText(value: unknown): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    const record = this.asRecord(value);
-    const entity = this.displayValue(record['entity']);
-    const fields = this.asArray(record['fields'])
-      .map((field) => this.displayValue(field))
-      .join(' + ');
-
-    return fields ? `${entity}.${fields}` : entity;
-  }
-
-  humanize(value: string): string {
-    return value
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (character) => character.toUpperCase());
-  }
-
-  saveSpecification(): void {
+  acceptDraftAndContinue(): void {
     const proposal = this.proposal();
 
     if (
       !this.dataModelId ||
       !proposal?.specification ||
-      !proposal.validation.can_continue ||
+      typeof proposal.specification !== 'object' ||
       this.requestInProgress() ||
       this.saveInProgress()
     ) {
@@ -296,12 +135,15 @@ Treat this as a starting example. I may change the entities, fields, field types
     this.errorMessage.set(null);
 
     this.specificationService
-      .saveSpecification(this.dataModelId, proposal.specification)
+      .saveSpecification(
+        this.dataModelId,
+        proposal.specification as Record<string, unknown>,
+      )
       .subscribe({
         next: () => {
           this.notificationService.success(
             'Specification saved',
-            'Specification saved successfully.',
+            'Your generated specification is saved. Review and correct any validation findings in Model Studio.',
           );
           void this.router.navigate([
             '/workspace',
@@ -315,7 +157,7 @@ Treat this as a starting example. I may change the entities, fields, field types
             error instanceof HttpErrorResponse &&
             typeof error.error?.detail === 'string'
               ? error.error.detail
-              : 'FORGE could not save the specification. Review validation findings and try again.';
+              : 'FORGE could not save the specification. Check the proposal structure and try again.';
 
           this.errorMessage.set(detail);
           this.saveInProgress.set(false);
@@ -365,36 +207,10 @@ Treat this as a starting example. I may change the entities, fields, field types
     this.requestInProgress.set(true);
     this.errorMessage.set(null);
     this.proposal.set(null);
-    this.recommendationReviews.set({});
-    this.clarificationAnswers.set({});
-    if (promptOverride === undefined) {
-      this.enrichedDescription.set('');
-    }
 
     this.aiService.proposeWholeSpecification(prompt).subscribe({
       next: (response) => {
         this.proposal.set(response);
-        this.clarificationAnswers.set(
-          Object.fromEntries(
-            response.decision_items.map((item) => [
-              item.id,
-              '',
-            ]),
-          ),
-        );
-        this.recommendationReviews.set(
-          Object.fromEntries(
-            response.recommendations.map((recommendation) => [
-              recommendation.id,
-              {
-                value: recommendation.proposed_value,
-                draftValue: recommendation.proposed_value,
-                status: 'pending' as RecommendationReviewStatus,
-                editing: false,
-              },
-            ]),
-          ),
-        );
         this.requestInProgress.set(false);
       },
       error: (error: unknown) => {
@@ -412,7 +228,6 @@ Treat this as a starting example. I may change the entities, fields, field types
 
   updatePrompt(value: string): void {
     this.prompt.set(value);
-    this.enrichedDescription.set('');
   }
 
   clearDraft(): void {
@@ -423,137 +238,7 @@ Treat this as a starting example. I may change the entities, fields, field types
     this.prompt.set('');
     this.proposal.set(null);
     this.errorMessage.set(null);
-    this.recommendationReviews.set({});
-    this.clarificationAnswers.set({});
-    this.enrichedDescription.set('');
   }
 
-  applyDecisionRecommendation(id: string, proposedValue: string): void {
-    if (this.requestInProgress() || !proposedValue.trim()) {
-      return;
-    }
 
-    this.updateClarificationAnswer(id, proposedValue);
-  }
-
-  updateClarificationAnswer(id: string, value: string): void {
-    this.clarificationAnswers.update((answers) => ({
-      ...answers,
-      [id]: value,
-    }));
-    this.enrichedDescription.set('');
-  }
-
-  buildEnrichedDescription(): void {
-    const original = this.prompt().trim();
-    const items = this.decisionItems();
-    const answers = this.clarificationAnswers();
-
-    if (!original || !items.length || !this.requiredDecisionsComplete()) {
-      return;
-    }
-
-    const decisions = items
-      .filter((item) => (answers[item.id] ?? '').trim().length > 0)
-      .map((item) => `- ${item.question}\n  Answer: ${answers[item.id].trim()}`);
-
-    const updatedDescription =
-      `${original}\n\nConfirmed user decisions:\n${decisions.join('\n')}`;
-
-    this.prompt.set(updatedDescription);
-    this.enrichedDescription.set(updatedDescription);
-    this.generateProposal(updatedDescription);
-  }
-
-  generateProposalFromEnrichedDescription(): void {
-    if (!this.prompt().trim() || this.requestInProgress()) {
-      return;
-    }
-
-    this.generateProposal();
-  }
-
-  reviewFor(id: string): RecommendationReviewState | undefined {
-    return this.recommendationReviews()[id];
-  }
-
-  reviewCount(status: RecommendationReviewStatus): number {
-    return Object.values(this.recommendationReviews()).filter(
-      (review) => review.status === status,
-    ).length;
-  }
-
-  acceptRecommendation(id: string): void {
-    this.updateRecommendationReview(id, {
-      status: 'accepted',
-      editing: false,
-    });
-  }
-
-  rejectRecommendation(id: string): void {
-    this.updateRecommendationReview(id, {
-      status: 'rejected',
-      editing: false,
-      draftValue: this.recommendationReviews()[id]?.value ?? '',
-    });
-  }
-
-  startRecommendationEdit(id: string): void {
-    const review = this.recommendationReviews()[id];
-    if (!review) {
-      return;
-    }
-
-    this.updateRecommendationReview(id, {
-      draftValue: review.value,
-      editing: true,
-    });
-  }
-
-  updateRecommendationDraft(id: string, value: string): void {
-    this.updateRecommendationReview(id, { draftValue: value });
-  }
-
-  saveRecommendationEdit(id: string): void {
-    const review = this.recommendationReviews()[id];
-    if (!review || !review.draftValue.trim()) {
-      return;
-    }
-
-    this.updateRecommendationReview(id, {
-      value: review.draftValue.trim(),
-      draftValue: review.draftValue.trim(),
-      status: 'accepted',
-      editing: false,
-    });
-  }
-
-  cancelRecommendationEdit(id: string): void {
-    const review = this.recommendationReviews()[id];
-    if (!review) {
-      return;
-    }
-
-    this.updateRecommendationReview(id, {
-      draftValue: review.value,
-      editing: false,
-    });
-  }
-
-  private updateRecommendationReview(
-    id: string,
-    changes: Partial<RecommendationReviewState>,
-  ): void {
-    this.recommendationReviews.update((reviews) => {
-      const current = reviews[id];
-      if (!current) {
-        return reviews;
-      }
-
-      return {
-        ...reviews,
-        [id]: { ...current, ...changes },
-      };
-    });
-  }
 }

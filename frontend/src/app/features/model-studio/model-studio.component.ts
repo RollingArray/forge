@@ -176,24 +176,25 @@ export class ModelStudioComponent {
 
   private loadSpecification(dataModelId: string): void {
     this.specificationService.getSpecification(dataModelId).subscribe({
-      next: (specification) => {
-        this.specification.set(specification);
-
-        const modelStudioData = adaptSpecification(specification);
-
-        this.canvasEntities.set(modelStudioData.entities);
-
-        this.modelRelationships.set(modelStudioData.relationships);
-
-        this.errorMessage.set(null);
-      },
+      next: (specification) => this.applySpecification(specification),
       error: (error) => {
-        console.error('[FORGE Model Studio] Failed to load specification:', error);
-
+        console.error(
+          '[FORGE Model Studio] Failed to load specification:',
+          error,
+        );
         this.specification.set(null);
         this.errorMessage.set('Unable to load the Data Model specification.');
       },
     });
+  }
+
+  private applySpecification(specification: ForgeSpecification): void {
+    this.specification.set(specification);
+
+    const modelStudioData = adaptSpecification(specification);
+    this.canvasEntities.set(modelStudioData.entities);
+    this.modelRelationships.set(modelStudioData.relationships);
+    this.errorMessage.set(null);
   }
 
   openEntityDialog(): void {

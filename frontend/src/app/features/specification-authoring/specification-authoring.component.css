@@ -1049,3 +1049,223 @@ app-workflow-content {
     flex-direction: column;
   }
 }
+
+/* Iterative specification prompt refinement */
+.refinement-review {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(18px, 2.2vw, 28px);
+  border: 1px solid rgba(112, 88, 170, 0.18);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.refinement-status {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid rgba(112, 88, 170, 0.2);
+  border-radius: 12px;
+  background: rgba(241, 236, 255, 0.65);
+  color: #51416f;
+  font-size: 12px;
+}
+
+.refinement-status span {
+  color: #716d81;
+  line-height: 1.6;
+}
+
+.refinement-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.refinement-block h3,
+.refinement-block label {
+  margin: 0;
+  color: #302744;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.refinement-block ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: #625c72;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.refinement-block textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 58px;
+  padding: 11px 12px;
+  border: 1px solid #dcd5eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #302744;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.65;
+  resize: vertical;
+}
+
+.refinement-block textarea:focus {
+  outline: 2px solid rgba(112, 84, 183, 0.25);
+  border-color: #8c75c5;
+}
+
+.refinement-block input,
+.refinement-block select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #dcd5eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #302744;
+  font: inherit;
+  font-size: 12px;
+}
+
+.refinement-block input:focus,
+.refinement-block select:focus {
+  outline: 2px solid rgba(112, 84, 183, 0.25);
+  border-color: #8c75c5;
+}
+
+.refinement-block input:disabled,
+.refinement-block select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.refinement-question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e7e1f0;
+  border-radius: 11px;
+  background: rgba(250, 248, 255, 0.8);
+}
+
+.refinement-recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dcd5f2;
+  border-radius: 9px;
+  background: rgba(244, 241, 255, 0.72);
+}
+
+.refinement-recommendation-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #51408c;
+}
+
+.refinement-recommendation-heading .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.recommendation-label {
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #e8e1fa;
+  color: #51408c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.recommendation-rationale {
+  margin: 0;
+  color: #625b72;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.recommendation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recommendation-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.answer-state {
+  color: #8a5b18;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.answer-state[data-answered='true'] {
+  color: #26734d;
+}
+
+.text-action-button {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #625b72;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.required-marker {
+  margin-left: 6px;
+  color: #8a5b18;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.refinement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.refinement-actions button {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .refinement-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .refinement-actions button {
+    justify-content: center;
+  }
+}

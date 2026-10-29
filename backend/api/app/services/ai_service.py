@@ -15,6 +15,7 @@ Email: ranjoy.sen@collins.com
 from typing import Callable
 
 from app.interfaces.ai_provider import (
+    AIPromptRefinement,
     AIDataModelProposal,
     AIWholeSpecificationProposal,
     AIEntityProposal,
@@ -44,6 +45,14 @@ class AIService:
         """Generate an entity proposal without persisting it."""
 
         return self._provider.propose_entity(prompt)
+
+    def refine_specification_prompt(
+        self,
+        prompt: str,
+    ) -> AIPromptRefinement:
+        """Refine a business description before specification authoring."""
+
+        return self._provider.refine_specification_prompt(prompt=prompt)
 
     def propose_whole_specification(
         self,

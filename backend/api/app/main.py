@@ -26,7 +26,6 @@ app = FastAPI(
     description="Backend API for the FORGE synthetic data generation platform.",
 )
 
-
 @app.on_event("startup")
 async def recover_generation_jobs() -> None:
     """Mark validated persisted RUNNING jobs as INTERRUPTED."""

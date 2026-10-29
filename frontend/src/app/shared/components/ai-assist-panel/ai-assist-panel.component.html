@@ -93,14 +93,14 @@
           type="button"
           class="generate-button"
           [disabled]="!prompt().trim() || generating() || !llmOnline()"
-          (click)="generateSuggestion()"
+          (click)="refineLabel() ? refineSuggestion() : generateSuggestion()"
         >
           @if (generating()) {
             <span class="material-symbols-outlined spin">sync</span>
             Generating...
           } @else {
             <span class="material-symbols-outlined">auto_awesome</span>
-            {{ generateLabel() }}
+            {{ refineLabel() ?? generateLabel() }}
           }
         </button>
       </div>

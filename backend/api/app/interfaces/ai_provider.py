@@ -49,6 +49,32 @@ class AIDataModelProposal:
 
 
 @dataclass(frozen=True)
+class AIPromptRefinementQuestion:
+    """Represents a targeted, typed question raised during prompt refinement."""
+
+    id: str
+    question: str
+    answer_type: str
+    options: list[str]
+    suggested_answer: str | None
+    recommendation_rationale: str | None
+    required: bool
+
+
+@dataclass(frozen=True)
+class AIPromptRefinement:
+    """Represents a refined business prompt ready for user review."""
+
+    refined_prompt: str
+    completeness_status: str
+    summary: str
+    understood_requirements: list[str]
+    assumptions: list[str]
+    open_questions: list[AIPromptRefinementQuestion]
+    missing_requirements: list[str]
+
+
+@dataclass(frozen=True)
 class AIWholeSpecificationProposal:
     """Represents a proposed canonical specification for user review."""
 
@@ -133,6 +159,14 @@ class AIProvider(ABC):
         prompt: str,
     ) -> AIDataModelProposal:
         """Generate a structured Data Model proposal from user intent."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def refine_specification_prompt(
+        self,
+        prompt: str,
+    ) -> AIPromptRefinement:
+        """Refine an informal business description before specification authoring."""
         raise NotImplementedError
 
     @abstractmethod

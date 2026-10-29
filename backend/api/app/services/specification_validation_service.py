@@ -319,9 +319,26 @@ class SpecificationValidationService:
                         identity_field,
                     )
 
-        population = entity.get("population", {}).get("count")
+        population_config = entity.get("population")
+        population = (
+            population_config.get("count")
+            if isinstance(population_config, dict)
+            else None
+        )
 
-        if (
+        if population is None:
+            # Population selection belongs to population planning, not
+            # specification authoring. Missing counts must not block a model.
+            add(
+                "warning",
+                "Entity",
+                "Population count is not specified",
+                f"Entity '{name}' has no requested population count. "
+                "Choose or resolve its population during population planning "
+                "before generation.",
+                name,
+            )
+        elif (
             not isinstance(population, int)
             or isinstance(population, bool)
             or population < 0

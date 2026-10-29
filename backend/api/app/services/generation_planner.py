@@ -726,6 +726,7 @@ def _parse_constraint(
     supported_operators = {
         "INTEGER": {">", ">=", "<", "<="},
         "DECIMAL": {">", ">=", "<", "<="},
+        "STRING": {"==", "!="},
         "CATEGORICAL": {"==", "!="},
     }
     if field_type is None:

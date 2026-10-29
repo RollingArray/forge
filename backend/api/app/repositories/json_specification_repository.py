@@ -58,7 +58,9 @@ class JsonSpecificationRepository:
         data_model_id: str,
         specification: dict[str, Any],
     ) -> dict[str, Any]:
-        """Persist and return the canonical specification."""
+        """Persist the canonical specification."""
+
+        specification_path = self._specification_path(data_model_id)
 
         specification_path = self._specification_path(data_model_id)
 

@@ -22,6 +22,9 @@ from urllib.request import Request, urlopen
 from app.core.ai_settings import AIConfiguration
 from app.prompts.data_model_prompt import DATA_MODEL_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.specification_authoring_prompt import SPECIFICATION_AUTHORING_SYSTEM_PROMPT
+from app.prompts.prompt_refinement_prompt import (
+    PROMPT_REFINEMENT_SYSTEM_PROMPT,
+)
 from app.prompts.entity_proposal_prompt import ENTITY_PROPOSAL_SYSTEM_PROMPT
 from app.prompts.constraint_proposal_prompt import (
     CONSTRAINT_PROPOSAL_SYSTEM_PROMPT,
@@ -33,6 +36,8 @@ from app.prompts.semantic_prompt import (
     SEMANTIC_PREVIEW_SYSTEM_PROMPT,
 )
 from app.interfaces.ai_provider import (
+    AIPromptRefinement,
+    AIPromptRefinementQuestion,
     AIConstraintProposal,
     AIForeignKeyProposal,
     AIDataModelProposal,
@@ -198,57 +203,55 @@ class OllamaAIProvider(AIProvider):
             reasoning=reasoning.strip(),
         )
 
-    def propose_whole_specification(
+    def refine_specification_prompt(
         self,
         prompt: str,
-        canonical_version: str,
-        vocabulary_version: str,
-    ) -> AIWholeSpecificationProposal:
-        """Propose a canonical specification without persisting it."""
+    ) -> AIPromptRefinement:
+        """Refine an informal description without creating a specification."""
 
         if not isinstance(prompt, str) or not prompt.strip():
-            raise ValueError("Specification authoring request must not be empty.")
-        if not canonical_version.strip() or not vocabulary_version.strip():
-            raise ValueError("Canonical specification versions are required.")
+            raise ValueError("Prompt refinement request must not be empty.")
+        if len(prompt.strip()) > 20000:
+            raise ValueError("Prompt refinement request exceeds 20000 characters.")
 
-        request_context = {
-            "canonical_version": canonical_version,
-            "vocabulary_version": vocabulary_version,
-            "user_input": prompt.strip(),
-        }
         request_payload = {
             "model": self._model,
             "messages": [
                 {
                     "role": "system",
-                    "content": SPECIFICATION_AUTHORING_SYSTEM_PROMPT,
+                    "content": PROMPT_REFINEMENT_SYSTEM_PROMPT,
                 },
                 {
                     "role": "user",
-                    "content": json.dumps(request_context, ensure_ascii=False),
+                    "content": json.dumps(
+                        {"user_input": prompt.strip()},
+                        ensure_ascii=False,
+                    ),
                 },
             ],
             "stream": False,
             "format": {
                 "type": "object",
                 "properties": {
-                    "status": {
+                    "refined_prompt": {"type": "string"},
+                    "completeness_status": {
                         "type": "string",
-                        "enum": ["PROPOSE", "CLARIFY", "UNSUPPORTED"],
+                        "enum": [
+                            "INCOMPLETE",
+                            "NEEDS_REVIEW",
+                            "READY_FOR_SPECIFICATION",
+                        ],
                     },
-                    "message": {"type": "string"},
-                    "specification": {
-                        "type": ["object", "null"],
+                    "summary": {"type": "string"},
+                    "understood_requirements": {
+                        "type": "array",
+                        "items": {"type": "string"},
                     },
                     "assumptions": {
                         "type": "array",
                         "items": {"type": "string"},
                     },
-                    "clarification_questions": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "decision_items": {
+                    "open_questions": {
                         "type": "array",
                         "items": {
                             "type": "object",
@@ -257,80 +260,53 @@ class OllamaAIProvider(AIProvider):
                                 "question": {"type": "string"},
                                 "answer_type": {
                                     "type": "string",
-                                    "enum": ["text", "field", "number", "choice"],
+                                    "enum": [
+                                        "yes_no",
+                                        "integer",
+                                        "decimal",
+                                        "text",
+                                        "field",
+                                        "operator",
+                                        "choice",
+                                    ],
+                                },
+                                "options": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                                "suggested_answer": {
+                                    "type": ["string", "null"],
+                                },
+                                "recommendation_rationale": {
+                                    "type": ["string", "null"],
                                 },
                                 "required": {"type": "boolean"},
-                                "recommendation": {
-                                    "type": ["object", "null"],
-                                    "properties": {
-                                        "id": {"type": "string"},
-                                        "title": {"type": "string"},
-                                        "proposed_value": {"type": "string"},
-                                        "rationale": {"type": "string"},
-                                        "alternatives": {
-                                            "type": "array",
-                                            "items": {"type": "string"},
-                                        },
-                                        "requires_confirmation": {"type": "boolean"},
-                                    },
-                                    "required": [
-                                        "id",
-                                        "title",
-                                        "proposed_value",
-                                        "rationale",
-                                        "alternatives",
-                                        "requires_confirmation",
-                                    ],
-                                    "additionalProperties": False,
-                                },
                             },
                             "required": [
                                 "id",
                                 "question",
                                 "answer_type",
+                                "options",
+                                "suggested_answer",
+                                "recommendation_rationale",
                                 "required",
-                                "recommendation",
                             ],
                             "additionalProperties": False,
                         },
                     },
-                    "reasoning": {"type": "string"},
-                    "recommendations": {
+                    "missing_requirements": {
                         "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "string"},
-                                "title": {"type": "string"},
-                                "proposed_value": {"type": "string"},
-                                "rationale": {"type": "string"},
-                                "alternatives": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
-                                "requires_confirmation": {"type": "boolean"},
-                            },
-                            "required": [
-                                "id",
-                                "title",
-                                "proposed_value",
-                                "rationale",
-                                "alternatives",
-                                "requires_confirmation",
-                            ],
-                            "additionalProperties": False,
-                        },
+                        "items": {"type": "string"},
                     },
                 },
                 "required": [
-                    "status",
-                    "message",
-                    "specification",
+                    "refined_prompt",
+                    "completeness_status",
+                    "summary",
+                    "understood_requirements",
                     "assumptions",
-                    "clarification_questions",
-                    "decision_items",
-                    "reasoning",
-                    "recommendations",
+                    "open_questions",
+                    "missing_requirements",
                 ],
                 "additionalProperties": False,
             },
@@ -355,6 +331,253 @@ class OllamaAIProvider(AIProvider):
                     response.read().decode("utf-8"),
                 )
         except (OSError, URLError) as exc:
+            raise RuntimeError(
+                "FORGE AI could not reach the configured Ollama provider."
+            ) from exc
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise RuntimeError(
+                "FORGE AI returned an invalid provider response."
+            ) from exc
+
+        message = provider_response.get("message")
+        if not isinstance(message, dict):
+            raise RuntimeError("FORGE AI returned an invalid chat response.")
+
+        raw_response = message.get("content")
+        if not isinstance(raw_response, str) or not raw_response.strip():
+            raise RuntimeError("FORGE AI returned an empty prompt refinement.")
+
+        try:
+            result = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FORGE AI returned invalid prompt refinement JSON."
+            ) from exc
+
+        expected_keys = {
+            "refined_prompt",
+            "completeness_status",
+            "summary",
+            "understood_requirements",
+            "assumptions",
+            "open_questions",
+            "missing_requirements",
+        }
+        if not isinstance(result, dict) or set(result) != expected_keys:
+            raise RuntimeError(
+                "FORGE AI returned an invalid prompt refinement structure."
+            )
+
+        refined_prompt = result["refined_prompt"]
+        status = result["completeness_status"]
+        summary = result["summary"]
+        if not isinstance(refined_prompt, str) or not refined_prompt.strip():
+            raise RuntimeError("FORGE AI returned an empty refined prompt.")
+        if status not in {
+            "INCOMPLETE",
+            "NEEDS_REVIEW",
+            "READY_FOR_SPECIFICATION",
+        }:
+            raise RuntimeError("FORGE AI returned an invalid completeness status.")
+        if not isinstance(summary, str) or not summary.strip():
+            raise RuntimeError("FORGE AI returned an invalid refinement summary.")
+
+        list_fields = (
+            "understood_requirements",
+            "assumptions",
+            "missing_requirements",
+        )
+        for field_name in list_fields:
+            value = result[field_name]
+            if not isinstance(value, list) or not all(
+                isinstance(item, str) for item in value
+            ):
+                raise RuntimeError(
+                    f"FORGE AI returned invalid {field_name.replace('_', ' ')}."
+                )
+
+        raw_questions = result["open_questions"]
+        if not isinstance(raw_questions, list):
+            raise RuntimeError("FORGE AI returned invalid refinement questions.")
+
+        questions: list[AIPromptRefinementQuestion] = []
+        question_ids: set[str] = set()
+        for item in raw_questions:
+            if not isinstance(item, dict) or set(item) != {
+                "id",
+                "question",
+                "answer_type",
+                "options",
+                "suggested_answer",
+                "recommendation_rationale",
+                "required",
+            }:
+                raise RuntimeError(
+                    "FORGE AI returned a malformed refinement question."
+                )
+
+            question_id = item["id"]
+            question_text = item["question"]
+            answer_type = item["answer_type"]
+            options = item["options"]
+            suggested_answer = item["suggested_answer"]
+            rationale = item["recommendation_rationale"]
+            required = item["required"]
+
+            if not isinstance(question_id, str) or not question_id.strip():
+                raise RuntimeError("FORGE AI returned an invalid question id.")
+            if question_id in question_ids:
+                raise RuntimeError("FORGE AI returned duplicate question ids.")
+            if not isinstance(question_text, str) or not question_text.strip():
+                raise RuntimeError("FORGE AI returned an invalid question.")
+            if answer_type not in {
+                "yes_no", "integer", "decimal", "text",
+                "field", "operator", "choice",
+            }:
+                raise RuntimeError("FORGE AI returned an invalid question answer type.")
+            if not isinstance(options, list) or not all(
+                isinstance(option, str) and option.strip()
+                for option in options
+            ):
+                raise RuntimeError("FORGE AI returned invalid question options.")
+            if len(options) > 50 or len(set(options)) != len(options):
+                raise RuntimeError("FORGE AI returned duplicate or excessive question options.")
+            if answer_type == "yes_no" and options != ["Yes", "No"]:
+                raise RuntimeError("FORGE AI yes/no questions must use Yes and No options.")
+            if answer_type == "operator" and (
+                not options
+                or any(option not in {"=", "!=", "<", "<=", ">", ">="} for option in options)
+            ):
+                raise RuntimeError("FORGE AI returned invalid comparison operator options.")
+            if answer_type == "choice" and not options:
+                raise RuntimeError("FORGE AI choice questions must provide options.")
+            if answer_type not in {"yes_no", "operator", "choice"} and options:
+                raise RuntimeError("FORGE AI supplied options for an answer type that does not use them.")
+            if suggested_answer is not None and not isinstance(
+                suggested_answer, str
+            ):
+                raise RuntimeError(
+                    "FORGE AI returned an invalid suggested answer."
+                )
+            if rationale is not None and not isinstance(rationale, str):
+                raise RuntimeError(
+                    "FORGE AI returned an invalid recommendation rationale."
+                )
+            if not isinstance(required, bool):
+                raise RuntimeError("FORGE AI returned an invalid question flag.")
+
+            question_ids.add(question_id)
+            questions.append(
+                AIPromptRefinementQuestion(
+                    id=question_id,
+                    question=question_text.strip(),
+                    answer_type=answer_type,
+                    options=options,
+                    suggested_answer=(
+                        suggested_answer.strip()
+                        if isinstance(suggested_answer, str)
+                        else None
+                    ),
+                    recommendation_rationale=(
+                        rationale.strip()
+                        if isinstance(rationale, str) and rationale.strip()
+                        else None
+                    ),
+                    required=required,
+                )
+            )
+
+        return AIPromptRefinement(
+            refined_prompt=refined_prompt.strip(),
+            completeness_status=status,
+            summary=summary.strip(),
+            understood_requirements=result["understood_requirements"],
+            assumptions=result["assumptions"],
+            open_questions=questions,
+            missing_requirements=result["missing_requirements"],
+        )
+
+    def propose_whole_specification(
+        self,
+        prompt: str,
+        canonical_version: str,
+        vocabulary_version: str,
+    ) -> AIWholeSpecificationProposal:
+        """Propose a canonical specification without persisting it."""
+
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError("Specification authoring request must not be empty.")
+        if not canonical_version.strip() or not vocabulary_version.strip():
+            raise ValueError("Canonical specification versions are required.")
+
+        request_context = {
+            "canonical_version": canonical_version,
+            "vocabulary_version": vocabulary_version,
+            "user_input": prompt.strip(),
+        }
+        request_payload = {
+            "model": self._model,
+            "think": "low",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SPECIFICATION_AUTHORING_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(request_context, ensure_ascii=False),
+                },
+            ],
+            "stream": False,
+            "options": {
+                "temperature": 0,
+                "top_p": 1,
+                "seed": 42,
+            },
+            "format": {
+                "type": "object",
+                "properties": {
+                    "message": {"type": "string"},
+                    "specification": {"type": "object"},
+                    "assumptions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "reasoning": {"type": "string"},
+                },
+                "required": [
+                    "message",
+                    "specification",
+                    "assumptions",
+                    "reasoning",
+                ],
+                "additionalProperties": False,
+            },
+        }
+
+        request = Request(
+            f"{self._base_url}/api/chat",
+            data=json.dumps(request_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self._generation_timeout_seconds,
+            ) as response:
+                provider_response = json.loads(
+                    response.read().decode("utf-8"),
+                )
+        except (OSError, URLError) as exc:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Ollama specification-authoring request failed."
+            )
             raise RuntimeError(
                 "FORGE AI could not reach the configured Ollama provider.",
             ) from exc
@@ -381,19 +604,26 @@ class OllamaAIProvider(AIProvider):
                 "FORGE AI returned an invalid specification proposal structure.",
             )
 
-        status = result.get("status")
+        status = "PROPOSE"
         response_message = result.get("message")
         specification = result.get("specification")
         assumptions = result.get("assumptions")
-        questions = result.get("clarification_questions")
-        decision_items = result.get("decision_items", [])
+        questions: list[str] = []
         reasoning = result.get("reasoning")
-        recommendations = result.get("recommendations", [])
 
-        if status not in {"PROPOSE", "CLARIFY", "UNSUPPORTED"}:
+        if not isinstance(specification, dict):
             raise RuntimeError(
-                "FORGE AI returned an invalid specification proposal status.",
+                "FORGE AI specification proposal is missing specification data.",
             )
+        if not isinstance(assumptions, list) or not all(
+            isinstance(item, str) for item in assumptions
+        ):
+            raise RuntimeError(
+                "FORGE AI returned invalid specification assumptions.",
+            )
+        validated_recommendations: list[dict[str, object]] = []
+        validated_decision_items: list[dict[str, object]] = []
+
         if not isinstance(response_message, str) or not response_message.strip():
             raise RuntimeError(
                 "FORGE AI returned an invalid specification proposal message.",
@@ -408,159 +638,10 @@ class OllamaAIProvider(AIProvider):
             raise RuntimeError(
                 "FORGE AI returned invalid specification assumptions.",
             )
-        if not isinstance(questions, list) or not all(
-            isinstance(item, str) for item in questions
-        ):
-            raise RuntimeError(
-                "FORGE AI returned invalid clarification questions.",
-            )
-        if not isinstance(recommendations, list):
-            raise RuntimeError(
-                "FORGE AI returned invalid specification recommendations.",
-            )
-
+        # Compatibility arrays were required to be empty above.
+        # Keep empty lists for the existing result dataclass contract.
         validated_recommendations: list[dict[str, object]] = []
-        required_recommendation_keys = {
-            "id",
-            "title",
-            "proposed_value",
-            "rationale",
-            "alternatives",
-            "requires_confirmation",
-        }
-
-        for recommendation in recommendations:
-            if not isinstance(recommendation, dict):
-                raise RuntimeError(
-                    "FORGE AI returned an invalid specification recommendation.",
-                )
-            if set(recommendation) != required_recommendation_keys:
-                raise RuntimeError(
-                    "FORGE AI recommendation has missing or unexpected fields.",
-                )
-
-            for key in ("id", "title", "proposed_value", "rationale"):
-                value = recommendation.get(key)
-                if not isinstance(value, str) or not value.strip():
-                    raise RuntimeError(
-                        f"FORGE AI recommendation has an invalid '{key}'.",
-                    )
-
-            alternatives = recommendation.get("alternatives")
-            if not isinstance(alternatives, list) or not all(
-                isinstance(item, str) and item.strip()
-                for item in alternatives
-            ):
-                raise RuntimeError(
-                    "FORGE AI recommendation has invalid alternatives.",
-                )
-
-            if not isinstance(recommendation.get("requires_confirmation"), bool):
-                raise RuntimeError(
-                    "FORGE AI recommendation has an invalid confirmation flag.",
-                )
-
-            validated_recommendations.append({
-                "id": recommendation["id"].strip(),
-                "title": recommendation["title"].strip(),
-                "proposed_value": recommendation["proposed_value"].strip(),
-                "rationale": recommendation["rationale"].strip(),
-                "alternatives": [item.strip() for item in alternatives],
-                "requires_confirmation": recommendation["requires_confirmation"],
-            })
-
-        if not isinstance(decision_items, list):
-            raise RuntimeError(
-                "FORGE AI returned invalid specification decision items.",
-            )
-
         validated_decision_items: list[dict[str, object]] = []
-        required_decision_keys = {
-            "id",
-            "question",
-            "answer_type",
-            "required",
-            "recommendation",
-        }
-        required_embedded_recommendation_keys = {
-            "id",
-            "title",
-            "proposed_value",
-            "rationale",
-            "alternatives",
-            "requires_confirmation",
-        }
-
-        for item in decision_items:
-            if not isinstance(item, dict) or set(item) != required_decision_keys:
-                raise RuntimeError(
-                    "FORGE AI decision item has missing or unexpected fields.",
-                )
-
-            for key in ("id", "question"):
-                value = item.get(key)
-                if not isinstance(value, str) or not value.strip():
-                    raise RuntimeError(
-                        f"FORGE AI decision item has an invalid '{key}'.",
-                    )
-
-            if item.get("answer_type") not in {"text", "field", "number", "choice"}:
-                raise RuntimeError(
-                    "FORGE AI decision item has an invalid answer type.",
-                )
-            if not isinstance(item.get("required"), bool):
-                raise RuntimeError(
-                    "FORGE AI decision item has an invalid required flag.",
-                )
-
-            embedded = item.get("recommendation")
-            validated_embedded: dict[str, object] | None = None
-            if embedded is not None:
-                if (
-                    not isinstance(embedded, dict)
-                    or set(embedded) != required_embedded_recommendation_keys
-                ):
-                    raise RuntimeError(
-                        "FORGE AI decision recommendation has missing or unexpected fields.",
-                    )
-
-                for key in ("id", "title", "proposed_value", "rationale"):
-                    value = embedded.get(key)
-                    if not isinstance(value, str) or not value.strip():
-                        raise RuntimeError(
-                            f"FORGE AI decision recommendation has an invalid '{key}'.",
-                        )
-
-                alternatives = embedded.get("alternatives")
-                if not isinstance(alternatives, list) or not all(
-                    isinstance(value, str) and value.strip()
-                    for value in alternatives
-                ):
-                    raise RuntimeError(
-                        "FORGE AI decision recommendation has invalid alternatives.",
-                    )
-
-                if not isinstance(embedded.get("requires_confirmation"), bool):
-                    raise RuntimeError(
-                        "FORGE AI decision recommendation has an invalid confirmation flag.",
-                    )
-
-                validated_embedded = {
-                    "id": embedded["id"].strip(),
-                    "title": embedded["title"].strip(),
-                    "proposed_value": embedded["proposed_value"].strip(),
-                    "rationale": embedded["rationale"].strip(),
-                    "alternatives": [value.strip() for value in alternatives],
-                    "requires_confirmation": embedded["requires_confirmation"],
-                }
-
-            validated_decision_items.append({
-                "id": item["id"].strip(),
-                "question": item["question"].strip(),
-                "answer_type": item["answer_type"],
-                "required": item["required"],
-                "recommendation": validated_embedded,
-            })
 
         if status != "PROPOSE":
             if specification is not None:
@@ -572,6 +653,58 @@ class OllamaAIProvider(AIProvider):
                 raise RuntimeError(
                     "FORGE AI specification proposal is missing specification data.",
                 )
+
+            # Apply established FORGE defaults deterministically.
+            # Preserve explicitly supplied population values.
+            entities = specification.get("entities")
+            if isinstance(entities, list):
+                for entity in entities:
+                    if not isinstance(entity, dict):
+                        continue
+                    population = entity.get("population")
+                    if not isinstance(population, dict):
+                        population = {}
+                        entity["population"] = population
+
+                    if population.get("count") is None:
+                        population["count"] = 100
+                        assumption = (
+                            "FORGE default applied: entity "
+                            f"{entity.get('name', 'unnamed')} population.count = 100; "
+                            "the user did not specify a count."
+                        )
+                        if assumption not in assumptions:
+                            assumptions.append(assumption)
+
+                    if "scaling" not in population:
+                        population["scaling"] = "SCALABLE"
+                        assumption = (
+                            "FORGE default applied: entity "
+                            f"{entity.get('name', 'unnamed')} population.scaling = SCALABLE; "
+                            "the user did not explicitly request FIXED scaling."
+                        )
+                        if assumption not in assumptions:
+                            assumptions.append(assumption)
+
+            generation = specification.get("generation")
+            if isinstance(generation, dict):
+                if "seed" not in generation:
+                    generation["seed"] = 42
+                    assumption = (
+                        "FORGE default applied: generation.seed = 42; "
+                        "the user did not specify a seed."
+                    )
+                    if assumption not in assumptions:
+                        assumptions.append(assumption)
+
+                if "scenario" not in generation:
+                    generation["scenario"] = "NORMAL"
+                    assumption = (
+                        "FORGE default applied: generation.scenario = NORMAL; "
+                        "the user did not specify a scenario."
+                    )
+                    if assumption not in assumptions:
+                        assumptions.append(assumption)
 
             # Enforce canonical field configuration for identifiers.
             # IDENTIFIER values use identity.strategy, never generation.strategy.
@@ -613,55 +746,69 @@ class OllamaAIProvider(AIProvider):
                 "statistical_behavior",
                 "scenarios",
             }
-            if not required_keys.issubset(specification):
-                missing = sorted(required_keys - set(specification))
-                raise RuntimeError(
-                    "FORGE AI specification is missing canonical keys: "
-                    + ", ".join(missing),
-                )
-
-            if specification.get("version") != canonical_version:
-                raise RuntimeError(
-                    "FORGE AI specification has an unexpected version.",
-                )
-            if specification.get("vocabulary_version") != vocabulary_version:
-                raise RuntimeError(
-                    "FORGE AI specification has an unexpected vocabulary version.",
-                )
-            if not isinstance(specification.get("model"), dict):
-                raise RuntimeError(
-                    "FORGE AI specification has invalid model metadata.",
-                )
-            if not isinstance(specification.get("generation"), dict):
-                raise RuntimeError(
-                    "FORGE AI specification has invalid generation settings.",
-                )
-            for key in required_keys - {
-                "version",
-                "vocabulary_version",
-                "model",
-                "generation",
-            }:
-                if not isinstance(specification.get(key), list):
-                    raise RuntimeError(
-                        f"FORGE AI specification has an invalid '{key}' collection.",
+            try:
+                actual_keys = set(specification)
+                if actual_keys != required_keys:
+                    missing = sorted(required_keys - actual_keys)
+                    unexpected = sorted(actual_keys - required_keys)
+                    details = []
+                    if missing:
+                        details.append(
+                            "missing canonical keys: " + ", ".join(missing)
+                        )
+                    if unexpected:
+                        details.append(
+                            "unexpected specification keys: "
+                            + ", ".join(unexpected)
+                        )
+                    raise ValueError(
+                        "Specification has invalid canonical root keys ("
+                        + "; ".join(details)
+                        + ")."
                     )
-            if not all(
-                isinstance(item, dict)
-                for key in (
-                    "entities",
-                    "relationships",
-                    "foreign_keys",
-                    "constraints",
-                    "dependencies",
-                    "statistical_behavior",
-                    "scenarios",
-                )
-                for item in specification[key]
-            ):
-                raise RuntimeError(
-                    "FORGE AI specification contains a non-object collection item.",
-                )
+
+                if specification.get("version") != canonical_version:
+                    raise ValueError(
+                        "Specification has an unexpected canonical version."
+                    )
+                if specification.get("vocabulary_version") != vocabulary_version:
+                    raise ValueError(
+                        "Specification has an unexpected vocabulary version."
+                    )
+                if not isinstance(specification.get("model"), dict):
+                    raise ValueError("Specification has invalid model metadata.")
+                if not isinstance(specification.get("generation"), dict):
+                    raise ValueError("Specification has invalid generation settings.")
+
+                collection_keys = required_keys - {
+                    "version",
+                    "vocabulary_version",
+                    "model",
+                    "generation",
+                }
+                for key in collection_keys:
+                    if not isinstance(specification.get(key), list):
+                        raise ValueError(
+                            f"Specification has an invalid '{key}' collection."
+                        )
+
+                if not all(
+                    isinstance(item, dict)
+                    for key in collection_keys
+                    for item in specification[key]
+                ):
+                    raise ValueError(
+                        "Specification contains a non-object collection item."
+                    )
+
+                # Authoring returns a reviewable proposal. Generation
+                # planning is performed only by the generation workflow;
+                # its failures must not discard the proposed specification.
+            except ValueError as exc:
+                raise ValueError(
+                    "FORGE AI specification failed deterministic validation: "
+                    f"{exc}"
+                ) from exc
 
         return AIWholeSpecificationProposal(
             status=status,
