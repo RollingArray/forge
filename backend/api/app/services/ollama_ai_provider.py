@@ -573,6 +573,33 @@ class OllamaAIProvider(AIProvider):
                     "FORGE AI specification proposal is missing specification data.",
                 )
 
+            # Enforce canonical field configuration for identifiers.
+            # IDENTIFIER values use identity.strategy, never generation.strategy.
+            entities = specification.get("entities")
+            if isinstance(entities, list):
+                for entity in entities:
+                    if not isinstance(entity, dict):
+                        continue
+
+                    fields = entity.get("fields")
+                    if not isinstance(fields, list):
+                        continue
+
+                    for field in fields:
+                        if (
+                            not isinstance(field, dict)
+                            or field.get("type") != "IDENTIFIER"
+                        ):
+                            continue
+
+                        identity = field.get("identity")
+                        if not isinstance(identity, dict):
+                            identity = {}
+                            field["identity"] = identity
+
+                        identity["strategy"] = "SEQUENTIAL_ID"
+                        field.pop("generation", None)
+
             required_keys = {
                 "version",
                 "vocabulary_version",
