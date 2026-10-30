@@ -48,6 +48,7 @@ import {
   WorkflowPageComponent,
 } from '../../shared/components/workflow-page/workflow-page.component';
 import { ModelStudioSummaryComponent } from './components/model-studio-summary/model-studio-summary.component';
+import { SpecificationEntryPanelComponent } from './components/specification-entry-panel/specification-entry-panel.component';
 import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
 import {
   WorkflowStep,
@@ -72,6 +73,7 @@ type StudioStepItem = WorkflowStepItem;
     ForeignKeyDialogComponent,
     WorkflowPageComponent,
     ModelStudioSummaryComponent,
+    SpecificationEntryPanelComponent,
     WorkflowRowComponent,
     ConfirmationDialogComponent,
   ],
@@ -171,6 +173,14 @@ export class ModelStudioComponent {
       '/workspace',
       this.dataModelId,
       'specification-authoring',
+    ]);
+  }
+
+  openSpecificationWizard(): void {
+    void this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'specification-wizard',
     ]);
   }
 

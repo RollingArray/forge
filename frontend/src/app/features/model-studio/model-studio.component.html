@@ -24,20 +24,12 @@
       </p>
     </section>
   } @else if (specification(); as specification) {
-    <div class="authoring-entry-actions">
-      <button
-        type="button"
-        class="authoring-entry-button"
-        (click)="openSpecificationAuthoring()"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-        <span>
-          <strong>Describe with AI</strong>
-          <small>Draft a specification from plain English or a field list</small>
-        </span>
-        <span class="material-symbols-outlined authoring-entry-arrow" aria-hidden="true">arrow_forward</span>
-      </button>
-    </div>
+    <app-specification-entry-panel
+      (manualAdd)="openEntityDialog()"
+      (describeWithAi)="openSpecificationAuthoring()"
+      (openCsvWizard)="openSpecificationWizard()"
+    />
+
 
     <app-workflow-row [columns]="1">
       <app-model-studio-summary [model]="specification" (addEntity)="openEntityDialog()" />

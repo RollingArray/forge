@@ -1,0 +1,51 @@
+<section class="forge-card specification-entry-panel">
+  <div class="entry-panel-heading">
+    <div>
+      <span class="entry-panel-eyebrow">SPECIFICATION BUILDER</span>
+      <h2>How would you like to define your data model?</h2>
+      <p>Choose a starting point. You can continue refining the specification in Model Studio.</p>
+    </div>
+    <span class="entry-panel-count">3 ways to get started</span>
+  </div>
+
+  <div class="entry-options">
+    <button
+      type="button"
+      class="entry-option entry-option-manual"
+      (click)="manualAdd.emit()"
+    >
+      <span class="entry-option-icon material-symbols-outlined" aria-hidden="true">add_circle</span>
+      <span class="entry-option-content">
+        <strong>Add Entity</strong>
+        <small>Manually define an entity and its fields.</small>
+        <span class="entry-option-action">Create manually <span class="material-symbols-outlined">arrow_forward</span></span>
+      </span>
+    </button>
+
+    <button
+      type="button"
+      class="entry-option entry-option-ai"
+      (click)="describeWithAi.emit()"
+    >
+      <span class="entry-option-icon material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+      <span class="entry-option-content">
+        <strong>Describe with AI</strong>
+        <small>Draft a specification from plain English or a field list.</small>
+        <span class="entry-option-action">Start with AI <span class="material-symbols-outlined">arrow_forward</span></span>
+      </span>
+    </button>
+
+    <button
+      type="button"
+      class="entry-option entry-option-csv"
+      (click)="openCsvWizard.emit()"
+    >
+      <span class="entry-option-icon material-symbols-outlined" aria-hidden="true">table_view</span>
+      <span class="entry-option-content">
+        <strong>CSV Specification</strong>
+        <small>Import entities, fields, keys, relationships and constraints.</small>
+        <span class="entry-option-action">Open CSV wizard <span class="material-symbols-outlined">arrow_forward</span></span>
+      </span>
+    </button>
+  </div>
+</section>
