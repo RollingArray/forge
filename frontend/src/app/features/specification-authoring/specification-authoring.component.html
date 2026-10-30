@@ -14,12 +14,11 @@
           [generating]="requestInProgress()"
           [hasProposal]="proposal() !== null"
           [errorMessage]="errorMessage()"
-          [showGuide]="showDescriptionGuide()"
+          [orderManagementExample]="orderManagementExampleDescription"
           (promptChange)="updatePrompt($event)"
           (generate)="generateProposal($event)"
           (clear)="clearDraft()"
-          (guideToggle)="toggleDescriptionGuide()"
-          (exampleSelected)="useOrderManagementExample()"
+          (exampleSelected)="useOrderManagementExample($event)"
         />
 
         @if (proposal(); as result) {

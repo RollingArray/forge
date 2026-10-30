@@ -31,18 +31,6 @@
 .ai-column {
   margin: 20px 0 20px 20px;
   padding: 22px;
-  border: 1px solid #d8cef2;
-  border-radius: 18px;
-  background:
-    radial-gradient(
-      circle at 15% 0%,
-      rgb(239 233 255 / 95%) 0%,
-      rgb(248 245 253 / 90%) 45%,
-      rgb(250 248 253 / 85%) 100%
-    );
-  box-shadow:
-    0 4px 14px rgb(91 70 184 / 6%),
-    inset 0 1px 0 rgb(255 255 255 / 70%);
 }
 
 .manual-column {

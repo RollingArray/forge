@@ -44,7 +44,6 @@ export class SpecificationAuthoringComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly requestInProgress = signal(false);
   readonly saveInProgress = signal(false);
-  readonly showDescriptionGuide = signal(false);
 
   readonly orderManagementExampleDescription = `ORDER MANAGEMENT DATA MODEL
 
@@ -177,11 +176,7 @@ Treat this as a starting example. I may change the entities, fields, field types
     ]);
   }
 
-  toggleDescriptionGuide(): void {
-    this.showDescriptionGuide.update((visible) => !visible);
-  }
-
-  useOrderManagementExample(): void {
+  useOrderManagementExample(example = this.orderManagementExampleDescription): void {
     if (this.requestInProgress()) {
       return;
     }
@@ -193,8 +188,7 @@ Treat this as a starting example. I may change the entities, fields, field types
       return;
     }
 
-    this.updatePrompt(this.orderManagementExampleDescription);
-    this.showDescriptionGuide.set(false);
+    this.updatePrompt(example);
   }
 
   generateProposal(promptOverride?: string): void {

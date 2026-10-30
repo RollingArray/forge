@@ -81,7 +81,6 @@ app-workflow-content {
   align-items: start;
 }
 
-.input-panel,
 .guidance-panel,
 .result-card {
   border: 1px solid rgba(224, 219, 237, 0.95);
@@ -1035,7 +1034,7 @@ app-workflow-content {
 /* FORGE_VISUAL_SPECIFICATION_STYLES */
 
 
-/* FORGE_VISUAL_SPECIFICATION_STYLES */
+
 .finding-location {
   color: #554174;
   font-size: 11px;
