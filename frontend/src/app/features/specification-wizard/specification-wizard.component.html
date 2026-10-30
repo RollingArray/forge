@@ -1,0 +1,251 @@
+<main class="specification-wizard-page">
+  <app-workflow-page-header
+    icon="table_view"
+    title="Build your Specification"
+    description="Paste your structured CSV data one section at a time. FORGE will parse each section, show a live preview, and check the proposed additions against your existing specification."
+    progress="CSV specification wizard"
+  />
+
+  <app-workflow-content>
+    <div class="wizard-content">
+      <section class="wizard-editor forge-card" aria-label="CSV specification editor">
+        <div class="wizard-intro">
+          <div>
+            <span class="wizard-eyebrow">SPECIFICATION INPUT</span>
+            <h2>Define your Data Model</h2>
+            <p>Choose a section, paste its CSV content, and review the parsed rows.</p>
+          </div>
+          <div class="wizard-section-count">
+            <strong>5</strong>
+            <span>CSV sections</span>
+          </div>
+        </div>
+
+        <div class="wizard-resource-actions">
+          <div class="resource-copy">
+            <strong>Start with a template or sample</strong>
+            <span>Use the blank CSV structure, or load an example into this Data Model.</span>
+          </div>
+          <div class="resource-buttons">
+            <a
+              class="wizard-tool-button template-button"
+              href="/assets/forge-templates/forge-specification-template.zip"
+              download
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">download</span>
+              Download CSV Template
+            </a>
+            <button
+              type="button"
+              class="wizard-tool-button sample-button"
+              (click)="loadAerospaceSample()"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">science</span>
+              Load Complete Aerospace Sample
+            </button>
+          </div>
+        </div>
+
+        <nav class="section-tabs" aria-label="Specification CSV sections" role="tablist">
+          @for (section of sections; track section.key) {
+            <button
+              type="button"
+              class="section-tab"
+              [class.active]="activeSection() === section.key"
+              [class.completed]="sectionHasContent(section.key)"
+              [attr.aria-selected]="activeSection() === section.key"
+              role="tab"
+              (click)="selectSection(section.key)"
+            >
+              <span class="tab-indicator">
+                @if (sectionHasContent(section.key)) {
+                  <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                } @else {
+                  <span class="material-symbols-outlined" aria-hidden="true">table_rows</span>
+                }
+              </span>
+              <span>{{ section.label }}</span>
+            </button>
+          }
+        </nav>
+
+        <div class="editor-grid">
+          <section class="csv-input-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="panel-kicker">ACTIVE SECTION</span>
+                <h3>{{ activeSectionDefinition().label }}</h3>
+                <p>{{ activeSectionDefinition().description }}</p>
+              </div>
+              <span class="input-status" [class.has-content]="sectionHasContent(activeSection())">
+                {{ sectionHasContent(activeSection()) ? 'Content added' : 'Awaiting CSV' }}
+              </span>
+            </div>
+
+            <div class="section-resource-actions">
+              <button
+                type="button"
+                class="wizard-tool-button section-sample-button"
+                (click)="loadActiveSectionSample()"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                Load Sample for This Section
+              </button>
+            </div>
+
+            <div class="header-reference">
+              <div class="reference-heading">
+                <span class="material-symbols-outlined" aria-hidden="true">view_column</span>
+                <span>Expected CSV header</span>
+              </div>
+              <code>{{ activeSectionDefinition().header }}</code>
+            </div>
+
+            <label class="csv-label" for="csv-section-input">Paste CSV content</label>
+            <textarea
+              id="csv-section-input"
+              class="csv-textarea"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+              [value]="activeCsv()"
+              [placeholder]="activeSectionDefinition().header + ' Paste your CSV rows here...'"
+              (input)="updateCsv($event)"
+            ></textarea>
+
+            <div class="input-footer">
+              <span>
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                Keep the header row. Quote values containing commas or line breaks.
+              </span>
+              <span>{{ activeParsePreview().rows.length }} parsed rows</span>
+            </div>
+          </section>
+
+          <section class="csv-preview-panel" aria-label="Live CSV preview">
+            <div class="panel-heading preview-panel-heading">
+              <div>
+                <span class="panel-kicker">LIVE PARSED OUTPUT</span>
+                <h3>Table preview</h3>
+                <p>Updates as you edit the active CSV section.</p>
+              </div>
+              <span class="preview-live-indicator">
+                <i></i>
+                Live
+              </span>
+            </div>
+
+            @if (activeParsePreview().error; as parseError) {
+              <div class="parse-error">
+                <span class="material-symbols-outlined" aria-hidden="true">error</span>
+                <span>{{ parseError }}</span>
+              </div>
+            } @else if (activeParsePreview().headers.length > 0) {
+              <app-workspace-simple-table
+                [columns]="previewColumns()"
+                [rows]="previewRows()"
+                rowKey="rowId"
+                height="390px"
+                [showSearch]="false"
+                emptyMessage="Add CSV data rows to see the preview."
+                [summary]="previewRows().length + (previewRows().length === 1 ? ' data row' : ' data rows')"
+              />
+            } @else {
+              <div class="preview-empty">
+                <span class="material-symbols-outlined" aria-hidden="true">table_chart</span>
+                <strong>No CSV data to preview</strong>
+                <p>Paste a header row and one or more data rows to see the table.</p>
+              </div>
+            }
+          </section>
+        </div>
+
+        @if (parseIssues().length > 0) {
+          <div class="parse-issues" role="alert">
+            <div class="parse-issues-heading">
+              <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+              CSV formatting needs attention
+            </div>
+            @for (issue of parseIssues(); track issue.label) {
+              <p><strong>{{ issue.label }}:</strong> {{ issue.error }}</p>
+            }
+          </div>
+        }
+      </section>
+
+      @if (previewError()) {
+        <div class="backend-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          {{ previewError() }}
+        </div>
+      }
+
+      @if (previewResponse(); as result) {
+        <section class="import-review forge-card" aria-label="CSV import review">
+          <div class="review-heading">
+            <div>
+              <span class="wizard-eyebrow">BACKEND VALIDATION</span>
+              <h2>Import preview</h2>
+              <p>FORGE compared the CSV records with the current Data Model specification.</p>
+            </div>
+            <span class="review-status" [class.review-ready]="result.can_apply">
+              {{ result.can_apply ? 'Ready to apply' : 'Needs attention' }}
+            </span>
+          </div>
+
+          <div class="review-summary">
+            @for (entry of previewSummary(); track entry[0]) {
+              <div class="summary-item">
+                <strong>{{ entry[1] }}</strong>
+                <span>{{ entry[0] }}</span>
+              </div>
+            }
+          </div>
+
+          @if (result.additions.length > 0) {
+            <div class="review-list">
+              <h3>New records ({{ result.additions.length }})</h3>
+              @for (item of result.additions; track $index) {
+                <p>{{ formatFinding(item) }}</p>
+              }
+            </div>
+          }
+
+          @if (result.already_present.length > 0) {
+            <div class="review-list">
+              <h3>Already present ({{ result.already_present.length }})</h3>
+              @for (item of result.already_present; track $index) {
+                <p>{{ formatFinding(item) }}</p>
+              }
+            </div>
+          }
+
+          @if (result.conflicts.length > 0 || result.issues.length > 0) {
+            <div class="review-list review-problems">
+              <h3>Conflicts and validation issues</h3>
+              @for (item of result.conflicts; track $index) {
+                <p>{{ formatFinding(item) }}</p>
+              }
+              @for (item of result.issues; track $index) {
+                <p>{{ formatFinding(item) }}</p>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  </app-workflow-content>
+
+  <app-workflow-action-bar
+    icon="table_view"
+    title="CSV Specification Wizard"
+    description="Preview checks your CSV against the current specification. Nothing is saved at this stage."
+    secondaryLabel="Back to Model Studio"
+    secondaryIcon="arrow_back"
+    [primaryLabel]="applyInProgress() ? 'Applying import…' : previewInProgress() ? 'Previewing import…' : canApply() ? 'Apply additions & open Model Studio' : 'Preview CSV import'"
+    [primaryIcon]="canApply() ? 'check_circle' : 'fact_check'"
+    [primaryDisabled]="previewInProgress() || applyInProgress() || (!canApply() && !canPreview())"
+    (secondaryAction)="returnToModelStudio()"
+    (primaryAction)="handlePrimaryAction()"
+  />
+</main>
