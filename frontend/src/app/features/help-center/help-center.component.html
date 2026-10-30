@@ -1,0 +1,148 @@
+<main class="help-center-page">
+  <app-workflow-page-header
+    icon="menu_book"
+    title="Help & Documentation"
+    description="Explore FORGE concepts, understand the specification vocabulary, and learn how to use the platform."
+    progress="Knowledge center"
+  />
+
+  <section class="help-content-area">
+    <div class="help-layout">
+      <app-content-card padding="0">
+        <div class="help-navigation-panel">
+          <app-workspace-scroll-area>
+            <aside class="help-navigation" aria-label="Help topics">
+          <div class="navigation-heading">
+            <div>
+              <span class="section-eyebrow">KNOWLEDGE CENTER</span>
+              <h2>In this guide</h2>
+            </div>
+            <span class="article-count">{{ articleSections().length }}</span>
+          </div>
+
+          <label class="search-field">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input
+              type="search"
+              placeholder="Search sections..."
+              [value]="searchTerm()"
+              (input)="onSearch($any($event.target).value)"
+              aria-label="Search guide sections"
+            />
+            @if (searchTerm()) {
+              <button
+                type="button"
+                class="clear-search"
+                aria-label="Clear search"
+                (click)="clearSearch()"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            }
+          </label>
+
+          <div class="navigation-section">
+            <span class="navigation-section-title">GUIDE CONTENTS</span>
+
+            @for (section of filteredSections(); track section.id) {
+              <button
+                type="button"
+                class="section-navigation-item"
+                [class.active]="selectedSectionId() === section.id"
+                [attr.aria-current]="selectedSectionId() === section.id ? 'location' : null"
+                (click)="selectSection(section)"
+              >
+                <span class="section-navigation-marker"></span>
+                <span class="section-navigation-title">{{ section.title }}</span>
+                <span class="material-symbols-outlined section-navigation-arrow">
+                  chevron_right
+                </span>
+              </button>
+            }
+
+            @if (filteredSections().length === 0) {
+              <div class="navigation-empty">
+                <span class="material-symbols-outlined">search_off</span>
+                <p>No matching sections.</p>
+                <button type="button" (click)="clearSearch()">Clear search</button>
+              </div>
+            }
+          </div>
+            </aside>
+          </app-workspace-scroll-area>
+        </div>
+      </app-content-card>
+
+      <app-content-card padding="0">
+        <section class="article-reader">
+          <header class="article-toolbar">
+            <div class="article-breadcrumb">
+              <span>Help Center</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+              <strong>{{ selectedArticle().category }}</strong>
+            </div>
+
+            <div class="article-toolbar-actions">
+              <span class="article-type">
+                <span class="status-indicator"></span>
+                Documentation
+              </span>
+
+              <button
+                type="button"
+                class="copy-section-link"
+                (click)="copySectionLink()"
+                [disabled]="!selectedSectionId()"
+                title="Copy a direct link to this section"
+              >
+                <span class="material-symbols-outlined">
+                  {{ sectionLinkCopied() ? 'check' : 'link' }}
+                </span>
+                {{ sectionLinkCopied() ? 'Copied' : 'Copy section link' }}
+              </button>
+            </div>
+          </header>
+
+          <app-workspace-scroll-area #articleScrollArea>
+          @if (articleLoading()) {
+            <div class="article-state" aria-live="polite">
+              <span class="loading-spinner"></span>
+              <h2>Loading knowledge guide</h2>
+              <p>Preparing the documentation for you.</p>
+            </div>
+          } @else if (articleError()) {
+            <div class="article-state article-error" role="alert">
+              <span class="material-symbols-outlined">error_outline</span>
+              <h2>Unable to open this article</h2>
+              <p>{{ articleError() }}</p>
+              <button type="button" (click)="retry()">Try again</button>
+            </div>
+          } @else {
+            <article
+              class="markdown-article"
+              [innerHTML]="articleHtml()"
+            ></article>
+          }
+          </app-workspace-scroll-area>
+
+          <footer class="article-footer">
+            <span>FORGE KNOWLEDGE CENTER</span>
+            <span>Understand the system behind the data.</span>
+          </footer>
+        </section>
+      </app-content-card>
+    </div>
+  </section>
+
+  <app-workflow-action-bar
+    icon="menu_book"
+    title="FORGE Help Center"
+    description="Continue exploring FORGE or return to your workspace."
+    secondaryLabel="Back"
+    secondaryIcon="arrow_back"
+    primaryLabel="Go to Workspace"
+    primaryIcon="home"
+    (secondaryAction)="goBack()"
+    (primaryAction)="goToWorkspace()"
+  />
+</main>

@@ -20,6 +20,49 @@
   --forge-text-eyebrow: #6b7280;
   --forge-text-subtle: #475467;
 
+
+  /* Shared workflow canvas */
+  --forge-workflow-background: radial-gradient(
+    ellipse 48% 42% at 28% 0%,
+    rgba(255, 184, 156, 0.90) 0%,
+    rgba(255, 196, 175, 0.58) 38%,
+    transparent 100%
+  ),
+  radial-gradient(
+    ellipse 38% 34% at 78% 12%,
+    rgba(183, 164, 255, 0.82) 0%,
+    rgba(201, 188, 255, 0.48) 45%,
+    transparent 100%
+  ),
+  radial-gradient(
+    ellipse 34% 38% at 88% 62%,
+    rgba(191, 178, 255, 0.52) 0%,
+    transparent 100%
+  ),
+  radial-gradient(
+    ellipse 44% 36% at 64% 100%,
+    rgba(255, 199, 132, 0.78) 0%,
+    rgba(255, 218, 170, 0.42) 48%,
+    transparent 100%
+  ),
+  radial-gradient(
+    ellipse 30% 28% at 8% 72%,
+    rgba(255, 190, 176, 0.58) 0%,
+    transparent 100%
+  ),
+  radial-gradient(
+    ellipse 26% 30% at 48% 42%,
+    rgba(218, 202, 255, 0.42) 0%,
+    transparent 100%
+  ),
+  linear-gradient(
+    135deg,
+    #f3e8e4 0%,
+    #f8eee9 35%,
+    #eee9f7 68%,
+    #eae7f5 100%
+  );
+
   /* Surfaces */
   --forge-surface: #ffffff;
   --forge-surface-subtle: #f8fafc;

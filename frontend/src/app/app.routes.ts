@@ -26,6 +26,7 @@ import { ResultsQualityAnalysisComponent } from './features/results-quality-anal
 import { UiKitDesignSystemComponent } from './features/ui-kit-design-system/ui-kit-design-system.component';
 import { SpecificationAuthoringComponent } from './features/specification-authoring/specification-authoring.component';
 import { SpecificationWizardComponent } from './features/specification-wizard/specification-wizard.component';
+import { HelpCenterComponent } from './features/help-center/help-center.component';
 
 export const routes: Routes = [
   {
@@ -46,6 +47,10 @@ export const routes: Routes = [
     component: AuthenticatedLayoutComponent,
     canActivate: [authGuard],
     children: [
+      {
+        path: 'help',
+        component: HelpCenterComponent,
+      },
       {
         path: 'workspace',
         component: WorkspaceComponent,

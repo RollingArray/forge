@@ -36,7 +36,13 @@
       @for (group of workspaceNavigationGroups; track group.title) {
         <app-workspace-navigation-group
           [group]="group"
-          [activeAction]="isActive('favorites') ? 'favorites' : null"
+          [activeAction]="
+            isActive('favorites')
+              ? 'favorites'
+              : isActive('help')
+                ? 'help'
+                : null
+          "
           (selected)="select($event)"
         />
       }

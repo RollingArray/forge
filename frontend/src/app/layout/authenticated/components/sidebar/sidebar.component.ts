@@ -153,10 +153,9 @@ export class SidebarComponent {
       icon: 'help',
       items: [
         {
-          label: 'Help &amp; Documentation',
+          label: 'Help & Documentation',
           icon: 'menu_book',
-          action: '',
-          availability: 'soon',
+          action: 'help',
         },
       ],
     },
@@ -305,7 +304,8 @@ export class SidebarComponent {
       url === '/workspace' ||
       url === '/workspace/favorites' ||
       url === '/workspace/activity' ||
-      url === '/workspace/ui-kit-design-system'
+      url === '/workspace/ui-kit-design-system' ||
+      url === '/help'
     );
   }
 
@@ -324,6 +324,9 @@ export class SidebarComponent {
     switch (section) {
       case 'workspace':
         return url === '/workspace' || url === '/workspace/ui-kit-design-system';
+
+      case 'help':
+        return segments.includes('help');
 
       case 'favorites':
         return url === '/workspace/favorites';
@@ -376,6 +379,10 @@ export class SidebarComponent {
     const dataModelId = workspaceIndex >= 0 ? segments[workspaceIndex + 1] : undefined;
 
     switch (action) {
+      case 'help':
+        void this.router.navigate(['/help']);
+        break;
+
       case 'workspace':
       case 'data-models':
         void this.router.navigate(['/workspace']);
