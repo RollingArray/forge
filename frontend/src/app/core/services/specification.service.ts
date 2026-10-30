@@ -28,6 +28,12 @@ import { ForgeSpecificationGeneration } from '../interfaces/forge-specification-
 import { ForgeSpecificationModel } from '../interfaces/forge-specification-model.interface';
 import { ForgeSpecificationRelationship } from '../interfaces/forge-specification-relationship.interface';
 import {
+  SpecificationImportApplyRequest,
+  SpecificationImportApplyResponse,
+  SpecificationImportCsv,
+  SpecificationImportPreviewResponse,
+} from '../interfaces/specification-import.interface';
+import {
   SpecificationValidationResult,
 } from '../interfaces/specification-validation.interface';
 
@@ -156,6 +162,38 @@ export class SpecificationService {
   private readonly http = inject(HttpClient);
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
+
+  previewImport(
+    dataModelId: string,
+    csv: SpecificationImportCsv,
+  ): Observable<SpecificationImportPreviewResponse> {
+    return this.http.post<SpecificationImportPreviewResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/import/preview`,
+      { csv },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.PreviewingSpecificationImport,
+        ),
+      },
+    );
+  }
+
+  applyImport(
+    dataModelId: string,
+    request: SpecificationImportApplyRequest,
+  ): Observable<SpecificationImportApplyResponse> {
+    return this.http.post<SpecificationImportApplyResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/import/apply`,
+      request,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.ApplyingSpecificationImport,
+        ),
+      },
+    );
+  }
 
   validate(
     dataModelId: string,

@@ -14,6 +14,8 @@
 
 export enum ApiLoadingMessage {
   LoadingWorkspace = 'Loading workspace...',
+  PreviewingSpecificationImport = 'Previewing CSV specification import...',
+  ApplyingSpecificationImport = 'Applying CSV specification import...',
   LoadingActivityFeed = 'Loading activity feed...',
   LoadingFavorites = 'Loading favorites...',
   CreatingFavorite = 'Adding favorite...',

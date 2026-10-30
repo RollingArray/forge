@@ -13,8 +13,18 @@ import { finalize } from 'rxjs';
 import { API_LOADING_MESSAGE } from '../tokens/api-loading-message.token';
 import { API_LOADING_SKIP } from '../tokens/api-loading-skip.token';
 import { ApiLoadingService } from '../services/api-loading.service';
+import { environment } from '../../../environments/environment';
 
 export const apiLoadingInterceptor: HttpInterceptorFn = (request, next) => {
+  const apiBaseUrl = environment.apiBaseUrl.replace(/\/$/, '');
+  const isApiRequest =
+    request.url === apiBaseUrl ||
+    request.url.startsWith(`${apiBaseUrl}/`) ||
+    request.url.startsWith(`${apiBaseUrl}?`);
+
+  if (!isApiRequest) {
+    return next(request);
+  }
   const apiLoadingService = inject(ApiLoadingService);
 
   const isPublicAuthRequest =
