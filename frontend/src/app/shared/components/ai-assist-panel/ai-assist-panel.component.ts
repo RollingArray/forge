@@ -21,16 +21,29 @@ import {
 } from '@angular/core';
 
 import { AIDataModelProposal } from '../../../core/interfaces/ai-data-model-proposal.interface';
+import { ForgeButtonComponent } from '../forge-button/forge-button.component';
 
 export interface AiAssistExample {
   label: string;
   prompt: string;
+  description?: string;
   example?: string;
+}
+
+export interface AiAssistGuide {
+  title: string;
+  introduction?: string;
+  sections: {
+    heading: string;
+    description: string;
+  }[];
+  reassurance?: string;
 }
 
 @Component({
   selector: 'app-ai-assist-panel',
   standalone: true,
+  imports: [ForgeButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ai-assist-panel.component.html',
   styleUrl: './ai-assist-panel.component.css',
@@ -63,6 +76,13 @@ export class AiAssistPanelComponent {
 
   readonly examples = input<AiAssistExample[]>([]);
 
+  readonly guide = input<AiAssistGuide | null>(null);
+  readonly guideExpanded = model(false);
+
+  toggleGuide(): void {
+    this.guideExpanded.update((expanded) => !expanded);
+  }
+
   readonly exampleHeading = input('Examples of requests');
 
   readonly exampleDescription = input(
@@ -82,6 +102,10 @@ export class AiAssistPanelComponent {
   readonly useProposal = output<AIDataModelProposal>();
   readonly regenerate = output<void>();
   readonly exampleSelected = output<string>();
+  readonly externalExampleSelection = input(false);
+  readonly showClearButton = input(false);
+  readonly clearDisabled = input(false);
+  readonly clear = output<void>();
 
   applyProposal(): void {
     const proposal = this.proposal();
@@ -116,6 +140,11 @@ export class AiAssistPanelComponent {
   }
 
   selectExample(prompt: string): void {
+    if (this.externalExampleSelection()) {
+      this.exampleSelected.emit(prompt);
+      return;
+    }
+
     this.prompt.set(prompt);
     this.exampleSelected.emit(prompt);
   }

@@ -5,6 +5,7 @@
   [class.forge-button--secondary]="variant() === 'secondary'"
   [disabled]="disabled()"
   [attr.aria-label]="ariaLabel() || label()"
+  [attr.aria-expanded]="ariaExpanded()"
   [attr.title]="title()"
   (click)="clicked.emit()"
 >

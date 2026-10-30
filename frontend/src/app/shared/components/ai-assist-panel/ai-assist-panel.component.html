@@ -37,15 +37,18 @@
       </div>
 
       <div class="ai-proposal-actions">
-        <button type="button" class="regenerate-button" (click)="regenerateProposal()">
-          <span class="material-symbols-outlined">refresh</span>
-          Regenerate
-        </button>
+        <app-forge-button
+          label="Regenerate"
+          icon="refresh"
+          variant="secondary"
+          (clicked)="regenerateProposal()"
+        />
 
-        <button type="button" class="use-proposal-button" (click)="applyProposal()">
-          <span class="material-symbols-outlined">check_circle</span>
-          Use This Proposal
-        </button>
+        <app-forge-button
+          label="Use This Proposal"
+          icon="check_circle"
+          (clicked)="applyProposal()"
+        />
       </div>
     </div>
   } @else {
@@ -73,6 +76,43 @@
       </div>
     </header>
 
+    @if (guide(); as activeGuide) {
+      <section class="ai-assist-guide">
+        <div class="ai-assist-guide-heading">
+          <span class="ai-assist-guide-title">
+            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+            {{ activeGuide.title }}
+          </span>
+          <app-forge-button
+            [label]="guideExpanded() ? 'Hide guide' : 'Show guide'"
+            [icon]="guideExpanded() ? 'expand_less' : 'expand_more'"
+            variant="secondary"
+            [disabled]="generating()"
+            [ariaLabel]="(guideExpanded() ? 'Collapse ' : 'Expand ') + activeGuide.title"
+            [ariaExpanded]="guideExpanded()"
+            (clicked)="toggleGuide()"
+          />
+        </div>
+
+        @if (guideExpanded()) {
+          <div class="ai-assist-guide-content">
+            @if (activeGuide.introduction) {
+              <p class="ai-assist-guide-introduction">{{ activeGuide.introduction }}</p>
+            }
+            @for (section of activeGuide.sections; track section.heading) {
+              <div class="ai-assist-guide-section">
+                <strong>{{ section.heading }}</strong>
+                <p>{{ section.description }}</p>
+              </div>
+            }
+            @if (activeGuide.reassurance) {
+              <p class="ai-assist-guide-reassurance">{{ activeGuide.reassurance }}</p>
+            }
+          </div>
+        }
+      </section>
+    }
+
     <div class="ai-assist-input">
       <textarea
         rows="7"
@@ -89,24 +129,28 @@
           {{ hint() }}
         </span>
 
-        <button
-          type="button"
-          class="generate-button"
+        <app-forge-button
+          [label]="generating() ? 'Generating...' : (refineLabel() ?? generateLabel())"
+          [icon]="generating() ? 'sync' : 'auto_awesome'"
           [disabled]="!prompt().trim() || generating() || !llmOnline()"
-          (click)="refineLabel() ? refineSuggestion() : generateSuggestion()"
-        >
-          @if (generating()) {
-            <span class="material-symbols-outlined spin">sync</span>
-            Generating...
-          } @else {
-            <span class="material-symbols-outlined">auto_awesome</span>
-            {{ refineLabel() ?? generateLabel() }}
-          }
-        </button>
+          (clicked)="refineLabel() ? refineSuggestion() : generateSuggestion()"
+        />
       </div>
     </div>
 
     <ng-content select="[ai-result]" />
+
+    @if (showClearButton()) {
+      <div class="ai-assist-actions">
+        <app-forge-button
+          label="Clear"
+          icon="delete_sweep"
+          variant="secondary"
+          [disabled]="clearDisabled()"
+          (clicked)="clear.emit()"
+        />
+      </div>
+    }
 
     @if (examples().length > 0) {
       <div class="examples-section">
@@ -124,22 +168,20 @@
             <div class="example-button">
               <div class="example-copy">
                 <span>{{ example.label }}</span>
-                <small>{{ example.prompt }}</small>
+                <small>{{ example.description || example.prompt }}</small>
 
                 @if (example.example) {
                   <em> Example: {{ example.example }} </em>
                 }
               </div>
 
-              <button
-                type="button"
-                class="example-select-button"
+              <app-forge-button
+                label="Select"
+                icon="arrow_forward"
+                variant="secondary"
                 [disabled]="generating() || !llmOnline()"
-                (click)="selectExample(example.prompt)"
-              >
-                Select
-                <span class="material-symbols-outlined"> arrow_forward </span>
-              </button>
+                (clicked)="selectExample(example.prompt)"
+              />
             </div>
           }
         </div>

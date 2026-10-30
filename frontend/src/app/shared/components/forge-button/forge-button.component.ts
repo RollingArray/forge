@@ -19,6 +19,7 @@ export class ForgeButtonComponent {
   readonly icon = input<string | null>(null);
   readonly disabled = input(false);
   readonly ariaLabel = input<string | null>(null);
+  readonly ariaExpanded = input<boolean | null>(null);
   readonly title = input<string | null>(null);
   readonly variant = input<ForgeButtonVariant>('primary');
 

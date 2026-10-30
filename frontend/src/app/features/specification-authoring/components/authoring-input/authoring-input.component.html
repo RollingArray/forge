@@ -1,52 +1,39 @@
-<section class="input-panel" aria-labelledby="description-heading">
-      <div class="panel-heading">
-        <span class="step-number">01</span>
-        <div>
-          <h2 id="description-heading">Describe the system</h2>
-          <p>Plain English, field lists, or a simple table all work.</p>
+<section class="input-panel ai-column" aria-labelledby="description-heading">
+  <app-ai-assist-panel
+    title="Start with FORGE AI"
+    description="Describe your system in plain English or provide a simple table. FORGE AI will propose a structured specification for you to review."
+    placeholder="Describe your entities, fields, identifiers, relationships, business rules, and requested record counts..."
+    hint="Include what you know. Uncertain details can remain open for clarification."
+    [guide]="guide"
+    [(guideExpanded)]="guideExpanded"
+    [examples]="examples"
+    [externalExampleSelection]="true"
+    (exampleSelected)="selectExample($event)"
+    exampleHeading="Try an example"
+    exampleDescription="Choose an example to get started."
+    [generateLabel]="hasProposal ? 'Generate again' : 'Generate with FORGE AI'"
+    [generating]="generating"
+    [llmOnline]="aiCapability()?.available ?? false"
+    [llmModel]="aiCapability()?.model ?? null"
+    [llmMode]="aiCapability()?.mode ?? null"
+    [prompt]="prompt"
+    (promptChange)="promptChange.emit($event)"
+    (generate)="generate.emit($event)"
+    [showClearButton]="true"
+    [clearDisabled]="generating || (!prompt && !hasProposal && !errorMessage)"
+    (clear)="clear.emit()"
+  >
+    <div ai-result>
+      @if (errorMessage; as error) {
+        <div class="error-panel" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <div>
+            <strong>Proposal could not be generated</strong>
+            <p>{{ error }}</p>
+          </div>
         </div>
-      </div>
+      }
+    </div>
+  </app-ai-assist-panel>
 
-      <app-description-learning-panel
-        [showGuide]="showGuide"
-        [generating]="generating"
-        (guideToggle)="guideToggle.emit()"
-        (exampleSelected)="exampleSelected.emit()" />
-
-
-      <app-ai-assist-panel
-        title="Start with FORGE AI"
-        description="Describe your system in plain English or provide a simple table. FORGE AI will propose a structured specification for you to review."
-        placeholder="Describe your entities, fields, identifiers, relationships, business rules, and requested record counts..."
-        hint="Include what you know. Uncertain details can remain open for clarification."
-        [generateLabel]="hasProposal ? 'Generate again' : 'Generate with FORGE AI'"
-        [generating]="generating"
-        [llmOnline]="true"
-        [prompt]="prompt"
-        (promptChange)="promptChange.emit($event)"
-        (generate)="generate.emit($event)"
-      >
-        <div ai-result>
-          @if (errorMessage; as error) {
-            <div class="error-panel" role="alert">
-              <span class="material-symbols-outlined" aria-hidden="true">error</span>
-              <div>
-                <strong>Proposal could not be generated</strong>
-                <p>{{ error }}</p>
-              </div>
-            </div>
-          }
-        </div>
-      </app-ai-assist-panel>
-
-      <div class="input-actions">
-        <button
-          type="button"
-          class="secondary-button"
-          [disabled]="generating || (!prompt && !hasProposal && !errorMessage)"
-          (click)="clear.emit()"
-        >
-          Clear
-        </button>
-      </div>
-    </section>
+</section>
