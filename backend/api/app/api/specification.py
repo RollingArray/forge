@@ -6,6 +6,9 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
+import hashlib
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.authentication_dependency import get_authenticated_user
@@ -41,13 +44,24 @@ from app.models.specification_foreign_key_model import (
     UpdateForeignKeyRequest,
 )
 from app.models.specification_model import SpecificationModel
+from app.models.specification_import_model import (
+    SpecificationImportPreviewRequest,
+    SpecificationImportPreviewResponse,
+    SpecificationImportApplyRequest,
+    SpecificationImportApplyResponse,
+)
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.activity_service import ActivityService
 from app.constants.activity import ActivityType
 from app.repositories.json_data_model_repository import JsonDataModelRepository
+from app.repositories.json_specification_repository import (
+    JsonSpecificationRepository,
+    SpecificationRevisionConflict,
+)
 from app.services.population_service import PopulationService
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
+from app.services.specification_import_service import SpecificationImportService
 
 
 router = APIRouter(
@@ -61,6 +75,8 @@ specification_validation_service = SpecificationValidationService()
 data_model_access_service = DataModelAccessService()
 activity_service = ActivityService()
 data_model_repository = JsonDataModelRepository()
+specification_import_service = SpecificationImportService()
+specification_import_repository = JsonSpecificationRepository()
 
 
 
@@ -1058,3 +1074,200 @@ async def delete_entity(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Entity not found.",
         )
+
+
+@router.post(
+    "/{data_model_id}/specification/import/preview",
+    response_model=SpecificationImportPreviewResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def specification_import_preview(
+    data_model_id: str,
+    request: SpecificationImportPreviewRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> SpecificationImportPreviewResponse:
+    """Preview additive CSV changes without modifying the specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    csv_sections = request.csv.model_dump()
+    parsed = specification_import_service.parse_and_convert(csv_sections)
+
+    existing = specification_import_repository.read(data_model_id)
+    baseline = (
+        existing
+        if existing is not None
+        else specification_import_repository._create_empty_specification(
+            model_name=data_model.name,
+            model_description=data_model.description,
+        )
+    )
+
+    merged = specification_import_service.merge_into_specification(
+        existing_specification=baseline,
+        parsed_result=parsed,
+    )
+
+    canonical_csv = json.dumps(
+        csv_sections,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    csv_digest = hashlib.sha256(canonical_csv).hexdigest()
+
+    return SpecificationImportPreviewResponse(
+        base_revision=specification_import_repository.revision(baseline),
+        csv_digest=csv_digest,
+        can_apply=merged["can_apply"],
+        summary=merged["summary"],
+        sections=parsed["sections"],
+        additions=merged["additions"],
+        already_present=merged["already_present"],
+        conflicts=merged["conflicts"],
+        issues=merged["issues"],
+    )
+
+
+@router.post(
+    "/{data_model_id}/specification/import/apply",
+    response_model=SpecificationImportApplyResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def specification_import_apply(
+    data_model_id: str,
+    request: SpecificationImportApplyRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> SpecificationImportApplyResponse:
+    """Apply the exact reviewed CSV against the reviewed specification revision."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    csv_sections = request.csv.model_dump()
+    canonical_csv = json.dumps(
+        csv_sections,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    actual_digest = hashlib.sha256(canonical_csv).hexdigest()
+
+    if actual_digest != request.csv_digest:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The CSV content differs from the reviewed preview.",
+        )
+
+    try:
+        with specification_import_repository.transaction(data_model_id):
+            existing = specification_import_repository.read(data_model_id)
+            baseline = (
+                existing
+                if existing is not None
+                else specification_import_repository._create_empty_specification(
+                    model_name=data_model.name,
+                    model_description=data_model.description,
+                )
+            )
+
+            current_revision = specification_import_repository.revision(
+                baseline
+            )
+            if current_revision != request.base_revision:
+                raise SpecificationRevisionConflict(
+                    "The specification changed after preview. "
+                    "Refresh the preview before applying the import."
+                )
+
+            parsed = specification_import_service.parse_and_convert(
+                csv_sections
+            )
+            merged = specification_import_service.merge_into_specification(
+                existing_specification=baseline,
+                parsed_result=parsed,
+            )
+
+            if not merged["can_apply"]:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "message": "The CSV import contains conflicts or validation issues.",
+                        "summary": merged["summary"],
+                        "conflicts": merged["conflicts"],
+                        "issues": merged["issues"],
+                    },
+                )
+
+            if merged["additions"]:
+                saved = specification_import_repository.save_if_revision(
+                    data_model_id=data_model_id,
+                    expected_revision=request.base_revision,
+                    specification=merged["candidate"],
+                    missing_specification=(
+                        baseline if existing is None else None
+                    ),
+                )
+            else:
+                saved = baseline
+
+            resulting_revision = specification_import_repository.revision(
+                saved
+            )
+
+    except SpecificationRevisionConflict as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if merged["additions"]:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=ActivityType.SPECIFICATION_IMPORT_APPLIED,
+            title="Specification imported",
+            description=(
+                f"CSV import added {len(merged['additions'])} "
+                "specification definitions."
+            ),
+            data_model_id=data_model_id,
+            metadata=merged["summary"],
+        )
+
+    return SpecificationImportApplyResponse(
+        applied=True,
+        summary=merged["summary"],
+        specification_revision=resulting_revision,
+    )
