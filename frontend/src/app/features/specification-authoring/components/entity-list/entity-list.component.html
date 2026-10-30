@@ -1,0 +1,63 @@
+<section class="entity-list">
+  <app-workspace-header
+    eyebrow="MODEL STRUCTURE"
+    title="Entities and fields"
+    summary="Review entity definitions, identities, population requirements and field-level generation configuration."
+    [state]="entitiesValue.length + (entitiesValue.length === 1 ? ' entity' : ' entities')"
+  />
+
+  @if (entitiesValue.length > 0) {
+    <app-workflow-row [columns]="2">
+      @for (entity of entitiesValue; track $index) {
+        <article class="specification-entity-card">
+          <app-workspace-header
+            eyebrow="ENTITY"
+            [title]="displayValue(asRecord(entity)['name'])"
+            [summary]="displayValue(asRecord(entity)['description'])"
+            [state]="populationCount(entity) + ' rows'"
+          />
+
+          <div class="entity-identity-summary">
+            <span class="material-symbols-outlined" aria-hidden="true">key</span>
+            <span>Identity fields</span>
+            <strong>{{ identityFields(entity) }}</strong>
+          </div>
+
+          <div class="specification-field-list">
+            <div class="field-list-heading">
+              <span>Fields</span>
+              <span>{{ asArray(asRecord(entity)['fields']).length }}</span>
+            </div>
+
+            @for (field of asArray(asRecord(entity)['fields']); track $index) {
+              <article class="specification-field-row">
+                <div class="specification-field-main">
+                  <strong>{{ displayValue(asRecord(field)['name']) }}</strong>
+                  <span class="field-type-pill">
+                    {{ displayValue(asRecord(field)['type']) }}
+                  </span>
+
+                  @if (asRecord(field)['identity']) {
+                    <span class="identity-strategy-pill">
+                      {{ fieldIdentityStrategy(field) }}
+                    </span>
+                  }
+                </div>
+
+                <p>{{ fieldGenerationSummary(field) }}</p>
+              </article>
+            } @empty {
+              <p class="specification-empty-note">
+                No fields are defined for this entity.
+              </p>
+            }
+          </div>
+        </article>
+      }
+    </app-workflow-row>
+  } @else {
+    <p class="specification-empty-note">
+      No entities were returned in the proposal.
+    </p>
+  }
+</section>

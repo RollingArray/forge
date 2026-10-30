@@ -1,4 +1,4 @@
-<section class="result-card visual-specification" aria-labelledby="visual-specification-heading">
+<section class="visual-specification" aria-labelledby="visual-specification-heading">
   <app-workspace-header
     eyebrow="CANONICAL SPECIFICATION"
     [title]="displayValue(asRecord(specificationValue['model'])['name'])"
@@ -48,107 +48,14 @@
     ]"
   />
 
-  <app-workspace-section>
-    <app-workspace-header
-      eyebrow="GENERATION CONFIGURATION"
-      title="Generation settings"
-      summary="Seed and scenario used to configure synthetic data generation."
-    />
-    <app-metric-grid
-      [columns]="2"
-      [metrics]="[
-        {
-          label: 'Seed',
-          value: displayValue(asRecord(specificationValue['generation'])['seed']),
-          description: 'Generation seed for reproducibility',
-          icon: 'pin',
-        },
-        {
-          label: 'Scenario',
-          value: displayValue(asRecord(specificationValue['generation'])['scenario']),
-          description: 'Selected generation scenario',
-          icon: 'tune',
-        },
-      ]"
-    />
-  </app-workspace-section>
+  <app-generation-settings
+    [generation]="specificationValue['generation']"
+  />
 
-  <section class="visual-specification-section">
-    <h4>Entities and fields</h4>
-    @for (entity of asArray(specificationValue['entities']); track $index) {
-      <article class="specification-entity-card">
-        <div class="specification-entity-heading">
-          <div>
-            <h5>{{ displayValue(asRecord(entity)['name']) }}</h5>
-            <p>{{ displayValue(asRecord(entity)['description']) }}</p>
-          </div>
-          <span class="population-pill">{{ populationCount(entity) }} rows</span>
-        </div>
+  <app-entity-list [entities]="specificationValue['entities']" />
 
-        <div class="entity-identity-summary">
-          <span class="material-symbols-outlined" aria-hidden="true">key</span>
-          <span>Identity fields</span>
-          <strong>{{ identityFields(entity) }}</strong>
-        </div>
+  <app-detail-sections [specification]="specificationValue" />
 
-        <div class="specification-field-list">
-          @for (field of asArray(asRecord(entity)['fields']); track $index) {
-            <div class="specification-field-row">
-              <div class="specification-field-main">
-                <strong>{{ displayValue(asRecord(field)['name']) }}</strong>
-                <span class="field-type-pill">{{ displayValue(asRecord(field)['type']) }}</span>
-                @if (asRecord(field)['identity']) {
-                  <span class="identity-strategy-pill">
-                    {{ fieldIdentityStrategy(field) }}
-                  </span>
-                }
-              </div>
-              <p>{{ fieldGenerationSummary(field) }}</p>
-            </div>
-          } @empty {
-            <p class="specification-empty-note">No fields are defined for this entity.</p>
-          }
-        </div>
-      </article>
-    } @empty {
-      <p class="specification-empty-note">No entities were returned in the proposal.</p>
-    }
-  </section>
-
-  @for (
-    section of asArray([
-      { key: 'relationships', title: 'Relationships', icon: 'account_tree' },
-      { key: 'foreign_keys', title: 'Foreign keys', icon: 'link' },
-      { key: 'constraints', title: 'Constraints', icon: 'rule' },
-      { key: 'dependencies', title: 'Dependencies', icon: 'conversion_path' },
-      { key: 'statistical_behavior', title: 'Statistical behavior', icon: 'query_stats' },
-      { key: 'scenarios', title: 'Scenarios', icon: 'tune' },
-    ]);
-    track $any(section).key
-  ) {
-    <section class="visual-specification-section">
-      <div class="specification-section-heading">
-        <h4>{{ $any(section).title }}</h4>
-        <span>{{ asArray(specificationValue[$any(section).key]).length }}</span>
-      </div>
-      @if (asArray(specificationValue[$any(section).key]).length > 0) {
-        <div class="forge-card specification-record-list">
-          @for (item of asArray(specificationValue[$any(section).key]); track $index) {
-            <article class="specification-record">
-              <strong>{{
-                recordTitle(item, $any(section).title.slice(0, -1) + ' ' + ($index + 1))
-              }}</strong>
-              <p>{{ recordSummary(item) }}</p>
-            </article>
-          }
-        </div>
-      } @else {
-        <p class="specification-empty-note">
-          No {{ $any(section).title.toLowerCase() }} are currently defined.
-        </p>
-      }
-    </section>
-  }
   <p class="visual-specification-footnote">
     This is a visual rendering of the proposed specification. It remains a draft; reviewing it here
     does not save or modify a Data Model.

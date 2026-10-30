@@ -1,0 +1,25 @@
+@for (section of sections; track section.key) {
+  <section class="visual-specification-section">
+    <div class="specification-section-heading">
+      <h4>{{ section.title }}</h4>
+      <span>{{ asArray(specificationValue[section.key]).length }}</span>
+    </div>
+
+    @if (asArray(specificationValue[section.key]).length > 0) {
+      <div class="forge-card specification-record-list">
+        @for (item of asArray(specificationValue[section.key]); track $index) {
+          <article class="specification-record">
+            <strong>{{
+              recordTitle(item, section.title.slice(0, -1) + ' ' + ($index + 1))
+            }}</strong>
+            <p>{{ recordSummary(item) }}</p>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="specification-empty-note">
+        No {{ section.title.toLowerCase() }} are currently defined.
+      </p>
+    }
+  </section>
+}

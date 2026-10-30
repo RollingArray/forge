@@ -1,0 +1,12 @@
+<app-workflow-row [columns]="1">
+  <app-workspace-header
+    eyebrow="GENERATION CONFIGURATION"
+    title="Generation settings"
+    summary="Seed and scenario used to configure synthetic data generation."
+  />
+
+  <app-metric-grid
+    [columns]="2"
+    [metrics]="metrics()"
+  />
+</app-workflow-row>

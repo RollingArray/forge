@@ -1,0 +1,118 @@
+.entity-list {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.specification-entity-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #e5dfef;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.entity-identity-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #eee9f4;
+  border-bottom: 1px solid #eee9f4;
+  color: #65577c;
+  font-size: 11px;
+}
+
+.entity-identity-summary .material-symbols-outlined {
+  color: #7959c6;
+  font-size: 17px;
+}
+
+.entity-identity-summary strong {
+  color: #3f315a;
+  overflow-wrap: anywhere;
+}
+
+.specification-field-list {
+  display: grid;
+  min-width: 0;
+}
+
+.field-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0 8px;
+  color: #65577c;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.field-list-heading span:last-child {
+  display: inline-grid;
+  min-width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 7px;
+  background: #f0ebfb;
+  color: #6547a7;
+}
+
+.specification-field-row {
+  display: grid;
+  gap: 7px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0edf5;
+}
+
+.specification-field-row:last-child {
+  border-bottom: 0;
+}
+
+.specification-field-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.specification-field-main > strong {
+  color: #393047;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.field-type-pill,
+.identity-strategy-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #e3dced;
+  border-radius: 7px;
+  background: #fff;
+  color: #625274;
+  font-size: 10px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.identity-strategy-pill {
+  border-color: #c9e8d5;
+  background: #effaf3;
+  color: #226c43;
+}
+
+.specification-field-row > p,
+.specification-empty-note {
+  margin: 0;
+  color: #777185;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
