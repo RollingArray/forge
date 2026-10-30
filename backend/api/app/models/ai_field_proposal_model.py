@@ -14,6 +14,14 @@ Email: ranjoy.sen@collins.com
 
 from typing import Any, Literal
 
+from app.constants.specification_vocabulary import (
+    Distribution,
+    FieldType,
+    GenerationStrategy,
+    IdentityStrategy,
+    StringGenerator,
+)
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -23,28 +31,19 @@ FieldProposalStatus = Literal[
     "UNSUPPORTED",
 ]
 
-FieldType = Literal[
-    "IDENTIFIER",
-    "STRING",
-    "INTEGER",
-    "DECIMAL",
-    "BOOLEAN",
-    "CATEGORICAL",
-]
-
 
 class AIFieldIdentityProposalModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    strategy: Literal["SEQUENTIAL_ID"]
+    strategy: IdentityStrategy
 
 
 class AIFieldGenerationProposalModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    strategy: Literal["RANDOM"] | None = None
-    distribution: str | None = None
-    generator: str | None = None
+    strategy: GenerationStrategy | None = None
+    distribution: Distribution | None = None
+    generator: StringGenerator | None = None
     parameters: dict[str, Any] | None = None
 
 

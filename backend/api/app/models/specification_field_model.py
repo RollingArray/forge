@@ -6,47 +6,20 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
-from typing import Any, Literal
+from typing import Any
+
+from app.constants.specification_vocabulary import (
+    Distribution,
+    FieldType,
+    GenerationStrategy,
+    IdentityStrategy,
+    StringCharacterSet,
+    StringGenerator,
+)
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-FieldType = Literal[
-    "IDENTIFIER",
-    "STRING",
-    "INTEGER",
-    "DECIMAL",
-    "BOOLEAN",
-    "CATEGORICAL",
-]
-
-IdentityStrategy = Literal[
-    "SEQUENTIAL_ID",
-]
-
-GenerationStrategy = Literal[
-    "RANDOM",
-]
-
-Distribution = Literal[
-    "UNIFORM",
-    "CATEGORICAL",
-    "DISCRETE_UNIFORM",
-    "NORMAL",
-    "POISSON",
-]
-
-StringGenerator = Literal[
-    "RANDOM_STRING",
-    "PATTERN",
-    "SEMANTIC",
-]
-
-StringCharacterSet = Literal[
-    "ALPHA",
-    "DIGITS",
-    "ALPHANUMERIC",
-]
 
 
 class FieldIdentityModel(BaseModel):

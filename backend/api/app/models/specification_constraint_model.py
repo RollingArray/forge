@@ -4,19 +4,9 @@ FORGE constraint request models.
 
 from __future__ import annotations
 
-from typing import Literal
+from app.constants.specification_vocabulary import ConstraintOperator
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-
-ConstraintOperator = Literal[
-    ">",
-    ">=",
-    "<",
-    "<=",
-    "==",
-    "!=",
-]
 
 
 class CreateConstraintRequest(BaseModel):

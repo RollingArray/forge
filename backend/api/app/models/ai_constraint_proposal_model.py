@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from app.constants.specification_vocabulary import ConstraintOperator
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -14,16 +16,6 @@ ConstraintProposalStatus = Literal[
     "CLARIFY",
     "UNSUPPORTED",
 ]
-
-ConstraintOperator = Literal[
-    ">",
-    ">=",
-    "<",
-    "<=",
-    "==",
-    "!=",
-]
-
 
 class AIConstraintProposalModel(BaseModel):
     """Proposed FORGE field constraint."""

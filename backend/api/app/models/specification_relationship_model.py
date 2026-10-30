@@ -6,22 +6,12 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
-from typing import Literal
+from app.constants.specification_vocabulary import (
+    RelationshipParticipation,
+    RelationshipType,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
-
-
-RelationshipType = Literal[
-    "ONE_TO_ONE",
-    "ONE_TO_MANY",
-    "MANY_TO_ONE",
-    "MANY_TO_MANY",
-]
-
-RelationshipParticipation = Literal[
-    "MANDATORY",
-    "OPTIONAL",
-]
 
 
 class CreateRelationshipRequest(BaseModel):

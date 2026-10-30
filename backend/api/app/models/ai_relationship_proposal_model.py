@@ -1,5 +1,10 @@
 from typing import Any, Literal
 
+from app.constants.specification_vocabulary import (
+    RelationshipParticipation,
+    RelationshipType,
+)
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,22 +25,9 @@ class AIRelationshipProposalModel(BaseModel):
     target_entity: str = Field(min_length=1)
     target_field: str = Field(min_length=1)
 
-    type: Literal[
-        "ONE_TO_ONE",
-        "ONE_TO_MANY",
-        "MANY_TO_ONE",
-        "MANY_TO_MANY",
-    ]
-
-    source_participation: Literal[
-        "MANDATORY",
-        "OPTIONAL",
-    ]
-
-    target_participation: Literal[
-        "MANDATORY",
-        "OPTIONAL",
-    ]
+    type: RelationshipType
+    source_participation: RelationshipParticipation
+    target_participation: RelationshipParticipation
 
 
 class AIRelationshipProposalResponseModel(BaseModel):

@@ -11,7 +11,21 @@ from __future__ import annotations
 import json
 import math
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, get_args
+
+from app.constants.specification_vocabulary import (
+    ConstraintOperator,
+    Distribution,
+    FieldType,
+    GenerationStrategy,
+    IdentityStrategy,
+    RelationshipParticipation,
+    RelationshipType,
+    SemanticMode,
+    StringCharacterSet,
+    StringGenerator,
+)
+from app.models.specification_entity_model import PopulationScaling
 
 from app.services.specification_csv_parser import SpecificationCsvParser
 
@@ -81,34 +95,17 @@ class SpecificationImportService:
         "constraints": ("entity", "field", "operator", "value"),
     }
 
-    FIELD_TYPES = {
-        "IDENTIFIER",
-        "STRING",
-        "INTEGER",
-        "DECIMAL",
-        "BOOLEAN",
-        "CATEGORICAL",
-    }
-    IDENTITY_STRATEGIES = {"SEQUENTIAL_ID"}
-    GENERATION_STRATEGIES = {"RANDOM"}
-    DISTRIBUTIONS = {
-        "UNIFORM",
-        "CATEGORICAL",
-        "DISCRETE_UNIFORM",
-        "NORMAL",
-        "POISSON",
-    }
-    STRING_GENERATORS = {"RANDOM_STRING", "PATTERN", "SEMANTIC"}
-    CHARACTER_SETS = {"ALPHA", "DIGITS", "ALPHANUMERIC"}
-    RELATIONSHIP_TYPES = {
-        "ONE_TO_ONE",
-        "ONE_TO_MANY",
-        "MANY_TO_ONE",
-        "MANY_TO_MANY",
-    }
-    PARTICIPATION_TYPES = {"MANDATORY", "OPTIONAL"}
-    CONSTRAINT_OPERATORS = {">", ">=", "<", "<=", "==", "!="}
-    POPULATION_SCALING = {"FIXED", "SCALABLE"}
+    FIELD_TYPES = set(get_args(FieldType))
+    IDENTITY_STRATEGIES = set(get_args(IdentityStrategy))
+    GENERATION_STRATEGIES = set(get_args(GenerationStrategy))
+    DISTRIBUTIONS = set(get_args(Distribution))
+    STRING_GENERATORS = set(get_args(StringGenerator))
+    CHARACTER_SETS = set(get_args(StringCharacterSet))
+    SEMANTIC_MODES = set(get_args(SemanticMode))
+    RELATIONSHIP_TYPES = set(get_args(RelationshipType))
+    PARTICIPATION_TYPES = set(get_args(RelationshipParticipation))
+    CONSTRAINT_OPERATORS = set(get_args(ConstraintOperator))
+    POPULATION_SCALING = {item.value for item in PopulationScaling}
 
     def __init__(
         self,
@@ -441,7 +438,7 @@ class SpecificationImportService:
                 if description:
                     parameters["description"] = description
                 if mode:
-                    if mode not in {"UNIQUE", "VOCABULARY"}:
+                    if mode not in self.SEMANTIC_MODES:
                         raise ValueError(
                             "semantic_mode must be UNIQUE or VOCABULARY."
                         )
