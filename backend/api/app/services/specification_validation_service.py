@@ -9,6 +9,8 @@ No LLM or UI logic belongs in this service.
 import math
 from typing import Any
 
+from app.services.relationship_endpoint import parse_relationship_endpoint
+
 
 class SpecificationValidationService:
     """Validate a canonical FORGE specification deterministically."""
@@ -368,6 +370,8 @@ class SpecificationValidationService:
         fields_by_entity: dict[str, set[str]],
         add,
     ) -> None:
+        """Validate canonical structured relationship endpoints."""
+
         relationships = specification.get("relationships", [])
 
         valid_types = {
@@ -376,88 +380,88 @@ class SpecificationValidationService:
             "MANY_TO_ONE",
             "MANY_TO_MANY",
         }
-
-        valid_participation = {
-            "MANDATORY",
-            "OPTIONAL",
-        }
-
-        def parse_reference(
-            reference: Any,
-            role: str,
-        ) -> tuple[str | None, str | None]:
-            if not isinstance(reference, str) or "." not in reference:
-                add(
-                    "error",
-                    "Relationship",
-                    f"Invalid {role} reference",
-                    f"{role.capitalize()} must reference an entity and field using ENTITY.FIELD format.",
-                    None,
-                )
-                return None, None
-
-            entity, field = reference.split(".", 1)
-            entity = entity.strip()
-            field = field.strip()
-
-            if not entity or not field:
-                add(
-                    "error",
-                    "Relationship",
-                    f"Invalid {role} reference",
-                    f"{role.capitalize()} reference '{reference}' must use ENTITY.FIELD format.",
-                    entity or None,
-                    field or None,
-                )
-                return None, None
-
-            if entity not in entity_names:
-                add(
-                    "error",
-                    "Relationship",
-                    f"Unknown {role} entity",
-                    f"{role.capitalize()} entity '{entity}' is not defined in the specification.",
-                    entity,
-                    field,
-                )
-                return None, None
-
-            if field not in fields_by_entity.get(entity, set()):
-                add(
-                    "error",
-                    "Relationship",
-                    f"Unknown {role} field",
-                    f"{role.capitalize()} field '{entity}.{field}' is not defined in the specification.",
-                    entity,
-                    field,
-                )
-                return None, None
-
-            return entity, field
+        valid_participation = {"MANDATORY", "OPTIONAL"}
 
         for relationship in relationships:
-            source_reference = relationship.get("source")
-            target_reference = relationship.get("target")
+            endpoints: dict[str, Any] = {}
+            endpoint_valid: dict[str, bool] = {}
 
-            source_entity, source_field = parse_reference(
-                source_reference,
-                "source",
+            for role in ("source", "target"):
+                raw = relationship.get(role)
+                parsed = None
+                valid = True
+
+                try:
+                    parsed = parse_relationship_endpoint(raw, role)
+                except ValueError as exc:
+                    add(
+                        "error",
+                        "Relationship",
+                        f"Invalid {role} endpoint",
+                        str(exc),
+                        None,
+                    )
+                    valid = False
+
+                if parsed is not None:
+                    entity = parsed.entity
+                    fields = parsed.fields
+
+                    if entity not in entity_names:
+                        add(
+                            "error",
+                            "Relationship",
+                            f"Unknown {role} entity",
+                            (
+                                f"{role.capitalize()} entity '{entity}' "
+                                "is not defined in the specification."
+                            ),
+                            entity,
+                        )
+                        valid = False
+                    else:
+                        for field in fields:
+                            if field not in fields_by_entity.get(entity, set()):
+                                add(
+                                    "error",
+                                    "Relationship",
+                                    f"Unknown {role} field",
+                                    (
+                                        f"{role.capitalize()} field "
+                                        f"'{entity}.{field}' is not defined "
+                                        "in the specification."
+                                    ),
+                                    entity,
+                                    field,
+                                )
+                                valid = False
+
+                    endpoints[role] = parsed
+
+                endpoint_valid[role] = valid
+
+            source_endpoint = endpoints.get("source")
+            target_endpoint = endpoints.get("target")
+            source_entity = (
+                source_endpoint.entity if source_endpoint else None
             )
-            target_entity, target_field = parse_reference(
-                target_reference,
-                "target",
+            target_entity = (
+                target_endpoint.entity if target_endpoint else None
+            )
+            source_field = (
+                source_endpoint.fields[0]
+                if source_endpoint and source_endpoint.fields
+                else None
             )
 
             relationship_type = relationship.get("type")
-
             if relationship_type not in valid_types:
                 add(
                     "error",
                     "Relationship",
                     "Invalid relationship type",
                     (
-                        f"Relationship '{source_reference or 'Unknown'} → "
-                        f"{target_reference or 'Unknown'}' uses invalid type "
+                        f"Relationship uses invalid type "
                         f"'{relationship_type}'. Expected one of: "
                         f"{', '.join(sorted(valid_types))}."
                     ),
@@ -480,10 +484,9 @@ class SpecificationValidationService:
                     "Relationship",
                     "Invalid source participation",
                     (
-                        f"Relationship '{source_reference or 'Unknown'} → "
-                        f"{target_reference or 'Unknown'}' uses invalid source "
-                        f"participation '{source_participation}'. Expected "
-                        f"MANDATORY or OPTIONAL."
+                        f"Relationship uses invalid source participation "
+                        f"'{source_participation}'. Expected MANDATORY "
+                        "or OPTIONAL."
                     ),
                     source_entity,
                     source_field,
@@ -495,20 +498,18 @@ class SpecificationValidationService:
                     "Relationship",
                     "Invalid target participation",
                     (
-                        f"Relationship '{source_reference or 'Unknown'} → "
-                        f"{target_reference or 'Unknown'}' uses invalid target "
-                        f"participation '{target_participation}'. Expected "
-                        f"MANDATORY or OPTIONAL."
+                        f"Relationship uses invalid target participation "
+                        f"'{target_participation}'. Expected MANDATORY "
+                        "or OPTIONAL."
                     ),
                     source_entity,
                     source_field,
                 )
 
             if (
-                source_entity
-                and source_field
-                and target_entity
-                and target_field
+                all(endpoint_valid.values())
+                and source_endpoint is not None
+                and target_endpoint is not None
                 and relationship_type in valid_types
                 and source_participation in valid_participation
                 and target_participation in valid_participation
@@ -518,7 +519,8 @@ class SpecificationValidationService:
                     "Relationship",
                     "Relationship is valid",
                     (
-                        f"{source_reference} → {target_reference} "
+                        f"{source_endpoint.reference} → "
+                        f"{target_endpoint.reference} "
                         f"({relationship_type}, "
                         f"{source_participation} → "
                         f"{target_participation})."
@@ -537,6 +539,7 @@ class SpecificationValidationService:
         foreign_keys = specification.get("foreign_keys", [])
         seen_names: set[str] = set()
         seen_mappings: set[tuple] = set()
+        seen_source_fields: dict[tuple[str, str], str] = {}
 
         field_maps = {
             entity.get("name"): {
@@ -675,6 +678,48 @@ class SpecificationValidationService:
                         f"{expected_name}: source references unknown field {source_entity}.{field_name}.",
                         source_entity,
                         field_name,
+                    )
+
+            if (
+                source_entity in entity_names
+                and all(
+                    isinstance(field_name, str)
+                    and field_name in source_map
+                    for field_name in source_fields
+                )
+                and len(source_fields) == len(set(source_fields))
+            ):
+                overlapping_fields = []
+
+                for field_name in source_fields:
+                    key = (source_entity, field_name)
+                    previous_fk = seen_source_fields.get(key)
+
+                    if previous_fk is not None:
+                        overlapping_fields.append(
+                            (field_name, previous_fk)
+                        )
+                    else:
+                        seen_source_fields[key] = name or expected_name
+
+                if overlapping_fields:
+                    valid = False
+
+                    details = "; ".join(
+                        f"{source_entity}.{field_name} is already assigned "
+                        f"by '{previous_fk}'"
+                        for field_name, previous_fk in overlapping_fields
+                    )
+
+                    add(
+                        "error",
+                        "Foreign Key",
+                        "Overlapping source field assignments",
+                        (
+                            f"{name or expected_name}: source fields "
+                            f"conflict with another foreign key: {details}."
+                        ),
+                        source_entity,
                     )
 
             for field_name in target_fields:

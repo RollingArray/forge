@@ -35,6 +35,7 @@ from app.models.specification_foreign_key_model import (
 )
 from app.constants.activity import ActivityType
 from app.services.activity_service import ActivityService
+from app.services.relationship_endpoint import parse_relationship_endpoint
 from app.repositories.json_data_model_repository import (
     JsonDataModelRepository,
 )
@@ -52,6 +53,133 @@ def _build_foreign_key_name(
 
     field_segment = "_".join(field.strip() for field in source_fields)
     return f"FK_{source_entity}_{field_segment}_{target_entity}"
+
+
+def _relationship_endpoints_for_foreign_key(
+    foreign_key: dict[str, Any],
+    relationship_source_entity: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build complete ordered relationship endpoints from a foreign key."""
+
+    fk_source = foreign_key.get("source")
+    fk_target = foreign_key.get("target")
+
+    if not isinstance(fk_source, dict) or not isinstance(fk_target, dict):
+        raise ValueError("The compatible foreign key has an invalid structure.")
+
+    source_entity = fk_source.get("entity")
+    target_entity = fk_target.get("entity")
+    source_fields = fk_source.get("fields")
+    target_fields = fk_target.get("fields")
+
+    if (
+        not isinstance(source_entity, str)
+        or not isinstance(target_entity, str)
+        or not isinstance(source_fields, list)
+        or not isinstance(target_fields, list)
+        or not source_fields
+        or len(source_fields) != len(target_fields)
+        or any(not isinstance(item, str) or not item.strip()
+               for item in source_fields + target_fields)
+        or len(set(source_fields)) != len(source_fields)
+        or len(set(target_fields)) != len(target_fields)
+    ):
+        raise ValueError("The compatible foreign key has an invalid field mapping.")
+
+    fk_source_endpoint = {
+        "entity": source_entity,
+        "fields": list(source_fields),
+    }
+    fk_target_endpoint = {
+        "entity": target_entity,
+        "fields": list(target_fields),
+    }
+
+    if relationship_source_entity == source_entity:
+        return fk_source_endpoint, fk_target_endpoint
+
+    if relationship_source_entity == target_entity:
+        return fk_target_endpoint, fk_source_endpoint
+
+    raise ValueError(
+        "The selected relationship source does not match the foreign key."
+    )
+
+
+def _relationship_uses_foreign_key(
+    relationship: dict[str, Any],
+    foreign_key: dict[str, Any],
+) -> bool:
+    """Check complete mappings and retain protection for legacy scalar records."""
+
+    try:
+        relationship_source = parse_relationship_endpoint(
+            relationship.get("source"), "source"
+        )
+        relationship_target = parse_relationship_endpoint(
+            relationship.get("target"), "target"
+        )
+    except ValueError:
+        return False
+
+    fk_source = foreign_key.get("source")
+    fk_target = foreign_key.get("target")
+
+    if not isinstance(fk_source, dict) or not isinstance(fk_target, dict):
+        return False
+
+    fk_source_entity = fk_source.get("entity")
+    fk_target_entity = fk_target.get("entity")
+    fk_source_fields = fk_source.get("fields")
+    fk_target_fields = fk_target.get("fields")
+
+    if (
+        not isinstance(fk_source_entity, str)
+        or not isinstance(fk_target_entity, str)
+        or not isinstance(fk_source_fields, list)
+        or not isinstance(fk_target_fields, list)
+        or not fk_source_fields
+        or len(fk_source_fields) != len(fk_target_fields)
+    ):
+        return False
+
+    forward = (
+        relationship_source.entity == fk_source_entity
+        and relationship_target.entity == fk_target_entity
+        and relationship_source.fields == tuple(fk_source_fields)
+        and relationship_target.fields == tuple(fk_target_fields)
+    )
+    reverse = (
+        relationship_source.entity == fk_target_entity
+        and relationship_target.entity == fk_source_entity
+        and relationship_source.fields == tuple(fk_target_fields)
+        and relationship_target.fields == tuple(fk_source_fields)
+    )
+
+    if forward or reverse:
+        return True
+
+    # Older specifications stored only the first field of a composite FK.
+    # Preserve their FK deletion protection until those records are migrated.
+    if (
+        len(relationship_source.fields) == 1
+        and len(relationship_target.fields) == 1
+    ):
+        legacy_forward = (
+            relationship_source.entity == fk_source_entity
+            and relationship_target.entity == fk_target_entity
+            and relationship_source.fields[0] == fk_source_fields[0]
+            and relationship_target.fields[0] == fk_target_fields[0]
+        )
+        legacy_reverse = (
+            relationship_source.entity == fk_target_entity
+            and relationship_target.entity == fk_source_entity
+            and relationship_source.fields[0] == fk_target_fields[0]
+            and relationship_target.fields[0] == fk_source_fields[0]
+        )
+        return legacy_forward or legacy_reverse
+
+    return False
 
 
 class SpecificationService:
@@ -805,6 +933,42 @@ class SpecificationService:
                     + ", ".join(sorted(invalid_populations))
                 )
 
+            fixed_population_changes = []
+
+            for entity_name, requested_count in populations.items():
+                entity = specification_by_name[entity_name]
+                existing_population = entity.get("population") or {}
+
+                if existing_population.get("scaling", "SCALABLE") != "FIXED":
+                    continue
+
+                existing_count = existing_population.get("count")
+
+                if requested_count != existing_count:
+                    fixed_population_changes.append(
+                        (
+                            entity_name,
+                            existing_count,
+                            requested_count,
+                        )
+                    )
+
+            if fixed_population_changes:
+                details = "; ".join(
+                    (
+                        f"{entity_name}: fixed count is "
+                        f"{existing_count!r}, requested count is "
+                        f"{requested_count!r}"
+                    )
+                    for entity_name, existing_count, requested_count
+                    in fixed_population_changes
+                )
+
+                raise ValueError(
+                    "FIXED entity populations cannot be changed: "
+                    + details
+                )
+
             candidate = deepcopy(specification)
 
             for entity in candidate.get("entities", []):
@@ -1388,47 +1552,17 @@ class SpecificationService:
             if existing is None:
                 raise ValueError("Foreign key not found.")
 
-            source = existing.get("source", {})
-            target = existing.get("target", {})
-            source_entity = source.get("entity") if isinstance(source, dict) else None
-            target_entity = target.get("entity") if isinstance(target, dict) else None
-            source_fields = source.get("fields", []) if isinstance(source, dict) else []
-            target_fields = target.get("fields", []) if isinstance(target, dict) else []
+            for relationship in specification.get("relationships", []):
+                if not isinstance(relationship, dict):
+                    continue
 
-            if (
-                source_entity
-                and target_entity
-                and source_fields
-                and target_fields
-            ):
-                foreign_key_endpoints = (
-                    f"{source_entity}.{source_fields[0]}",
-                    f"{target_entity}.{target_fields[0]}",
-                )
-                reverse_foreign_key_endpoints = (
-                    foreign_key_endpoints[1],
-                    foreign_key_endpoints[0],
-                )
-
-                for relationship in specification.get("relationships", []):
-                    if not isinstance(relationship, dict):
-                        continue
-
-                    relationship_endpoints = (
-                        relationship.get("source"),
-                        relationship.get("target"),
+                if _relationship_uses_foreign_key(relationship, existing):
+                    raise ValueError(
+                        f"Cannot delete foreign key '{request.name}' because "
+                        "it is used by relationship "
+                        f"'{relationship.get('source')}' → "
+                        f"'{relationship.get('target')}'. Delete that relationship first."
                     )
-
-                    if relationship_endpoints in (
-                        foreign_key_endpoints,
-                        reverse_foreign_key_endpoints,
-                    ):
-                        raise ValueError(
-                            f"Cannot delete foreign key '{request.name}' because "
-                            "it is used by relationship "
-                            f"'{relationship.get('source')}' → "
-                            f"'{relationship.get('target')}'. Delete that relationship first."
-                        )
 
             candidate = deepcopy(specification)
 
@@ -1556,41 +1690,12 @@ class SpecificationService:
 
             foreign_key = compatible_foreign_keys[0]
 
-            fk_source = foreign_key.get("source", {})
-            fk_target = foreign_key.get("target", {})
-
-            fk_source_entity = fk_source.get("entity")
-            fk_source_fields = fk_source.get("fields", [])
-
-            fk_target_entity = fk_target.get("entity")
-            fk_target_fields = fk_target.get("fields", [])
-
-            if (
-                not isinstance(fk_source_entity, str)
-                or not isinstance(fk_target_entity, str)
-                or not isinstance(fk_source_fields, list)
-                or not isinstance(fk_target_fields, list)
-                or not fk_source_fields
-                or not fk_target_fields
-            ):
-                raise ValueError(
-                    "The compatible foreign key has an invalid structure."
+            relationship_source, relationship_target = (
+                _relationship_endpoints_for_foreign_key(
+                    foreign_key,
+                    request.source_entity,
                 )
-
-            if fk_source_entity == request.source_entity:
-                relationship_source = (
-                    f"{fk_source_entity}.{fk_source_fields[0]}"
-                )
-                relationship_target = (
-                    f"{fk_target_entity}.{fk_target_fields[0]}"
-                )
-            else:
-                relationship_source = (
-                    f"{fk_target_entity}.{fk_target_fields[0]}"
-                )
-                relationship_target = (
-                    f"{fk_source_entity}.{fk_source_fields[0]}"
-                )
+            )
 
             relationship = {
                 "source": relationship_source,
@@ -1647,7 +1752,7 @@ class SpecificationService:
         data_model_id: str,
         actor_user_id: str,
         existing_relationship: dict[str, Any],
-        request: UpdateRelationshipRequest,
+        request: CreateRelationshipRequest,
     ) -> dict[str, Any] | None:
         """Update an existing relationship using an existing compatible foreign key."""
         with self._specification_repository.transaction(data_model_id):
@@ -1750,39 +1855,12 @@ class SpecificationService:
 
             foreign_key = compatible_foreign_keys[0]
 
-            fk_source = foreign_key.get("source", {})
-            fk_target = foreign_key.get("target", {})
-
-            fk_source_entity = fk_source.get("entity")
-            fk_target_entity = fk_target.get("entity")
-
-            fk_source_fields = fk_source.get("fields", [])
-            fk_target_fields = fk_target.get("fields", [])
-
-            if not fk_source_entity or not fk_target_entity:
-                raise ValueError(
-                    "The foreign key does not define valid source and target entities."
+            relationship_source, relationship_target = (
+                _relationship_endpoints_for_foreign_key(
+                    foreign_key,
+                    request.source_entity,
                 )
-
-            if not fk_source_fields or not fk_target_fields:
-                raise ValueError(
-                    "The foreign key does not define valid source and target fields."
-                )
-
-            if fk_source_entity == request.source_entity:
-                relationship_source = (
-                    f"{fk_source_entity}.{fk_source_fields[0]}"
-                )
-                relationship_target = (
-                    f"{fk_target_entity}.{fk_target_fields[0]}"
-                )
-            else:
-                relationship_source = (
-                    f"{fk_target_entity}.{fk_target_fields[0]}"
-                )
-                relationship_target = (
-                    f"{fk_source_entity}.{fk_source_fields[0]}"
-                )
+            )
 
             updated_relationship = {
                 "source": relationship_source,

@@ -9,6 +9,8 @@ import math
 from dataclasses import dataclass
 from decimal import Decimal
 
+from app.services.relationship_endpoint import parse_relationship_endpoint
+
 
 class GenerationPlanningError(ValueError):
     """Raised when a FORGE generation plan cannot be built."""
@@ -534,35 +536,27 @@ def _parse_relationship(
     relationship: dict,
     entity_names: set[str],
 ) -> RelationshipDependency:
-    source = relationship.get("source")
-    target = relationship.get("target")
+    """Parse legacy or composite relationship endpoints."""
 
-    if not isinstance(source, str) or not source:
-        raise GenerationPlanningError(
-            "Each relationship must have a source."
+    try:
+        source = parse_relationship_endpoint(
+            relationship.get("source"),
+            "source",
         )
-
-    if not isinstance(target, str) or not target:
-        raise GenerationPlanningError(
-            "Each relationship must have a target."
+        target = parse_relationship_endpoint(
+            relationship.get("target"),
+            "target",
         )
-
-    if "." not in source or "." not in target:
-        raise GenerationPlanningError(
-            "Relationship source and target must use "
-            "'ENTITY.FIELD' notation."
-        )
-
-    source_entity, source_field = source.split(".", 1)
-    target_entity, target_field = target.split(".", 1)
+    except ValueError as exc:
+        raise GenerationPlanningError(str(exc)) from exc
 
     _validate_entity_reference(
-        source_entity,
+        source.entity,
         entity_names,
         "Relationship source",
     )
     _validate_entity_reference(
-        target_entity,
+        target.entity,
         entity_names,
         "Relationship target",
     )
@@ -584,10 +578,10 @@ def _parse_relationship(
     )
 
     return RelationshipDependency(
-        source_entity=source_entity,
-        source_fields=(source_field,),
-        target_entity=target_entity,
-        target_fields=(target_field,),
+        source_entity=source.entity,
+        source_fields=source.fields,
+        target_entity=target.entity,
+        target_fields=target.fields,
         relationship_type=relationship_type,
         source_participation=source_participation,
         target_participation=target_participation,

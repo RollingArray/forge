@@ -772,7 +772,7 @@ class SpecificationImportService:
         seen_entities: set[str] = set()
         seen_fields: set[tuple[str, str]] = set()
         seen_foreign_keys: set[str] = set()
-        seen_relationships: set[tuple[str, str, str]] = set()
+        seen_relationships: set[tuple[tuple[str, tuple[str, ...]], tuple[str, tuple[str, ...]], str]] = set()
         seen_constraints: set[str] = set()
 
         # 1. Entities
@@ -1147,19 +1147,23 @@ class SpecificationImportService:
             fk_target = foreign_key["target"]
 
             if fk_source["entity"] == source_entity:
-                relationship_source = (
-                    f"{fk_source['entity']}.{fk_source['fields'][0]}"
-                )
-                relationship_target = (
-                    f"{fk_target['entity']}.{fk_target['fields'][0]}"
-                )
+                relationship_source = {
+                    "entity": fk_source["entity"],
+                    "fields": list(fk_source["fields"]),
+                }
+                relationship_target = {
+                    "entity": fk_target["entity"],
+                    "fields": list(fk_target["fields"]),
+                }
             else:
-                relationship_source = (
-                    f"{fk_target['entity']}.{fk_target['fields'][0]}"
-                )
-                relationship_target = (
-                    f"{fk_source['entity']}.{fk_source['fields'][0]}"
-                )
+                relationship_source = {
+                    "entity": fk_target["entity"],
+                    "fields": list(fk_target["fields"]),
+                }
+                relationship_target = {
+                    "entity": fk_source["entity"],
+                    "fields": list(fk_source["fields"]),
+                }
 
             definition = {
                 "source": relationship_source,
@@ -1169,8 +1173,14 @@ class SpecificationImportService:
                 "target_participation": item["target_participation"],
             }
             natural_key = (
-                definition["source"],
-                definition["target"],
+                (
+                    relationship_source["entity"],
+                    tuple(relationship_source["fields"]),
+                ),
+                (
+                    relationship_target["entity"],
+                    tuple(relationship_target["fields"]),
+                ),
                 definition["type"],
             )
 

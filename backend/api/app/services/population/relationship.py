@@ -9,6 +9,7 @@ established by Experiment 023.
 from dataclasses import dataclass
 from typing import Any
 
+from app.services.relationship_endpoint import parse_relationship_endpoint
 from .model import EntityPopulation
 
 
@@ -22,11 +23,11 @@ class PopulationRequirement:
     reason: str
 
 
-def _split_endpoint(endpoint: str) -> tuple[str, str]:
-    """Split an entity.field endpoint."""
+def _split_endpoint(endpoint: Any, role: str) -> tuple[str, tuple[str, ...]]:
+    """Read an entity and its ordered fields from a canonical endpoint."""
 
-    entity, field = endpoint.split(".", 1)
-    return entity, field
+    parsed = parse_relationship_endpoint(endpoint, role)
+    return parsed.entity, parsed.fields
 
 
 def _get_population(
@@ -217,21 +218,23 @@ def analyze_relationship(
 
     source_entity, _ = _split_endpoint(
         relationship["source"],
+        "source",
     )
     target_entity, _ = _split_endpoint(
         relationship["target"],
+        "target",
     )
 
     relationship_type = relationship["type"]
 
     source_participation = relationship.get(
         "source_participation",
-        "OPTIONAL",
+        "MANDATORY",
     )
 
     target_participation = relationship.get(
         "target_participation",
-        "OPTIONAL",
+        "MANDATORY",
     )
 
     source_population = _get_population(

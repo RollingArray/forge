@@ -2,6 +2,10 @@
 from dataclasses import asdict
 from typing import Any
 
+from app.services.population.adapter import (
+    build_dependencies_by_entity,
+    build_entities_metadata,
+)
 from app.services.population.allocator import allocate_population_target
 from app.services.population.planner import build_population_plan
 from app.services.specification_service import SpecificationService
@@ -34,14 +38,13 @@ class PopulationService:
             for entity in specification.get("entities", [])
         }
 
-        entities = {
-            entity["name"]: entity
-            for entity in specification.get("entities", [])
-        }
+        entities = build_entities_metadata(specification)
+        dependencies = build_dependencies_by_entity(specification)
 
         plan = build_population_plan(
             populations=populations,
             relationships=specification.get("relationships", []),
+            dependencies_by_entity=dependencies,
             entities=entities,
         )
 
@@ -81,14 +84,13 @@ class PopulationService:
             for entity in specification.get("entities", [])
         }
 
-        entities = {
-            entity["name"]: entity
-            for entity in specification.get("entities", [])
-        }
+        entities = build_entities_metadata(specification)
+        dependencies = build_dependencies_by_entity(specification)
 
         plan = build_population_plan(
             populations=populations,
             relationships=specification.get("relationships", []),
+            dependencies_by_entity=dependencies,
             entities=entities,
         )
 
@@ -108,12 +110,16 @@ class PopulationService:
         result["affected_entities"] = list(allocation.affected_entities)
         result["target_feasible"] = allocation.feasible_target
         result["target_reason"] = allocation.reason
+        result["allocation_status"] = allocation.status
+        result["allocation_diagnostics"] = list(allocation.diagnostics)
         result["feasible"] = (
-            all(
+            allocation.status == "FEASIBLE"
+            and allocation.feasible_target
+            and allocation.allocated_total == allocation.target
+            and all(
                 population["status"] == "FEASIBLE"
                 for population in result["populations"].values()
             )
-            and allocation.feasible_target
         )
 
         return result

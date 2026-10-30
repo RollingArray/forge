@@ -1,23 +1,23 @@
 entity,description,population_count,population_scaling
-AEROSPACE_CUSTOMER,Airlines aircraft manufacturers and aerospace customers,120,FIXED
-AIRCRAFT_PROGRAM,Aircraft development and production programmes,35,FIXED
-BUSINESS_UNIT,Internal aerospace business divisions,12,FIXED
-MANUFACTURING_PLANT,Manufacturing and assembly facilities,18,FIXED
-PRODUCT,Top level aerospace products and assemblies,250,FIXED
-PRODUCT_REVISION,Engineering controlled revisions of products,650,FIXED
-PART,Manufactured purchased and serviceable aerospace components,25000,FIXED
-BOM,Product bills of materials by revision,1800,FIXED
-BOM_COMPONENT,Individual component positions within bills of materials,18000,FIXED
-SUPPLIER,Approved aerospace suppliers,1800,FIXED
-SUPPLIER_PART,Supplier specific part catalogue entries,12000,FIXED
-PURCHASE_ORDER,Procurement orders issued to suppliers,8500,FIXED
-PURCHASE_ORDER_LINE,Individual procurement order lines,42000,FIXED
-WORK_CENTER,Manufacturing work centres and production cells,320,FIXED
-PRODUCTION_ORDER,Manufacturing orders for aerospace products and parts,12000,FIXED
-PRODUCTION_OPERATION,Individual manufacturing operations,65000,FIXED
-MATERIAL_LOT,Traceable raw material and component batches,30000,FIXED
-INVENTORY_TRANSACTION,Material receipts issues transfers and adjustments,150000,FIXED
-SHIPMENT,Inbound and outbound material shipments,9000,FIXED
-QUALITY_INSPECTION,Incoming in process and final quality inspections,45000,FIXED
-NONCONFORMANCE,Recorded manufacturing and supplier quality deviations,3200,FIXED
-CORRECTIVE_ACTION,Corrective and preventive actions linked to quality issues,1100,FIXED
+AEROSPACE_CUSTOMER,Airlines aircraft manufacturers and aerospace customers,120,SCALABLE
+AIRCRAFT_PROGRAM,Aircraft development and production programmes,35,SCALABLE
+BUSINESS_UNIT,Internal aerospace business divisions,12,SCALABLE
+MANUFACTURING_PLANT,Manufacturing and assembly facilities,18,SCALABLE
+PRODUCT,Top level aerospace products and assemblies,250,SCALABLE
+PRODUCT_REVISION,Engineering controlled revisions of products,650,SCALABLE
+PART,Manufactured purchased and serviceable aerospace components,25000,SCALABLE
+BOM,Product bills of materials by revision,1800,SCALABLE
+BOM_COMPONENT,Individual component positions within bills of materials,18000,SCALABLE
+SUPPLIER,Approved aerospace suppliers,1800,SCALABLE
+SUPPLIER_PART,Supplier specific part catalogue entries,12000,SCALABLE
+PURCHASE_ORDER,Procurement orders issued to suppliers,8500,SCALABLE
+PURCHASE_ORDER_LINE,Individual procurement order lines,42000,SCALABLE
+WORK_CENTER,Manufacturing work centres and production cells,320,SCALABLE
+PRODUCTION_ORDER,Manufacturing orders for aerospace products and parts,12000,SCALABLE
+PRODUCTION_OPERATION,Individual manufacturing operations,65000,SCALABLE
+MATERIAL_LOT,Traceable raw material and component batches,30000,SCALABLE
+INVENTORY_TRANSACTION,Material receipts issues transfers and adjustments,150000,SCALABLE
+SHIPMENT,Inbound and outbound material shipments,9000,SCALABLE
+QUALITY_INSPECTION,Incoming in process and final quality inspections,45000,SCALABLE
+NONCONFORMANCE,Recorded manufacturing and supplier quality deviations,3200,SCALABLE
+CORRECTIVE_ACTION,Corrective and preventive actions linked to quality issues,1100,SCALABLE
