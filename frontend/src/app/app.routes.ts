@@ -25,6 +25,7 @@ import { ResultsValidationAnalysisComponent } from './features/results-validatio
 import { ResultsQualityAnalysisComponent } from './features/results-quality-analysis/results-quality-analysis.component';
 import { UiKitDesignSystemComponent } from './features/ui-kit-design-system/ui-kit-design-system.component';
 import { SpecificationAuthoringComponent } from './features/specification-authoring/specification-authoring.component';
+import { SpecificationWizardComponent } from './features/specification-wizard/specification-wizard.component';
 
 export const routes: Routes = [
   {
@@ -64,6 +65,10 @@ export const routes: Routes = [
       {
         path: 'workspace/:dataModelId/specification-authoring',
         component: SpecificationAuthoringComponent,
+      },
+      {
+        path: 'workspace/:dataModelId/specification-wizard',
+        component: SpecificationWizardComponent,
       },
       {
         path: 'workspace/:dataModelId/model-studio',
