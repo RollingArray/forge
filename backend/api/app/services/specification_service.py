@@ -104,14 +104,15 @@ class SpecificationService:
         specification: dict[str, Any],
     ) -> dict[str, Any] | None:
         """Persist a complete, previously validated canonical specification."""
+        with self._specification_repository.transaction(data_model_id):
 
-        if self.get_specification(data_model_id=data_model_id) is None:
-            return None
+            if self.get_specification(data_model_id=data_model_id) is None:
+                return None
 
-        return self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=deepcopy(specification),
-        )
+            return self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=deepcopy(specification),
+            )
 
     def create_entity(
         self,
@@ -120,76 +121,77 @@ class SpecificationService:
         request: CreateEntityRequest,
     ) -> dict[str, Any] | None:
         """Create and persist an entity in the canonical specification."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entities = specification.setdefault(
-            "entities",
-            [],
-        )
-
-        if any(
-            entity.get("name") == request.name
-            for entity in entities
-        ):
-            raise ValueError(
-                f"Entity already exists: {request.name}"
-            )
-
-        entity: dict[str, Any] = {
-            "name": request.name,
-            "description": request.description,
-            "fields": [],
-        }
-
-        if request.population is not None:
-            entity["population"] = {
-                "count": (
-                    request.population.count
-                    if request.population.count is not None
-                    else 100
-                ),
-                "scaling": request.population.scaling.value,
-            }
-        else:
-            entity["population"] = {
-                "count": 100,
-                "scaling": "SCALABLE",
-            }
-
-        candidate = deepcopy(specification)
-        candidate["entities"].append(entity)
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_ADDED,
-                title="Entity added",
-                description=f"Added entity '{request.name}'",
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": request.name,
-                    "population": entity["population"].get("count"),
-                    "scaling": entity["population"]["scaling"],
-                },
             )
 
-        return entity
+            if specification is None:
+                return None
+
+            entities = specification.setdefault(
+                "entities",
+                [],
+            )
+
+            if any(
+                entity.get("name") == request.name
+                for entity in entities
+            ):
+                raise ValueError(
+                    f"Entity already exists: {request.name}"
+                )
+
+            entity: dict[str, Any] = {
+                "name": request.name,
+                "description": request.description,
+                "fields": [],
+            }
+
+            if request.population is not None:
+                entity["population"] = {
+                    "count": (
+                        request.population.count
+                        if request.population.count is not None
+                        else 100
+                    ),
+                    "scaling": request.population.scaling.value,
+                }
+            else:
+                entity["population"] = {
+                    "count": 100,
+                    "scaling": "SCALABLE",
+                }
+
+            candidate = deepcopy(specification)
+            candidate["entities"].append(entity)
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_ADDED,
+                    title="Entity added",
+                    description=f"Added entity '{request.name}'",
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": request.name,
+                        "population": entity["population"].get("count"),
+                        "scaling": entity["population"]["scaling"],
+                    },
+                )
+
+            return entity
 
 
 
@@ -201,113 +203,114 @@ class SpecificationService:
         request: UpdateEntityRequest,
     ) -> dict[str, Any] | None:
         """Update entity details and population as one logical operation."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(f"Unknown entity: {entity_name}")
-
-        candidate = deepcopy(specification)
-        updated_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-
-        changes: list[dict[str, object]] = []
-
-        previous_description = entity.get("description", "")
-        if previous_description != request.description:
-            changes.append(
-                {
-                    "field": "description",
-                    "from": previous_description,
-                    "to": request.description,
-                }
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
-            updated_entity["description"] = request.description
 
-        existing_population = entity.get("population", {})
-        if request.population is not None:
-            previous_population = existing_population.get("count")
-            if previous_population != request.population:
+            if specification is None:
+                return None
+
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(f"Unknown entity: {entity_name}")
+
+            candidate = deepcopy(specification)
+            updated_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+
+            changes: list[dict[str, object]] = []
+
+            previous_description = entity.get("description", "")
+            if previous_description != request.description:
                 changes.append(
                     {
-                        "field": "population",
-                        "from": previous_population,
-                        "to": request.population,
+                        "field": "description",
+                        "from": previous_description,
+                        "to": request.description,
                     }
                 )
-                updated_entity["population"] = {
-                    "count": request.population,
-                    "scaling": existing_population.get(
-                        "scaling",
-                        "SCALABLE",
-                    ),
-                }
+                updated_entity["description"] = request.description
 
-        if not changes:
-            return updated_entity
+            existing_population = entity.get("population", {})
+            if request.population is not None:
+                previous_population = existing_population.get("count")
+                if previous_population != request.population:
+                    changes.append(
+                        {
+                            "field": "population",
+                            "from": previous_population,
+                            "to": request.population,
+                        }
+                    )
+                    updated_entity["population"] = {
+                        "count": request.population,
+                        "scaling": existing_population.get(
+                            "scaling",
+                            "SCALABLE",
+                        ),
+                    }
 
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
+            if not changes:
+                return updated_entity
 
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            changed_fields = [str(change["field"]) for change in changes]
-
-            if changed_fields == ["description"]:
-                title = "Updated Entity description"
-                description = (
-                    f"Updated the description of entity '{entity_name}'"
-                )
-            elif changed_fields == ["population"]:
-                title = "Updated Entity population"
-                change = changes[0]
-                description = (
-                    f"Updated population for entity '{entity_name}' "
-                    f"from {change['from']} to {change['to']}"
-                )
-            else:
-                title = "Updated Entity"
-                description = (
-                    f"Updated description and population for entity "
-                    f"'{entity_name}'"
-                )
-
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_UPDATED,
-                title=title,
-                description=description,
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "changes": changes,
-                },
+                specification=candidate,
             )
 
-        return updated_entity
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                changed_fields = [str(change["field"]) for change in changes]
+
+                if changed_fields == ["description"]:
+                    title = "Updated Entity description"
+                    description = (
+                        f"Updated the description of entity '{entity_name}'"
+                    )
+                elif changed_fields == ["population"]:
+                    title = "Updated Entity population"
+                    change = changes[0]
+                    description = (
+                        f"Updated population for entity '{entity_name}' "
+                        f"from {change['from']} to {change['to']}"
+                    )
+                else:
+                    title = "Updated Entity"
+                    description = (
+                        f"Updated description and population for entity "
+                        f"'{entity_name}'"
+                    )
+
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_UPDATED,
+                    title=title,
+                    description=description,
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "changes": changes,
+                    },
+                )
+
+            return updated_entity
 
     def update_entity_identity(
         self,
@@ -317,99 +320,100 @@ class SpecificationService:
         fields: list[str],
     ) -> dict[str, Any] | None:
         """Define the identity fields for an existing entity."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(
-                f"Unknown entity: {entity_name}"
-            )
-
-        entity_fields = {
-            field.get("name")
-            for field in entity.get("fields", [])
-        }
-
-        unknown_fields = [
-            field
-            for field in fields
-            if field not in entity_fields
-        ]
-
-        if unknown_fields:
-            raise ValueError(
-                "Unknown identity field(s): "
-                + ", ".join(unknown_fields)
-            )
-
-        current_identity = entity.get("identity") or {}
-        previous_fields = list(current_identity.get("fields") or [])
-        updated_fields = list(fields)
-
-        if previous_fields == updated_fields:
-            return entity
-
-        candidate = deepcopy(specification)
-
-        candidate_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-
-        candidate_entity["identity"] = {
-            "fields": updated_fields,
-        }
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_UPDATED,
-                title="Entity identity updated",
-                description=(
-                    f"Updated identity for entity "
-                    f"'{entity_name}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "identity_fields": updated_fields,
-                    "composite": len(updated_fields) > 1,
-                    "changes": [
-                        {
-                            "field": "identity.fields",
-                            "from": previous_fields,
-                            "to": updated_fields,
-                        }
-                    ],
-                },
             )
 
-        return candidate_entity
+            if specification is None:
+                return None
+
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(
+                    f"Unknown entity: {entity_name}"
+                )
+
+            entity_fields = {
+                field.get("name")
+                for field in entity.get("fields", [])
+            }
+
+            unknown_fields = [
+                field
+                for field in fields
+                if field not in entity_fields
+            ]
+
+            if unknown_fields:
+                raise ValueError(
+                    "Unknown identity field(s): "
+                    + ", ".join(unknown_fields)
+                )
+
+            current_identity = entity.get("identity") or {}
+            previous_fields = list(current_identity.get("fields") or [])
+            updated_fields = list(fields)
+
+            if previous_fields == updated_fields:
+                return entity
+
+            candidate = deepcopy(specification)
+
+            candidate_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+
+            candidate_entity["identity"] = {
+                "fields": updated_fields,
+            }
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_UPDATED,
+                    title="Entity identity updated",
+                    description=(
+                        f"Updated identity for entity "
+                        f"'{entity_name}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "identity_fields": updated_fields,
+                        "composite": len(updated_fields) > 1,
+                        "changes": [
+                            {
+                                "field": "identity.fields",
+                                "from": previous_fields,
+                                "to": updated_fields,
+                            }
+                        ],
+                    },
+                )
+
+            return candidate_entity
 
     def create_field(
         self,
@@ -419,101 +423,102 @@ class SpecificationService:
         request: CreateFieldRequest,
     ) -> dict[str, Any] | None:
         """Create and persist a field in an existing entity."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entities = specification.setdefault(
-            "entities",
-            [],
-        )
-
-        entity = next(
-            (
-                item
-                for item in entities
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(
-                f"Unknown entity: {entity_name}"
-            )
-
-        fields = entity.setdefault(
-            "fields",
-            [],
-        )
-
-        if any(
-            field.get("name") == request.name
-            for field in fields
-        ):
-            raise ValueError(
-                f"Field already exists: {entity_name}.{request.name}"
-            )
-
-        field: dict[str, Any] = {
-            "name": request.name,
-            "type": request.type,
-        }
-
-        if request.identity is not None:
-            field["identity"] = request.identity.model_dump(
-                exclude_none=True,
-            )
-
-        if request.generation is not None:
-            field["generation"] = request.generation.model_dump(
-                exclude_none=True,
-            )
-
-        candidate = deepcopy(specification)
-
-        candidate_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-
-        candidate_entity.setdefault(
-            "fields",
-            [],
-        ).append(field)
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FIELD_ADDED,
-                title="Field added",
-                description=(
-                    f"Added field '{entity_name}.{request.name}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "field_name": request.name,
-                    "field_type": request.type,
-                },
             )
 
-        return field
+            if specification is None:
+                return None
+
+            entities = specification.setdefault(
+                "entities",
+                [],
+            )
+
+            entity = next(
+                (
+                    item
+                    for item in entities
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(
+                    f"Unknown entity: {entity_name}"
+                )
+
+            fields = entity.setdefault(
+                "fields",
+                [],
+            )
+
+            if any(
+                field.get("name") == request.name
+                for field in fields
+            ):
+                raise ValueError(
+                    f"Field already exists: {entity_name}.{request.name}"
+                )
+
+            field: dict[str, Any] = {
+                "name": request.name,
+                "type": request.type,
+            }
+
+            if request.identity is not None:
+                field["identity"] = request.identity.model_dump(
+                    exclude_none=True,
+                )
+
+            if request.generation is not None:
+                field["generation"] = request.generation.model_dump(
+                    exclude_none=True,
+                )
+
+            candidate = deepcopy(specification)
+
+            candidate_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+
+            candidate_entity.setdefault(
+                "fields",
+                [],
+            ).append(field)
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FIELD_ADDED,
+                    title="Field added",
+                    description=(
+                        f"Added field '{entity_name}.{request.name}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "field_name": request.name,
+                        "field_type": request.type,
+                    },
+                )
+
+            return field
 
     def update_field(
         self,
@@ -524,110 +529,111 @@ class SpecificationService:
         request: UpdateFieldRequest,
     ) -> dict[str, Any] | None:
         """Update an existing field and record its actual changes."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(f"Unknown entity: {entity_name}")
-
-        field = next(
-            (
-                item
-                for item in entity.get("fields", [])
-                if item.get("name") == field_name
-            ),
-            None,
-        )
-
-        if field is None:
-            raise ValueError(
-                f"Unknown field: {entity_name}.{field_name}"
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        updates = request.model_dump(exclude_unset=True)
-        candidate = deepcopy(specification)
+            if specification is None:
+                return None
 
-        candidate_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
 
-        candidate_field = next(
-            item
-            for item in candidate_entity.get("fields", [])
-            if item.get("name") == field_name
-        )
+            if entity is None:
+                raise ValueError(f"Unknown entity: {entity_name}")
 
-        changes: list[dict[str, Any]] = []
+            field = next(
+                (
+                    item
+                    for item in entity.get("fields", [])
+                    if item.get("name") == field_name
+                ),
+                None,
+            )
 
-        for key, value in updates.items():
-            if key in {"identity", "generation"} and value is not None:
-                value = (
-                    value.model_dump(exclude_none=True)
-                    if hasattr(value, "model_dump")
-                    else value
+            if field is None:
+                raise ValueError(
+                    f"Unknown field: {entity_name}.{field_name}"
                 )
 
-            previous_value = deepcopy(candidate_field.get(key))
+            updates = request.model_dump(exclude_unset=True)
+            candidate = deepcopy(specification)
 
-            if previous_value == value:
-                continue
-
-            changes.append(
-                {
-                    "field": key,
-                    "from": previous_value,
-                    "to": deepcopy(value),
-                }
+            candidate_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
             )
-            candidate_field[key] = value
 
-        if not changes:
-            return candidate_field
+            candidate_field = next(
+                item
+                for item in candidate_entity.get("fields", [])
+                if item.get("name") == field_name
+            )
 
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
+            changes: list[dict[str, Any]] = []
 
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
+            for key, value in updates.items():
+                if key in {"identity", "generation"} and value is not None:
+                    value = (
+                        value.model_dump(exclude_none=True)
+                        if hasattr(value, "model_dump")
+                        else value
+                    )
 
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FIELD_UPDATED,
-                title="Field updated",
-                description=(
-                    f"Updated field "
-                    f"'{entity_name}.{candidate_field.get('name', field_name)}'"
-                ),
+                previous_value = deepcopy(candidate_field.get(key))
+
+                if previous_value == value:
+                    continue
+
+                changes.append(
+                    {
+                        "field": key,
+                        "from": previous_value,
+                        "to": deepcopy(value),
+                    }
+                )
+                candidate_field[key] = value
+
+            if not changes:
+                return candidate_field
+
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "field_name": field_name,
-                    "changes": changes,
-                },
+                specification=candidate,
             )
 
-        return candidate_field
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FIELD_UPDATED,
+                    title="Field updated",
+                    description=(
+                        f"Updated field "
+                        f"'{entity_name}.{candidate_field.get('name', field_name)}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "field_name": field_name,
+                        "changes": changes,
+                    },
+                )
+
+            return candidate_field
 
     def delete_field(
         self,
@@ -637,118 +643,119 @@ class SpecificationService:
         field_name: str,
     ) -> dict[str, Any] | None:
         """Delete an existing field when no specification references depend on it."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(data_model_id=data_model_id)
+            specification = self.get_specification(data_model_id=data_model_id)
 
-        if specification is None:
-            return None
+            if specification is None:
+                return None
 
-        entity = next(
-            (
-                item for item in specification.get("entities", [])
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-        if entity is None:
-            raise ValueError(f"Unknown entity: {entity_name}")
-
-        field = next(
-            (
-                item for item in entity.get("fields", [])
-                if item.get("name") == field_name
-            ),
-            None,
-        )
-        if field is None:
-            raise ValueError(f"Unknown field: {entity_name}.{field_name}")
-
-        identity_fields = entity.get("identity", {}).get("fields", [])
-        if field_name in identity_fields:
-            raise ValueError(
-                f"Cannot delete field '{entity_name}.{field_name}' because it "
-                "is part of the entity identity. Update the identity first."
+            entity = next(
+                (
+                    item for item in specification.get("entities", [])
+                    if item.get("name") == entity_name
+                ),
+                None,
             )
+            if entity is None:
+                raise ValueError(f"Unknown entity: {entity_name}")
 
-        for relationship in specification.get("relationships", []):
-            if not isinstance(relationship, dict):
-                continue
-            for endpoint in ("source", "target"):
-                if relationship.get(endpoint) == f"{entity_name}.{field_name}":
-                    raise ValueError(
-                        f"Cannot delete field '{entity_name}.{field_name}' "
-                        f"because it is used by a relationship "
-                        f"('{relationship.get('source')}' → "
-                        f"'{relationship.get('target')}'). Delete that "
-                        "relationship first."
-                    )
+            field = next(
+                (
+                    item for item in entity.get("fields", [])
+                    if item.get("name") == field_name
+                ),
+                None,
+            )
+            if field is None:
+                raise ValueError(f"Unknown field: {entity_name}.{field_name}")
 
-        for foreign_key in specification.get("foreign_keys", []):
-            if not isinstance(foreign_key, dict):
-                continue
-            for endpoint in ("source", "target"):
-                reference = foreign_key.get(endpoint, {})
+            identity_fields = entity.get("identity", {}).get("fields", [])
+            if field_name in identity_fields:
+                raise ValueError(
+                    f"Cannot delete field '{entity_name}.{field_name}' because it "
+                    "is part of the entity identity. Update the identity first."
+                )
+
+            for relationship in specification.get("relationships", []):
+                if not isinstance(relationship, dict):
+                    continue
+                for endpoint in ("source", "target"):
+                    if relationship.get(endpoint) == f"{entity_name}.{field_name}":
+                        raise ValueError(
+                            f"Cannot delete field '{entity_name}.{field_name}' "
+                            f"because it is used by a relationship "
+                            f"('{relationship.get('source')}' → "
+                            f"'{relationship.get('target')}'). Delete that "
+                            "relationship first."
+                        )
+
+            for foreign_key in specification.get("foreign_keys", []):
+                if not isinstance(foreign_key, dict):
+                    continue
+                for endpoint in ("source", "target"):
+                    reference = foreign_key.get(endpoint, {})
+                    if (
+                        isinstance(reference, dict)
+                        and reference.get("entity") == entity_name
+                        and field_name in reference.get("fields", [])
+                    ):
+                        raise ValueError(
+                            f"Cannot delete field '{entity_name}.{field_name}' "
+                            f"because it is used by foreign key "
+                            f"'{foreign_key.get('name', 'Unnamed')}'. "
+                            "Delete that foreign key first."
+                        )
+
+            for constraint in specification.get("constraints", []):
                 if (
-                    isinstance(reference, dict)
-                    and reference.get("entity") == entity_name
-                    and field_name in reference.get("fields", [])
+                    isinstance(constraint, dict)
+                    and constraint.get("entity") == entity_name
+                    and constraint.get("field") == field_name
                 ):
                     raise ValueError(
                         f"Cannot delete field '{entity_name}.{field_name}' "
-                        f"because it is used by foreign key "
-                        f"'{foreign_key.get('name', 'Unnamed')}'. "
-                        "Delete that foreign key first."
+                        "because it is used by a constraint. Delete that "
+                        "constraint first."
                     )
 
-        for constraint in specification.get("constraints", []):
-            if (
-                isinstance(constraint, dict)
-                and constraint.get("entity") == entity_name
-                and constraint.get("field") == field_name
-            ):
-                raise ValueError(
-                    f"Cannot delete field '{entity_name}.{field_name}' "
-                    "because it is used by a constraint. Delete that "
-                    "constraint first."
-                )
+            candidate = deepcopy(specification)
+            candidate_entity = next(
+                item for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+            deleted_field = next(
+                item for item in candidate_entity.get("fields", [])
+                if item.get("name") == field_name
+            )
+            candidate_entity["fields"] = [
+                item for item in candidate_entity.get("fields", [])
+                if item.get("name") != field_name
+            ]
 
-        candidate = deepcopy(specification)
-        candidate_entity = next(
-            item for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-        deleted_field = next(
-            item for item in candidate_entity.get("fields", [])
-            if item.get("name") == field_name
-        )
-        candidate_entity["fields"] = [
-            item for item in candidate_entity.get("fields", [])
-            if item.get("name") != field_name
-        ]
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FIELD_DELETED,
-                title="Field deleted",
-                description=f"Deleted field '{entity_name}.{field_name}'",
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "field": deleted_field,
-                },
+                specification=candidate,
             )
 
-        return deleted_field
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FIELD_DELETED,
+                    title="Field deleted",
+                    description=f"Deleted field '{entity_name}.{field_name}'",
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "field": deleted_field,
+                    },
+                )
+
+            return deleted_field
 
     def accept_population_plan(
         self,
@@ -757,90 +764,91 @@ class SpecificationService:
         populations: dict[str, int],
     ) -> dict[str, Any] | None:
         """Persist an accepted population plan into the canonical specification."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        specification_entities = specification.get("entities", [])
-        specification_by_name = {
-            entity.get("name"): entity
-            for entity in specification_entities
-        }
-
-        unknown_entities = [
-            entity_name
-            for entity_name in populations
-            if entity_name not in specification_by_name
-        ]
-
-        if unknown_entities:
-            raise ValueError(
-                "Unknown population entity(s): "
-                + ", ".join(sorted(unknown_entities))
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        invalid_populations = [
-            entity_name
-            for entity_name, count in populations.items()
-            if isinstance(count, bool)
-            or not isinstance(count, int)
-            or count < 0
-        ]
+            if specification is None:
+                return None
 
-        if invalid_populations:
-            raise ValueError(
-                "Population counts must be non-negative integers: "
-                + ", ".join(sorted(invalid_populations))
-            )
-
-        candidate = deepcopy(specification)
-
-        for entity in candidate.get("entities", []):
-            entity_name = entity.get("name")
-
-            if entity_name not in populations:
-                continue
-
-            existing_population = entity.get("population") or {}
-
-            entity["population"] = {
-                "count": populations[entity_name],
-                "scaling": existing_population.get(
-                    "scaling",
-                    "SCALABLE",
-                ),
+            specification_entities = specification.get("entities", [])
+            specification_by_name = {
+                entity.get("name"): entity
+                for entity in specification_entities
             }
 
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
+            unknown_entities = [
+                entity_name
+                for entity_name in populations
+                if entity_name not in specification_by_name
+            ]
 
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
+            if unknown_entities:
+                raise ValueError(
+                    "Unknown population entity(s): "
+                    + ", ".join(sorted(unknown_entities))
+                )
 
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.POPULATION_PLAN_ACCEPTED,
-                title="Population plan accepted",
-                description="Accepted population plan for generation",
+            invalid_populations = [
+                entity_name
+                for entity_name, count in populations.items()
+                if isinstance(count, bool)
+                or not isinstance(count, int)
+                or count < 0
+            ]
+
+            if invalid_populations:
+                raise ValueError(
+                    "Population counts must be non-negative integers: "
+                    + ", ".join(sorted(invalid_populations))
+                )
+
+            candidate = deepcopy(specification)
+
+            for entity in candidate.get("entities", []):
+                entity_name = entity.get("name")
+
+                if entity_name not in populations:
+                    continue
+
+                existing_population = entity.get("population") or {}
+
+                entity["population"] = {
+                    "count": populations[entity_name],
+                    "scaling": existing_population.get(
+                        "scaling",
+                        "SCALABLE",
+                    ),
+                }
+
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    "operation": "ACCEPT_POPULATION_PLAN",
-                    "outcome": "ACCEPTED",
-                    "entity_count": len(populations),
-                    "total_population": sum(populations.values()),
-                },
+                specification=candidate,
             )
 
-        return candidate
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.POPULATION_PLAN_ACCEPTED,
+                    title="Population plan accepted",
+                    description="Accepted population plan for generation",
+                    data_model_id=data_model_id,
+                    metadata={
+                        "operation": "ACCEPT_POPULATION_PLAN",
+                        "outcome": "ACCEPTED",
+                        "entity_count": len(populations),
+                        "total_population": sum(populations.values()),
+                    },
+                )
+
+            return candidate
 
     def update_entity_population(
         self,
@@ -850,77 +858,78 @@ class SpecificationService:
         count: int,
     ) -> dict[str, Any] | None:
         """Update entity population using the standard change-log convention."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(f"Unknown entity: {entity_name}")
-
-        candidate = deepcopy(specification)
-        updated_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-
-        existing_population = entity.get("population", {})
-        previous_count = existing_population.get("count")
-
-        if previous_count == count:
-            return updated_entity
-
-        updated_entity["population"] = {
-            "count": count,
-            "scaling": existing_population.get("scaling", "SCALABLE"),
-        }
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_UPDATED,
-                title="Updated Entity population",
-                description=(
-                    f"Updated population for entity '{entity_name}' "
-                    f"from {previous_count} to {count}"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "changes": [
-                        {
-                            "field": "population",
-                            "from": previous_count,
-                            "to": count,
-                        }
-                    ],
-                },
             )
 
-        return updated_entity
+            if specification is None:
+                return None
+
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(f"Unknown entity: {entity_name}")
+
+            candidate = deepcopy(specification)
+            updated_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+
+            existing_population = entity.get("population", {})
+            previous_count = existing_population.get("count")
+
+            if previous_count == count:
+                return updated_entity
+
+            updated_entity["population"] = {
+                "count": count,
+                "scaling": existing_population.get("scaling", "SCALABLE"),
+            }
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_UPDATED,
+                    title="Updated Entity population",
+                    description=(
+                        f"Updated population for entity '{entity_name}' "
+                        f"from {previous_count} to {count}"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "changes": [
+                            {
+                                "field": "population",
+                                "from": previous_count,
+                                "to": count,
+                            }
+                        ],
+                    },
+                )
+
+            return updated_entity
 
     def update_entity_population_scaling(
         self,
@@ -930,81 +939,82 @@ class SpecificationService:
         scaling: str,
     ) -> dict[str, Any] | None:
         """Update the population scaling intent of an entity."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entities = specification.setdefault(
-            "entities",
-            [],
-        )
-
-        entity = next(
-            (
-                item
-                for item in entities
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(
-                f"Unknown entity: {entity_name}"
-            )
-
-        if scaling not in {"FIXED", "SCALABLE"}:
-            raise ValueError(
-                f"Invalid population scaling: {scaling}"
-            )
-
-        candidate = deepcopy(specification)
-
-        updated_entity = next(
-            item
-            for item in candidate["entities"]
-            if item.get("name") == entity_name
-        )
-
-        population = updated_entity.setdefault(
-            "population",
-            {},
-        )
-
-        population["scaling"] = scaling
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_UPDATED,
-                title="Entity updated",
-                description=(
-                    f"Updated population scaling for entity "
-                    f"'{entity_name}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                    "operation": "UPDATE_POPULATION_SCALING",
-                    "scaling": scaling,
-                },
             )
 
-        return updated_entity
+            if specification is None:
+                return None
+
+            entities = specification.setdefault(
+                "entities",
+                [],
+            )
+
+            entity = next(
+                (
+                    item
+                    for item in entities
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(
+                    f"Unknown entity: {entity_name}"
+                )
+
+            if scaling not in {"FIXED", "SCALABLE"}:
+                raise ValueError(
+                    f"Invalid population scaling: {scaling}"
+                )
+
+            candidate = deepcopy(specification)
+
+            updated_entity = next(
+                item
+                for item in candidate["entities"]
+                if item.get("name") == entity_name
+            )
+
+            population = updated_entity.setdefault(
+                "population",
+                {},
+            )
+
+            population["scaling"] = scaling
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_UPDATED,
+                    title="Entity updated",
+                    description=(
+                        f"Updated population scaling for entity "
+                        f"'{entity_name}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                        "operation": "UPDATE_POPULATION_SCALING",
+                        "scaling": scaling,
+                    },
+                )
+
+            return updated_entity
 
 
     def create_foreign_key(
@@ -1014,144 +1024,145 @@ class SpecificationService:
         request: CreateForeignKeyRequest,
     ) -> dict[str, Any] | None:
         """Create and persist a deterministic foreign key."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entities = specification.get("entities", [])
-
-        source_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.source_entity
-            ),
-            None,
-        )
-
-        target_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.target_entity
-            ),
-            None,
-        )
-
-        if source_entity is None:
-            raise ValueError(
-                f"Unknown source entity: {request.source_entity}"
-            )
-
-        if target_entity is None:
-            raise ValueError(
-                f"Unknown target entity: {request.target_entity}"
-            )
-
-        if request.source_entity == request.target_entity:
-            raise ValueError(
-                "A foreign key must connect two different entities."
-            )
-
-        source_fields = source_entity.get("fields", [])
-
-        source_field_names = {
-            field.get("name")
-            for field in source_fields
-            if isinstance(field, dict)
-        }
-
-        unknown_source_fields = [
-            field_name
-            for field_name in request.source_fields
-            if field_name not in source_field_names
-        ]
-
-        if unknown_source_fields:
-            raise ValueError(
-                "Unknown source field(s): "
-                + ", ".join(unknown_source_fields)
-                + "."
-            )
-
-        identity = target_entity.get("identity", {})
-        target_identity_fields = identity.get("fields", [])
-
-        if not isinstance(target_identity_fields, list):
-            target_identity_fields = []
-
-        if not target_identity_fields:
-            raise ValueError(
-                f"Target entity '{request.target_entity}' "
-                "must define an identity before it can be referenced "
-                "by a foreign key."
-            )
-
-        if len(request.source_fields) != len(target_identity_fields):
-            raise ValueError(
-                "The number of source fields must match the number "
-                "of target identity fields."
-            )
-
-        foreign_key = {
-            "name": _build_foreign_key_name(
-                request.source_entity,
-                request.source_fields,
-                request.target_entity,
-            ),
-            "source": {
-                "entity": request.source_entity,
-                "fields": list(request.source_fields),
-            },
-            "target": {
-                "entity": request.target_entity,
-                "fields": list(target_identity_fields),
-            },
-        }
-
-        foreign_keys = specification.setdefault(
-            "foreign_keys",
-            [],
-        )
-
-        if foreign_key in foreign_keys:
-            raise ValueError(
-                "Foreign key already exists."
-            )
-
-        candidate = deepcopy(specification)
-        candidate.setdefault("foreign_keys", []).append(
-            foreign_key,
-        )
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FOREIGN_KEY_ADDED,
-                title="Foreign key added",
-                description=(
-                    f"Added foreign key "
-                    f"'{foreign_key['name']}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata=foreign_key,
             )
 
-        return foreign_key
+            if specification is None:
+                return None
+
+            entities = specification.get("entities", [])
+
+            source_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.source_entity
+                ),
+                None,
+            )
+
+            target_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.target_entity
+                ),
+                None,
+            )
+
+            if source_entity is None:
+                raise ValueError(
+                    f"Unknown source entity: {request.source_entity}"
+                )
+
+            if target_entity is None:
+                raise ValueError(
+                    f"Unknown target entity: {request.target_entity}"
+                )
+
+            if request.source_entity == request.target_entity:
+                raise ValueError(
+                    "A foreign key must connect two different entities."
+                )
+
+            source_fields = source_entity.get("fields", [])
+
+            source_field_names = {
+                field.get("name")
+                for field in source_fields
+                if isinstance(field, dict)
+            }
+
+            unknown_source_fields = [
+                field_name
+                for field_name in request.source_fields
+                if field_name not in source_field_names
+            ]
+
+            if unknown_source_fields:
+                raise ValueError(
+                    "Unknown source field(s): "
+                    + ", ".join(unknown_source_fields)
+                    + "."
+                )
+
+            identity = target_entity.get("identity", {})
+            target_identity_fields = identity.get("fields", [])
+
+            if not isinstance(target_identity_fields, list):
+                target_identity_fields = []
+
+            if not target_identity_fields:
+                raise ValueError(
+                    f"Target entity '{request.target_entity}' "
+                    "must define an identity before it can be referenced "
+                    "by a foreign key."
+                )
+
+            if len(request.source_fields) != len(target_identity_fields):
+                raise ValueError(
+                    "The number of source fields must match the number "
+                    "of target identity fields."
+                )
+
+            foreign_key = {
+                "name": _build_foreign_key_name(
+                    request.source_entity,
+                    request.source_fields,
+                    request.target_entity,
+                ),
+                "source": {
+                    "entity": request.source_entity,
+                    "fields": list(request.source_fields),
+                },
+                "target": {
+                    "entity": request.target_entity,
+                    "fields": list(target_identity_fields),
+                },
+            }
+
+            foreign_keys = specification.setdefault(
+                "foreign_keys",
+                [],
+            )
+
+            if foreign_key in foreign_keys:
+                raise ValueError(
+                    "Foreign key already exists."
+                )
+
+            candidate = deepcopy(specification)
+            candidate.setdefault("foreign_keys", []).append(
+                foreign_key,
+            )
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FOREIGN_KEY_ADDED,
+                    title="Foreign key added",
+                    description=(
+                        f"Added foreign key "
+                        f"'{foreign_key['name']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata=foreign_key,
+                )
+
+            return foreign_key
 
     def update_foreign_key(
         self,
@@ -1160,190 +1171,191 @@ class SpecificationService:
         request: UpdateForeignKeyRequest,
     ) -> dict[str, Any] | None:
         """Update an existing deterministic foreign key mapping."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        foreign_keys = specification.get("foreign_keys", [])
-
-        existing = next(
-            (
-                foreign_key
-                for foreign_key in foreign_keys
-                if isinstance(foreign_key, dict)
-                and foreign_key.get("name") == request.existing.name
-            ),
-            None,
-        )
-
-        if existing is None:
-            raise ValueError("Foreign key not found.")
-
-        new_request = request.foreign_key
-
-        if new_request.source_entity == new_request.target_entity:
-            raise ValueError(
-                "A foreign key must connect two different entities."
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        entities = specification.get("entities", [])
+            if specification is None:
+                return None
 
-        source_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == new_request.source_entity
-            ),
-            None,
-        )
+            foreign_keys = specification.get("foreign_keys", [])
 
-        target_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == new_request.target_entity
-            ),
-            None,
-        )
-
-        if source_entity is None:
-            raise ValueError(
-                f"Unknown source entity: {new_request.source_entity}"
-            )
-
-        if target_entity is None:
-            raise ValueError(
-                f"Unknown target entity: {new_request.target_entity}"
-            )
-
-        source_fields = source_entity.get("fields", [])
-
-        source_field_names = {
-            field.get("name")
-            for field in source_fields
-            if isinstance(field, dict)
-        }
-
-        unknown_source_fields = [
-            field_name
-            for field_name in new_request.source_fields
-            if field_name not in source_field_names
-        ]
-
-        if unknown_source_fields:
-            raise ValueError(
-                "Unknown source field(s): "
-                + ", ".join(unknown_source_fields)
-                + "."
-            )
-
-        identity = target_entity.get("identity", {})
-        target_identity_fields = identity.get("fields", [])
-
-        if not isinstance(target_identity_fields, list):
-            target_identity_fields = []
-
-        if not target_identity_fields:
-            raise ValueError(
-                f"Target entity '{new_request.target_entity}' "
-                "must define an identity before it can be referenced "
-                "by a foreign key."
-            )
-
-        if len(new_request.source_fields) != len(
-            target_identity_fields
-        ):
-            raise ValueError(
-                "The number of source fields must match the number "
-                "of target identity fields."
-            )
-
-        updated_foreign_key = {
-            "name": _build_foreign_key_name(
-                new_request.source_entity,
-                new_request.source_fields,
-                new_request.target_entity,
-            ),
-            "source": {
-                "entity": new_request.source_entity,
-                "fields": list(new_request.source_fields),
-            },
-            "target": {
-                "entity": new_request.target_entity,
-                "fields": list(target_identity_fields),
-            },
-        }
-
-        if updated_foreign_key != existing:
-            duplicate = next(
+            existing = next(
                 (
                     foreign_key
                     for foreign_key in foreign_keys
                     if isinstance(foreign_key, dict)
-                    and foreign_key != existing
-                    and foreign_key == updated_foreign_key
+                    and foreign_key.get("name") == request.existing.name
                 ),
                 None,
             )
 
-            if duplicate is not None:
+            if existing is None:
+                raise ValueError("Foreign key not found.")
+
+            new_request = request.foreign_key
+
+            if new_request.source_entity == new_request.target_entity:
                 raise ValueError(
-                    "Foreign key already exists."
+                    "A foreign key must connect two different entities."
                 )
 
-        changes = [
-            {
-                "field": field_name,
-                "from": deepcopy(existing.get(field_name)),
-                "to": deepcopy(updated_foreign_key.get(field_name)),
-            }
-            for field_name in ("name", "source", "target")
-            if existing.get(field_name) != updated_foreign_key.get(field_name)
-        ]
+            entities = specification.get("entities", [])
 
-        if not changes:
-            return updated_foreign_key
-
-        candidate = deepcopy(specification)
-        candidate["foreign_keys"] = [
-            updated_foreign_key
-            if foreign_key == existing
-            else foreign_key
-            for foreign_key in candidate["foreign_keys"]
-        ]
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FOREIGN_KEY_UPDATED,
-                title="Foreign key updated",
-                description=(
-                    f"Updated foreign key "
-                    f"'{updated_foreign_key['name']}'"
+            source_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == new_request.source_entity
                 ),
-                data_model_id=data_model_id,
-                metadata={
-                    "entity_name": updated_foreign_key["source"]["entity"],
-                    "key_name": updated_foreign_key["name"],
-                    "changes": changes,
-                },
+                None,
             )
 
-        return updated_foreign_key
+            target_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == new_request.target_entity
+                ),
+                None,
+            )
+
+            if source_entity is None:
+                raise ValueError(
+                    f"Unknown source entity: {new_request.source_entity}"
+                )
+
+            if target_entity is None:
+                raise ValueError(
+                    f"Unknown target entity: {new_request.target_entity}"
+                )
+
+            source_fields = source_entity.get("fields", [])
+
+            source_field_names = {
+                field.get("name")
+                for field in source_fields
+                if isinstance(field, dict)
+            }
+
+            unknown_source_fields = [
+                field_name
+                for field_name in new_request.source_fields
+                if field_name not in source_field_names
+            ]
+
+            if unknown_source_fields:
+                raise ValueError(
+                    "Unknown source field(s): "
+                    + ", ".join(unknown_source_fields)
+                    + "."
+                )
+
+            identity = target_entity.get("identity", {})
+            target_identity_fields = identity.get("fields", [])
+
+            if not isinstance(target_identity_fields, list):
+                target_identity_fields = []
+
+            if not target_identity_fields:
+                raise ValueError(
+                    f"Target entity '{new_request.target_entity}' "
+                    "must define an identity before it can be referenced "
+                    "by a foreign key."
+                )
+
+            if len(new_request.source_fields) != len(
+                target_identity_fields
+            ):
+                raise ValueError(
+                    "The number of source fields must match the number "
+                    "of target identity fields."
+                )
+
+            updated_foreign_key = {
+                "name": _build_foreign_key_name(
+                    new_request.source_entity,
+                    new_request.source_fields,
+                    new_request.target_entity,
+                ),
+                "source": {
+                    "entity": new_request.source_entity,
+                    "fields": list(new_request.source_fields),
+                },
+                "target": {
+                    "entity": new_request.target_entity,
+                    "fields": list(target_identity_fields),
+                },
+            }
+
+            if updated_foreign_key != existing:
+                duplicate = next(
+                    (
+                        foreign_key
+                        for foreign_key in foreign_keys
+                        if isinstance(foreign_key, dict)
+                        and foreign_key != existing
+                        and foreign_key == updated_foreign_key
+                    ),
+                    None,
+                )
+
+                if duplicate is not None:
+                    raise ValueError(
+                        "Foreign key already exists."
+                    )
+
+            changes = [
+                {
+                    "field": field_name,
+                    "from": deepcopy(existing.get(field_name)),
+                    "to": deepcopy(updated_foreign_key.get(field_name)),
+                }
+                for field_name in ("name", "source", "target")
+                if existing.get(field_name) != updated_foreign_key.get(field_name)
+            ]
+
+            if not changes:
+                return updated_foreign_key
+
+            candidate = deepcopy(specification)
+            candidate["foreign_keys"] = [
+                updated_foreign_key
+                if foreign_key == existing
+                else foreign_key
+                for foreign_key in candidate["foreign_keys"]
+            ]
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FOREIGN_KEY_UPDATED,
+                    title="Foreign key updated",
+                    description=(
+                        f"Updated foreign key "
+                        f"'{updated_foreign_key['name']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": updated_foreign_key["source"]["entity"],
+                        "key_name": updated_foreign_key["name"],
+                        "changes": changes,
+                    },
+                )
+
+            return updated_foreign_key
 
     def delete_foreign_key(
         self,
@@ -1352,102 +1364,103 @@ class SpecificationService:
         request: ExistingForeignKeyRequest,
     ) -> dict[str, Any] | None:
         """Delete an existing deterministic foreign key."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        foreign_keys = specification.get("foreign_keys", [])
-
-        existing = next(
-            (
-                foreign_key
-                for foreign_key in foreign_keys
-                if isinstance(foreign_key, dict)
-                and foreign_key.get("name") == request.name
-            ),
-            None,
-        )
-
-        if existing is None:
-            raise ValueError("Foreign key not found.")
-
-        source = existing.get("source", {})
-        target = existing.get("target", {})
-        source_entity = source.get("entity") if isinstance(source, dict) else None
-        target_entity = target.get("entity") if isinstance(target, dict) else None
-        source_fields = source.get("fields", []) if isinstance(source, dict) else []
-        target_fields = target.get("fields", []) if isinstance(target, dict) else []
-
-        if (
-            source_entity
-            and target_entity
-            and source_fields
-            and target_fields
-        ):
-            foreign_key_endpoints = (
-                f"{source_entity}.{source_fields[0]}",
-                f"{target_entity}.{target_fields[0]}",
-            )
-            reverse_foreign_key_endpoints = (
-                foreign_key_endpoints[1],
-                foreign_key_endpoints[0],
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-            for relationship in specification.get("relationships", []):
-                if not isinstance(relationship, dict):
-                    continue
+            if specification is None:
+                return None
 
-                relationship_endpoints = (
-                    relationship.get("source"),
-                    relationship.get("target"),
+            foreign_keys = specification.get("foreign_keys", [])
+
+            existing = next(
+                (
+                    foreign_key
+                    for foreign_key in foreign_keys
+                    if isinstance(foreign_key, dict)
+                    and foreign_key.get("name") == request.name
+                ),
+                None,
+            )
+
+            if existing is None:
+                raise ValueError("Foreign key not found.")
+
+            source = existing.get("source", {})
+            target = existing.get("target", {})
+            source_entity = source.get("entity") if isinstance(source, dict) else None
+            target_entity = target.get("entity") if isinstance(target, dict) else None
+            source_fields = source.get("fields", []) if isinstance(source, dict) else []
+            target_fields = target.get("fields", []) if isinstance(target, dict) else []
+
+            if (
+                source_entity
+                and target_entity
+                and source_fields
+                and target_fields
+            ):
+                foreign_key_endpoints = (
+                    f"{source_entity}.{source_fields[0]}",
+                    f"{target_entity}.{target_fields[0]}",
+                )
+                reverse_foreign_key_endpoints = (
+                    foreign_key_endpoints[1],
+                    foreign_key_endpoints[0],
                 )
 
-                if relationship_endpoints in (
-                    foreign_key_endpoints,
-                    reverse_foreign_key_endpoints,
-                ):
-                    raise ValueError(
-                        f"Cannot delete foreign key '{request.name}' because "
-                        "it is used by relationship "
-                        f"'{relationship.get('source')}' → "
-                        f"'{relationship.get('target')}'. Delete that relationship first."
+                for relationship in specification.get("relationships", []):
+                    if not isinstance(relationship, dict):
+                        continue
+
+                    relationship_endpoints = (
+                        relationship.get("source"),
+                        relationship.get("target"),
                     )
 
-        candidate = deepcopy(specification)
+                    if relationship_endpoints in (
+                        foreign_key_endpoints,
+                        reverse_foreign_key_endpoints,
+                    ):
+                        raise ValueError(
+                            f"Cannot delete foreign key '{request.name}' because "
+                            "it is used by relationship "
+                            f"'{relationship.get('source')}' → "
+                            f"'{relationship.get('target')}'. Delete that relationship first."
+                        )
 
-        candidate["foreign_keys"] = [
-            foreign_key
-            for foreign_key in foreign_keys
-            if foreign_key != existing
-        ]
+            candidate = deepcopy(specification)
 
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
+            candidate["foreign_keys"] = [
+                foreign_key
+                for foreign_key in foreign_keys
+                if foreign_key != existing
+            ]
 
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.FOREIGN_KEY_DELETED,
-                title="Foreign key deleted",
-                description=(
-                    f"Deleted foreign key '{existing['name']}'"
-                ),
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata=existing,
+                specification=candidate,
             )
 
-        return existing
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.FOREIGN_KEY_DELETED,
+                    title="Foreign key deleted",
+                    description=(
+                        f"Deleted foreign key '{existing['name']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata=existing,
+                )
+
+            return existing
 
     def create_relationship(
         self,
@@ -1456,177 +1469,178 @@ class SpecificationService:
         request: CreateRelationshipRequest,
     ) -> dict[str, Any] | None:
         """Create a relationship using an existing compatible foreign key."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entities = specification.get("entities", [])
-
-        source_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.source_entity
-            ),
-            None,
-        )
-
-        target_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.target_entity
-            ),
-            None,
-        )
-
-        if source_entity is None:
-            raise ValueError(
-                f"Unknown source entity: {request.source_entity}"
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        if target_entity is None:
-            raise ValueError(
-                f"Unknown target entity: {request.target_entity}"
+            if specification is None:
+                return None
+
+            entities = specification.get("entities", [])
+
+            source_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.source_entity
+                ),
+                None,
             )
 
-        if request.source_entity == request.target_entity:
-            raise ValueError(
-                "A relationship must connect two different entities."
+            target_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.target_entity
+                ),
+                None,
             )
 
-        foreign_keys = specification.get("foreign_keys", [])
+            if source_entity is None:
+                raise ValueError(
+                    f"Unknown source entity: {request.source_entity}"
+                )
 
-        compatible_foreign_keys = [
-            foreign_key
-            for foreign_key in foreign_keys
-            if (
-                foreign_key.get("source", {}).get("entity")
-                == request.source_entity
-                and foreign_key.get("target", {}).get("entity")
-                == request.target_entity
-            )
-            or (
-                foreign_key.get("source", {}).get("entity")
-                == request.target_entity
-                and foreign_key.get("target", {}).get("entity")
-                == request.source_entity
-            )
-        ]
+            if target_entity is None:
+                raise ValueError(
+                    f"Unknown target entity: {request.target_entity}"
+                )
 
-        if not compatible_foreign_keys:
-            raise ValueError(
-                f"No compatible foreign key exists between "
-                f"'{request.source_entity}' and "
-                f"'{request.target_entity}'. "
-                "Define a foreign key first."
-            )
+            if request.source_entity == request.target_entity:
+                raise ValueError(
+                    "A relationship must connect two different entities."
+                )
 
-        if len(compatible_foreign_keys) > 1:
-            names = [
-                foreign_key.get("name", "Unnamed foreign key")
-                for foreign_key in compatible_foreign_keys
+            foreign_keys = specification.get("foreign_keys", [])
+
+            compatible_foreign_keys = [
+                foreign_key
+                for foreign_key in foreign_keys
+                if (
+                    foreign_key.get("source", {}).get("entity")
+                    == request.source_entity
+                    and foreign_key.get("target", {}).get("entity")
+                    == request.target_entity
+                )
+                or (
+                    foreign_key.get("source", {}).get("entity")
+                    == request.target_entity
+                    and foreign_key.get("target", {}).get("entity")
+                    == request.source_entity
+                )
             ]
 
-            raise ValueError(
-                "Multiple foreign keys exist between "
-                f"'{request.source_entity}' and "
-                f"'{request.target_entity}': "
-                + ", ".join(names)
-                + "."
+            if not compatible_foreign_keys:
+                raise ValueError(
+                    f"No compatible foreign key exists between "
+                    f"'{request.source_entity}' and "
+                    f"'{request.target_entity}'. "
+                    "Define a foreign key first."
+                )
+
+            if len(compatible_foreign_keys) > 1:
+                names = [
+                    foreign_key.get("name", "Unnamed foreign key")
+                    for foreign_key in compatible_foreign_keys
+                ]
+
+                raise ValueError(
+                    "Multiple foreign keys exist between "
+                    f"'{request.source_entity}' and "
+                    f"'{request.target_entity}': "
+                    + ", ".join(names)
+                    + "."
+                )
+
+            foreign_key = compatible_foreign_keys[0]
+
+            fk_source = foreign_key.get("source", {})
+            fk_target = foreign_key.get("target", {})
+
+            fk_source_entity = fk_source.get("entity")
+            fk_source_fields = fk_source.get("fields", [])
+
+            fk_target_entity = fk_target.get("entity")
+            fk_target_fields = fk_target.get("fields", [])
+
+            if (
+                not isinstance(fk_source_entity, str)
+                or not isinstance(fk_target_entity, str)
+                or not isinstance(fk_source_fields, list)
+                or not isinstance(fk_target_fields, list)
+                or not fk_source_fields
+                or not fk_target_fields
+            ):
+                raise ValueError(
+                    "The compatible foreign key has an invalid structure."
+                )
+
+            if fk_source_entity == request.source_entity:
+                relationship_source = (
+                    f"{fk_source_entity}.{fk_source_fields[0]}"
+                )
+                relationship_target = (
+                    f"{fk_target_entity}.{fk_target_fields[0]}"
+                )
+            else:
+                relationship_source = (
+                    f"{fk_target_entity}.{fk_target_fields[0]}"
+                )
+                relationship_target = (
+                    f"{fk_source_entity}.{fk_source_fields[0]}"
+                )
+
+            relationship = {
+                "source": relationship_source,
+                "target": relationship_target,
+                "type": request.type,
+                "source_participation": request.source_participation,
+                "target_participation": request.target_participation,
+            }
+
+            relationships = specification.setdefault(
+                "relationships",
+                [],
             )
 
-        foreign_key = compatible_foreign_keys[0]
+            if relationship in relationships:
+                raise ValueError(
+                    "Relationship already exists."
+                )
 
-        fk_source = foreign_key.get("source", {})
-        fk_target = foreign_key.get("target", {})
+            candidate = deepcopy(specification)
+            candidate["relationships"].append(relationship)
 
-        fk_source_entity = fk_source.get("entity")
-        fk_source_fields = fk_source.get("fields", [])
-
-        fk_target_entity = fk_target.get("entity")
-        fk_target_fields = fk_target.get("fields", [])
-
-        if (
-            not isinstance(fk_source_entity, str)
-            or not isinstance(fk_target_entity, str)
-            or not isinstance(fk_source_fields, list)
-            or not isinstance(fk_target_fields, list)
-            or not fk_source_fields
-            or not fk_target_fields
-        ):
-            raise ValueError(
-                "The compatible foreign key has an invalid structure."
-            )
-
-        if fk_source_entity == request.source_entity:
-            relationship_source = (
-                f"{fk_source_entity}.{fk_source_fields[0]}"
-            )
-            relationship_target = (
-                f"{fk_target_entity}.{fk_target_fields[0]}"
-            )
-        else:
-            relationship_source = (
-                f"{fk_target_entity}.{fk_target_fields[0]}"
-            )
-            relationship_target = (
-                f"{fk_source_entity}.{fk_source_fields[0]}"
-            )
-
-        relationship = {
-            "source": relationship_source,
-            "target": relationship_target,
-            "type": request.type,
-            "source_participation": request.source_participation,
-            "target_participation": request.target_participation,
-        }
-
-        relationships = specification.setdefault(
-            "relationships",
-            [],
-        )
-
-        if relationship in relationships:
-            raise ValueError(
-                "Relationship already exists."
-            )
-
-        candidate = deepcopy(specification)
-        candidate["relationships"].append(relationship)
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.RELATIONSHIP_ADDED,
-                title="Relationship added",
-                description=(
-                    f"Added relationship "
-                    f"'{relationship['source']}' → "
-                    f"'{relationship['target']}'"
-                ),
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    **relationship,
-                    "foreign_key": foreign_key.get("name"),
-                },
+                specification=candidate,
             )
 
-        return relationship
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.RELATIONSHIP_ADDED,
+                    title="Relationship added",
+                    description=(
+                        f"Added relationship "
+                        f"'{relationship['source']}' → "
+                        f"'{relationship['target']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        **relationship,
+                        "foreign_key": foreign_key.get("name"),
+                    },
+                )
+
+            return relationship
 
     def update_relationship(
         self,
@@ -1636,205 +1650,206 @@ class SpecificationService:
         request: UpdateRelationshipRequest,
     ) -> dict[str, Any] | None:
         """Update an existing relationship using an existing compatible foreign key."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        relationships = specification.get("relationships", [])
-
-        existing = next(
-            (
-                relationship
-                for relationship in relationships
-                if relationship == existing_relationship
-            ),
-            None,
-        )
-
-        if existing is None:
-            raise ValueError("Relationship not found.")
-
-        if request.source_entity == request.target_entity:
-            raise ValueError(
-                "A relationship must connect two different entities."
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        entities = specification.get("entities", [])
+            if specification is None:
+                return None
 
-        source_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.source_entity
-            ),
-            None,
-        )
+            relationships = specification.get("relationships", [])
 
-        target_entity = next(
-            (
-                entity
-                for entity in entities
-                if entity.get("name") == request.target_entity
-            ),
-            None,
-        )
-
-        if source_entity is None:
-            raise ValueError(
-                f"Unknown source entity: {request.source_entity}"
+            existing = next(
+                (
+                    relationship
+                    for relationship in relationships
+                    if relationship == existing_relationship
+                ),
+                None,
             )
 
-        if target_entity is None:
-            raise ValueError(
-                f"Unknown target entity: {request.target_entity}"
+            if existing is None:
+                raise ValueError("Relationship not found.")
+
+            if request.source_entity == request.target_entity:
+                raise ValueError(
+                    "A relationship must connect two different entities."
+                )
+
+            entities = specification.get("entities", [])
+
+            source_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.source_entity
+                ),
+                None,
             )
 
-        foreign_keys = specification.get("foreign_keys", [])
-
-        compatible_foreign_keys = [
-            foreign_key
-            for foreign_key in foreign_keys
-            if (
-                foreign_key.get("source", {}).get("entity")
-                == request.source_entity
-                and foreign_key.get("target", {}).get("entity")
-                == request.target_entity
-            )
-            or (
-                foreign_key.get("source", {}).get("entity")
-                == request.target_entity
-                and foreign_key.get("target", {}).get("entity")
-                == request.source_entity
-            )
-        ]
-
-        if not compatible_foreign_keys:
-            raise ValueError(
-                f"No compatible foreign key exists between "
-                f"'{request.source_entity}' and "
-                f"'{request.target_entity}'. "
-                "Define a foreign key first."
+            target_entity = next(
+                (
+                    entity
+                    for entity in entities
+                    if entity.get("name") == request.target_entity
+                ),
+                None,
             )
 
-        if len(compatible_foreign_keys) > 1:
-            names = [
-                foreign_key.get("name", "Unnamed foreign key")
-                for foreign_key in compatible_foreign_keys
+            if source_entity is None:
+                raise ValueError(
+                    f"Unknown source entity: {request.source_entity}"
+                )
+
+            if target_entity is None:
+                raise ValueError(
+                    f"Unknown target entity: {request.target_entity}"
+                )
+
+            foreign_keys = specification.get("foreign_keys", [])
+
+            compatible_foreign_keys = [
+                foreign_key
+                for foreign_key in foreign_keys
+                if (
+                    foreign_key.get("source", {}).get("entity")
+                    == request.source_entity
+                    and foreign_key.get("target", {}).get("entity")
+                    == request.target_entity
+                )
+                or (
+                    foreign_key.get("source", {}).get("entity")
+                    == request.target_entity
+                    and foreign_key.get("target", {}).get("entity")
+                    == request.source_entity
+                )
             ]
 
-            raise ValueError(
-                "Multiple compatible foreign keys exist between "
-                f"'{request.source_entity}' and "
-                f"'{request.target_entity}': "
-                + ", ".join(names)
-            )
+            if not compatible_foreign_keys:
+                raise ValueError(
+                    f"No compatible foreign key exists between "
+                    f"'{request.source_entity}' and "
+                    f"'{request.target_entity}'. "
+                    "Define a foreign key first."
+                )
 
-        foreign_key = compatible_foreign_keys[0]
+            if len(compatible_foreign_keys) > 1:
+                names = [
+                    foreign_key.get("name", "Unnamed foreign key")
+                    for foreign_key in compatible_foreign_keys
+                ]
 
-        fk_source = foreign_key.get("source", {})
-        fk_target = foreign_key.get("target", {})
+                raise ValueError(
+                    "Multiple compatible foreign keys exist between "
+                    f"'{request.source_entity}' and "
+                    f"'{request.target_entity}': "
+                    + ", ".join(names)
+                )
 
-        fk_source_entity = fk_source.get("entity")
-        fk_target_entity = fk_target.get("entity")
+            foreign_key = compatible_foreign_keys[0]
 
-        fk_source_fields = fk_source.get("fields", [])
-        fk_target_fields = fk_target.get("fields", [])
+            fk_source = foreign_key.get("source", {})
+            fk_target = foreign_key.get("target", {})
 
-        if not fk_source_entity or not fk_target_entity:
-            raise ValueError(
-                "The foreign key does not define valid source and target entities."
-            )
+            fk_source_entity = fk_source.get("entity")
+            fk_target_entity = fk_target.get("entity")
 
-        if not fk_source_fields or not fk_target_fields:
-            raise ValueError(
-                "The foreign key does not define valid source and target fields."
-            )
+            fk_source_fields = fk_source.get("fields", [])
+            fk_target_fields = fk_target.get("fields", [])
 
-        if fk_source_entity == request.source_entity:
-            relationship_source = (
-                f"{fk_source_entity}.{fk_source_fields[0]}"
-            )
-            relationship_target = (
-                f"{fk_target_entity}.{fk_target_fields[0]}"
-            )
-        else:
-            relationship_source = (
-                f"{fk_target_entity}.{fk_target_fields[0]}"
-            )
-            relationship_target = (
-                f"{fk_source_entity}.{fk_source_fields[0]}"
-            )
+            if not fk_source_entity or not fk_target_entity:
+                raise ValueError(
+                    "The foreign key does not define valid source and target entities."
+                )
 
-        updated_relationship = {
-            "source": relationship_source,
-            "target": relationship_target,
-            "type": request.type,
-            "source_participation": request.source_participation,
-            "target_participation": request.target_participation,
-        }
+            if not fk_source_fields or not fk_target_fields:
+                raise ValueError(
+                    "The foreign key does not define valid source and target fields."
+                )
 
-        changes = [
-            {
-                "field": field,
-                "from": existing.get(field),
-                "to": updated_relationship.get(field),
+            if fk_source_entity == request.source_entity:
+                relationship_source = (
+                    f"{fk_source_entity}.{fk_source_fields[0]}"
+                )
+                relationship_target = (
+                    f"{fk_target_entity}.{fk_target_fields[0]}"
+                )
+            else:
+                relationship_source = (
+                    f"{fk_target_entity}.{fk_target_fields[0]}"
+                )
+                relationship_target = (
+                    f"{fk_source_entity}.{fk_source_fields[0]}"
+                )
+
+            updated_relationship = {
+                "source": relationship_source,
+                "target": relationship_target,
+                "type": request.type,
+                "source_participation": request.source_participation,
+                "target_participation": request.target_participation,
             }
-            for field in (
-                "source",
-                "target",
-                "type",
-                "source_participation",
-                "target_participation",
-            )
-            if existing.get(field) != updated_relationship.get(field)
-        ]
 
-        if not changes:
-            return existing
+            changes = [
+                {
+                    "field": field,
+                    "from": existing.get(field),
+                    "to": updated_relationship.get(field),
+                }
+                for field in (
+                    "source",
+                    "target",
+                    "type",
+                    "source_participation",
+                    "target_participation",
+                )
+                if existing.get(field) != updated_relationship.get(field)
+            ]
 
-        candidate = deepcopy(specification)
+            if not changes:
+                return existing
 
-        candidate["relationships"] = [
-            updated_relationship
-            if relationship == existing
-            else relationship
-            for relationship in candidate["relationships"]
-        ]
+            candidate = deepcopy(specification)
 
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
+            candidate["relationships"] = [
+                updated_relationship
+                if relationship == existing
+                else relationship
+                for relationship in candidate["relationships"]
+            ]
 
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.RELATIONSHIP_UPDATED,
-                title="Relationship updated",
-                description=(
-                    f"Updated relationship "
-                    f"'{updated_relationship['source']}' → "
-                    f"'{updated_relationship['target']}'"
-                ),
+            self._specification_repository.save(
                 data_model_id=data_model_id,
-                metadata={
-                    "previous": existing,
-                    "updated": updated_relationship,
-                    "foreign_key": foreign_key.get("name"),
-                    "changes": changes,
-                },
+                specification=candidate,
             )
 
-        return updated_relationship
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.RELATIONSHIP_UPDATED,
+                    title="Relationship updated",
+                    description=(
+                        f"Updated relationship "
+                        f"'{updated_relationship['source']}' → "
+                        f"'{updated_relationship['target']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "previous": existing,
+                        "updated": updated_relationship,
+                        "foreign_key": foreign_key.get("name"),
+                        "changes": changes,
+                    },
+                )
+
+            return updated_relationship
 
 
     def delete_relationship(
@@ -1844,55 +1859,56 @@ class SpecificationService:
         relationship: dict[str, Any],
     ) -> bool:
         """Delete an existing relationship."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return False
-
-        relationships = specification.get(
-            "relationships",
-            [],
-        )
-
-        if relationship not in relationships:
-            return False
-
-        candidate = deepcopy(specification)
-
-        candidate["relationships"] = [
-            item
-            for item in candidate["relationships"]
-            if item != relationship
-        ]
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.RELATIONSHIP_DELETED,
-                title="Relationship deleted",
-                description=(
-                    f"Deleted relationship "
-                    f"'{relationship.get('source')}' → "
-                    f"'{relationship.get('target')}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata=relationship,
             )
 
-        return True
+            if specification is None:
+                return False
+
+            relationships = specification.get(
+                "relationships",
+                [],
+            )
+
+            if relationship not in relationships:
+                return False
+
+            candidate = deepcopy(specification)
+
+            candidate["relationships"] = [
+                item
+                for item in candidate["relationships"]
+                if item != relationship
+            ]
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.RELATIONSHIP_DELETED,
+                    title="Relationship deleted",
+                    description=(
+                        f"Deleted relationship "
+                        f"'{relationship.get('source')}' → "
+                        f"'{relationship.get('target')}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata=relationship,
+                )
+
+            return True
 
 
     def _validate_constraint_compatibility(
@@ -1932,88 +1948,89 @@ class SpecificationService:
         request: CreateConstraintRequest,
     ) -> dict[str, Any] | None:
         """Create and persist a deterministic field constraint."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == request.entity
-            ),
-            None,
-        )
-
-        if entity is None:
-            raise ValueError(
-                f"Unknown entity: {request.entity}"
-            )
-
-        field = next(
-            (
-                item
-                for item in entity.get("fields", [])
-                if item.get("name") == request.field
-            ),
-            None,
-        )
-
-        if field is None:
-            raise ValueError(
-                f"Unknown field: {request.entity}.{request.field}"
-            )
-
-        self._validate_constraint_compatibility(
-            field=field,
-            operator=request.operator,
-        )
-
-        constraints = specification.setdefault(
-            "constraints",
-            [],
-        )
-
-        candidate_constraint = request.model_dump()
-
-        if candidate_constraint in constraints:
-            raise ValueError(
-                "Constraint already exists."
-            )
-
-        candidate = deepcopy(specification)
-        candidate.setdefault("constraints", []).append(
-            candidate_constraint,
-        )
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.CONSTRAINT_ADDED,
-                title="Constraint added",
-                description=(
-                    f"Added constraint on "
-                    f"'{request.entity}.{request.field}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata=candidate_constraint,
             )
 
-        return candidate_constraint
+            if specification is None:
+                return None
+
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == request.entity
+                ),
+                None,
+            )
+
+            if entity is None:
+                raise ValueError(
+                    f"Unknown entity: {request.entity}"
+                )
+
+            field = next(
+                (
+                    item
+                    for item in entity.get("fields", [])
+                    if item.get("name") == request.field
+                ),
+                None,
+            )
+
+            if field is None:
+                raise ValueError(
+                    f"Unknown field: {request.entity}.{request.field}"
+                )
+
+            self._validate_constraint_compatibility(
+                field=field,
+                operator=request.operator,
+            )
+
+            constraints = specification.setdefault(
+                "constraints",
+                [],
+            )
+
+            candidate_constraint = request.model_dump()
+
+            if candidate_constraint in constraints:
+                raise ValueError(
+                    "Constraint already exists."
+                )
+
+            candidate = deepcopy(specification)
+            candidate.setdefault("constraints", []).append(
+                candidate_constraint,
+            )
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.CONSTRAINT_ADDED,
+                    title="Constraint added",
+                    description=(
+                        f"Added constraint on "
+                        f"'{request.entity}.{request.field}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata=candidate_constraint,
+                )
+
+            return candidate_constraint
 
     def update_constraint(
         self,
@@ -2022,120 +2039,121 @@ class SpecificationService:
         request: UpdateConstraintRequest,
     ) -> dict[str, Any] | None:
         """Replace an existing deterministic field constraint."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return None
-
-        existing = request.existing.model_dump()
-        updated = request.constraint.model_dump()
-
-        constraints = specification.setdefault(
-            "constraints",
-            [],
-        )
-
-        existing_index = next(
-            (
-                index
-                for index, constraint in enumerate(constraints)
-                if constraint == existing
-            ),
-            None,
-        )
-
-        if existing_index is None:
-            raise ValueError(
-                "Existing constraint was not found."
+            specification = self.get_specification(
+                data_model_id=data_model_id,
             )
 
-        entity = next(
-            (
-                item
-                for item in specification.get("entities", [])
-                if item.get("name") == updated["entity"]
-            ),
-            None,
-        )
+            if specification is None:
+                return None
 
-        if entity is None:
-            raise ValueError(
-                f"Unknown entity: {updated['entity']}"
+            existing = request.existing.model_dump()
+            updated = request.constraint.model_dump()
+
+            constraints = specification.setdefault(
+                "constraints",
+                [],
             )
 
-        field = next(
-            (
-                item
-                for item in entity.get("fields", [])
-                if item.get("name") == updated["field"]
-            ),
-            None,
-        )
-
-        if field is None:
-            raise ValueError(
-                f"Unknown field: "
-                f"{updated['entity']}.{updated['field']}"
+            existing_index = next(
+                (
+                    index
+                    for index, constraint in enumerate(constraints)
+                    if constraint == existing
+                ),
+                None,
             )
 
-        self._validate_constraint_compatibility(
-            field=field,
-            operator=updated["operator"],
-        )
-
-        for index, constraint in enumerate(constraints):
-            if index != existing_index and constraint == updated:
+            if existing_index is None:
                 raise ValueError(
-                    "Constraint already exists."
+                    "Existing constraint was not found."
                 )
 
-        changes = [
-            {
-                "field": field,
-                "from": existing.get(field),
-                "to": updated.get(field),
-            }
-            for field in ("entity", "field", "operator", "value")
-            if existing.get(field) != updated.get(field)
-        ]
-
-        if not changes:
-            return existing
-
-        candidate = deepcopy(specification)
-        candidate["constraints"][existing_index] = updated
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.CONSTRAINT_UPDATED,
-                title="Constraint updated",
-                description=(
-                    f"Updated constraint on "
-                    f"'{updated['entity']}.{updated['field']}'"
+            entity = next(
+                (
+                    item
+                    for item in specification.get("entities", [])
+                    if item.get("name") == updated["entity"]
                 ),
-                data_model_id=data_model_id,
-                metadata={
-                    "previous": existing,
-                    "updated": updated,
-                    "changes": changes,
-                },
+                None,
             )
 
-        return updated
+            if entity is None:
+                raise ValueError(
+                    f"Unknown entity: {updated['entity']}"
+                )
+
+            field = next(
+                (
+                    item
+                    for item in entity.get("fields", [])
+                    if item.get("name") == updated["field"]
+                ),
+                None,
+            )
+
+            if field is None:
+                raise ValueError(
+                    f"Unknown field: "
+                    f"{updated['entity']}.{updated['field']}"
+                )
+
+            self._validate_constraint_compatibility(
+                field=field,
+                operator=updated["operator"],
+            )
+
+            for index, constraint in enumerate(constraints):
+                if index != existing_index and constraint == updated:
+                    raise ValueError(
+                        "Constraint already exists."
+                    )
+
+            changes = [
+                {
+                    "field": field,
+                    "from": existing.get(field),
+                    "to": updated.get(field),
+                }
+                for field in ("entity", "field", "operator", "value")
+                if existing.get(field) != updated.get(field)
+            ]
+
+            if not changes:
+                return existing
+
+            candidate = deepcopy(specification)
+            candidate["constraints"][existing_index] = updated
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.CONSTRAINT_UPDATED,
+                    title="Constraint updated",
+                    description=(
+                        f"Updated constraint on "
+                        f"'{updated['entity']}.{updated['field']}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata={
+                        "previous": existing,
+                        "updated": updated,
+                        "changes": changes,
+                    },
+                )
+
+            return updated
 
     def delete_constraint(
         self,
@@ -2144,58 +2162,59 @@ class SpecificationService:
         request: dict[str, Any],
     ) -> bool:
         """Delete an existing deterministic field constraint."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return False
-
-        constraints = specification.setdefault(
-            "constraints",
-            [],
-        )
-
-        index = next(
-            (
-                index
-                for index, constraint in enumerate(constraints)
-                if constraint == request
-            ),
-            None,
-        )
-
-        if index is None:
-            return False
-
-        candidate = deepcopy(specification)
-        deleted = candidate["constraints"].pop(index)
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.CONSTRAINT_DELETED,
-                title="Constraint deleted",
-                description=(
-                    f"Deleted constraint on "
-                    f"'{deleted.get('entity')}.{deleted.get('field')}'"
-                ),
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata=deleted,
             )
 
-        return True
+            if specification is None:
+                return False
+
+            constraints = specification.setdefault(
+                "constraints",
+                [],
+            )
+
+            index = next(
+                (
+                    index
+                    for index, constraint in enumerate(constraints)
+                    if constraint == request
+                ),
+                None,
+            )
+
+            if index is None:
+                return False
+
+            candidate = deepcopy(specification)
+            deleted = candidate["constraints"].pop(index)
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.CONSTRAINT_DELETED,
+                    title="Constraint deleted",
+                    description=(
+                        f"Deleted constraint on "
+                        f"'{deleted.get('entity')}.{deleted.get('field')}'"
+                    ),
+                    data_model_id=data_model_id,
+                    metadata=deleted,
+                )
+
+            return True
 
     def delete_entity(
         self,
@@ -2204,113 +2223,114 @@ class SpecificationService:
         entity_name: str,
     ) -> bool:
         """Delete an entity when no specification references depend on it."""
+        with self._specification_repository.transaction(data_model_id):
 
-        specification = self.get_specification(
-            data_model_id=data_model_id,
-        )
-
-        if specification is None:
-            return False
-
-        entities = specification.setdefault("entities", [])
-
-        entity = next(
-            (
-                item
-                for item in entities
-                if item.get("name") == entity_name
-            ),
-            None,
-        )
-
-        if entity is None:
-            return False
-
-        relationships = specification.get(
-            "relationships",
-            [],
-        )
-
-        for relationship in relationships:
-            for key in ("source", "target"):
-                reference = relationship.get(key)
-
-                if (
-                    isinstance(reference, str)
-                    and reference.split(".", 1)[0] == entity_name
-                ):
-                    raise ValueError(
-                        f"Entity '{entity_name}' is referenced by "
-                        "a relationship."
-                    )
-
-        foreign_keys = specification.get(
-            "foreign_keys",
-            [],
-        )
-
-        for foreign_key in foreign_keys:
-            for key in ("source", "target"):
-                endpoint = foreign_key.get(key, {})
-
-                if (
-                    isinstance(endpoint, dict)
-                    and endpoint.get("entity") == entity_name
-                ):
-                    raise ValueError(
-                        f"Entity '{entity_name}' is referenced by "
-                        "a foreign key."
-                    )
-
-        dependencies = specification.get(
-            "dependencies",
-            [],
-        )
-
-        for dependency in dependencies:
-            references = [
-                dependency.get("target"),
-                *dependency.get("source_fields", []),
-            ]
-
-            if any(
-                isinstance(reference, str)
-                and reference.split(".", 1)[0] == entity_name
-                for reference in references
-            ):
-                raise ValueError(
-                    f"Entity '{entity_name}' is referenced by "
-                    "a dependency."
-                )
-
-        candidate = deepcopy(specification)
-
-        candidate["entities"] = [
-            item
-            for item in candidate["entities"]
-            if item.get("name") != entity_name
-        ]
-
-        self._specification_repository.save(
-            data_model_id=data_model_id,
-            specification=candidate,
-        )
-
-        data_model = self._data_model_repository.get_by_id_any(
-            data_model_id=data_model_id,
-        )
-
-        if data_model is not None:
-            self._activity_service.record(
-                owner_user_id=data_model.owner_user_id,
-                actor_user_id=actor_user_id,
-                activity_type=ActivityType.ENTITY_DELETED,
-                title="Entity deleted",
-                description=f"Deleted entity '{entity_name}'",
+            specification = self.get_specification(
                 data_model_id=data_model_id,
-                metadata={
-                    "entity_name": entity_name,
-                },
             )
 
-        return True
+            if specification is None:
+                return False
+
+            entities = specification.setdefault("entities", [])
+
+            entity = next(
+                (
+                    item
+                    for item in entities
+                    if item.get("name") == entity_name
+                ),
+                None,
+            )
+
+            if entity is None:
+                return False
+
+            relationships = specification.get(
+                "relationships",
+                [],
+            )
+
+            for relationship in relationships:
+                for key in ("source", "target"):
+                    reference = relationship.get(key)
+
+                    if (
+                        isinstance(reference, str)
+                        and reference.split(".", 1)[0] == entity_name
+                    ):
+                        raise ValueError(
+                            f"Entity '{entity_name}' is referenced by "
+                            "a relationship."
+                        )
+
+            foreign_keys = specification.get(
+                "foreign_keys",
+                [],
+            )
+
+            for foreign_key in foreign_keys:
+                for key in ("source", "target"):
+                    endpoint = foreign_key.get(key, {})
+
+                    if (
+                        isinstance(endpoint, dict)
+                        and endpoint.get("entity") == entity_name
+                    ):
+                        raise ValueError(
+                            f"Entity '{entity_name}' is referenced by "
+                            "a foreign key."
+                        )
+
+            dependencies = specification.get(
+                "dependencies",
+                [],
+            )
+
+            for dependency in dependencies:
+                references = [
+                    dependency.get("target"),
+                    *dependency.get("source_fields", []),
+                ]
+
+                if any(
+                    isinstance(reference, str)
+                    and reference.split(".", 1)[0] == entity_name
+                    for reference in references
+                ):
+                    raise ValueError(
+                        f"Entity '{entity_name}' is referenced by "
+                        "a dependency."
+                    )
+
+            candidate = deepcopy(specification)
+
+            candidate["entities"] = [
+                item
+                for item in candidate["entities"]
+                if item.get("name") != entity_name
+            ]
+
+            self._specification_repository.save(
+                data_model_id=data_model_id,
+                specification=candidate,
+            )
+
+            data_model = self._data_model_repository.get_by_id_any(
+                data_model_id=data_model_id,
+            )
+
+            if data_model is not None:
+                self._activity_service.record(
+                    owner_user_id=data_model.owner_user_id,
+                    actor_user_id=actor_user_id,
+                    activity_type=ActivityType.ENTITY_DELETED,
+                    title="Entity deleted",
+                    description=f"Deleted entity '{entity_name}'",
+                    data_model_id=data_model_id,
+                    metadata={
+                        "entity_name": entity_name,
+                    },
+                )
+
+            return True
