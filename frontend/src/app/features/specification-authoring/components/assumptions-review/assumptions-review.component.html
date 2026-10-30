@@ -1,14 +1,18 @@
-<app-workspace-section>
-  <app-workspace-header
-    eyebrow="REVIEW"
-    title="Assumptions to review"
-    summary="Review these assumptions before proceeding."
-    [state]="assumptions().length + ' assumptions'"
-  />
+<section class="forge-card">
+  <app-workflow-row [columns]="1">
+    <app-workspace-header
+      eyebrow="REVIEW"
+      title="Assumptions to review"
+      summary="Review these assumptions before proceeding."
+      [state]="assumptions().length + ' assumptions'"
+    />
 
-  <ul>
-    @for (assumption of assumptions(); track $index) {
-      <li>{{ assumption }}</li>
-    }
-  </ul>
-</app-workspace-section>
+    <app-workspace-simple-table
+      [columns]="columns"
+      [rows]="tableRows()"
+      rowKey="id"
+      [height]="tableHeight()"
+      emptyMessage="No assumptions to review."
+    />
+  </app-workflow-row>
+</section>
