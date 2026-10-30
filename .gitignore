@@ -78,3 +78,6 @@ backend/api/data/data_model/
 
 # Local working backups
 .forge-backups/
+
+# FORGE runtime lock files
+/backend/api/data/.locks/
