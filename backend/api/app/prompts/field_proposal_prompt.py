@@ -65,15 +65,16 @@ INTEGER:
 - distribution may be:
   - UNIFORM
   - DISCRETE_UNIFORM
-  - NORMAL
-- UNIFORM and DISCRETE_UNIFORM may include minimum and maximum.
+- UNIFORM and DISCRETE_UNIFORM require minimum and maximum.
 
 DECIMAL:
 - Use generation.strategy = RANDOM.
 - distribution may be:
   - UNIFORM
   - NORMAL
-- UNIFORM may include minimum and maximum.
+- UNIFORM and NORMAL require minimum and maximum.
+- NORMAL produces bounded bell-shaped values centred on the midpoint
+  of the configured range.
 
 BOOLEAN:
 - Use generation.strategy = RANDOM.

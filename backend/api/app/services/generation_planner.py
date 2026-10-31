@@ -358,7 +358,7 @@ def _validate_generation_configuration(
                 allowed = (
                     {"UNIFORM", "DISCRETE_UNIFORM"}
                     if field_type == "INTEGER"
-                    else {"UNIFORM"}
+                    else {"UNIFORM", "NORMAL"}
                 )
                 if (
                     generation.get("strategy") != "RANDOM"

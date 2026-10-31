@@ -474,7 +474,11 @@
             <small class="validation-message"> Choose how values should be distributed. </small>
           }
 
-          @if (distribution() === 'UNIFORM' || distribution() === 'DISCRETE_UNIFORM') {
+          @if (
+            distribution() === 'UNIFORM' ||
+            distribution() === 'DISCRETE_UNIFORM' ||
+            distribution() === 'NORMAL'
+          ) {
             <div class="parameter-panel">
               <div class="parameter-panel-title">What range should the values use?</div>
 

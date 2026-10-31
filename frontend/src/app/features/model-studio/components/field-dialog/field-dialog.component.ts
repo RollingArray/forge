@@ -337,7 +337,8 @@ export class FieldDialogComponent {
 
     if (
       this.distribution() === 'UNIFORM' ||
-      this.distribution() === 'DISCRETE_UNIFORM'
+      this.distribution() === 'DISCRETE_UNIFORM' ||
+      this.distribution() === 'NORMAL'
     ) {
       const minimum = this.toNumber(this.minimum());
       const maximum = this.toNumber(this.maximum());
@@ -347,10 +348,6 @@ export class FieldDialogComponent {
       }
 
       return minimum <= maximum;
-    }
-
-    if (this.distribution() === 'NORMAL') {
-      return true;
     }
 
     return false;
@@ -427,7 +424,8 @@ export class FieldDialogComponent {
 
       if (
         this.distribution() === 'UNIFORM' ||
-        this.distribution() === 'DISCRETE_UNIFORM'
+        this.distribution() === 'DISCRETE_UNIFORM' ||
+        this.distribution() === 'NORMAL'
       ) {
         const minimum = this.toNumber(this.minimum());
         const maximum = this.toNumber(this.maximum());
@@ -737,7 +735,8 @@ export class FieldDialogComponent {
 
     if (
       this.distribution() === 'UNIFORM' ||
-      this.distribution() === 'DISCRETE_UNIFORM'
+      this.distribution() === 'DISCRETE_UNIFORM' ||
+      this.distribution() === 'NORMAL'
     ) {
       parameters['minimum'] = this.toNumber(this.minimum());
       parameters['maximum'] = this.toNumber(this.maximum());

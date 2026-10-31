@@ -85,7 +85,10 @@ class GenerationQualityService:
         if distribution == "CATEGORICAL" and isinstance(values, list):
             return len(values)
 
-        if distribution in {"DISCRETE_UNIFORM", "UNIFORM"}:
+        if (
+            field.get("type") == "INTEGER"
+            and distribution in {"DISCRETE_UNIFORM", "UNIFORM"}
+        ):
             minimum = parameters.get("minimum")
             maximum = parameters.get("maximum")
 

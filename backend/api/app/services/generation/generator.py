@@ -299,7 +299,7 @@ class Generator:
         distribution = generation.get("distribution")
         field_name = field.get("name", "FIELD")
 
-        if distribution != "UNIFORM":
+        if distribution not in {"UNIFORM", "NORMAL"}:
             raise GenerationError(
                 f"Unsupported decimal distribution for {field_name}: "
                 f"{distribution!r}"
@@ -314,9 +314,26 @@ class Generator:
         if minimum == maximum:
             return minimum
 
-        return minimum + (maximum - minimum) * Decimal(
-            str(self._random.random())
-        )
+        if distribution == "UNIFORM":
+            return minimum + (maximum - minimum) * Decimal(
+                str(self._random.random())
+            )
+
+        # Bounded normal distribution centred on the range midpoint.
+        # A standard deviation of one-sixth of the range places the
+        # bounds approximately three standard deviations from the mean.
+        # Resampling preserves the bounds without clipping values.
+        midpoint = (minimum + maximum) / Decimal("2")
+        standard_deviation = (maximum - minimum) / Decimal("6")
+
+        while True:
+            standard_normal = Decimal(
+                str(self._random.gauss(0.0, 1.0))
+            )
+            candidate = midpoint + standard_deviation * standard_normal
+
+            if minimum <= candidate <= maximum:
+                return candidate
 
     def _generate_boolean(self) -> bool:
         """Generate a boolean value."""

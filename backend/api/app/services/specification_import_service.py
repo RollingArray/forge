@@ -481,8 +481,8 @@ class SpecificationImportService:
                         raise ValueError(
                             f"INTEGER {key} must be a whole number."
                         )
-            elif distribution and distribution != "UNIFORM":
-                raise ValueError("DECIMAL supports UNIFORM only.")
+            elif distribution and distribution not in {"UNIFORM", "NORMAL"}:
+                raise ValueError("DECIMAL supports UNIFORM or NORMAL.")
 
         elif field_type == "CATEGORICAL":
             if generator:

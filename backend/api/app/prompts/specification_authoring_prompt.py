@@ -106,9 +106,10 @@ FIELD GENERATION CONFIGURATIONS
 - INTEGER fields use distribution UNIFORM or DISCRETE_UNIFORM and finite,
   whole-number parameters.minimum and parameters.maximum, with minimum <=
   maximum. Use a defensible range based on the field meaning and requirements.
-- DECIMAL fields support only distribution UNIFORM, with finite numeric
-  parameters.minimum and parameters.maximum, with minimum <= maximum.
-  Do not use NORMAL or POISSON for DECIMAL generation.
+- DECIMAL fields support distribution UNIFORM or NORMAL, with finite
+  numeric parameters.minimum and parameters.maximum, with minimum <= maximum.
+  NORMAL produces bounded bell-shaped values centred on the midpoint of
+  the configured range. Do not use POISSON for DECIMAL generation.
 - BOOLEAN fields use generation: {"strategy": "RANDOM"}.
 - CATEGORICAL fields use generation.strategy RANDOM,
   generation.distribution CATEGORICAL, and a non-empty
