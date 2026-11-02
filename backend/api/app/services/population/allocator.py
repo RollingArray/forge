@@ -472,6 +472,11 @@ def allocate_population_target(
             minimums=minimums,
             maximums=maximums,
             fixed=fixed_populations,
+            priorities={
+                name: 2 if name == driver else 1
+                for name in scalable
+            },
+            constraints=analysis.population_constraints,
         )
     except (TypeError, ValueError) as exc:
         return result(

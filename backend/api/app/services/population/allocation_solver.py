@@ -1,7 +1,9 @@
 """Deterministic integer allocation for entity populations."""
 
 from dataclasses import dataclass
-from typing import Mapping
+from heapq import heappop, heappush
+from math import prod
+from typing import Mapping, Sequence
 
 
 @dataclass(frozen=True)
@@ -29,85 +31,130 @@ def _validate_names(names: Mapping[str, object], label: str) -> None:
             raise ValueError(f"{label} contains an invalid entity name.")
 
 
+def _constraint_violations(
+    populations: Mapping[str, int],
+    constraints: Sequence[object],
+) -> list[str]:
+    """Return violations of the supported population-level constraints."""
+
+    violations: list[str] = []
+
+    for constraint in constraints:
+        kind = getattr(constraint, "kind", None)
+        entity = getattr(constraint, "entity", None)
+        related = tuple(getattr(constraint, "related_entities", ()))
+        value = populations.get(entity, 0)
+
+        if kind == "PARENT_REQUIRED_FOR_POSITIVE_CHILD":
+            if value > 0:
+                for parent in related:
+                    if populations.get(parent, 0) <= 0:
+                        violations.append(
+                            f"{entity} requires a positive {parent} population."
+                        )
+
+        elif kind == "CHILD_AT_LEAST_PARENT":
+            if related and value < populations.get(related[0], 0):
+                violations.append(
+                    f"{entity} must have at least as many rows as {related[0]}."
+                )
+
+        elif kind == "CHILD_AT_MOST_PARENT":
+            if related and value > populations.get(related[0], 0):
+                violations.append(
+                    f"{entity} cannot exceed the population of {related[0]}."
+                )
+
+        elif kind == "IDENTITY_CAPACITY":
+            capacity = getattr(constraint, "multiplier", 1) * prod(
+                populations.get(parent, 0) for parent in related
+            )
+            if value > capacity:
+                violations.append(
+                    f"{entity} exceeds its derived identity capacity of {capacity:,}."
+                )
+
+        else:
+            violations.append(
+                f"Unsupported population constraint kind: {kind}."
+            )
+
+    return violations
+
+
 def _distribute_residual(
     residual: int,
     allocations: dict[str, int],
     maximums: Mapping[str, int | None],
     priorities: Mapping[str, int],
-) -> None:
-    """Raise final populations toward a common level, respecting caps."""
+    constraints: Sequence[object],
+    fixed_populations: Mapping[str, int],
+) -> int:
+    """
+    Distribute residual records using weighted fairness.
 
-    del priorities  # Equal final populations are the default policy.
+    A higher priority gives an entity a proportionally larger allocation.
+    Candidate increments are accepted only when all supported population
+    constraints remain satisfied.
+    """
+
+    heap: list[tuple[float, int, str]] = []
+
+    for name, count in allocations.items():
+        maximum = maximums.get(name)
+        if maximum is None or count < maximum:
+            priority = priorities[name]
+            heappush(heap, (count / priority, -priority, name))
 
     remaining = residual
 
-    while remaining > 0:
-        active = [
-            name
-            for name, count in allocations.items()
-            if maximums.get(name) is None
-            or count < maximums[name]
-        ]
+    while remaining > 0 and heap:
+        blocked: list[str] = []
+        progressed = False
 
-        if not active:
+        while heap:
+            _, _, name = heappop(heap)
+            current = allocations[name]
+            maximum = maximums.get(name)
+
+            if maximum is not None and current >= maximum:
+                continue
+
+            candidate = dict(fixed_populations)
+            candidate.update(allocations)
+            candidate[name] = current + 1
+
+            if _constraint_violations(candidate, constraints):
+                blocked.append(name)
+                continue
+
+            allocations[name] = current + 1
+            remaining -= 1
+
+            priority = priorities[name]
+            heappush(
+                heap,
+                (allocations[name] / priority, -priority, name),
+            )
+
+            for blocked_name in blocked:
+                blocked_priority = priorities[blocked_name]
+                heappush(
+                    heap,
+                    (
+                        allocations[blocked_name] / blocked_priority,
+                        -blocked_priority,
+                        blocked_name,
+                    ),
+                )
+
+            progressed = True
             break
 
-        lowest = min(allocations[name] for name in active)
-        lowest_group = sorted(
-            name for name in active
-            if allocations[name] == lowest
-        )
-
-        next_level = min(
-            (
-                allocations[name]
-                for name in active
-                if allocations[name] > lowest
-            ),
-            default=None,
-        )
-
-        next_cap = min(
-            (
-                maximums[name]
-                for name in lowest_group
-                if maximums.get(name) is not None
-            ),
-            default=None,
-        )
-
-        boundaries = [
-            value for value in (next_level, next_cap)
-            if value is not None
-        ]
-
-        if boundaries:
-            distance = min(boundaries) - lowest
-        else:
-            distance = max(1, remaining // len(lowest_group))
-
-        if distance <= 0:
+        if not progressed:
             break
 
-        cost = distance * len(lowest_group)
-
-        if cost <= remaining:
-            for name in lowest_group:
-                allocations[name] += distance
-            remaining -= cost
-            continue
-
-        full_rounds, extra = divmod(
-            remaining, len(lowest_group)
-        )
-
-        for name in lowest_group:
-            allocations[name] += full_rounds
-
-        for name in lowest_group[:extra]:
-            allocations[name] += 1
-
-        remaining = 0
+    return remaining
 
 
 def allocate_integer_populations(
@@ -117,6 +164,7 @@ def allocate_integer_populations(
     maximums: Mapping[str, int | None] | None = None,
     fixed: Mapping[str, int] | None = None,
     priorities: Mapping[str, int] | None = None,
+    constraints: Sequence[object] = (),
 ) -> AllocationResult:
     """
     Allocate an exact dataset target across fixed and scalable entities.
@@ -132,6 +180,7 @@ def allocate_integer_populations(
     maximums = maximums or {}
     fixed = fixed or {}
     priorities = priorities or {}
+    constraints = tuple(constraints)
 
     _validate_names(minimums, "minimums")
     _validate_names(maximums, "maximums")
@@ -247,18 +296,40 @@ def allocate_integer_populations(
         for name in minimums
     }
 
-    _distribute_residual(
+    initial_violations = _constraint_violations(
+        allocations,
+        constraints,
+    )
+
+    if initial_violations:
+        return AllocationResult(
+            target=target,
+            populations=allocations,
+            allocated_total=sum(allocations.values()),
+            minimum_total=minimum_total,
+            maximum_total=maximum_total,
+            feasible=False,
+            reason=(
+                "The minimum population allocation already violates "
+                "supported population constraints: "
+                + " ".join(initial_violations)
+            ),
+        )
+
+    remaining = _distribute_residual(
         residual=residual,
         allocations=scalable_allocations,
         maximums=normalized_maximums,
         priorities=normalized_priorities,
+        constraints=constraints,
+        fixed_populations=fixed,
     )
 
     allocations.update(scalable_allocations)
 
     allocated_total = sum(allocations.values())
 
-    feasible = allocated_total == target
+    feasible = remaining == 0 and allocated_total == target
 
     return AllocationResult(
         target=target,
@@ -271,8 +342,9 @@ def allocate_integer_populations(
             None
             if feasible
             else (
-                f"Only {allocated_total:,} of {target:,} requested "
-                "records could be allocated within the supplied capacities."
+                f"Only {allocated_total:,} of {target:,} requested records "
+                "could be allocated without violating supported population "
+                "constraints or derived capacities."
             )
         ),
     )

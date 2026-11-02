@@ -10,7 +10,10 @@ from dataclasses import asdict, dataclass, field
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from app.services.relationship_endpoint import parse_relationship_endpoint
+from app.services.relationship_endpoint import (
+    ForeignKeyMapping,
+    resolve_relationship_mapping,
+)
 
 
 @dataclass(frozen=True)
@@ -573,7 +576,18 @@ def analyze_specification_constraints(
             supported,
         ))
 
-    # Match relationship declarations exactly as GenerationValidator does.
+    # Resolve relationship declarations through the canonical resolver.
+    canonical_foreign_keys = tuple(
+        ForeignKeyMapping(
+            name=fk["name"],
+            child_entity=fk["child"],
+            child_fields=fk["child_fields"],
+            parent_entity=fk["parent"],
+            parent_fields=fk["parent_fields"],
+        )
+        for fk in fk_records
+    )
+
     relationships = specification.get("relationships", [])
     if not isinstance(relationships, list):
         _diagnostic(
@@ -590,24 +604,31 @@ def analyze_specification_constraints(
             )
             continue
 
-        source_raw = relationship.get("source")
-        target_raw = relationship.get("target")
-        rel_type = str(relationship.get("type", "UNKNOWN")).upper()
-        source_participation = str(
-            relationship.get("source_participation", "MANDATORY")
-        ).upper()
-        target_participation = str(
-            relationship.get("target_participation", "MANDATORY")
-        ).upper()
+        resolution = resolve_relationship_mapping(
+            relationship,
+            canonical_foreign_keys,
+        )
 
-        source_label = str(source_raw)
-        target_label = str(target_raw)
+        source_label = (
+            resolution.source.reference
+            if resolution.source is not None
+            else str(relationship.get("source"))
+        )
+        target_label = (
+            resolution.target.reference
+            if resolution.target is not None
+            else str(relationship.get("target"))
+        )
         subject = f"{source_label}->{target_label}"
+
+        rel_type = resolution.relationship_type
+        source_participation = resolution.source_participation
+        target_participation = resolution.target_participation
 
         def add_relationship(
             status: str,
             reason: str,
-            fk: dict[str, Any] | None = None,
+            fk: ForeignKeyMapping | None = None,
             direction: str | None = None,
             child: str | None = None,
             parent: str | None = None,
@@ -619,65 +640,54 @@ def analyze_specification_constraints(
                 source_participation=source_participation,
                 target_participation=target_participation,
                 status=status,
-                fk_name=fk["name"] if fk else None,
+                fk_name=fk.name if fk else None,
                 fk_direction=direction,
                 child_entity=child,
                 parent_entity=parent,
                 reason=reason,
             ))
 
-        if rel_type == "MANY_TO_MANY":
-            reason = (
-                "Direct MANY_TO_MANY declarations do not identify an "
-                "association mapping."
-            )
-            add_relationship("UNSUPPORTED", reason)
-            _diagnostic(
-                result, "UNSUPPORTED_MANY_TO_MANY", "WARNING",
-                "Explicit junction or association evidence is required.", subject,
-            )
-            continue
-
-        if rel_type not in {"ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_ONE"}:
-            reason = f"Unsupported relationship type: {rel_type}."
-            add_relationship("UNSUPPORTED", reason)
-            _diagnostic(
-                result, "UNSUPPORTED_RELATIONSHIP_TYPE", "WARNING",
-                reason, subject,
-            )
-            continue
-
-        if (
-            source_participation not in {"MANDATORY", "OPTIONAL"}
-            or target_participation not in {"MANDATORY", "OPTIONAL"}
-        ):
-            reason = "Participation must be MANDATORY or OPTIONAL."
+        if resolution.status == "INVALID":
+            reason = resolution.reason or "Invalid relationship declaration."
             add_relationship("INVALID", reason)
             _diagnostic(
-                result, "INVALID_RELATIONSHIP_PARTICIPATION", "ERROR",
-                reason, subject,
+                result,
+                resolution.diagnostic_code or "INVALID_RELATIONSHIP",
+                "ERROR",
+                reason,
+                subject,
             )
             continue
 
-        try:
-            source_endpoint = parse_relationship_endpoint(
-                source_raw, "source"
+        if resolution.status == "UNSUPPORTED":
+            reason = resolution.reason or "Unsupported relationship declaration."
+            add_relationship("UNSUPPORTED", reason)
+
+            if resolution.diagnostic_code == "UNSUPPORTED_MANY_TO_MANY":
+                message = "Explicit junction or association evidence is required."
+            else:
+                message = reason
+
+            _diagnostic(
+                result,
+                resolution.diagnostic_code or "UNSUPPORTED_RELATIONSHIP_TYPE",
+                "WARNING",
+                message,
+                subject,
             )
-            target_endpoint = parse_relationship_endpoint(
-                target_raw, "target"
-            )
-        except ValueError as exc:
-            reason = str(exc)
+            continue
+
+        source_endpoint = resolution.source
+        target_endpoint = resolution.target
+
+        if source_endpoint is None or target_endpoint is None:
+            reason = "Relationship endpoints could not be resolved."
             add_relationship("INVALID", reason)
             _diagnostic(
                 result, "INVALID_RELATIONSHIP_ENDPOINT", "ERROR",
                 reason, subject,
             )
             continue
-
-        source_label = source_endpoint.reference
-        target_label = target_endpoint.reference
-        subject = f"{source_label}->{target_label}"
 
         source_entity = source_endpoint.entity
         target_entity = target_endpoint.entity
@@ -722,95 +732,37 @@ def analyze_specification_constraints(
             )
             continue
 
-        matching: list[tuple[dict[str, Any], str]] = []
-        partial_composite = False
-
-        for fk in fk_records:
-            forward = (
-                fk["child"] == source_entity
-                and fk["child_fields"] == source_fields
-                and fk["parent"] == target_entity
-                and fk["parent_fields"] == target_fields
-            )
-            reverse = (
-                fk["child"] == target_entity
-                and fk["child_fields"] == target_fields
-                and fk["parent"] == source_entity
-                and fk["parent_fields"] == source_fields
-            )
-
-            if forward:
-                matching.append((fk, "FORWARD"))
-            elif reverse:
-                matching.append((fk, "REVERSE"))
-            elif (
-                fk["child"] == source_entity
-                and fk["parent"] == target_entity
-                and bool(set(source_fields) & set(fk["child_fields"]))
-                and bool(set(target_fields) & set(fk["parent_fields"]))
-            ) or (
-                fk["child"] == target_entity
-                and fk["parent"] == source_entity
-                and bool(set(target_fields) & set(fk["child_fields"]))
-                and bool(set(source_fields) & set(fk["parent_fields"]))
-            ):
-                partial_composite = True
-
-        expected = {
-            "ONE_TO_ONE": None,
-            "ONE_TO_MANY": "REVERSE",
-            "MANY_TO_ONE": "FORWARD",
-        }[rel_type]
-
-        compatible = [
-            (fk, direction)
-            for fk, direction in matching
-            if expected is None or direction == expected
-        ]
-
-        if len(compatible) != 1:
-            if len(compatible) > 1:
-                reason = (
-                    "Multiple compatible foreign keys match this relationship."
-                )
-                code = "AMBIGUOUS_RELATIONSHIP_MAPPING"
-            elif partial_composite:
-                reason = (
-                    "Relationship endpoints match only part of a composite "
-                    "foreign key; the validator does not treat that as a "
-                    "relationship mapping."
-                )
-                code = "PARTIAL_COMPOSITE_RELATIONSHIP_MAPPING"
-            elif matching:
-                reason = (
-                    "Matching foreign keys exist, but their direction conflicts "
-                    "with the declared cardinality."
-                )
-                code = "RELATIONSHIP_DIRECTION_MISMATCH"
-            else:
-                reason = (
-                    "A complete ordered foreign key mapping in the expected "
-                    "direction could not be established."
-                )
-                code = "RELATIONSHIP_FK_NOT_FOUND"
-
+        if resolution.status != "MAPPED":
+            reason = resolution.reason or "Relationship FK mapping is unresolved."
             add_relationship("UNMAPPED", reason)
-            _diagnostic(result, code, "WARNING", reason, subject)
+            _diagnostic(
+                result,
+                resolution.diagnostic_code or "RELATIONSHIP_FK_NOT_FOUND",
+                "WARNING",
+                reason,
+                subject,
+            )
             continue
 
-        fk, direction = compatible[0]
-        child = source_entity if direction == "FORWARD" else target_entity
-        parent = target_entity if direction == "FORWARD" else source_entity
+        foreign_key = resolution.foreign_key
+        if foreign_key is None:
+            reason = "Mapped relationship has no resolved foreign key."
+            add_relationship("INVALID", reason)
+            _diagnostic(
+                result, "INVALID_RELATIONSHIP_MAPPING", "ERROR",
+                reason, subject,
+            )
+            continue
 
         add_relationship(
             "MAPPED",
             "Complete ordered FK mapping matches the generation validator. "
             "Row-level cardinality and participation still require "
             "generation-time verification.",
-            fk,
-            direction,
-            child,
-            parent,
+            foreign_key,
+            resolution.direction,
+            resolution.child_entity,
+            resolution.parent_entity,
         )
 
     # Every positive child population requires a non-empty keyspace
