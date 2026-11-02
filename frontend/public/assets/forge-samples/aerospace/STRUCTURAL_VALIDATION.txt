@@ -1,0 +1,14 @@
+AEROSPACE V2 SAMPLE STRUCTURAL REPORT
+Entities: 15
+Fields: 82
+Foreign keys: 16
+Relationships: 16
+Constraints: 9
+Relationship types: MANY_TO_ONE, ONE_TO_MANY, ONE_TO_ONE
+Field types: BOOLEAN, CATEGORICAL, DECIMAL, IDENTIFIER, INTEGER, STRING
+String generators: PATTERN, RANDOM_STRING, SEMANTIC
+Integer distributions: DISCRETE_UNIFORM, UNIFORM
+Decimal distributions: NORMAL, UNIFORM
+FIXED entities: 1
+SCALABLE entities: 14
+Structural checks: PASS
