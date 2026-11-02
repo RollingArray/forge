@@ -5,6 +5,10 @@ from typing import Any
 
 from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation.value_conversion import convert_value
+from app.services.relationship_endpoint import (
+    normalize_foreign_key_mappings,
+    resolve_relationship_mapping,
+)
 
 
 class GenerationValidationError(ValueError):
@@ -507,7 +511,24 @@ class GenerationValidator:
             for field in entity.get("fields", []):
                 field_name = field["name"]
 
+                generation = field.get("generation") or {}
+                generation_parameters = (
+                    generation.get("parameters") or {}
+                )
+                distribution = str(
+                    generation.get("distribution") or ""
+                ).strip().upper()
+
                 allowed_values = field.get("allowed_values")
+
+                # Categorical generation values define the field domain.
+                if (
+                    allowed_values is None
+                    and distribution == "CATEGORICAL"
+                ):
+                    allowed_values = generation_parameters.get("values")
+
+                # Explicit domain bounds remain independently supported.
                 minimum = field.get("min")
                 maximum = field.get("max")
 
@@ -990,23 +1011,45 @@ class GenerationValidator:
                 details=metric,
             )
 
-        # Evaluate relationship cardinality using explicit FK mappings
-        # and row-level references. FK integrity rules above remain separate.
-        for index, relationship in enumerate(
-            specification.get("relationships", []),
-            start=1,
-        ):
-            source_ref = relationship.get("source", f"relationship_{index}")
-            target_ref = relationship.get("target", "unknown_target")
-            relationship_type = str(
-                relationship.get("type", "UNKNOWN")
-            ).upper()
-            source_participation = str(
-                relationship.get("source_participation", "MANDATORY")
-            ).upper()
-            target_participation = str(
-                relationship.get("target_participation", "MANDATORY")
-            ).upper()
+        # Evaluate relationship cardinality through the canonical resolver.
+        # FK integrity rules above remain separate.
+        try:
+            canonical_foreign_keys = normalize_foreign_key_mappings(
+                foreign_keys
+            )
+            canonical_foreign_key_error = None
+        except ValueError as exc:
+            canonical_foreign_keys = ()
+            canonical_foreign_key_error = str(exc)
+
+        relationships = specification.get("relationships", [])
+
+        if relationships is None:
+            relationships = []
+
+        if not isinstance(relationships, list):
+            relationships = []
+
+        for index, relationship in enumerate(relationships, start=1):
+            relationship_data = (
+                relationship if isinstance(relationship, dict) else {}
+            )
+
+            source_ref = relationship_data.get(
+                "source", f"relationship_{index}"
+            )
+            target_ref = relationship_data.get(
+                "target", "unknown_target"
+            )
+
+            resolution = resolve_relationship_mapping(
+                relationship,
+                canonical_foreign_keys,
+            )
+
+            relationship_type = resolution.relationship_type
+            source_participation = resolution.source_participation
+            target_participation = resolution.target_participation
 
             details: dict[str, Any] = {
                 "source": source_ref,
@@ -1014,175 +1057,132 @@ class GenerationValidator:
                 "type": relationship_type,
                 "source_participation": source_participation,
                 "target_participation": target_participation,
+                "resolution_status": resolution.status,
+                "diagnostic_code": resolution.diagnostic_code,
             }
             status = "NOT_EVALUATED"
 
-            if relationship_type == "MANY_TO_MANY":
-                details["reason"] = (
-                    "A direct MANY_TO_MANY declaration does not identify "
-                    "an association mapping. Explicit junction or "
-                    "association evidence is required."
-                )
-            elif relationship_type not in {
-                "ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_ONE"
-            }:
-                details["reason"] = (
-                    f"Unsupported relationship type: {relationship_type}."
-                )
-            elif (
-                not isinstance(source_ref, str)
-                or "." not in source_ref
-                or not isinstance(target_ref, str)
-                or "." not in target_ref
-            ):
+            if canonical_foreign_key_error is not None:
                 status = "FAILED"
                 details["reason"] = (
-                    "Relationship endpoints must use ENTITY.FIELD notation."
+                    "Foreign-key declarations could not be normalized: "
+                    f"{canonical_foreign_key_error}"
                 )
-            elif (
-                source_participation not in {"MANDATORY", "OPTIONAL"}
-                or target_participation not in {"MANDATORY", "OPTIONAL"}
-            ):
-                status = "FAILED"
-                details["reason"] = (
-                    "Relationship participation must be MANDATORY or OPTIONAL."
-                )
-            else:
-                source_entity, source_field = source_ref.split(".", 1)
-                target_entity, target_field = target_ref.split(".", 1)
-                details.update({
-                    "source_entity": source_entity,
-                    "source_field": source_field,
-                    "target_entity": target_entity,
-                    "target_field": target_field,
-                })
 
+            elif resolution.status == "INVALID":
+                status = "FAILED"
+                details["reason"] = resolution.reason
+
+            elif resolution.status == "UNSUPPORTED":
+                details["reason"] = resolution.reason
+
+            elif resolution.status == "UNMAPPED":
+                details["reason"] = resolution.reason
+
+            elif resolution.status == "MAPPED":
+                source = resolution.source
+                target = resolution.target
+                foreign_key = resolution.foreign_key
+
+                # A MAPPED result must contain all canonical endpoint data.
                 if (
-                    source_entity not in entity_map
-                    or target_entity not in entity_map
-                    or source_field not in field_types.get(source_entity, {})
-                    or target_field not in field_types.get(target_entity, {})
+                    source is None
+                    or target is None
+                    or foreign_key is None
+                    or resolution.child_entity is None
+                    or resolution.parent_entity is None
+                    or resolution.direction is None
                 ):
                     status = "FAILED"
                     details["reason"] = (
-                        "A declared relationship endpoint entity or field "
-                        "does not exist in the specification."
+                        "Canonical relationship resolution returned an "
+                        "incomplete mapping."
                     )
                 else:
-                    matching_fks = []
-                    foreign_key_candidates = (
-                        foreign_keys if isinstance(foreign_keys, list) else []
-                    )
+                    source_entity = source.entity
+                    source_fields = source.fields
+                    target_entity = target.entity
+                    target_fields = target.fields
 
-                    for foreign_key in foreign_key_candidates:
-                        if not isinstance(foreign_key, dict):
-                            continue
+                    details.update({
+                        "source_entity": source_entity,
+                        "source_fields": list(source_fields),
+                        "target_entity": target_entity,
+                        "target_fields": list(target_fields),
+                        "foreign_key_name": foreign_key.name,
+                        "foreign_key_direction": resolution.direction,
+                        "matching_foreign_keys": [{
+                            "name": foreign_key.name,
+                            "direction": resolution.direction,
+                        }],
+                        "compatible_foreign_keys": [{
+                            "name": foreign_key.name,
+                            "direction": resolution.direction,
+                        }],
+                    })
 
-                        fk_source = foreign_key.get("source")
-                        fk_target = foreign_key.get("target")
-                        if (
-                            not isinstance(fk_source, dict)
-                            or not isinstance(fk_target, dict)
-                        ):
-                            continue
+                    # Preserve the singular evidence fields used by existing
+                    # consumers when the endpoint consists of one field.
+                    if len(source_fields) == 1:
+                        details["source_field"] = source_fields[0]
+                    if len(target_fields) == 1:
+                        details["target_field"] = target_fields[0]
 
-                        fk_source_fields = fk_source.get("fields")
-                        fk_target_fields = fk_target.get("fields")
-                        if (
-                            not isinstance(fk_source_fields, list)
-                            or not isinstance(fk_target_fields, list)
-                            or any(
-                                not isinstance(field, str)
-                                for field in fk_source_fields
-                            )
-                            or any(
-                                not isinstance(field, str)
-                                for field in fk_target_fields
-                            )
-                        ):
-                            continue
+                    child_entity = resolution.child_entity
+                    parent_entity = resolution.parent_entity
+                    child_fields = foreign_key.child_fields
+                    parent_fields = foreign_key.parent_fields
 
-                        fk_source_fields = tuple(fk_source_fields)
-                        fk_target_fields = tuple(fk_target_fields)
+                    details.update({
+                        "child_entity": child_entity,
+                        "child_fields": list(child_fields),
+                        "parent_entity": parent_entity,
+                        "parent_fields": list(parent_fields),
+                    })
 
-                        forward = (
-                            fk_source.get("entity") == source_entity
-                            and fk_source_fields == (source_field,)
-                            and fk_target.get("entity") == target_entity
-                            and fk_target_fields == (target_field,)
+                    if len(child_fields) == 1:
+                        details["child_field"] = child_fields[0]
+                    if len(parent_fields) == 1:
+                        details["parent_field"] = parent_fields[0]
+
+                    missing_entities = [
+                        entity_name
+                        for entity_name in (source_entity, target_entity)
+                        if entity_name not in entity_map
+                    ]
+                    missing_source_fields = [
+                        field_name
+                        for field_name in source_fields
+                        if field_name not in field_types.get(
+                            source_entity, {}
                         )
-                        reverse = (
-                            fk_source.get("entity") == target_entity
-                            and fk_source_fields == (target_field,)
-                            and fk_target.get("entity") == source_entity
-                            and fk_target_fields == (source_field,)
+                    ]
+                    missing_target_fields = [
+                        field_name
+                        for field_name in target_fields
+                        if field_name not in field_types.get(
+                            target_entity, {}
                         )
-
-                        if forward or reverse:
-                            matching_fks.append({
-                                "name": foreign_key.get("name"),
-                                "direction": (
-                                    "FORWARD" if forward else "REVERSE"
-                                ),
-                                "foreign_key": foreign_key,
-                            })
-
-                    expected_direction = {
-                        "ONE_TO_ONE": None,
-                        "ONE_TO_MANY": "REVERSE",
-                        "MANY_TO_ONE": "FORWARD",
-                    }[relationship_type]
-                    compatible_fks = [
-                        item for item in matching_fks
-                        if expected_direction is None
-                        or item["direction"] == expected_direction
                     ]
 
-                    def describe_fk(item: dict[str, Any]) -> dict[str, Any]:
-                        return {
-                            "name": item["name"],
-                            "direction": item["direction"],
-                        }
-
-                    details["matching_foreign_keys"] = [
-                        describe_fk(item) for item in matching_fks
-                    ]
-                    details["compatible_foreign_keys"] = [
-                        describe_fk(item) for item in compatible_fks
-                    ]
-
-                    if len(compatible_fks) != 1:
-                        if matching_fks and not compatible_fks:
-                            details["reason"] = (
-                                "Endpoint-matching FK mappings exist, but "
-                                "none matches the declared relationship "
-                                "cardinality direction."
-                            )
-                        elif len(compatible_fks) > 1:
-                            details["reason"] = (
-                                "Multiple compatible FK mappings match this "
-                                "relationship; the mapping is ambiguous."
-                            )
-                        else:
-                            details["reason"] = (
-                                "A unique FK mapping in the expected direction "
-                                "could not be established for this relationship."
-                            )
+                    if (
+                        missing_entities
+                        or missing_source_fields
+                        or missing_target_fields
+                    ):
+                        status = "FAILED"
+                        details["reason"] = (
+                            "A declared relationship endpoint entity or "
+                            "field does not exist in the specification."
+                        )
+                        details["missing_entities"] = missing_entities
+                        details["missing_source_fields"] = (
+                            missing_source_fields
+                        )
+                        details["missing_target_fields"] = (
+                            missing_target_fields
+                        )
                     else:
-                        mapping = compatible_fks[0]
-                        fk = mapping["foreign_key"]
-
-                        if mapping["direction"] == "FORWARD":
-                            child_entity = source_entity
-                            child_field = source_field
-                            parent_entity = target_entity
-                            parent_field = target_field
-                        else:
-                            child_entity = target_entity
-                            child_field = target_field
-                            parent_entity = source_entity
-                            parent_field = source_field
-
                         child_rows = list(self._iter_typed_rows(
                             data_model_id=data_model_id,
                             job_id=job_id,
@@ -1196,90 +1196,134 @@ class GenerationValidator:
                             field_types=field_types[parent_entity],
                         ))
 
+                        def has_blank_component(value: Any) -> bool:
+                            return (
+                                value is None
+                                or (
+                                    isinstance(value, str)
+                                    and not value.strip()
+                                )
+                            )
+
+                        def row_has_missing_fields(
+                            row: dict[str, Any],
+                            fields: tuple[str, ...],
+                        ) -> bool:
+                            return any(
+                                field_name not in row
+                                for field_name in fields
+                            )
+
+                        def row_key(
+                            row: dict[str, Any],
+                            fields: tuple[str, ...],
+                        ) -> tuple[Any, ...]:
+                            return tuple(
+                                row.get(field_name)
+                                for field_name in fields
+                            )
+
+                        def key_is_complete(
+                            key: tuple[Any, ...],
+                        ) -> bool:
+                            return not any(
+                                has_blank_component(value)
+                                for value in key
+                            )
+
                         child_missing = sum(
                             1 for row in child_rows
-                            if child_field not in row
+                            if row_has_missing_fields(row, child_fields)
                         )
                         parent_missing = sum(
                             1 for row in parent_rows
-                            if parent_field not in row
+                            if row_has_missing_fields(row, parent_fields)
                         )
+
+                        source_rows = (
+                            child_rows
+                            if source_entity == child_entity
+                            else parent_rows
+                        )
+                        target_rows = (
+                            child_rows
+                            if target_entity == child_entity
+                            else parent_rows
+                        )
+
                         details.update({
-                            "child_entity": child_entity,
-                            "child_field": child_field,
-                            "parent_entity": parent_entity,
-                            "parent_field": parent_field,
                             "child_rows_checked": len(child_rows),
                             "parent_rows_checked": len(parent_rows),
-                            "source_missing_field_count": (
-                                sum(1 for row in child_rows
-                                    if source_entity == child_entity
-                                    and source_field not in row)
-                                + sum(1 for row in parent_rows
-                                      if source_entity == parent_entity
-                                      and source_field not in row)
+                            "source_missing_field_count": sum(
+                                1 for row in source_rows
+                                if row_has_missing_fields(
+                                    row, source_fields
+                                )
                             ),
-                            "target_missing_field_count": (
-                                sum(1 for row in child_rows
-                                    if target_entity == child_entity
-                                    and target_field not in row)
-                                + sum(1 for row in parent_rows
-                                      if target_entity == parent_entity
-                                      and target_field not in row)
+                            "target_missing_field_count": sum(
+                                1 for row in target_rows
+                                if row_has_missing_fields(
+                                    row, target_fields
+                                )
                             ),
                         })
 
                         if not child_rows or not parent_rows:
                             details["reason"] = (
-                                "At least one endpoint has no generated rows; "
-                                "relationship conformance cannot be established."
+                                "At least one endpoint has no generated "
+                                "rows; relationship conformance cannot "
+                                "be established."
                             )
+
                         elif child_missing or parent_missing:
                             status = "FAILED"
                             details["reason"] = (
                                 "One or more generated rows are missing a "
                                 "declared relationship endpoint field."
                             )
+
                         else:
                             parent_values = [
-                                row[parent_field] for row in parent_rows
+                                row_key(row, parent_fields)
+                                for row in parent_rows
                             ]
                             parent_non_null = [
-                                value for value in parent_values
-                                if value is not None
-                                and not (
-                                    isinstance(value, str) and not value.strip()
-                                )
+                                key for key in parent_values
+                                if key_is_complete(key)
                             ]
-                            parent_value_counts: dict[Any, int] = {}
-                            for value in parent_non_null:
-                                parent_value_counts[value] = (
-                                    parent_value_counts.get(value, 0) + 1
+
+                            parent_value_counts: dict[
+                                tuple[Any, ...], int
+                            ] = {}
+                            for key in parent_non_null:
+                                parent_value_counts[key] = (
+                                    parent_value_counts.get(key, 0) + 1
                                 )
 
                             child_values = [
-                                row[child_field] for row in child_rows
+                                row_key(row, child_fields)
+                                for row in child_rows
                             ]
                             child_null_count = sum(
-                                1 for value in child_values
-                                if value is None
-                                or (
-                                    isinstance(value, str) and not value.strip()
-                                )
+                                1 for key in child_values
+                                if not key_is_complete(key)
                             )
                             child_non_null = [
-                                value for value in child_values
-                                if value is not None
-                                and not (
-                                    isinstance(value, str) and not value.strip()
-                                )
+                                key for key in child_values
+                                if key_is_complete(key)
                             ]
+
                             parent_value_set = set(parent_non_null)
-                            dangling_values = set(child_non_null) - parent_value_set
-                            child_reference_counts: dict[Any, int] = {}
-                            for value in child_non_null:
-                                child_reference_counts[value] = (
-                                    child_reference_counts.get(value, 0) + 1
+                            dangling_values = (
+                                set(child_non_null) - parent_value_set
+                            )
+
+                            child_reference_counts: dict[
+                                tuple[Any, ...], int
+                            ] = {}
+                            for key in child_non_null:
+                                child_reference_counts[key] = (
+                                    child_reference_counts.get(key, 0) + 1
                                 )
 
                             duplicate_parent_values = sum(
@@ -1293,16 +1337,24 @@ class GenerationValidator:
                                 if count > 1
                             )
                             parents_without_children = sum(
-                                1 for value in parent_value_set
-                                if child_reference_counts.get(value, 0) == 0
+                                1 for key in parent_value_set
+                                if child_reference_counts.get(key, 0) == 0
                             )
 
                             details.update({
-                                "parent_distinct_values": len(parent_value_set),
-                                "parent_duplicate_rows": duplicate_parent_values,
-                                "child_non_null_reference_count": len(child_non_null),
+                                "parent_distinct_values": len(
+                                    parent_value_set
+                                ),
+                                "parent_duplicate_rows": (
+                                    duplicate_parent_values
+                                ),
+                                "child_non_null_reference_count": (
+                                    len(child_non_null)
+                                ),
                                 "child_null_count": child_null_count,
-                                "dangling_reference_count": len(dangling_values),
+                                "dangling_reference_count": (
+                                    len(dangling_values)
+                                ),
                                 "duplicate_child_reference_rows": (
                                     duplicate_child_references
                                 ),
@@ -1315,23 +1367,25 @@ class GenerationValidator:
 
                             if duplicate_parent_values:
                                 reasons.append(
-                                    "The referenced parent endpoint is not unique."
+                                    "The referenced parent endpoint is "
+                                    "not unique."
                                 )
+
                             if dangling_values:
                                 reasons.append(
-                                    "One or more child references do not match "
-                                    "a parent endpoint value."
+                                    "One or more child references do not "
+                                    "match a parent endpoint value."
                                 )
 
                             child_participation = (
                                 source_participation
-                                if child_entity == source_entity
+                                if resolution.direction == "FORWARD"
                                 else target_participation
                             )
                             parent_participation = (
-                                source_participation
-                                if parent_entity == source_entity
-                                else target_participation
+                                target_participation
+                                if resolution.direction == "FORWARD"
+                                else source_participation
                             )
 
                             if (
@@ -1339,16 +1393,17 @@ class GenerationValidator:
                                 and child_null_count
                             ):
                                 reasons.append(
-                                    "Mandatory child-side participation has "
-                                    "null or blank references."
+                                    "Mandatory child-side participation "
+                                    "has null or blank references."
                                 )
+
                             if (
                                 parent_participation == "MANDATORY"
                                 and parents_without_children
                             ):
                                 reasons.append(
-                                    "Mandatory parent-side participation has "
-                                    "parent records with no related child."
+                                    "Mandatory parent-side participation "
+                                    "has parent records with no related child."
                                 )
 
                             if (
@@ -1356,12 +1411,10 @@ class GenerationValidator:
                                 and duplicate_child_references
                             ):
                                 reasons.append(
-                                    "ONE_TO_ONE cardinality is violated because "
-                                    "multiple child records reference the same parent."
+                                    "ONE_TO_ONE cardinality is violated "
+                                    "because multiple child records "
+                                    "reference the same parent."
                                 )
-
-                            details["foreign_key_name"] = mapping["name"]
-                            details["foreign_key_direction"] = mapping["direction"]
 
                             if reasons:
                                 status = "FAILED"
@@ -1373,9 +1426,10 @@ class GenerationValidator:
                             else:
                                 status = "PASSED"
                                 details["reason"] = (
-                                    "Explicit FK mapping, parent endpoint "
-                                    "uniqueness, reference validity, cardinality, "
-                                    "and declared participation checks passed."
+                                    "Canonical FK mapping, parent endpoint "
+                                    "uniqueness, reference validity, "
+                                    "cardinality, and declared participation "
+                                    "checks passed."
                                 )
 
             record_rule(
