@@ -1,0 +1,194 @@
+<app-workspace-section>
+  <app-workspace-header
+    eyebrow="RULE RESULTS"
+    title="Validation rule outcomes"
+    summary="Inspect every deterministic rule, its execution status, and the measured evidence recorded for this generation job."
+  />
+
+  @if (rules().length) {
+    <app-metric-grid [columns]="4" [metrics]="metrics()" />
+
+    <app-content-grid [columns]="1">
+      @for (group of groups(); track group.category) {
+        <app-content-card [padding]="0">
+          <details class="category-panel evidence-card">
+            <summary class="category-heading">
+              <span class="section-marker" aria-hidden="true">
+                <span class="material-symbols-outlined">{{ iconFor(group.category) }}</span>
+              </span>
+
+              <span class="section-heading">
+                <strong>{{ group.label }}</strong>
+                <span>{{ categoryDescription(group.category) }}</span>
+              </span>
+
+              <span class="category-outcome">
+                <span class="section-count">{{ group.rules.length }} rules</span>
+                <span class="passed-count">{{ group.passed }} passed</span>
+
+                @if (group.failed > 0) {
+                  <span class="failed-count">{{ group.failed }} failed</span>
+                }
+
+                @if (group.notEvaluated > 0) {
+                  <span class="pending-count">{{ group.notEvaluated }} not evaluated</span>
+                }
+              </span>
+
+              <span class="material-symbols-outlined expand-indicator" aria-hidden="true">
+                add
+              </span>
+            </summary>
+
+            @switch (group.category) {
+              @case ('POPULATION') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="populationColumns"
+                    [rows]="group.populationRows"
+                    rowKey="entity"
+                    height="420px"
+                    emptyMessage="No population evidence is available."
+                  />
+                </div>
+              }
+              @case ('IDENTITY') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="identityColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No identity evidence is available."
+                  />
+                </div>
+              }
+              @case ('SCHEMA') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="schemaColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No schema evidence is available."
+                  />
+                </div>
+              }
+              @case ('FOREIGN_KEY') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="foreignKeyColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No foreign-key evidence is available."
+                  />
+                </div>
+              }
+              @case ('RELATIONSHIP_CARDINALITY') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="relationshipColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No relationship evidence is available."
+                  />
+                </div>
+              }
+              @case ('CONSTRAINT') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="constraintColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No business-constraint evidence is available."
+                  />
+                </div>
+              }
+              @case ('DOMAIN') {
+                <div class="population-results-table">
+                  <app-workspace-simple-table
+                    [columns]="domainColumns"
+                    [rows]="group.evidenceRows"
+                    rowKey="key"
+                    height="420px"
+                    emptyMessage="No domain evidence is available."
+                  />
+                </div>
+              }
+              @default {
+                <div class="rule-list">
+                  @for (rule of group.rules; track rule.rule_id) {
+                    <details class="rule-item">
+                      <summary class="rule-heading">
+                        <span class="rule-id">{{ rule.rule_id }}</span>
+                        <span class="rule-status" [attr.data-status]="statusClass(rule)">
+                          {{ statusLabel(rule) }}
+                        </span>
+                        @if (detailEntries(rule).length) {
+                          <span class="material-symbols-outlined rule-expand-icon" aria-hidden="true">
+                            expand_more
+                          </span>
+                        }
+                      </summary>
+                      @if (detailEntries(rule).length) {
+                        <dl class="rule-details">
+                          @for (detail of detailEntries(rule); track detail.label) {
+                            <div class="detail-row">
+                              <dt>{{ detail.label }}</dt>
+                              <dd>{{ detail.value }}</dd>
+                            </div>
+                          }
+                        </dl>
+                      }
+                    </details>
+                  }
+                </div>
+              }
+            }
+
+            @if (group.category !== 'POPULATION') {
+              @for (rule of group.rules; track rule.rule_id) {
+                @if (hasDiagnostic(rule)) {
+                  <div class="rule-list">
+                    <details class="rule-item">
+                      <summary class="rule-heading">
+                        <span class="rule-id">{{ rule.rule_id }} diagnostics</span>
+                        <span class="rule-status" [attr.data-status]="statusClass(rule)">
+                          {{ statusLabel(rule) }}
+                        </span>
+                        <span class="material-symbols-outlined rule-expand-icon" aria-hidden="true">
+                          expand_more
+                        </span>
+                      </summary>
+                      <dl class="rule-details">
+                        @for (detail of detailEntries(rule); track detail.label) {
+                          <div class="detail-row">
+                            <dt>{{ detail.label }}</dt>
+                            <dd>{{ detail.value }}</dd>
+                          </div>
+                        }
+                      </dl>
+                    </details>
+                  </div>
+                }
+              }
+            }
+          </details>
+        </app-content-card>
+      }
+    </app-content-grid>
+  } @else {
+    <app-content-card [padding]="0">
+      <section class="empty-rule-state">
+        <strong>Rule-level evidence unavailable</strong>
+        <p>
+          This generation job does not contain persisted individual rule results.
+          Category-level validation evidence remains available above.
+        </p>
+      </section>
+    </app-content-card>
+  }
+</app-workspace-section>

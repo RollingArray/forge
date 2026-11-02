@@ -25,6 +25,8 @@ import { GenerationService } from '../generate/services/generation.service';
 import { GenerationValidationSummary } from '../results/results.models';
 import { ResultsValidationSummaryComponent } from './components/results-validation-summary/results-validation-summary.component';
 import { ValidationEvidenceComponent } from './components/validation-evidence/validation-evidence.component';
+import { ValidationRuleResultsComponent } from './components/validation-rule-results/validation-rule-results.component';
+import type { ValidationRuleResult } from '../../core/interfaces/validation-rule-result.interface';
 import { ValidationFindingsComponent } from './components/validation-findings/validation-findings.component';
 
 import type { ValidationFinding } from '../../core/interfaces/validation-finding.interface';
@@ -37,6 +39,7 @@ import type { ValidationFinding } from '../../core/interfaces/validation-finding
     WorkflowRowComponent,
     ResultsValidationSummaryComponent,
     ValidationEvidenceComponent,
+    ValidationRuleResultsComponent,
     ValidationFindingsComponent,
   ],
   templateUrl: './results-validation-analysis.component.html',
@@ -125,7 +128,9 @@ export class ResultsValidationAnalysisComponent {
       },
     };
 
-    return Object.entries(evidence).map(([key, raw]) => {
+    return Object.entries(evidence)
+      .filter(([key]) => key !== 'rule_results')
+      .map(([key, raw]) => {
       const definition = definitions[key] ?? {
         title: this.titleFromKey(key),
         description: 'Summary of the checks performed.',
@@ -239,6 +244,28 @@ export class ResultsValidationAnalysisComponent {
     });
   });
 
+
+  readonly ruleResults = computed<ValidationRuleResult[]>(() => {
+    const raw = this.validation()?.evidence?.['rule_results'];
+
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    return raw.filter((item): item is ValidationRuleResult => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return false;
+      }
+
+      const record = item as Record<string, unknown>;
+
+      return (
+        typeof record['rule_id'] === 'string' &&
+        typeof record['category'] === 'string' &&
+        typeof record['status'] === 'string'
+      );
+    });
+  });
 
   readonly relationshipEvidenceCheck = computed<ValidationCheck | null>(() => {
     const quality = this.asRecord(this.job()?.quality);
