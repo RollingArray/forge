@@ -9,7 +9,12 @@ import math
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.services.relationship_endpoint import parse_relationship_endpoint
+from app.services.relationship_endpoint import (
+    ForeignKeyMapping,
+    normalize_foreign_key_mappings,
+    parse_relationship_endpoint,
+    resolve_relationship_mapping,
+)
 
 
 class GenerationPlanningError(ValueError):
@@ -41,7 +46,7 @@ class RelationshipDependency:
 
 @dataclass(frozen=True)
 class RelationshipGroup:
-    """Canonical grouped relationship semantics."""
+    """One relationship declaration with its canonical FK resolution."""
 
     parent_entity: str
     child_entity: str
@@ -50,6 +55,16 @@ class RelationshipGroup:
     relationship_type: str
     parent_participation: str
     child_participation: str
+    source_entity: str
+    source_fields: tuple[str, ...]
+    target_entity: str
+    target_fields: tuple[str, ...]
+    source_participation: str
+    target_participation: str
+    resolution_status: str
+    foreign_key_name: str | None = None
+    direction: str | None = None
+    resolution_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -622,59 +637,79 @@ def _build_relationship_dependencies(
 
 def _build_relationship_groups(
     relationships: tuple[RelationshipDependency, ...],
+    foreign_keys: tuple[ForeignKeyMapping, ...],
 ) -> tuple[RelationshipGroup, ...]:
-    groups: dict[
-        tuple[str, str, str, str, str],
-        list[RelationshipDependency],
-    ] = {}
-
-    for relationship in relationships:
-        key = (
-            relationship.source_entity,
-            relationship.target_entity,
-            relationship.relationship_type,
-            relationship.source_participation,
-            relationship.target_participation,
-        )
-        groups.setdefault(key, []).append(relationship)
+    """Resolve each declaration independently without merging field mappings."""
 
     result: list[RelationshipGroup] = []
 
-    for grouped_relationships in groups.values():
-        first = grouped_relationships[0]
+    for relationship in relationships:
+        declaration = {
+            "source": {
+                "entity": relationship.source_entity,
+                "fields": list(relationship.source_fields),
+            },
+            "target": {
+                "entity": relationship.target_entity,
+                "fields": list(relationship.target_fields),
+            },
+            "type": relationship.relationship_type,
+            "source_participation": relationship.source_participation,
+            "target_participation": relationship.target_participation,
+        }
 
-        parent_fields = tuple(
-            field
-            for relationship in grouped_relationships
-            for field in relationship.source_fields
+        resolution = resolve_relationship_mapping(
+            declaration,
+            foreign_keys,
         )
-        child_fields = tuple(
-            field
-            for relationship in grouped_relationships
-            for field in relationship.target_fields
-        )
 
-        if len(parent_fields) != len(set(parent_fields)):
-            raise GenerationPlanningError(
-                "Relationship group contains duplicate parent fields: "
-                f"{first.source_entity} -> {first.target_entity}."
-            )
+        mapping = resolution.foreign_key
+        mapped = resolution.status == "MAPPED" and mapping is not None
 
-        if len(child_fields) != len(set(child_fields)):
-            raise GenerationPlanningError(
-                "Relationship group contains duplicate child fields: "
-                f"{first.source_entity} -> {first.target_entity}."
-            )
+        if mapped:
+            assert mapping is not None
+            if resolution.direction == "FORWARD":
+                child_participation = relationship.source_participation
+                parent_participation = relationship.target_participation
+            else:
+                child_participation = relationship.target_participation
+                parent_participation = relationship.source_participation
+
+            parent_entity = mapping.parent_entity
+            child_entity = mapping.child_entity
+            parent_fields = mapping.parent_fields
+            child_fields = mapping.child_fields
+            foreign_key_name = mapping.name
+        else:
+            # Keep the declaration visible to quality reporting, but do not
+            # present its endpoints as a resolved FK mapping.
+            parent_entity = relationship.source_entity
+            child_entity = relationship.target_entity
+            parent_fields = relationship.source_fields
+            child_fields = relationship.target_fields
+            parent_participation = relationship.source_participation
+            child_participation = relationship.target_participation
+            foreign_key_name = None
 
         result.append(
             RelationshipGroup(
-                parent_entity=first.source_entity,
-                child_entity=first.target_entity,
+                parent_entity=parent_entity,
+                child_entity=child_entity,
                 parent_fields=parent_fields,
                 child_fields=child_fields,
-                relationship_type=first.relationship_type,
-                parent_participation=first.source_participation,
-                child_participation=first.target_participation,
+                relationship_type=relationship.relationship_type,
+                parent_participation=parent_participation,
+                child_participation=child_participation,
+                source_entity=relationship.source_entity,
+                source_fields=relationship.source_fields,
+                target_entity=relationship.target_entity,
+                target_fields=relationship.target_fields,
+                source_participation=relationship.source_participation,
+                target_participation=relationship.target_participation,
+                resolution_status=resolution.status,
+                foreign_key_name=foreign_key_name,
+                direction=resolution.direction,
+                resolution_reason=resolution.reason,
             )
         )
 
@@ -886,8 +921,16 @@ class GenerationPlanner:
             entity_names,
         )
 
+        try:
+            canonical_foreign_keys = normalize_foreign_key_mappings(
+                specification.get("foreign_keys", [])
+            )
+        except ValueError as exc:
+            raise GenerationPlanningError(str(exc)) from exc
+
         relationship_groups = _build_relationship_groups(
             relationships,
+            canonical_foreign_keys,
         )
 
         field_types_by_entity = {

@@ -306,9 +306,12 @@ class GenerationQualityService:
         for group in plan.relationship_groups:
             relationship_type = group.relationship_type.upper()
 
-            # These relationship types do not establish a child-side
-            # identity capacity from the group's parent key count.
-            if relationship_type in {"MANY_TO_ONE", "MANY_TO_MANY"}:
+            # Only canonical FK mappings establish a parent-key-backed
+            # identity dimension for the actual FK child entity.
+            if (
+                group.resolution_status != "MAPPED"
+                or relationship_type == "MANY_TO_MANY"
+            ):
                 continue
 
             group_by_child.setdefault(
@@ -484,39 +487,44 @@ class GenerationQualityService:
         ):
             relationship_type = group.relationship_type.upper()
 
-            if relationship_type == "MANY_TO_MANY":
-                relationships[f"relationship_group_{index}"] = {
-                    "measurement_status": "not_measurable",
-                    "measurement_note": (
+            if group.resolution_status != "MAPPED":
+                if relationship_type == "MANY_TO_MANY":
+                    measurement_note = (
                         "A direct MANY_TO_MANY declaration does not "
                         "establish a parent-key/child-FK mapping. "
                         "Cardinality and participation require explicit "
                         "association or junction evidence."
-                    ),
-                    "source_entity": group.parent_entity,
-                    "target_entity": group.child_entity,
-                    "source_fields": list(group.parent_fields),
-                    "target_fields": list(group.child_fields),
+                    )
+                else:
+                    measurement_note = (
+                        group.resolution_reason
+                        or "A canonical foreign-key mapping could not "
+                        "be established for this relationship."
+                    )
+
+                relationships[f"relationship_group_{index}"] = {
+                    "measurement_status": "not_measurable",
+                    "measurement_note": measurement_note,
+                    "source_entity": group.source_entity,
+                    "target_entity": group.target_entity,
+                    "source_fields": list(group.source_fields),
+                    "target_fields": list(group.target_fields),
                     "relationship_type": group.relationship_type,
-                    "source_participation": group.parent_participation,
-                    "target_participation": group.child_participation,
+                    "source_participation": group.source_participation,
+                    "target_participation": group.target_participation,
+                    "resolution_status": group.resolution_status,
+                    "resolution_reason": group.resolution_reason,
                 }
                 continue
 
-            if relationship_type == "MANY_TO_ONE":
-                parent_entity = group.child_entity
-                child_entity = group.parent_entity
-                parent_fields = group.child_fields
-                child_fields = group.parent_fields
-                parent_participation = group.child_participation
-                child_participation = group.parent_participation
-            else:
-                parent_entity = group.parent_entity
-                child_entity = group.child_entity
-                parent_fields = group.parent_fields
-                child_fields = group.child_fields
-                parent_participation = group.parent_participation
-                child_participation = group.child_participation
+            # RelationshipGroup already stores the actual FK parent and
+            # child, regardless of declaration direction.
+            parent_entity = group.parent_entity
+            child_entity = group.child_entity
+            parent_fields = group.parent_fields
+            child_fields = group.child_fields
+            parent_participation = group.parent_participation
+            child_participation = group.child_participation
 
             parent_key_counts: Counter[tuple[Any, ...]] = Counter()
             parent_rows_checked = 0
@@ -631,7 +639,7 @@ class GenerationQualityService:
                 "relationship_type": group.relationship_type,
                 "parent_participation": parent_participation,
                 "child_participation": child_participation,
-                "composite": len(group.parent_fields) > 1,
+                "composite": len(parent_fields) > 1,
                 "parent_rows_checked": parent_rows_checked,
                 "parent_rows_with_null_key": parent_rows_with_null_key,
                 "parent_keys": len(parent_keys),
