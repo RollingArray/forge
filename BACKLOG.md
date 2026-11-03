@@ -81,8 +81,8 @@
 - [pending] **Record whole-specification AI proposal generation**
   Record successful AI proposal generation with suitable proposal type and outcome metadata.
 
-- [pending] **Enrich specification validation activity**
-  Record validation outcome, finding counts by severity, and validated specification revision where available.
+- [done] **Enrich specification validation activity**
+  Added outcome, specification revision, continuation status, error/warning/passed counts, total checks, and validated entity count to `MODEL_VALIDATED` and `MODEL_VALIDATION_FAILED` activity metadata. Successful validation was verified through the FORGE UI, including reconciliation of all 17 findings.
 
 - [pending] **Support DECIMAL precision and scale**
   Add optional precision and scale to DECIMAL field specifications and enforce them during generation.

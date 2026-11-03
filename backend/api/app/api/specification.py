@@ -245,6 +245,18 @@ async def validate_specification(
                 f"Validation completed with {len(findings)} finding(s)."
             ),
             data_model_id=data_model_id,
+            metadata={
+                "outcome": "failed" if failed else "success",
+                "specification_revision": (
+                    specification_import_repository.revision(specification)
+                ),
+                "can_continue": result.get("can_continue", False),
+                "errors": result.get("errors", 0),
+                "warnings": result.get("warnings", 0),
+                "passed": result.get("passed", 0),
+                "total_checks": result.get("total_checks", len(findings)),
+                "entities_validated": result.get("entities_validated", 0),
+            },
         )
     return result
 
