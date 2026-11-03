@@ -140,3 +140,128 @@ Audit completion criteria:
 - Confirmed defects are distinguished from specification or product capability gaps.
 - Backlog fixes are agreed before implementation begins.
 - The consolidated UI acceptance scenario passes.
+
+
+## Activity Logging Audit
+
+The activity logging review covers backend event recording, event semantics,
+persistence reliability, and the Recent Activity presentation.
+
+The following items are based on source-code inspection. Implementation and
+acceptance testing remain pending. Preserve the existing activity history and
+avoid changing unrelated event behavior.
+
+### Confirmed implementation gaps
+
+- [ ] **ACT-01: Introduce a specification-saved activity event**
+  Add `SPECIFICATION_SAVED` to the activity taxonomy and presentation mapping.
+  The specification save endpoint currently records `AI_PROPOSAL_ACCEPTED`
+  for a general specification save, even when the specification was manually
+  authored or imported. Record `SPECIFICATION_SAVED` only after successful
+  persistence.
+  Acceptance: Save manually authored, AI-authored, and imported specifications
+  through the FORGE UI. Verify that each successful save is represented
+  accurately in Recent Activity.
+
+- [ ] **ACT-02: Record whole-specification AI proposal generation**
+  Record `AI_PROPOSAL_GENERATED` when the whole-specification proposal endpoint
+  successfully generates a proposal. Use `proposal_type="specification"` and
+  suitable outcome metadata. Do not record failed provider calls as successful
+  proposals.
+  Acceptance: Generate a proposal from plain English and tabular input through
+  the FORGE UI. Verify the activity entry and its metadata.
+
+- [ ] **ACT-03: Avoid no-op population scaling activities**
+  The population scaling update path can persist and record `ENTITY_UPDATED`
+  even when the scaling configuration has not changed. Compare the existing
+  and requested values before saving. Avoid unnecessary persistence and
+  activity records for unchanged values. Capture meaningful before/after
+  values in metadata when a change occurs.
+  Acceptance: Update population scaling through the FORGE UI. Verify that a
+  real change produces one activity entry and an unchanged value produces none.
+
+### Specification Wizard activity
+
+- [x] **ACT-08: Record the wizard's Apply additions and open Model Studio action**
+  Verify that the wizard action which applies imported additions and saves the
+  specification records exactly one `SPECIFICATION_IMPORT_APPLIED` activity.
+  The activity must be recorded only after successful specification
+  persistence and before navigation to Model Studio. Reuse the existing event
+  and import-application recording path where possible. Do not emit a duplicate
+  event from both the wizard and the backend service. A failed save must not
+  produce a successful activity entry.
+  Acceptance: Through the FORGE UI, apply additions and open Model Studio.
+  Verify that the saved specification contains the additions and exactly one
+  corresponding activity appears in Recent Activity. Repeat with a failed
+  save and verify that no successful activity is recorded.
+
+### Release-readiness risks
+
+- [ ] **ACT-04: Make JSON activity persistence concurrency-safe**
+  Multiple independently constructed `ActivityService` and
+  `JsonActivityRepository` instances write to the same `activities.json` and
+  temporary file. Their instance-level locks do not coordinate concurrent
+  writes. Atomic replacement alone does not prevent lost updates or temporary
+  file collisions.
+  Review and agree on a concurrency-safe persistence strategy that preserves
+  the repository abstraction and supports the intended deployment model.
+  Consider both multiple service instances and multiple application workers.
+  Acceptance: Exercise concurrent activity writes and verify that every
+  successfully recorded activity is retained, with no corrupted JSON or
+  temporary-file collisions.
+
+- [ ] **ACT-05: Review activity metadata exposure**
+  Review metadata containing before/after values, configuration details, and
+  generation information. Establish which details are appropriate for
+  Recent Activity and which should remain operational or restricted data.
+  Acceptance: Inspect activity entries through the UI and confirm that
+  proprietary specification values and unnecessary sensitive details are
+  not exposed.
+
+### Taxonomy and scope decisions
+
+- [ ] **ACT-06: Remove or implement unused data-model duplication activity**
+  `DATA_MODEL_DUPLICATED` exists in the activity taxonomy and presentation
+  mapping, but no corresponding duplication workflow was found during the
+  audit. Confirm product scope. If duplication is not planned, remove the
+  unused event and its presentation mapping. If it is planned, implement
+  recording after successful duplication.
+  Acceptance: The taxonomy and UI accurately reflect supported workflows.
+
+### Deferred capabilities
+
+- [ ] **ACT-07: Revisit generation cancellation activity when cancellation
+  is implemented**
+  `GENERATION_CANCELLED` exists in the taxonomy and presentation mapping,
+  but no user-facing cancellation action or API route was found during the
+  audit. Do not implement activity recording without a supported cancellation
+  workflow. Revisit this item when cancellation becomes part of the product.
+  Acceptance: A successfully cancelled generation job produces one accurate
+  cancellation activity entry.
+
+### Confirmed behavior to preserve
+
+- Generation job creation is immediately followed by starting generation
+  in the current frontend workflow. Do not introduce a separate
+  `GENERATION_JOB_CREATED` event at this stage.
+- `GENERATION_STARTED` already captures resumed execution through its
+  `resumed` metadata. Do not introduce a separate resume event.
+- Entity identity and population changes are represented by `ENTITY_UPDATED`.
+  Do not introduce identity-specific event types.
+- Generation completion, partial completion, and failure are already recorded.
+- Access grant, role change, and revocation events are implemented.
+- Foreign-key updates and generation failure recording are implemented.
+- Do not infer missing implementation solely from the absence of historical
+  records.
+
+### Activity audit acceptance criteria
+
+- Event names and descriptions accurately represent the business outcome.
+- Activities are recorded only after the corresponding operation succeeds.
+- Failed operations are not presented as successful business outcomes.
+- Duplicate or no-op activities are avoided.
+- Activity persistence remains reliable under concurrent writes.
+- Recent Activity presents useful information without exposing unnecessary
+  specification or operational details.
+- Existing historical activity records remain readable.
+- Final acceptance is performed through the FORGE UI.

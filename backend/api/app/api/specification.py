@@ -1253,6 +1253,36 @@ async def specification_import_apply(
         ) from exc
 
     if merged["additions"]:
+        section_counts = {
+            section: sum(
+                1 for item in merged["additions"]
+                if item["section"] == section
+            )
+            for section in (
+                "entities",
+                "fields_and_keys",
+                "relationships",
+                "foreign_keys",
+                "constraints",
+            )
+        }
+
+        activity_metadata = {
+            **merged["summary"],
+            "operation": "apply_additions_and_open_model_studio",
+            "source": "specification_wizard",
+            "format": "csv",
+            "outcome": "success",
+            "entities_added": section_counts["entities"],
+            "fields_added": section_counts["fields_and_keys"],
+            "relationships_added": section_counts["relationships"],
+            "foreign_keys_added": section_counts["foreign_keys"],
+            "constraints_added": section_counts["constraints"],
+            "base_revision": request.base_revision,
+            "resulting_revision": resulting_revision,
+            "csv_digest": request.csv_digest,
+        }
+
         activity_service.record(
             owner_user_id=data_model.owner_user_id,
             actor_user_id=user.user_id,
@@ -1263,7 +1293,7 @@ async def specification_import_apply(
                 "specification definitions."
             ),
             data_model_id=data_model_id,
-            metadata=merged["summary"],
+            metadata=activity_metadata,
         )
 
     return SpecificationImportApplyResponse(
