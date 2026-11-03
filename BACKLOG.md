@@ -65,7 +65,7 @@
 
 ### Activity logging
 
-- Whole-specification AI proposal generation needs a dedicated activity entry.
+- Whole-specification AI proposal generation activity gap resolved; successful proposals now create a workspace-level activity entry.
 - Population scaling updates can generate activity records for unchanged values.
 - Specification validation activity currently lacks useful metadata.
 
@@ -78,8 +78,8 @@
 - [done] **Record Specification Wizard CSV import activity**
   Verified `SPECIFICATION_IMPORT_APPLIED` after successful application of CSV additions.
 
-- [pending] **Record whole-specification AI proposal generation**
-  Record successful AI proposal generation with suitable proposal type and outcome metadata.
+- [done] **Record whole-specification AI proposal generation**
+  Added workspace-level `AI_PROPOSAL_GENERATED` activity for successful whole-specification proposals, including proposal outcome, deterministic validation summary, and structural counts. Verified through the FORGE UI alongside the separate AI-sourced `SPECIFICATION_SAVED` event.
 
 - [done] **Enrich specification validation activity**
   Added outcome, specification revision, continuation status, error/warning/passed counts, total checks, and validated entity count to `MODEL_VALIDATED` and `MODEL_VALIDATION_FAILED` activity metadata. Successful validation was verified through the FORGE UI, including reconciliation of all 17 findings.

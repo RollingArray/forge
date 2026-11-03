@@ -531,6 +531,9 @@ class WorkspaceService:
             if proposal_type.strip().lower() == "data model":
                 return f"{actor_name} {action} an AI data model proposal"
 
+            if proposal_type.strip().lower() == "specification":
+                return f"{actor_name} {action} an AI specification proposal"
+
             return (
                 f"{actor_name} {action} an AI {proposal_type} proposal "
                 f"for '{data_model}'"

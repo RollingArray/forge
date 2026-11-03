@@ -849,8 +849,6 @@ def propose_whole_specification(
 ) -> AIWholeSpecificationProposalResponseModel:
     """Propose and validate a canonical specification without saving it."""
 
-    del user  # Authentication is required; this endpoint does not mutate user data.
-
     try:
         proposal = _ai_service.propose_whole_specification(
             prompt=request.prompt.strip(),
@@ -892,6 +890,44 @@ def propose_whole_specification(
             f"{proposal.message} The proposed specification needs correction "
             "before it can proceed. Review the deterministic validation findings."
         )
+
+    if proposal.status == "PROPOSE" and proposal.specification is not None:
+        specification = proposal.specification
+        entities = specification.get("entities", [])
+        fields_count = sum(
+            len(entity.get("fields", []))
+            for entity in entities
+            if isinstance(entity, dict)
+            and isinstance(entity.get("fields", []), list)
+        )
+
+        try:
+            activity_service.record(
+                owner_user_id=user.user_id,
+                actor_user_id=user.user_id,
+                activity_type=ActivityType.AI_PROPOSAL_GENERATED,
+                title="AI specification proposal generated",
+                description="FORGE AI generated a whole-specification proposal.",
+                metadata={
+                    "operation": "GENERATE_WHOLE_SPECIFICATION_PROPOSAL",
+                    "proposal_type": "specification",
+                    "outcome": "GENERATED",
+                    "validation_can_continue": validation.get(
+                        "can_continue", False
+                    ),
+                    "validation_errors": validation.get("errors", 0),
+                    "validation_warnings": validation.get("warnings", 0),
+                    "validation_passed": validation.get("passed", 0),
+                    "entities": len(entities),
+                    "fields": fields_count,
+                    "relationships": len(specification.get("relationships", [])),
+                    "foreign_keys": len(specification.get("foreign_keys", [])),
+                    "constraints": len(specification.get("constraints", [])),
+                },
+            )
+        except Exception:
+            # Activity telemetry must not interfere with specification authoring.
+            pass
 
     return AIWholeSpecificationProposalResponseModel(
         status=proposal.status,
