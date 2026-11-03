@@ -503,6 +503,14 @@ class WorkspaceService:
         if activity_type == ActivityType.POPULATION_PLAN_ACCEPTED:
             return f"{actor_name} accepted the population plan for '{data_model}'"
 
+        if activity_type == ActivityType.SPECIFICATION_SAVED:
+            if metadata.get("source") == "ai":
+                return (
+                    f"{actor_name} saved an AI-generated specification "
+                    f"for '{data_model}'"
+                )
+            return f"{actor_name} saved the specification for '{data_model}'"
+
         if activity_type in {
             ActivityType.AI_PROPOSAL_GENERATED,
             ActivityType.AI_PROPOSAL_ACCEPTED,

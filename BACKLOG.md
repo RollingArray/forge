@@ -153,15 +153,16 @@ avoid changing unrelated event behavior.
 
 ### Confirmed implementation gaps
 
-- [ ] **ACT-01: Introduce a specification-saved activity event**
-  Add `SPECIFICATION_SAVED` to the activity taxonomy and presentation mapping.
-  The specification save endpoint currently records `AI_PROPOSAL_ACCEPTED`
-  for a general specification save, even when the specification was manually
-  authored or imported. Record `SPECIFICATION_SAVED` only after successful
-  persistence.
-  Acceptance: Save manually authored, AI-authored, and imported specifications
-  through the FORGE UI. Verify that each successful save is represented
-  accurately in Recent Activity.
+- [x] **ACT-01: Introduce a specification-saved activity event**
+  Added `SPECIFICATION_SAVED` to the activity taxonomy and presentation
+  mapping. The general specification save endpoint now records this event
+  after successful persistence, with source attribution (`manual` or `ai`),
+  operation, outcome, resulting specification revision, and structural
+  counts. The AI authoring workflow explicitly identifies its save as
+  AI-originated. CSV imports retain their separate
+  `SPECIFICATION_IMPORT_APPLIED` event.
+  Acceptance: Verified the AI-generated specification save through the FORGE
+  UI and confirmed the event type, source, operation, revision, and counts.
 
 - [ ] **ACT-02: Record whole-specification AI proposal generation**
   Record `AI_PROPOSAL_GENERATED` when the whole-specification proposal endpoint
@@ -179,6 +180,15 @@ avoid changing unrelated event behavior.
   values in metadata when a change occurs.
   Acceptance: Update population scaling through the FORGE UI. Verify that a
   real change produces one activity entry and an unchanged value produces none.
+
+- [ ] **ACT-09: Enrich specification validation activity metadata**
+  The `MODEL_VALIDATED` activity currently records an empty metadata object.
+  Inspect the validation result and record useful audit context, including
+  validation outcome, finding counts by severity, and the specification
+  revision validated, where those values are available. Avoid exposing
+  proprietary specification content.
+  Acceptance: Validate a specification through the FORGE UI. Verify that the
+  activity metadata accurately describes the validation result and revision.
 
 ### Specification Wizard activity
 

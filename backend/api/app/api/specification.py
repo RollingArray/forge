@@ -8,6 +8,7 @@ Email: ranjoy.sen@collins.com
 
 import hashlib
 import json
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -122,6 +123,7 @@ async def get_specification(
 async def save_specification(
     data_model_id: str,
     request: SpecificationModel,
+    source: Literal["manual", "ai"] = "manual",
     user: AuthUser = Depends(get_authenticated_user),
 ) -> SpecificationModel:
     """Validate and persist a reviewed canonical specification."""
@@ -154,13 +156,37 @@ async def save_specification(
         data_model_id=data_model_id,
     )
     if data_model is not None:
+        entities = saved.get("entities", [])
+        fields_count = sum(
+            len(entity.get("fields", []))
+            for entity in entities
+            if isinstance(entity, dict)
+            and isinstance(entity.get("fields", []), list)
+        )
         activity_service.record(
             owner_user_id=data_model.owner_user_id,
             actor_user_id=user.user_id,
-            activity_type=ActivityType.AI_PROPOSAL_ACCEPTED,
+            activity_type=ActivityType.SPECIFICATION_SAVED,
             title="Specification saved",
-            description="A reviewed specification was validated and saved.",
+            description="A specification was validated and saved.",
             data_model_id=data_model_id,
+            metadata={
+                "source": source,
+                "operation": (
+                    "save_and_open_model_studio"
+                    if source == "ai"
+                    else "save_specification"
+                ),
+                "outcome": "success",
+                "specification_revision": (
+                    specification_import_repository.revision(saved)
+                ),
+                "entities": len(entities),
+                "fields": fields_count,
+                "relationships": len(saved.get("relationships", [])),
+                "foreign_keys": len(saved.get("foreign_keys", [])),
+                "constraints": len(saved.get("constraints", [])),
+            },
         )
 
     return SpecificationModel(**saved)

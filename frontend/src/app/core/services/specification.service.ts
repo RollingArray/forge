@@ -541,12 +541,14 @@ export class SpecificationService {
   saveSpecification(
     dataModelId: string,
     specification: Record<string, unknown>,
+    source: "manual" | "ai" = "manual",
   ): Observable<ForgeSpecification> {
     return this.http
       .put<SpecificationResponse>(
         `${this.apiBaseUrl}/data-models/${dataModelId}/specification`,
         specification,
         {
+          params: { source },
           context: new HttpContext().set(
             API_LOADING_MESSAGE,
             ApiLoadingMessage.SavingSpecification,

@@ -43,6 +43,7 @@ class ActivityType(StrEnum):
     CONSTRAINT_UPDATED = "CONSTRAINT_UPDATED"
     CONSTRAINT_DELETED = "CONSTRAINT_DELETED"
     SPECIFICATION_IMPORT_APPLIED = "SPECIFICATION_IMPORT_APPLIED"
+    SPECIFICATION_SAVED = "SPECIFICATION_SAVED"
     POPULATION_PLAN_ACCEPTED = "POPULATION_PLAN_ACCEPTED"
 
     AI_PROPOSAL_GENERATED = "AI_PROPOSAL_GENERATED"
@@ -165,6 +166,10 @@ ACTIVITY_PRESENTATION: dict[ActivityType, ActivityPresentation] = {
     ),
     ActivityType.SPECIFICATION_IMPORT_APPLIED: ActivityPresentation(
         icon="upload_file",
+        accent="green",
+    ),
+    ActivityType.SPECIFICATION_SAVED: ActivityPresentation(
+        icon="save",
         accent="green",
     ),
     ActivityType.POPULATION_PLAN_ACCEPTED: ActivityPresentation(

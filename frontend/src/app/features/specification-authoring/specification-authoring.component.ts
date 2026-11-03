@@ -137,6 +137,7 @@ Treat this as a starting example. I may change the entities, fields, field types
       .saveSpecification(
         this.dataModelId,
         proposal.specification as Record<string, unknown>,
+        'ai',
       )
       .subscribe({
         next: () => {
