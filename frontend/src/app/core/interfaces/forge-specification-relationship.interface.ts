@@ -1,3 +1,5 @@
+import { ForgeRelationshipEndpointValue } from '../types/forge-relationship-endpoint-value.type';
+
 /**
  * ============================================================================
  * FORGE — Framework for Observed Rules & Engineered Data
@@ -13,8 +15,8 @@
  */
 
 export interface ForgeSpecificationRelationship {
-  source: string;
-  target: string;
+  source: ForgeRelationshipEndpointValue;
+  target: ForgeRelationshipEndpointValue;
   type: string;
   source_participation?: string;
   target_participation?: string;

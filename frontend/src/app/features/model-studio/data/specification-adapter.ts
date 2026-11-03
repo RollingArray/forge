@@ -2,6 +2,7 @@ import { ForgeForeignKey } from '../../../core/interfaces/forge-foreign-key.inte
 import { ForgeSpecification } from '../../../core/interfaces/forge-specification.interface';
 import { ForgeSpecificationEntity } from '../../../core/interfaces/forge-specification-entity.interface';
 import { ForgeSpecificationField } from '../../../core/interfaces/forge-specification-field.interface';
+import { normalizeRelationshipEndpoint } from '../../../core/utils/relationship-endpoint.util';
 import {
   CanvasEntity,
   EntityAccent,
@@ -123,12 +124,6 @@ function buildEntity(
   };
 }
 
-function endpointEntityName(
-  endpoint: string,
-): string {
-  return endpoint.split('.')[0];
-}
-
 function cardinalityForRelationship(
   type: string,
   side: 'source' | 'target',
@@ -156,15 +151,14 @@ function buildRelationships(
 ): ModelRelationship[] {
   return specification.relationships.map(
     relationship => {
-      const source =
-        endpointEntityName(
-          relationship.source,
-        );
+      const sourceEndpoint =
+        normalizeRelationshipEndpoint(relationship.source);
 
-      const target =
-        endpointEntityName(
-          relationship.target,
-        );
+      const targetEndpoint =
+        normalizeRelationshipEndpoint(relationship.target);
+
+      const source = sourceEndpoint.entity;
+      const target = targetEndpoint.entity;
 
       const matchingForeignKeys =
         specification.foreignKeys.filter(
@@ -179,29 +173,36 @@ function buildRelationships(
             ),
         );
 
-      const sourceFields: string[] = [];
-      const targetFields: string[] = [];
+      const sourceFields: string[] = [...sourceEndpoint.fields];
+      const targetFields: string[] = [...targetEndpoint.fields];
 
-      for (const foreignKey of matchingForeignKeys) {
-        if (
-          foreignKey.source.entity === source &&
-          foreignKey.target.entity === target
-        ) {
-          sourceFields.push(
-            ...foreignKey.source.fields,
-          );
+      // Legacy endpoint strings may not carry complete field mappings.
+      // In that case, resolve the mapping from the compatible foreign key.
+      if (sourceFields.length === 0 || targetFields.length === 0) {
+        sourceFields.length = 0;
+        targetFields.length = 0;
 
-          targetFields.push(
-            ...foreignKey.target.fields,
-          );
-        } else {
-          sourceFields.push(
-            ...foreignKey.target.fields,
-          );
+        for (const foreignKey of matchingForeignKeys) {
+          if (
+            foreignKey.source.entity === source &&
+            foreignKey.target.entity === target
+          ) {
+            sourceFields.push(
+              ...foreignKey.source.fields,
+            );
 
-          targetFields.push(
-            ...foreignKey.source.fields,
-          );
+            targetFields.push(
+              ...foreignKey.target.fields,
+            );
+          } else {
+            sourceFields.push(
+              ...foreignKey.target.fields,
+            );
+
+            targetFields.push(
+              ...foreignKey.source.fields,
+            );
+          }
         }
       }
 

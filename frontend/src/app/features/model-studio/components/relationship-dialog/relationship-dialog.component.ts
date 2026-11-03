@@ -30,6 +30,8 @@ import { TitleCasePipe } from '@angular/common';
 import { ForgeForeignKey } from '../../../../core/interfaces/forge-foreign-key.interface';
 import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import { ForgeSpecificationRelationship } from '../../../../core/interfaces/forge-specification-relationship.interface';
+import { ForgeRelationshipEndpointValue } from '../../../../core/types/forge-relationship-endpoint-value.type';
+import { normalizeRelationshipEndpoint } from '../../../../core/utils/relationship-endpoint.util';
 import { AIService } from '../../../../core/services/ai.service';
 import { AICapability } from '../../../../core/interfaces/ai-capability.interface';
 import { AIRelationshipProposal } from '../../../../core/interfaces/ai-relationship-proposal.interface';
@@ -469,13 +471,10 @@ export class RelationshipDialogComponent {
     });
   }
 
-  private parseEntity(endpoint: string): string | null {
-    const separator = endpoint.indexOf('.');
-
-    if (separator <= 0) {
-      return null;
-    }
-
-    return endpoint.slice(0, separator);
+  private parseEntity(
+    endpoint: ForgeRelationshipEndpointValue,
+  ): string | null {
+    const entity = normalizeRelationshipEndpoint(endpoint).entity;
+    return entity || null;
   }
 }

@@ -27,6 +27,7 @@ import { ForgeSpecificationField } from '../interfaces/forge-specification-field
 import { ForgeSpecificationGeneration } from '../interfaces/forge-specification-generation.interface';
 import { ForgeSpecificationModel } from '../interfaces/forge-specification-model.interface';
 import { ForgeSpecificationRelationship } from '../interfaces/forge-specification-relationship.interface';
+import { ForgeRelationshipEndpointValue } from '../types/forge-relationship-endpoint-value.type';
 import {
   SpecificationImportApplyRequest,
   SpecificationImportApplyResponse,
@@ -130,8 +131,8 @@ interface UpdateRelationshipRequest {
 }
 
 interface DeleteRelationshipRequest {
-  source: string;
-  target: string;
+  source: ForgeRelationshipEndpointValue;
+  target: ForgeRelationshipEndpointValue;
   type:
     | 'ONE_TO_ONE'
     | 'ONE_TO_MANY'

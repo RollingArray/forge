@@ -25,14 +25,14 @@
     <div class="relationship-list">
       @for (
         relationship of relationships();
-        track relationship.source + relationship.target + relationship.type
+        track endpointEntity(relationship.source) + endpointEntity(relationship.target) + relationship.type
       ) {
                 <app-inspector-row icon="account_tree" ariaLabel="Relationship" [showEdit]="true" variant="compact" (edit)="editRelationship.emit(relationship)">
                   <div inspector-row-content class="relationship-diagram">
                     <div class="entity-row source-row">
                       <span class="material-symbols-outlined entity-icon">database</span>
                       <div class="entity-details">
-                        <strong>{{ relationship.source }}</strong>
+                        <strong>{{ endpointEntity(relationship.source) }}</strong>
                         <small>Source entity</small>
                       </div>
 
@@ -63,7 +63,7 @@
                       <span class="material-symbols-outlined entity-icon">database</span>
                       <div class="entity-details">
                         <small>Target entity</small>
-                        <strong>{{ relationship.target }}</strong>
+                        <strong>{{ endpointEntity(relationship.target) }}</strong>
                       </div>
 
                     </div>

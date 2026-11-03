@@ -14,6 +14,18 @@ from app.constants.specification_vocabulary import (
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class RelationshipEndpointRequest(BaseModel):
+    """Complete endpoint definition for a relationship."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    entity: str = Field(min_length=1)
+    fields: list[str] = Field(min_length=1)
+
+
+RelationshipEndpointValue = str | RelationshipEndpointRequest
+
+
 class CreateRelationshipRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -29,8 +41,8 @@ class CreateRelationshipRequest(BaseModel):
 class DeleteRelationshipRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    source: str = Field(min_length=1)
-    target: str = Field(min_length=1)
+    source: RelationshipEndpointValue = Field(...)
+    target: RelationshipEndpointValue = Field(...)
 
     type: RelationshipType
 

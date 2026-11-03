@@ -11,6 +11,7 @@ import { ForgeForeignKey } from '../../../../core/interfaces/forge-foreign-key.i
 import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification-field.interface';
 import { ForgeSpecificationRelationship } from '../../../../core/interfaces/forge-specification-relationship.interface';
+import { normalizeRelationshipEndpoint } from '../../../../core/utils/relationship-endpoint.util';
 import { InspectorTab } from '../../../../core/types/inspector-tab.type';
 
 @Component({
@@ -73,9 +74,9 @@ export class EntityInspectorComponent {
     if (!entityName) return [];
 
     return this.relationships().filter(
-      (relationship) =>
-        relationship.source.startsWith(`${entityName}.`) ||
-        relationship.target.startsWith(`${entityName}.`),
+      relationship =>
+        normalizeRelationshipEndpoint(relationship.source).entity === entityName ||
+        normalizeRelationshipEndpoint(relationship.target).entity === entityName,
     );
   }
 
@@ -83,22 +84,19 @@ export class EntityInspectorComponent {
     const entityName = this.entity()?.name;
     if (!entityName) return '';
 
-    if (relationship.source.startsWith(`${entityName}.`)) {
-      return relationship.target;
-    }
+    const source = normalizeRelationshipEndpoint(relationship.source);
+    const target = normalizeRelationshipEndpoint(relationship.target);
 
-    return relationship.source;
+    return source.entity === entityName ? target.entity : source.entity;
   }
 
   relationshipDirection(relationship: ForgeSpecificationRelationship): string {
     const entityName = this.entity()?.name;
     if (!entityName) return '';
 
-    if (relationship.source.startsWith(`${entityName}.`)) {
-      return 'Connects to';
-    }
-
-    return 'Connected from';
+    return normalizeRelationshipEndpoint(relationship.source).entity === entityName
+      ? 'Connects to'
+      : 'Connected from';
   }
 
   readonly activeTab = signal<InspectorTab>('FIELDS');

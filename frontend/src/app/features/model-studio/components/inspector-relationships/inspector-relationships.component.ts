@@ -17,6 +17,8 @@ import { EmptyInspectorStateComponent } from '../empty-inspector-state/empty-ins
 import { InspectorShellComponent } from '../inspector-shell/inspector-shell.component';
 import { InspectorRowComponent } from '../inspector-row/inspector-row.component';
 import { ForgeSpecificationRelationship } from '../../../../core/interfaces/forge-specification-relationship.interface';
+import { ForgeRelationshipEndpointValue } from '../../../../core/types/forge-relationship-endpoint-value.type';
+import { normalizeRelationshipEndpoint } from '../../../../core/utils/relationship-endpoint.util';
 
 @Component({
   selector: 'app-inspector-relationships',
@@ -33,6 +35,10 @@ export class InspectorRelationshipsComponent {
   readonly addRelationship = output<void>();
   readonly editRelationship = output<ForgeSpecificationRelationship>();
   readonly deleteRelationship = output<ForgeSpecificationRelationship>();
+
+  endpointEntity(endpoint: ForgeRelationshipEndpointValue): string {
+    return normalizeRelationshipEndpoint(endpoint).entity;
+  }
 
   cardinality(type: string): string {
     const labels: Record<string, string> = {
