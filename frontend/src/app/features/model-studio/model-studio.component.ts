@@ -328,6 +328,7 @@ export class ModelStudioComponent {
         currentEntity.name,
         entity.description,
         entity.population,
+        entity.scaling,
       )
       .subscribe({
         next: () => {

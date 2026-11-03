@@ -84,6 +84,8 @@ class UpdateEntityRequest(BaseModel):
         ge=0,
     )
 
+    scaling: PopulationScaling | None = None
+
     @field_validator("population", mode="before")
     @classmethod
     def validate_population(cls, value: object) -> object:

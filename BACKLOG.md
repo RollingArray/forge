@@ -66,8 +66,6 @@
 ### Activity logging
 
 - Whole-specification AI proposal generation activity gap resolved; successful proposals now create a workspace-level activity entry.
-- Population scaling updates can generate activity records for unchanged values.
-- Specification validation activity currently lacks useful metadata.
 
 
 ## 3. Features to Implement
@@ -126,8 +124,8 @@
 - [pending] **Report unavailable quality metrics correctly**
   Do not represent missing measurements as zero or report High Fidelity without supporting evidence.
 
-- [pending] **Avoid no-op population scaling activities**
-  Do not persist or record an update when the requested scaling configuration is unchanged.
+- [done] **Support population scaling updates in Entity Edit**
+  Enabled editing of FIXED and SCALABLE population modes alongside entity description and population count. Updates record only actual changes with before/after metadata, while unchanged submissions avoid unnecessary persistence and activity records. Verified scaling-only and combined updates through the FORGE UI.
 
 
 ## Engineering Principles

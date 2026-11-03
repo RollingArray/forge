@@ -372,7 +372,7 @@ class SpecificationService:
                 )
                 updated_entity["description"] = request.description
 
-            existing_population = entity.get("population", {})
+            existing_population = entity.get("population") or {}
             if request.population is not None:
                 previous_population = existing_population.get("count")
                 if previous_population != request.population:
@@ -390,6 +390,27 @@ class SpecificationService:
                             "SCALABLE",
                         ),
                     }
+
+            if request.scaling is not None:
+                previous_scaling = existing_population.get(
+                    "scaling",
+                    "SCALABLE",
+                )
+                requested_scaling = request.scaling.value
+
+                if previous_scaling != requested_scaling:
+                    changes.append(
+                        {
+                            "field": "population_scaling",
+                            "from": previous_scaling,
+                            "to": requested_scaling,
+                        }
+                    )
+                    updated_population = updated_entity.setdefault(
+                        "population",
+                        {},
+                    )
+                    updated_population["scaling"] = requested_scaling
 
             if not changes:
                 return updated_entity
@@ -418,11 +439,18 @@ class SpecificationService:
                         f"Updated population for entity '{entity_name}' "
                         f"from {change['from']} to {change['to']}"
                     )
+                elif changed_fields == ["population_scaling"]:
+                    title = "Updated Entity population scaling"
+                    change = changes[0]
+                    description = (
+                        f"Updated population scaling for entity "
+                        f"'{entity_name}' from {change['from']} "
+                        f"to {change['to']}"
+                    )
                 else:
                     title = "Updated Entity"
                     description = (
-                        f"Updated description and population for entity "
-                        f"'{entity_name}'"
+                        f"Updated configuration for entity '{entity_name}'"
                     )
 
                 self._activity_service.record(
@@ -1135,6 +1163,15 @@ class SpecificationService:
                 raise ValueError(
                     f"Invalid population scaling: {scaling}"
                 )
+
+            existing_population = entity.get("population") or {}
+            existing_scaling = existing_population.get(
+                "scaling",
+                "SCALABLE",
+            )
+
+            if existing_scaling == scaling:
+                return entity
 
             candidate = deepcopy(specification)
 

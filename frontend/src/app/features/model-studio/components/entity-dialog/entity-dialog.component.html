@@ -149,9 +149,6 @@
   for="entity-population-scaling"
 >
   Population Scaling
-  @if (isEditing()) {
-    <span class="material-symbols-outlined field-lock" aria-label="Population scaling cannot be changed while editing" title="Population scaling cannot be changed while editing">lock</span>
-  }
 </label>
 
 <p class="field-help">
@@ -170,7 +167,6 @@
       name="population-scaling"
       value="SCALABLE"
       [checked]="populationScaling === 'SCALABLE'"
-      [disabled]="isEditing()"
       (change)="populationScaling = 'SCALABLE'"
     />
 
@@ -189,7 +185,6 @@
       name="population-scaling"
       value="FIXED"
       [checked]="populationScaling === 'FIXED'"
-      [disabled]="isEditing()"
       (change)="populationScaling = 'FIXED'"
     />
 
