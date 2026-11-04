@@ -1,0 +1,3 @@
+source_entity,target_entity,type,source_participation,target_participation
+ENTITY_2,ENTITY_1,MANY_TO_ONE,MANDATORY,OPTIONAL
+ENTITY_3,ENTITY_2,ONE_TO_ONE,MANDATORY,OPTIONAL

@@ -1,0 +1,4 @@
+entity,description,population_count,population_scaling
+ENTITY_1,Generic example with single-field identity and field-generation examples,100,FIXED
+ENTITY_2,Generic example with composite identity and a single-field foreign key,200,SCALABLE
+ENTITY_3,Generic example with a composite foreign key,500,SCALABLE

@@ -1,0 +1,3 @@
+source_entity,source_fields,target_entity
+ENTITY_2,"[""ENTITY_2_FIELD_3""]",ENTITY_1
+ENTITY_3,"[""ENTITY_3_FIELD_2"", ""ENTITY_3_FIELD_3""]",ENTITY_2
