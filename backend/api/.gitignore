@@ -6,3 +6,6 @@ data/forge_*_data_model/
 
 # Generated FORGE generation artifacts
 data/generation/
+
+# Runtime activity data (generated locally)
+/data/activity/
