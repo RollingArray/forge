@@ -19,6 +19,7 @@ from app.models.data_model_list_item_model import DataModelListItemModel
 from app.models.workspace_activity_model import WorkspaceActivityModel
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.data_model_service import DataModelService
+from app.api.workspace import workspace_service
 from app.models.execution_context_model import (
     ExecutionContextDataModel,
     ExecutionContextJobModel,

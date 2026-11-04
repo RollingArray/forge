@@ -221,7 +221,10 @@ class WorkspaceService:
 
         activities = sorted(
             activities_by_id.values(),
-            key=lambda activity: activity.timestamp,
+            key=lambda activity: (
+                activity.timestamp,
+                activity.activity_id,
+            ),
             reverse=True,
         )
 
@@ -236,6 +239,26 @@ class WorkspaceService:
             )
             for activity in page
         ], has_more
+
+    def get_data_model_activity(
+        self,
+        data_model_id: str,
+        viewer_user_id: str,
+    ) -> list[WorkspaceActivity]:
+        """Return recent activity for a visible Data Model."""
+
+        activities = self._activity_service.get_by_data_model_id(
+            data_model_id=data_model_id,
+            limit=50,
+        )
+
+        return [
+            self._to_workspace_activity(
+                activity=activity,
+                viewer_user_id=viewer_user_id,
+            )
+            for activity in activities
+        ]
 
     def get_activity(
         self,
