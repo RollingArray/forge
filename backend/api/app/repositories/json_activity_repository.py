@@ -4,7 +4,6 @@ Purpose: Append-only JSONL persistence for FORGE activity events.
 """
 
 import fcntl
-import hashlib
 import json
 import os
 from contextlib import contextmanager
@@ -213,9 +212,7 @@ class JsonActivityRepository(ActivityRepository):
         return activities[:limit]
 
     def _partition_root(self, scope: str, identity: str) -> Path:
-        identity_key = hashlib.sha256(
-            identity.encode("utf-8")
-        ).hexdigest()
+        identity_key = identity
 
         return self._data_directory / scope / identity_key
 
@@ -243,9 +240,7 @@ class JsonActivityRepository(ActivityRepository):
     ) -> Iterator[None]:
         """Serialize a partition across threads, instances and processes."""
 
-        identity_key = hashlib.sha256(
-            identity.encode("utf-8")
-        ).hexdigest()
+        identity_key = identity
 
         lock_path = (
             self._lock_directory
