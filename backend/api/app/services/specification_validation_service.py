@@ -552,16 +552,105 @@ class SpecificationValidationService:
         }
 
         for foreign_key in foreign_keys:
+            if not isinstance(foreign_key, dict):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid foreign key definition",
+                    "Every foreign key must be an object.",
+                )
+                continue
+
             name = str(foreign_key.get("name", "")).strip()
 
-            source = foreign_key.get("source", {})
-            target = foreign_key.get("target", {})
+            source = foreign_key.get("source")
+            target = foreign_key.get("target")
 
-            source_entity = str(source.get("entity", "")).strip()
-            target_entity = str(target.get("entity", "")).strip()
+            if not isinstance(source, dict):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid foreign key source",
+                    (
+                        f"Foreign key '{name or 'unnamed'}' must define "
+                        "source as an object containing entity and fields."
+                    ),
+                )
+                continue
 
-            source_fields = source.get("fields", [])
-            target_fields = target.get("fields", [])
+            if not isinstance(target, dict):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid foreign key target",
+                    (
+                        f"Foreign key '{name or 'unnamed'}' must define "
+                        "target as an object containing entity and fields."
+                    ),
+                    str(source.get("entity", "")).strip() or None,
+                )
+                continue
+
+            source_entity_value = source.get("entity")
+            target_entity_value = target.get("entity")
+
+            if not isinstance(source_entity_value, str):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid source entity",
+                    (
+                        f"Foreign key '{name or 'unnamed'}' must define "
+                        "source.entity as a string."
+                    ),
+                )
+                continue
+
+            if not isinstance(target_entity_value, str):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid target entity",
+                    (
+                        f"Foreign key '{name or 'unnamed'}' must define "
+                        "target.entity as a string."
+                    ),
+                    source_entity_value.strip() or None,
+                )
+                continue
+
+            source_entity = source_entity_value.strip()
+            target_entity = target_entity_value.strip()
+
+            source_fields = source.get("fields")
+            target_fields = target.get("fields")
+
+            if (
+                not isinstance(source_fields, list)
+                or not source_fields
+                or not all(
+                    isinstance(field, str) and field.strip()
+                    for field in source_fields
+                )
+                or not isinstance(target_fields, list)
+                or not target_fields
+                or not all(
+                    isinstance(field, str) and field.strip()
+                    for field in target_fields
+                )
+            ):
+                add(
+                    "error",
+                    "Foreign Key",
+                    "Invalid foreign key fields",
+                    (
+                        f"Foreign key '{name or 'unnamed'}' must define "
+                        "non-empty source.fields and target.fields arrays "
+                        "containing field names."
+                    ),
+                    source_entity or None,
+                )
+                continue
 
             expected_name = f"FK_{source_entity}_{target_entity}"
 

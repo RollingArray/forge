@@ -538,7 +538,46 @@ class OllamaAIProvider(AIProvider):
                 "type": "object",
                 "properties": {
                     "message": {"type": "string"},
-                    "specification": {"type": "object"},
+                    "specification": {
+                "type": "object",
+                "properties": {
+                    "foreign_keys": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "source": {
+                                    "type": "object",
+                                    "properties": {
+                                        "entity": {"type": "string"},
+                                        "fields": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": ["entity", "fields"],
+                                    "additionalProperties": False,
+                                },
+                                "target": {
+                                    "type": "object",
+                                    "properties": {
+                                        "entity": {"type": "string"},
+                                        "fields": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": ["entity", "fields"],
+                                    "additionalProperties": False,
+                                },
+                            },
+                            "required": ["name", "source", "target"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+            },
                     "assumptions": {
                         "type": "array",
                         "items": {"type": "string"},
@@ -732,6 +771,59 @@ class OllamaAIProvider(AIProvider):
 
                         identity["strategy"] = "SEQUENTIAL_ID"
                         field.pop("generation", None)
+
+            # Normalize unambiguous flat AI foreign-key shorthand.
+            # Canonical validation remains strict.
+            foreign_keys = specification.get("foreign_keys")
+            if isinstance(foreign_keys, list):
+                for foreign_key in foreign_keys:
+                    if not isinstance(foreign_key, dict):
+                        continue
+
+                    source_ref = foreign_key.get("source")
+                    target_ref = foreign_key.get("target")
+                    flat_fields = foreign_key.get("fields")
+
+                    if not (
+                        isinstance(source_ref, str)
+                        and isinstance(target_ref, str)
+                        and isinstance(flat_fields, list)
+                        and len(flat_fields) == 1
+                        and isinstance(flat_fields[0], str)
+                    ):
+                        continue
+
+                    if (
+                        source_ref.count(".") != 1
+                        or target_ref.count(".") != 1
+                    ):
+                        continue
+
+                    source_entity, source_field = source_ref.split(".", 1)
+                    target_entity, target_field = target_ref.split(".", 1)
+
+                    if not all((
+                        source_entity.strip(),
+                        source_field.strip(),
+                        target_entity.strip(),
+                        target_field.strip(),
+                    )):
+                        continue
+
+                    if not (
+                        source_field == target_field == flat_fields[0]
+                    ):
+                        continue
+
+                    foreign_key["source"] = {
+                        "entity": source_entity,
+                        "fields": [source_field],
+                    }
+                    foreign_key["target"] = {
+                        "entity": target_entity,
+                        "fields": [target_field],
+                    }
+                    foreign_key.pop("fields", None)
 
             required_keys = {
                 "version",
