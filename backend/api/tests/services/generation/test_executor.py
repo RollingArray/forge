@@ -5,6 +5,7 @@ from app.services.generation.executor import GenerationExecutor
 from app.services.generation_planner import (
     GenerationEntityPlan,
     GenerationPlan,
+    GenerationPlanner,
 )
 
 
@@ -909,3 +910,192 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
         == semantic_values[int(row["PRODUCT_ID"]) - 1]
         for row in rows
     )
+
+def test_executor_enforces_mandatory_parent_participation(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
+
+    monkeypatch.chdir(tmp_path)
+
+    specification = {
+        "entities": [
+            {
+                "name": "PARENT",
+                "population": {"count": 3},
+                "identity": {"fields": ["PARENT_ID"]},
+                "fields": [
+                    {
+                        "name": "PARENT_ID",
+                        "type": "IDENTIFIER",
+                        "identity": {"strategy": "SEQUENTIAL_ID"},
+                    },
+                ],
+            },
+            {
+                "name": "CHILD",
+                "population": {"count": 3},
+                "fields": [
+                    {"name": "PARENT_ID", "type": "STRING"},
+                ],
+            },
+        ],
+        "foreign_keys": [
+            {
+                "name": "FK_CHILD_PARENT",
+                "source": {
+                    "entity": "CHILD",
+                    "fields": ["PARENT_ID"],
+                },
+                "target": {
+                    "entity": "PARENT",
+                    "fields": ["PARENT_ID"],
+                },
+            },
+        ],
+        "relationships": [
+            {
+                "source": {
+                    "entity": "PARENT",
+                    "fields": ["PARENT_ID"],
+                },
+                "target": {
+                    "entity": "CHILD",
+                    "fields": ["PARENT_ID"],
+                },
+                "type": "ONE_TO_MANY",
+                "source_participation": "MANDATORY",
+                "target_participation": "OPTIONAL",
+            },
+        ],
+    }
+
+    plan = GenerationPlanner().build(specification)
+
+    mandatory_groups = [
+        group
+        for group in plan.relationship_groups
+        if (
+            group.resolution_status == "MAPPED"
+            and group.relationship_type.upper() == "ONE_TO_MANY"
+            and group.parent_participation.upper() == "MANDATORY"
+        )
+    ]
+
+    assert len(mandatory_groups) == 1
+    assert mandatory_groups[0].parent_entity == "PARENT"
+    assert mandatory_groups[0].child_entity == "CHILD"
+
+    data_model_id = "MANDATORY-PARTICIPATION-TEST"
+    job_id = "MANDATORY-PARTICIPATION-TEST-JOB"
+
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = tmp_path / "checkpoints"
+
+    initial_checkpoint = checkpoint_store.create_checkpoint(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=50,
+        entity_targets={
+            "PARENT": 3,
+            "CHILD": 3,
+        },
+    )
+
+    checkpoint_store.save(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        seed=42,
+        entities=initial_checkpoint["entities"],
+        specification_hash=initial_checkpoint["specification_hash"],
+        chunk_size=50,
+    )
+
+    artifact_writer = GenerationArtifactWriter(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_writer._data_directory = tmp_path / "artifacts"
+
+    completed_chunks: list[tuple[str, list[dict]]] = []
+
+    def capture_chunk(*args) -> None:
+        entity_name = args[0]
+        chunk_number = args[1]
+        rows = args[4]
+
+        completed_chunks.append((entity_name, rows))
+
+        checkpoint = checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+        assert checkpoint is not None
+
+        entity_state = checkpoint["entities"][entity_name]
+        completed = entity_state.setdefault("completed_chunks", [])
+
+        if chunk_number not in completed:
+            completed.append(chunk_number)
+            completed.sort()
+
+        entity_state["committed_rows"] = min(
+            len(completed) * 50,
+            entity_state["target_rows"],
+        )
+
+        checkpoint_store.save(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            seed=42,
+            entities=checkpoint["entities"],
+            specification_hash=checkpoint["specification_hash"],
+            chunk_size=50,
+        )
+
+    executor = GenerationExecutor(
+        seed=42,
+        checkpoint_store=checkpoint_store,
+        artifact_writer=artifact_writer,
+    )
+
+    result = executor.execute(
+        specification=specification,
+        plan=plan,
+        data_model_id=data_model_id,
+        job_id=job_id,
+        on_chunk_completed=capture_chunk,
+    )
+
+    parent_rows = [
+        row
+        for entity_name, rows in completed_chunks
+        if entity_name == "PARENT"
+        for row in rows
+    ]
+
+    child_rows = [
+        row
+        for entity_name, rows in completed_chunks
+        if entity_name == "CHILD"
+        for row in rows
+    ]
+
+    parent_ids = {
+        str(row["PARENT_ID"])
+        for row in parent_rows
+    }
+
+    child_parent_ids = {
+        str(row["PARENT_ID"])
+        for row in child_rows
+    }
+
+    assert len(parent_rows) == 3
+    assert len(child_rows) == 3
+    assert child_parent_ids == parent_ids
+    assert len(child_parent_ids) == 3
+    assert result.generated_rows == 6

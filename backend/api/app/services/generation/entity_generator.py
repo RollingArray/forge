@@ -39,6 +39,7 @@ class EntityGenerator:
         entity: dict[str, Any],
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
+        mandatory_relationships: list[dict[str, Any]] | None = None,
         chunk_size: int = 50,
         start_chunk: int = 1,
         on_chunk_start: Callable[[str, int, int, int], None] | None = None,
@@ -71,6 +72,82 @@ class EntityGenerator:
             entity=entity,
             fields=fields,
         )
+
+        mandatory_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ] = []
+
+        seen_mandatory_mappings: set[
+            tuple[tuple[str, ...], str, tuple[str, ...]]
+        ] = set()
+
+        for relationship in mandatory_relationships or []:
+            child_fields = tuple(relationship["child_fields"])
+            parent_entity = relationship["parent_entity"]
+            parent_fields = tuple(relationship["parent_fields"])
+
+            if not child_fields or len(child_fields) != len(parent_fields):
+                raise EntityGenerationError(
+                    f"{entity_name}: invalid mandatory relationship "
+                    f"mapping {child_fields} -> {parent_entity}.{parent_fields}."
+                )
+
+            if set(child_fields).intersection(identity_fields):
+                raise EntityGenerationError(
+                    f"{entity_name}: mandatory parent coverage for "
+                    f"{child_fields} cannot currently be combined with "
+                    "child identity fields. Identity-aware relationship "
+                    "allocation is required."
+                )
+
+            matching_foreign_keys = [
+                foreign_key
+                for foreign_key in foreign_keys
+                if tuple(foreign_key["child_fields"]) == child_fields
+                and foreign_key["parent_entity"] == parent_entity
+                and tuple(foreign_key["parent_fields"]) == parent_fields
+            ]
+
+            if len(matching_foreign_keys) != 1:
+                raise EntityGenerationError(
+                    f"{entity_name}: mandatory relationship "
+                    f"{child_fields} -> {parent_entity}.{parent_fields} "
+                    "does not resolve to exactly one generation FK."
+                )
+
+            mapping_key = (
+                child_fields,
+                parent_entity,
+                parent_fields,
+            )
+
+            if mapping_key in seen_mandatory_mappings:
+                continue
+
+            seen_mandatory_mappings.add(mapping_key)
+
+            indexed_parent_keys = context.get_indexed_key_space(
+                entity_name=parent_entity,
+                fields=parent_fields,
+            )
+
+            if not indexed_parent_keys:
+                raise EntityGenerationError(
+                    f"{entity_name}: mandatory parent participation "
+                    f"cannot be satisfied because {parent_entity} "
+                    "has no generated parent keys."
+                )
+
+            if len(indexed_parent_keys) > target_rows:
+                raise EntityGenerationError(
+                    f"{entity_name}: mandatory parent participation "
+                    f"requires at least {len(indexed_parent_keys)} child "
+                    f"rows, but the configured population is {target_rows}."
+                )
+
+            mandatory_assignments.append(
+                (child_fields, indexed_parent_keys)
+            )
 
         total_chunks = (
             (target_rows + chunk_size - 1) // chunk_size
@@ -112,6 +189,25 @@ class EntityGenerator:
                 context=context,
                 fields=fields,
             )
+
+            # Mandatory parent participation is allocated against global
+            # child-row positions, not local chunk positions. This keeps
+            # coverage deterministic across chunk boundaries and resumes.
+            for local_index, row_index in enumerate(
+                range(chunk_start, chunk_end)
+            ):
+                for child_fields, parent_keys in mandatory_assignments:
+                    if row_index >= len(parent_keys):
+                        continue
+
+                    parent_key = parent_keys[row_index]
+
+                    for child_field, value in zip(
+                        child_fields,
+                        parent_key,
+                        strict=True,
+                    ):
+                        identity_rows[local_index][child_field] = value
 
             self._prepare_chunk_semantic_values(
                 entity_name=entity_name,

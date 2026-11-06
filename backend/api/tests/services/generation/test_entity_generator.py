@@ -750,3 +750,173 @@ def test_single_field_fk_uses_indexed_parent_key_space() -> None:
         ("C3",),
     }
 
+def _mandatory_parent_context(
+    parent_keys: list[tuple],
+    parent_fields: tuple[str, ...] = ("PARENT_ID",),
+) -> GenerationContext:
+    context = GenerationContext()
+    context.restore_key_space(
+        entity_name="PARENT",
+        identity_fields=parent_fields,
+        key_space=parent_keys,
+    )
+    return context
+
+
+def test_mandatory_parent_participation_covers_every_parent_across_chunks() -> None:
+    parent_keys = [(f"P{i}",) for i in range(1, 6)]
+    context = _mandatory_parent_context(parent_keys)
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 5},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+    mandatory_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+    }]
+
+    generated: list[dict] = []
+
+    EntityGenerator(seed=42).generate(
+        entity=entity,
+        foreign_keys=foreign_keys,
+        context=context,
+        mandatory_relationships=mandatory_relationships,
+        chunk_size=2,
+        on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+            generated.extend(rows),
+    )
+
+    assert [row["PARENT_ID"] for row in generated] == [
+        "P1", "P2", "P3", "P4", "P5"
+    ]
+
+
+def test_mandatory_parent_participation_uses_global_row_position_on_resume() -> None:
+    parent_keys = [(f"P{i}",) for i in range(1, 4)]
+    context = _mandatory_parent_context(parent_keys)
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 5},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+    mandatory_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+    }]
+
+    generated: list[dict] = []
+
+    EntityGenerator(seed=42).generate(
+        entity=entity,
+        foreign_keys=foreign_keys,
+        context=context,
+        mandatory_relationships=mandatory_relationships,
+        chunk_size=2,
+        start_chunk=2,
+        on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+            generated.extend(rows),
+    )
+
+    # Global child row 3 must receive parent key 3, even when execution
+    # resumes at chunk 2.
+    assert generated[0]["PARENT_ID"] == "P3"
+
+
+def test_mandatory_composite_parent_participation_preserves_complete_tuples() -> None:
+    parent_keys = [
+        ("T1", "P1"),
+        ("T2", "P2"),
+        ("T3", "P3"),
+    ]
+    context = _mandatory_parent_context(
+        parent_keys,
+        ("TENANT_ID", "PARENT_ID"),
+    )
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 3},
+        "fields": [
+            {"name": "FK_TENANT_ID", "type": "STRING"},
+            {"name": "FK_PARENT_ID", "type": "STRING"},
+        ],
+    }
+    foreign_keys = [{
+        "child_fields": ["FK_TENANT_ID", "FK_PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["TENANT_ID", "PARENT_ID"],
+    }]
+    mandatory_relationships = [{
+        "child_fields": ("FK_TENANT_ID", "FK_PARENT_ID"),
+        "parent_entity": "PARENT",
+        "parent_fields": ("TENANT_ID", "PARENT_ID"),
+    }]
+
+    generated: list[dict] = []
+
+    EntityGenerator(seed=42).generate(
+        entity=entity,
+        foreign_keys=foreign_keys,
+        context=context,
+        mandatory_relationships=mandatory_relationships,
+        chunk_size=2,
+        on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+            generated.extend(rows),
+    )
+
+    actual_tuples = [
+        (row["FK_TENANT_ID"], row["FK_PARENT_ID"])
+        for row in generated
+    ]
+    assert actual_tuples == parent_keys
+
+
+def test_mandatory_parent_participation_rejects_insufficient_child_population() -> None:
+    context = _mandatory_parent_context([
+        ("P1",),
+        ("P2",),
+        ("P3",),
+    ])
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 2},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+    mandatory_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+    }]
+
+    with pytest.raises(
+        EntityGenerationError,
+        match="requires at least 3 child rows",
+    ):
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            mandatory_relationships=mandatory_relationships,
+        )
