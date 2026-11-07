@@ -1,21 +1,479 @@
 # FORGE Engineering Backlog
 
-## 1. Investigations
+This file is the authoritative engineering register for FORGE audit findings,
+corrective work, capability development, and end-to-end acceptance.
 
-- [pending] **Generation: Semantic uniqueness**
-  Investigate uniqueness across chunks, persisted semantic values, and resumed generation.
+Status labels:
+- [confirmed] Evidence establishes an implementation defect or gap.
+- [risk] A plausible reliability or architectural risk requiring a decision or mitigation.
+- [test-gap] Required test coverage is missing.
+- [decision] Product or specification decision is required.
+- [pending] Agreed work that has not yet been implemented or accepted.
+- [done] Implemented and verified to the stated acceptance level.
+- [active] Currently being implemented; only one work package may be active.
+- [agreed] Product or engineering policy explicitly accepted but not yet implemented.
 
-- [pending] **Generation: Population planning and identity capacity**
-  Review composite identities, categorical domains, relationship-backed identity dimensions, and feasibility calculations.
+Audit and source-inspection findings do not constitute UI acceptance.
+Do not mark an item done based only on source inspection.
 
-- [pending] **Implement end-to-end MANY_TO_MANY relationship support**
+---
 
-  Implement logical MANY_TO_MANY relationships using an explicitly defined junction/association entity and its physical foreign-key mappings.
+
+## Release objective and ordered execution plan
+
+**Destination: FORGE Release Candidate 1.0**
+
+Deliver a stable, specification-driven synthetic data generation platform
+whose supported end-to-end workflows are correct, reliable, demonstrable
+through the FORGE UI, and ready for controlled release.
+
+### Execution rules
+
+1. Work on exactly one work package at a time.
+2. Do not start the next work package until the current package is complete
+   and its acceptance criteria have passed.
+3. Mark a work package [active] only when work actually begins.
+4. Mark individual findings [done] only after implementation, relevant
+   automated tests, and the required acceptance evidence are complete.
+5. Source inspection and automated tests support acceptance; they do not
+   replace the required FORGE UI verification.
+6. Preserve existing working-tree changes. Do not overwrite unrelated work.
+7. Do not commit or push without explicit approval.
+8. If a blocker is discovered, record it and resolve or explicitly agree
+   its disposition before proceeding.
+9. Do not introduce new capabilities merely to make the specification fit
+   the implementation. Agree product and specification decisions first.
+
+Only one work package may be [active] at any time.
+
+### Ordered release work packages
+
+#### WP-01: Specification integrity
+Priority: P0
+
+Scope:
+- SPEC-01: Canonical specification validation before generation.
+- SPEC-02: Whole-candidate validation before field persistence.
+- TEST-09: Specification preflight and candidate validation tests.
+
+Exit criteria:
+- Invalid specifications cannot create generation jobs or artifacts.
+- Warning-only specifications remain eligible for generation.
+- Invalid field changes cannot corrupt an existing valid specification.
+- API/service regression tests pass.
+- The behavior is verified through the FORGE UI.
+
+#### WP-02: Generated data correctness
+Priority: P0
+
+Scope:
+- SEM-01 and SEM-02: Semantic UNIQUE validation and semantic-store integrity.
+- POP-01: Correct identity capacity for independent foreign-key dimensions.
+- NUM-02, NUM-03 and NUM-05: Exact decimal representation and numeric
+  boundary preservation across supported workflows.
+- TEST-01 through TEST-04.
+
+Exit criteria:
+- Semantic UNIQUE values remain unique across the complete dataset.
+- Corrupt semantic state cannot silently cause duplicate generation.
+- Population capacity agrees with generation identity construction.
+- Supported decimal values and bounds retain their intended precision.
+- Relevant regression tests pass.
+- The supported behavior is verified through the FORGE UI.
+
+#### WP-03: Execution, artifacts and recovery
+Priority: P0
+
+Scope:
+- ART-01 through ART-06: Atomic artifact writes, reconciliation and recovery.
+- REC-01: Random generation state and resume determinism.
+- SEM-04 and SEM-05: Semantic-store concurrency and recovery robustness.
+- TEST-05 and TEST-06.
+
+Exit criteria:
+- Interrupted writes cannot expose incomplete final artifacts as valid.
+- Checkpoint, progress and artifact row counts reconcile.
+- Interrupted generation resumes safely.
+- Recovery behavior is deterministic where the specification and seed
+  require deterministic equivalence.
+- Failure scenarios are covered by automated tests.
+- Recovery is demonstrated through the FORGE UI.
+
+#### WP-04: Validation and quality confidence
+Priority: P0
+
+Scope:
+- GEN-VAL-01: Independent generation and validation outcomes.
+- SPEC-03: NOT_EVALUATED reporting semantics.
+- QLT-01 through QLT-11: Quality measurement correctness and resilience.
+- TEST-10 through TEST-13.
+
+Exit criteria:
+- Generation execution status is not incorrectly downgraded by a
+  post-generation validation or quality-analysis exception.
+- Validation conformance remains independently visible.
+- Unsupported or unevaluated rules are never represented as passed.
+- Invalid, missing, unavailable and measured-zero quality values are
+  distinguishable.
+- Quality reporting and frontend/backend calculations agree.
+- Automated regression tests pass.
+- Results and validation behavior are verified through the FORGE UI.
+
+#### WP-05: Activity and product reliability
+Priority: P1
+
+Scope:
+- ACT-01 through ACT-06.
+- TEST-07, TEST-08 and TEST-14.
+- Resolve outstanding activity product decisions where necessary.
+
+Exit criteria:
+- Activity persistence and index recovery are reliable.
+- Activity access and presentation remain appropriately scoped.
+- Supported activity events are recorded consistently.
+- Unknown presentation values do not break the activity feed.
+- Relevant tests pass and behavior is verified through the FORGE UI.
+
+#### WP-06: Full Release Candidate acceptance
+Priority: P1
+
+Scope:
+- Execute all applicable scenarios in Section 7.
+- Run the full regression suite.
+- Review known limitations and deferred capabilities.
+- Verify installation, configuration and operational requirements.
+- Prepare release notes and RC sign-off evidence.
+
+Exit criteria:
+- All P0 work packages are complete.
+- P1 work is complete or explicitly accepted as a release limitation.
+- P2 work is explicitly deferred or included by an agreed scope decision.
+- All supported end-to-end UI scenarios pass.
+- No unresolved release-blocking defect remains.
+- RC 1.0 is approved for release-candidate use.
+
+### Deferred capability scope
+
+The following work is not automatically part of RC 1.0:
+- REL-01: Full logical MANY_TO_MANY relationship support.
+- SEM-03: Semantic uniqueness as an additional quality metric.
+- NUM-01: Optional DECIMAL precision and scale enhancement.
+- NUM-04: Numeric cross-field constraints.
+
+These remain visible in the engineering backlog. They may be promoted into RC scope only through an explicit decision.
+
+
+## 1. Audit status and agreed decisions
+
+### Completed investigations
+
+- [done] GEN-AUDIT-01: Semantic uniqueness across chunks,
+  persisted semantic values and resumed generation.
+- [done] GEN-AUDIT-02: Population planning and identity capacity,
+  including composite identities and relationship-backed dimensions.
+- [done] GEN-AUDIT-03: Artifact integrity and generation recovery.
+- [done] GEN-AUDIT-04: Quality measurement completeness and accuracy.
+- [done] GEN-AUDIT-05: Specification compliance.
+- [done] GEN-AUDIT-06: Semantic uniqueness.
+- [done] GEN-AUDIT-07: Population planning and identity capacity.
+- [done] GEN-AUDIT-08: MANY_TO_MANY relationship support.
+- [done] GEN-AUDIT-09: Activity persistence and concurrency.
+- [done] GEN-AUDIT-10: Activity metadata exposure.
+- [done] GEN-AUDIT-11: Activity event taxonomy and product coverage.
+
+The above indicate that source investigations have been completed.
+They do not indicate that corrective work or end-to-end acceptance has passed.
+
+### Agreed specification and execution policies
+
+- [agreed] Generation preflight:
+  Run canonical specification validation before creating a generation job
+  or its artifacts. Validation errors block generation. Warnings alone do not.
+
+- [agreed] Independent execution and conformance statuses:
+  Generation execution status and validation conformance status are separate.
+  A fully generated job may be COMPLETED while conformance is INCOMPLETE or
+  NON_CONFORMANT. Validation findings remain visible.
+
+- [agreed] Whole-specification candidate validation:
+  Field create/update validates the complete candidate specification before
+  persistence.
+
+### Outstanding product and specification decisions
+
+- [decision] Confirm the supported field-type vocabulary, including whether
+  DATE is intentionally unsupported.
+- [decision] Define which generation parameters must be validated during
+  specification authoring and which may be checked at runtime.
+- [decision] Define the reporting semantics for NOT_EVALUATED validation rules.
+- [decision] Confirm whether data-model duplication is a supported user workflow.
+- [decision] Decide whether generation cancellation should be exposed as a
+  workspace activity event.
+- [decision] Define the intended product contract for logical MANY_TO_MANY
+  relationships and junction entities.
+
+---
+
+## 2. Confirmed defects and implementation gaps
+
+### 2.1 Generation execution and validation
+
+- [confirmed] GEN-VAL-01: Post-generation validation exceptions can affect
+  the reported generation outcome. A validation failure must not incorrectly
+  downgrade an otherwise fully generated job to PARTIALLY_COMPLETED.
+
+  Required behavior:
+  - Preserve the actual generation execution outcome.
+  - Report validation outcome independently.
+  - Keep validation errors and warnings visible.
+  - Do not misrepresent generated artifact completeness.
+
+- [pending] SPEC-01: Enforce canonical specification validation as a
+  generation preflight gate.
+
+  Acceptance:
+  - Invalid specifications cannot create generation jobs or artifacts.
+  - Warnings alone do not block generation.
+  - The user receives actionable validation findings.
+
+- [pending] SPEC-02: Validate the complete candidate specification before
+  field create/update persistence.
+
+  Acceptance:
+  - Invalid candidate specifications are rejected.
+  - Existing valid specification state remains unchanged after rejection.
+
+### 2.2 Semantic uniqueness
+
+Existing generation code already performs cross-chunk duplicate checks,
+excludes persisted values during semantic refill, and persists generated
+semantic values. Do not reintroduce these as wholly missing capabilities.
+
+- [confirmed] SEM-01: Final dataset validation does not independently verify
+  fields configured with semantic UNIQUE mode.
+
+  Acceptance:
+  - Validate semantic UNIQUE values across the complete generated dataset.
+  - Normalize consistently with generation-time duplicate checks.
+  - Report violations against the relevant entity and field.
+
+- [confirmed] SEM-02: Corrupt or unreadable semantic JSON is treated as an
+  empty semantic store. During recovery, this can cause previously committed
+  values to be omitted from duplicate exclusion.
+
+  Acceptance:
+  - Do not silently treat corrupted persisted semantic state as valid empty
+    state.
+  - Fail safely or reconcile against committed artifacts.
+  - Preserve the ability to diagnose and recover the affected job.
+
+- [pending] SEM-03: Include semantic uniqueness in quality reporting if the
+  quality contract requires it. Keep this separate from correctness validation.
+
+### 2.3 Population planning and identity capacity
+
+- [confirmed] POP-01: Multiple independent identity foreign keys referencing
+  the same parent can be deduplicated in population capacity analysis, while
+  generation constructs separate identity components. This can understate
+  theoretical identity capacity.
+
+  Acceptance:
+  - Model independent identity dimensions independently.
+  - Ensure planner capacity agrees with the generation identity construction.
+  - Cover multiple references to the same parent.
+
+- [pending] POP-02: Align and document the modelling scope of the older
+  population capacity analysis and the newer constraint analysis.
+
+  Acceptance:
+  - Establish which path is authoritative for each planning operation.
+  - Avoid contradictory feasibility results.
+
+### 2.4 Quality analysis and reporting
+
+- [confirmed] QLT-07: Quality-profile construction is not fault-isolated.
+  An analysis exception can prevent the generation result from being returned.
+
+  Acceptance:
+  - A failure in one quality dimension does not erase valid generation results.
+  - The generation execution outcome remains accurate.
+  - The failed quality measurement is reported as unavailable or failed,
+    not as a successful measurement.
+  - Regression tests cover quality-analysis exceptions.
+
+- [confirmed] QLT-01: Unexpected categorical values are not explicitly
+  reported with their values and counts.
+
+- [confirmed] QLT-02: A non-numeric value can suppress the entire field's
+  numeric statistical profile.
+
+- [confirmed] QLT-03: Statistical profiling retains all non-empty field
+  values in memory, creating scalability concerns for large datasets.
+
+- [confirmed] QLT-04: Results summary can display "High Fidelity" whenever
+  a quality profile exists, without evidence-based quality criteria.
+
+- [confirmed] QLT-05: Missing quality measurements can be represented as
+  zero, confusing unavailable measurements with measured zero values.
+
+- [confirmed] QLT-06: Categorical identity capacity can be inflated when
+  duplicate configured categorical values are counted more than once.
+
+- [confirmed] QLT-08: Zero requested rows can produce a population fidelity
+  rate of 1.0 without a meaningful population measurement.
+
+- [confirmed] QLT-09: Empty categorical measurements can report a zero
+  missing rate, making unavailable evidence indistinguishable from measured zero.
+
+- [confirmed] QLT-10: Frontend entity-level population fidelity uses a
+  different calculation from the backend population fidelity calculation.
+
+- [confirmed] QLT-11: Distribution visualization converts null, missing,
+  empty and invalid numeric measurements to zero.
+
+  Acceptance across QLT-01 to QLT-06 and QLT-08 to QLT-11:
+  - Distinguish valid, invalid, missing and unexpected values.
+  - Do not silently omit statistical evidence.
+  - Use bounded-memory profiling where practical.
+  - Derive quality status from explicit criteria.
+  - Represent unavailable metrics as unavailable, not zero.
+  - Count distinct categorical values for identity capacity.
+
+---
+
+## 3. Reliability, recovery and robustness risks
+
+### 3.1 Artifact integrity and recovery
+
+- [confirmed] ART-01: Chunk CSV writes are written directly to final paths
+  rather than using an atomic replacement strategy.
+
+- [confirmed] ART-02: Consolidated entity CSV writes are not atomic.
+
+- [confirmed] ART-03: Artifact writing does not independently reconcile
+  actual output row counts against committed checkpoint counts and targets.
+
+- [risk] ART-04: Artifact reader validation does not independently establish
+  every aspect of chunk sequence continuity, row-count consistency and
+  schema consistency.
+
+- [test-gap] ART-05: Dedicated generation-service recovery orchestration
+  tests are missing.
+
+- [test-gap] ART-06: Recovery tests should cover missing, incomplete,
+  duplicated, uncommitted and corrupted artifact/checkpoint combinations,
+  checkpoint/job-progress divergence, checkpoint persistence failure,
+  consolidation failure and interrupted recovery.
+
+Positive control:
+The checkpoint store already uses temporary-file writing, flush, fsync and
+atomic replacement. Preserve this behavior.
+
+Acceptance:
+- Interrupted writes cannot leave apparently valid partial final artifacts.
+- Committed chunk counts reconcile with actual artifact rows.
+- Consolidated CSV output is consistent with committed chunks.
+- Recovery is deterministic, diagnosable and tested.
+
+### 3.2 Random generation recovery and determinism
+
+- [confirmed] REC-01: Random generator state is not restored or advanced past
+  committed rows when resuming an interrupted entity. Resumed output can differ
+  from uninterrupted output and can repeat random values from earlier chunks.
+
+  Acceptance:
+  - Compare interrupted/resumed output with uninterrupted output using the
+    same specification and seed.
+  - Verify random fields, uniqueness constraints and final output consistency.
+  - Perform acceptance through the FORGE UI.
+
+### 3.3 Semantic store robustness
+
+- [risk] SEM-04: Semantic store read-modify-write operations have no
+  demonstrated cross-process locking. Concurrent execution against the same
+  job could result in lost updates.
+
+- [test-gap] SEM-05: No dedicated test establishes safe recovery when semantic
+  state is corrupted while committed artifacts already exist.
+
+  Acceptance:
+  - Establish whether multiple runners can execute the same job concurrently.
+  - If concurrency is possible, protect semantic store updates.
+  - Test interrupted and resumed semantic generation with real artifacts.
+
+### 3.4 Activity persistence
+
+- [risk] ACT-01: A complete but malformed JSONL activity event can interrupt
+  index rebuilding.
+
+- [test-gap] ACT-02: Dedicated activity repository tests are missing for
+  persistence, concurrent writers, malformed event recovery and index rebuild.
+
+Positive controls:
+- In-process and cross-process locking exist.
+- Event appends are flushed and synchronized.
+- The event log is authoritative.
+- The index can be rebuilt.
+- Index replacement uses a temporary file and atomic replacement.
+
+### 3.5 Activity presentation
+
+- [risk] ACT-03: Frontend activity mapping copies backend icon and accent
+  values without a demonstrated fallback for unknown values.
+
+- [decision] ACT-04: Review which selected metadata should be rendered in
+  user-facing activity descriptions.
+
+### 3.6 Activity event taxonomy
+
+- [decision] ACT-05: Generation cancellation does not currently create a
+  workspace activity event. Product decision on whether cancellation should
+  be exposed is recorded in the decision section.
+
+- [risk] ACT-06: DATA_MODEL_DUPLICATED has an event type and presentation
+  mapping, but no recording call site was identified. Whether duplication is
+  a supported workflow remains unverified.
+
+Positive controls:
+- Raw metadata is not returned directly by the activity API.
+- Data-model activity access is checked.
+- Selected metadata is transformed into presentation descriptions.
+
+---
+
+## 4. Specification and capability gaps
+
+### 4.1 Numeric generation and validation
+
+- [pending] NUM-01: Support optional DECIMAL precision and scale in field
+  specifications and enforce them during generation.
+
+- [pending] NUM-02: Preserve exact decimal representation through
+  specification import, generation, validation, persistence, CSV export
+  and reading.
+
+- [pending] NUM-03: Use exact decimal handling for DECIMAL validation rather
+  than binary floating-point comparisons.
+
+- [pending] NUM-04: Support numeric cross-field constraints, for example
+  BRGEW >= NTGEW, rather than limiting comparisons to constant values.
+
+- [pending] NUM-05: Preserve fractional numeric bounds during specification
+  import without converting exact Decimal values to float.
+
+### 4.2 MANY_TO_MANY relationship support
+
+- [pending] REL-01: Implement end-to-end logical MANY_TO_MANY relationship
+  support using an explicitly defined junction/association entity and its
+  physical foreign-key mappings.
 
   Scope:
-  - Resolve logical relationships to the appropriate junction entity and its two endpoint foreign keys.
-  - Validate junction mappings against the identities of both participating entities.
-  - Generate valid associations with configurable or deterministic distribution.
+  - Resolve logical relationships to the appropriate junction entity and
+    its two endpoint foreign keys.
+  - Validate junction mappings against identities of both participating
+    entities.
+  - Generate valid associations with configurable or deterministic
+    distribution.
   - Enforce mandatory and optional participation on both sides.
   - Prevent duplicate association pairs.
   - Support composite junction identities.
@@ -23,224 +481,207 @@
   - Validate association cardinality and participation.
   - Include MANY_TO_MANY relationship fidelity in generation quality metrics.
 
+  Current capability:
+  - Direct logical MANY_TO_MANY declarations are unsupported.
+  - A junction entity with two ordinary foreign keys can be represented.
+  - FORGE does not yet interpret those foreign keys as a combined logical
+    association with endpoint cardinality and participation semantics.
+  - Unsupported relationship rules may remain NOT_EVALUATED.
+
   Acceptance:
-  - Every mandatory participating entity instance has at least one association.
+  - Every mandatory participating entity instance has at least one
+    association.
   - Every association references existing records on both sides.
   - Duplicate association pairs are rejected.
   - Association distribution satisfies configured requirements.
   - Validation and quality reports measure both endpoints correctly.
-  - Tests cover chunk boundaries, composite identities, optional participation, and recovery.
+  - Tests cover chunk boundaries, composite identities, optional
+    participation and recovery.
 
+### 4.3 Validation semantics
 
-- [pending] **Generation: Artifact integrity and recovery**
-  Investigate chunk writes, checkpoint commits, artifact consolidation, reconciliation, and interrupted-job recovery.
-
-  Scope:
-  - Verify atomicity and durability of chunk and consolidated CSV writes.
-  - Reconcile consolidated artifact row counts with checkpoint committed rows and entity targets.
-  - Verify checkpoint and job-progress consistency during startup recovery and resume.
-  - Test missing, truncated, uncommitted, and schema-inconsistent chunks.
-  - Verify recovery behaviour when checkpoint persistence or artifact consolidation fails.
-  - Verify interrupted-entity last-chunk discard and regeneration behaviour.
-  - Verify that recovery never exposes incomplete artifacts as valid consolidated output.
-  - Verify that quality-analysis failure after full row generation does not misrepresent the generated row count or artifact integrity.
-
-- [pending] **Generation: Quality measurement**
-  Review population, relationship, distribution, statistical fidelity, identity-space utilization, and performance measurements.
-
-  Confirmed investigation findings:
-  - Invalid numeric values can suppress all statistical measurements for an affected field.
-  - Statistical profiling retains non-empty values for all fields in memory rather than using bounded-memory numeric profiling.
-  - Unexpected categorical values are excluded from the reported configured-category breakdown.
-  - Empty categorical measurements can report a zero missing rate, which is indistinguishable from a measured zero.
-  - Zero requested rows can produce a population fidelity rate of 1.0 without a meaningful population measurement.
-  - Quality-profile construction is not fault-isolated; an analysis exception can prevent the generation result from being returned.
-  - The Results summary labels any available quality profile as High Fidelity without checking its evidence or measurement outcomes.
-  - Summary metrics and both quality visualizations can convert unavailable measurements to zero.
-  - Frontend entity-level population fidelity uses a different formula from the backend population fidelity calculation.
-  - The distribution visualization converts null, missing, empty, and invalid numeric values to zero.
-  - No dedicated quality-service Python test source was identified in the inspected test suite.
-
-  Decisions to establish:
-  - Define the semantics of zero-target population fidelity and not-applicable measurements.
-  - Define evidence-based criteria for any overall quality or High Fidelity status.
-  - Define whether distribution deviation requires configurable acceptance thresholds.
+- [confirmed] REL-02: Unsupported or unmapped relationship rules can remain
+  NOT_EVALUATED. They must not be presented as successfully validated.
 
   Acceptance:
-  - Unavailable, invalid, not-measured, and measured-zero values are distinguishable in API responses and UI.
-  - Population fidelity has one agreed calculation across backend and frontend.
-  - Unexpected categorical values and invalid numeric values are visible in quality evidence.
-  - Profiling has a defined memory strategy for large datasets.
-  - Failure in one quality dimension does not silently erase other valid measurements or misrepresent generation results.
-  - Automated tests cover quality calculations, unavailable measurements, invalid values, and analysis failures.
+  - Unsupported relationship rules remain explicitly identifiable.
+  - NOT_EVALUATED findings are visible in validation results.
+  - Overall conformance remains INCOMPLETE when required rules are
+    not evaluated.
 
-- [pending] **Generation: Specification compliance**
-  Review numeric generation, decimal precision, cross-field consistency, semantic formats, value conversion, and constraint enforcement.
+- [pending] SPEC-03: Define and implement explicit reporting semantics for
+  NOT_EVALUATED rules, including the difference between incomplete evidence
+  and successful conformance.
 
-- [pending] **Generation: End-to-end UI acceptance**
-  Complete a consolidated acceptance run after agreed fixes are implemented.
+- [decision] SPEC-04: Confirm whether DATE should be added to the supported
+  field vocabulary. Do not add DATE support without an explicit decision.
 
-  Suggested scenario:
-  - Parent: 125 rows, chunks of 50, 50, and 25.
-  - Child: 275 rows, chunks of 50, 50, 50, 50, 50, and 25.
-  - Child foreign key references the parent identity.
-  - Optionally include a grandchild referencing the child.
+- [decision] SPEC-05: Define the authoring-time versus runtime validation
+  contract for generation parameters.
 
-  Verify execution order, complete parent key availability, referential integrity, exact row counts, partial chunks, identity uniqueness, validation, quality results, and complete CSV artifacts.
+---
 
-- [pending] **Activity: Persistence concurrency**
-  Investigate concurrent writes from multiple activity service instances and application workers.
+## 5. Test gaps
 
-- [pending] **Activity: Metadata exposure**
-  Review which activity metadata is appropriate for Recent Activity and which should remain operational or restricted.
+- [test-gap] TEST-01: Add semantic store corruption and resume tests.
+- [test-gap] TEST-02: Add final dataset semantic UNIQUE validation tests.
+- [test-gap] TEST-03: Add population analyzer tests for categorical and
+  bounded integer identity capacity.
+- [test-gap] TEST-04: Add population analyzer tests for multiple independent
+  foreign-key identity dimensions referencing the same parent.
+- [test-gap] TEST-05: Add generation-service recovery orchestration tests.
+- [test-gap] TEST-06: Add artifact row-count and schema reconciliation tests.
+- [test-gap] TEST-07: Add activity repository persistence and concurrency tests.
+- [test-gap] TEST-08: Add activity index recovery tests for malformed complete
+  JSONL records.
+- [test-gap] TEST-09: Add specification preflight and whole-candidate
+  validation tests.
+- [test-gap] TEST-10: Add validator tests for nulls, malformed typed values,
+  domain bounds, artifact-reader failures and NOT_EVALUATED semantics.
+  Verify that validator exceptions do not silently terminate validation or
+  misrepresent conformance.
+- [test-gap] TEST-11: Add regression tests for GEN-VAL-01, ensuring
+  post-generation validation exceptions do not misclassify completed generation.
+- [test-gap] TEST-12: Add end-to-end MANY_TO_MANY tests when that capability
+  is implemented.
+- [test-gap] TEST-13: Add quality reporting regression tests for zero-target
+  populations, empty categorical measurements, backend/frontend fidelity
+  agreement, invalid distribution measurements, invalid numeric values,
+  unexpected categorical values, unavailable versus measured-zero values,
+  bounded-memory profiling and isolated quality-analysis failures.
+- [test-gap] TEST-14: Add activity taxonomy tests for cancellation and
+  duplication recording once the corresponding product decisions are made.
 
-- [pending] **Activity: Event taxonomy and product scope**
-  Confirm whether data-model duplication and generation cancellation are supported workflows.
+Existing coverage must be reused. Do not add duplicate tests merely to repeat
+behavior already adequately tested.
 
+---
 
-## 2. Found Gaps
-
-### Generation and semantic data
-
-- Semantic UNIQUE values are not comprehensively enforced across generation chunks and the complete dataset.
-- Semantic value persistence and recovery need stronger duplicate handling.
-- Random generator state is not restored when resuming an interrupted entity, which can cause resumed output to differ from uninterrupted output.
-- Chunk writing and consolidated CSV artifact recovery require further reliability review.
-
-### Artifact integrity and recovery
-
-- Chunk CSV files are written directly to their final paths rather than through temporary files and atomic replacement. An interrupted write can leave a truncated chunk.
-- Consolidated entity CSV files are also written directly to their final paths. A read or schema failure during consolidation can leave a partial consolidated artifact.
-- Consolidation does not compare its actual output row count with the checkpoint's committed row count or the entity target.
-- The artifact reader checks committed chunk presence but does not independently establish all recovery invariants, including contiguous chunk numbering, consistent schema, and expected row counts.
-- Recovery reconciliation has safeguards for contiguous chunks, missing files, and truncated chunks, but dedicated service-level recovery tests were not found in the inspected test suite.
-- Direct test coverage was not found for checkpoint/job-progress divergence, checkpoint save failure, interrupted recovery, or consolidation failure scenarios.
-- The recovery policy discards the last committed chunk of an interrupted active entity. Its correctness and expected regeneration behaviour require explicit acceptance testing.
-
-### Numeric generation and validation
-
-- DECIMAL specifications do not fully support precision and scale.
-- Numeric validation uses binary floating-point conversion for DECIMAL values.
-- Numeric cross-field comparisons, such as `BRGEW >= NTGEW`, are not currently supported.
-- Specification import converts fractional numeric bounds to float, potentially losing precision.
-
-### Quality analysis
-
-- Numeric statistical reporting can omit an entire field when invalid values are encountered.
-- Statistical profiling retains non-empty values for all fields in memory, creating a scaling risk for large datasets.
-- Unexpected categorical values are excluded from the configured-category breakdown rather than reported explicitly.
-- Empty categorical measurements can report a zero missing rate, making unavailable evidence indistinguishable from a measured zero.
-- Zero requested rows can produce a perfect population fidelity rate despite there being no meaningful population target.
-- Quality status can display High Fidelity without evidence-based criteria.
-- Missing population fidelity measurements can be displayed as zero in the summary and population visualization.
-- Population chart datasets convert unavailable entity-level requested and generated counts to zero.
-- Frontend entity-level population fidelity uses a different formula from the backend calculation.
-- Distribution visualization converts unavailable or invalid numeric measurements to zero, potentially presenting missing evidence as measured results.
-- Quality-profile construction runs after validation and can raise an exception that prevents the generation result from being returned.
-- Quality analysis has no dedicated test file in the inspected test suite; quality failure and partial-artifact scenarios need explicit coverage.
-- Validator sections handle selected conversion and comparison errors, but some malformed values and artifact-reader failures can still escape as exceptions.
-- Identity-space capacity can be inflated by duplicate categorical values.
+## 6. Completed work
 
 ### Activity logging
 
-- Whole-specification AI proposal generation activity gap resolved; successful proposals now create a workspace-level activity entry.
+- [done] Record specification save activity.
+  Added SPECIFICATION_SAVED, source attribution, operation, outcome, revision
+  and structural counts. AI-originated save was verified through the FORGE UI.
 
+- [done] Record Specification Wizard CSV import activity.
+  SPECIFICATION_IMPORT_APPLIED was verified after successful application of
+  CSV additions.
 
-## 3. Features to Implement
+- [done] Record whole-specification AI proposal generation.
+  Added workspace-level AI_PROPOSAL_GENERATED activity for successful
+  whole-specification proposals, including proposal outcome, deterministic
+  validation summary and structural counts. Verified through the FORGE UI.
 
-- [done] **Record specification save activity**
-  Added `SPECIFICATION_SAVED`, source attribution, operation, outcome, revision, and structural counts. Verified AI-originated save through the FORGE UI.
+- [done] Enrich specification validation activity.
+  Added outcome, specification revision, continuation status,
+  error/warning/passed counts, total checks and validated entity count to
+  MODEL_VALIDATED and MODEL_VALIDATION_FAILED activity metadata.
+  Successful validation was verified through the FORGE UI.
 
-- [done] **Record Specification Wizard CSV import activity**
-  Verified `SPECIFICATION_IMPORT_APPLIED` after successful application of CSV additions.
+### Entity population editing
 
-- [done] **Record whole-specification AI proposal generation**
-  Added workspace-level `AI_PROPOSAL_GENERATED` activity for successful whole-specification proposals, including proposal outcome, deterministic validation summary, and structural counts. Verified through the FORGE UI alongside the separate AI-sourced `SPECIFICATION_SAVED` event.
+- [done] Support population scaling updates in Entity Edit.
+  Enabled editing of FIXED and SCALABLE population modes alongside entity
+  description and population count. Updates record only actual changes with
+  before/after metadata. Verified scaling-only and combined updates through
+  the FORGE UI.
 
-- [done] **Enrich specification validation activity**
-  Added outcome, specification revision, continuation status, error/warning/passed counts, total checks, and validated entity count to `MODEL_VALIDATED` and `MODEL_VALIDATION_FAILED` activity metadata. Successful validation was verified through the FORGE UI, including reconciliation of all 17 findings.
+### Generation semantic uniqueness
 
-- [pending] **Support DECIMAL precision and scale**
-  Add optional precision and scale to DECIMAL field specifications and enforce them during generation.
+- [done] Enforce semantic UNIQUE values across generation chunks and
+  persisted semantic batches.
+  Existing implementation checks within-batch and persisted-value collisions,
+  refills missing values and persists semantic values. Existing tests cover
+  cross-chunk uniqueness and resume behavior.
+  This does not close SEM-01 or SEM-02.
 
-- [pending] **Support numeric cross-field constraints**
-  Enable comparisons between fields rather than only comparisons against constant values.
+---
 
-- [pending] **Improve quality reporting**
-  Report unexpected categories, distinguish invalid and missing values, and establish evidence-based quality status.
+## 7. End-to-end FORGE UI acceptance
 
-- [pending] **Improve statistical profiling**
-  Support bounded-memory profiling for large generated datasets.
+Acceptance must be performed through the FORGE UI.
+Source inspection and automated tests are supporting evidence, not UI
+acceptance proof.
 
-- [pending] **Improve identity-space calculations**
-  Count distinct categorical values when calculating identity capacity.
+### 7.1 Core generation scenario
 
+Use a fresh data model.
 
-## 4. Bugs to Resolve
+Scenario:
+- Parent entity: 125 rows, chunks of 50, 50 and 25.
+- Child entity: 275 rows, chunks of 50, 50, 50, 50, 50 and 25.
+- Child foreign key references the parent identity.
+- Optionally include a grandchild entity referencing the child.
+- Use a chunk size of 50.
+- Do not use alternate-key foreign keys in this scenario because current
+  specification validation restricts FK targets to declared identity fields.
 
-- [pending] **Enforce semantic uniqueness across chunks**
-  Prevent duplicate semantic UNIQUE values across the complete generated dataset.
+Verify:
+- Parent-before-child execution.
+- Complete parent key availability.
+- Valid foreign-key references across all chunks.
+- Exact requested row counts.
+- Correct final partial chunks.
+- Identity uniqueness.
+- Validation results and conformance status.
+- Quality metrics and unavailable metric presentation.
+- Complete exported CSV files.
+- Results UI agrees with actual generated data.
 
-- [pending] **Enforce uniqueness in semantic storage**
-  Detect and reject duplicate values when appending to the semantic store.
+### 7.2 Semantic uniqueness scenario
 
-- [pending] **Validate semantic uniqueness after generation**
-  Check semantic UNIQUE fields across the complete generated dataset.
+- Include a semantic UNIQUE field.
+- Generate multiple chunks.
+- Verify uniqueness across the complete output.
+- Interrupt and resume generation.
+- Verify persisted semantic state and final uniqueness.
 
-- [pending] **Include semantic uniqueness in quality metrics**
-  Make uniqueness violations visible in generation quality results.
+### 7.3 Recovery scenario
 
-- [pending] **Preserve random generator state on resume**
-  Restore or correctly advance random streams when resuming interrupted generation.
+- Interrupt a multi-chunk generation.
+- Resume through the UI.
+- Verify checkpoint reconciliation, chunk completeness, row counts and
+  final artifact consistency.
+- Compare with an uninterrupted run using the same specification and seed
+  where deterministic equivalence is expected.
 
-- [pending] **Preserve exact decimal representation**
-  Avoid precision loss during specification import, generation, validation, persistence, and CSV processing.
+### 7.4 Specification and validation scenario
 
-- [pending] **Report invalid numeric values**
-  Prevent invalid values from silently suppressing an entire field's statistical results.
+- Exercise invalid and warning-only specifications.
+- Verify invalid specifications are blocked before job creation.
+- Verify warning-only specifications remain eligible for generation.
+- Verify execution status remains separate from conformance status.
+- Verify NOT_EVALUATED findings are not presented as successful checks.
 
-- [pending] **Report unavailable quality metrics correctly**
-  Preserve the distinction between measured zero, unavailable, invalid, and not-applicable measurements throughout the API and UI. Do not substitute zero for missing evidence or report High Fidelity without agreed supporting criteria.
+### 7.5 Activity scenario
 
-- [pending] **Align population fidelity calculations**
-  Use one agreed population fidelity definition across backend analysis, entity-level UI calculations, summaries, and visualizations. Define the behaviour for zero requested rows.
+- Verify generation start and terminal activity events.
+- Verify cancellation activity behavior once its product decision is made.
+- Verify actor, target and data-model descriptions.
+- Verify no raw metadata or internal identifiers are exposed.
+- Verify unknown presentation values do not break the activity feed.
 
-- [pending] **Report unexpected categorical values**
-  Include observed values outside the configured categorical domain in quality evidence and make their counts and impact visible.
+### 7.6 MANY_TO_MANY scenario
 
-- [pending] **Make quality analysis resilient**
-  Isolate failures by quality dimension so an exception in one analysis does not prevent other valid measurements or the generation result from being returned.
+Pending implementation and product contract.
+Verify both endpoints, mandatory/optional participation, duplicate association
+prevention, composite identities, chunk boundaries, recovery and quality
+reporting.
 
-- [pending] **Make artifact chunk writes atomic**
-  Prevent interrupted chunk writes from exposing truncated files at committed artifact paths.
+---
 
-- [pending] **Make consolidated artifact writes atomic**
-  Build consolidated CSV output separately and publish it only after successful completion and integrity checks.
-
-- [pending] **Reconcile consolidated artifact row counts**
-  Verify consolidated row counts against checkpoint committed rows and entity targets before treating artifacts as usable.
-
-- [pending] **Correct generation failure-state classification**
-  Distinguish generation/execution failures from unexpected exceptions during validation execution, quality analysis, artifact finalization, and persistence. Preserve accurate generated-row counts, validation outcomes, and artifact state.
-
-- [pending] **Harden validator exception handling**
-  Ensure malformed values and artifact-reading failures are reported consistently without silently terminating validation or misrepresenting validation outcomes.
-
-- [pending] **Test artifact recovery and consolidation failure scenarios**
-  Cover missing and truncated committed chunks, uncommitted chunks, schema mismatches, row-count mismatches, checkpoint/job-progress divergence, and checkpoint persistence failures.
-
-- [pending] **Add dedicated quality measurement tests**
-  Cover numeric fields containing invalid values, empty datasets, zero-target populations, unexpected categorical values, unavailable measurements, fidelity calculation consistency, bounded-memory behaviour, and isolated quality-analysis failures.
-
-- [done] **Support population scaling updates in Entity Edit**
-  Enabled editing of FIXED and SCALABLE population modes alongside entity description and population count. Updates record only actual changes with before/after metadata, while unchanged submissions avoid unnecessary persistence and activity records. Verified scaling-only and combined updates through the FORGE UI.
-
-
-## Engineering Principles
+## 8. Engineering principles
 
 - Specification remains the source of truth.
 - Do not change code merely to accommodate the current specification.
 - Preserve existing working-tree changes.
 - Complete investigations before implementing agreed fixes.
-- Distinguish implementation defects from capabilities not yet supported by the specification.
+- Distinguish implementation defects from capabilities not yet supported by
+  the specification.
+- Do not silently convert unavailable evidence into successful outcomes.
+- Preserve independent generation and validation statuses.
+- Reuse existing tests and avoid duplicate coverage.
 - Perform end-to-end acceptance through the FORGE UI.
+- Do not commit or push without explicit approval.
