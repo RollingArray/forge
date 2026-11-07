@@ -48,6 +48,32 @@
 - [pending] **Generation: Quality measurement**
   Review population, relationship, distribution, statistical fidelity, identity-space utilization, and performance measurements.
 
+  Confirmed investigation findings:
+  - Invalid numeric values can suppress all statistical measurements for an affected field.
+  - Statistical profiling retains non-empty values for all fields in memory rather than using bounded-memory numeric profiling.
+  - Unexpected categorical values are excluded from the reported configured-category breakdown.
+  - Empty categorical measurements can report a zero missing rate, which is indistinguishable from a measured zero.
+  - Zero requested rows can produce a population fidelity rate of 1.0 without a meaningful population measurement.
+  - Quality-profile construction is not fault-isolated; an analysis exception can prevent the generation result from being returned.
+  - The Results summary labels any available quality profile as High Fidelity without checking its evidence or measurement outcomes.
+  - Summary metrics and both quality visualizations can convert unavailable measurements to zero.
+  - Frontend entity-level population fidelity uses a different formula from the backend population fidelity calculation.
+  - The distribution visualization converts null, missing, empty, and invalid numeric values to zero.
+  - No dedicated quality-service Python test source was identified in the inspected test suite.
+
+  Decisions to establish:
+  - Define the semantics of zero-target population fidelity and not-applicable measurements.
+  - Define evidence-based criteria for any overall quality or High Fidelity status.
+  - Define whether distribution deviation requires configurable acceptance thresholds.
+
+  Acceptance:
+  - Unavailable, invalid, not-measured, and measured-zero values are distinguishable in API responses and UI.
+  - Population fidelity has one agreed calculation across backend and frontend.
+  - Unexpected categorical values and invalid numeric values are visible in quality evidence.
+  - Profiling has a defined memory strategy for large datasets.
+  - Failure in one quality dimension does not silently erase other valid measurements or misrepresent generation results.
+  - Automated tests cover quality calculations, unavailable measurements, invalid values, and analysis failures.
+
 - [pending] **Generation: Specification compliance**
   Review numeric generation, decimal precision, cross-field consistency, semantic formats, value conversion, and constraint enforcement.
 
@@ -100,11 +126,16 @@
 
 ### Quality analysis
 
-- Unexpected categorical values are not explicitly reported.
 - Numeric statistical reporting can omit an entire field when invalid values are encountered.
-- Statistical profiling retains all field values in memory.
+- Statistical profiling retains non-empty values for all fields in memory, creating a scaling risk for large datasets.
+- Unexpected categorical values are excluded from the configured-category breakdown rather than reported explicitly.
+- Empty categorical measurements can report a zero missing rate, making unavailable evidence indistinguishable from a measured zero.
+- Zero requested rows can produce a perfect population fidelity rate despite there being no meaningful population target.
 - Quality status can display High Fidelity without evidence-based criteria.
-- Missing population fidelity measurements can be displayed as zero.
+- Missing population fidelity measurements can be displayed as zero in the summary and population visualization.
+- Population chart datasets convert unavailable entity-level requested and generated counts to zero.
+- Frontend entity-level population fidelity uses a different formula from the backend calculation.
+- Distribution visualization converts unavailable or invalid numeric measurements to zero, potentially presenting missing evidence as measured results.
 - Quality-profile construction runs after validation and can raise an exception that prevents the generation result from being returned.
 - Quality analysis has no dedicated test file in the inspected test suite; quality failure and partial-artifact scenarios need explicit coverage.
 - Validator sections handle selected conversion and comparison errors, but some malformed values and artifact-reader failures can still escape as exceptions.
@@ -169,7 +200,16 @@
   Prevent invalid values from silently suppressing an entire field's statistical results.
 
 - [pending] **Report unavailable quality metrics correctly**
-  Do not represent missing measurements as zero or report High Fidelity without supporting evidence.
+  Preserve the distinction between measured zero, unavailable, invalid, and not-applicable measurements throughout the API and UI. Do not substitute zero for missing evidence or report High Fidelity without agreed supporting criteria.
+
+- [pending] **Align population fidelity calculations**
+  Use one agreed population fidelity definition across backend analysis, entity-level UI calculations, summaries, and visualizations. Define the behaviour for zero requested rows.
+
+- [pending] **Report unexpected categorical values**
+  Include observed values outside the configured categorical domain in quality evidence and make their counts and impact visible.
+
+- [pending] **Make quality analysis resilient**
+  Isolate failures by quality dimension so an exception in one analysis does not prevent other valid measurements or the generation result from being returned.
 
 - [pending] **Make artifact chunk writes atomic**
   Prevent interrupted chunk writes from exposing truncated files at committed artifact paths.
@@ -188,6 +228,9 @@
 
 - [pending] **Test artifact recovery and consolidation failure scenarios**
   Cover missing and truncated committed chunks, uncommitted chunks, schema mismatches, row-count mismatches, checkpoint/job-progress divergence, and checkpoint persistence failures.
+
+- [pending] **Add dedicated quality measurement tests**
+  Cover numeric fields containing invalid values, empty datasets, zero-target populations, unexpected categorical values, unavailable measurements, fidelity calculation consistency, bounded-memory behaviour, and isolated quality-analysis failures.
 
 - [done] **Support population scaling updates in Entity Edit**
   Enabled editing of FIXED and SCALABLE population modes alongside entity description and population count. Updates record only actual changes with before/after metadata, while unchanged submissions avoid unnecessary persistence and activity records. Verified scaling-only and combined updates through the FORGE UI.
