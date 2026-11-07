@@ -87,6 +87,60 @@ def test_semantic_generation_refills_missing_values(monkeypatch):
     assert "Count: 1" in calls[1]["messages"][1]["content"]
 
 
+def test_semantic_generation_excludes_previously_persisted_values(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [[
+            "product 0",
+            " Product 1 ",
+            "Product 2",
+            "Product 3",
+        ]],
+    )
+
+    result = provider.generate_semantic_values(
+        description="Realistic aerospace product name.",
+        mode="UNIQUE",
+        count=2,
+        exclude_values=[" Product 0 ", "PRODUCT 1"],
+    )
+
+    assert result == ["Product 2", "Product 3"]
+    assert len(calls) == 1
+
+    prompt = calls[0]["messages"][1]["content"]
+    assert "Previously generated values (do not repeat):" in prompt
+    assert json.loads(prompt.split(
+        "Previously generated values (do not repeat):\n", 1
+    )[1]) == ["Product 0", "PRODUCT 1"]
+
+
+def test_semantic_generation_refills_after_exclusions_and_duplicates(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [
+            ["existing", "Alpha", " alpha "],
+            ["Beta", "Gamma"],
+        ],
+    )
+
+    result = provider.generate_semantic_values(
+        description="Realistic aerospace product name.",
+        mode="UNIQUE",
+        count=3,
+        exclude_values=["Existing"],
+    )
+
+    assert result == ["Alpha", "Beta", "Gamma"]
+    assert len(calls) == 2
+
+    second_prompt = calls[1]["messages"][1]["content"]
+    assert "Count: 2" in second_prompt
+    assert "Previously generated values (do not repeat):" in second_prompt
+    assert json.loads(second_prompt.split(
+        "Previously generated values (do not repeat):\n", 1
+    )[1]) == ["Existing", "Alpha"]
+
 def _refinement_provider(monkeypatch, refinement_response):
     class FakeResponse:
         def __init__(self, content):
@@ -420,7 +474,14 @@ def test_whole_specification_does_not_retry_invalid_configuration(
     )
 
     assert result.status == "PROPOSE"
-    assert result.specification == invalid_specification
+    assert (
+        result.specification["entities"][0]["fields"][0]["identity"]["strategy"]
+        == "SEQUENTIAL_ID"
+    )
+    assert result.specification["entities"][0]["population"] == {
+        "scaling": "SCALABLE",
+        "count": 100,
+    }
     assert len(calls) == 1
     assert len(validation_calls) == 0
     assert calls[0]["options"] == {

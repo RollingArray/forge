@@ -81,6 +81,7 @@ class AIService:
         description: str,
         mode: str,
         count: int,
+        exclude_values: list[str] | None = None,
         on_call_completed: Callable[[int, int, float, bool], None] | None = None,
     ) -> list[str]:
         """Generate semantic values for production data generation."""
@@ -89,6 +90,7 @@ class AIService:
             description=description,
             mode=mode,
             count=count,
+            exclude_values=exclude_values,
             on_call_completed=on_call_completed,
         )
 

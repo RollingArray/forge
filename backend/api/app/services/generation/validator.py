@@ -1439,6 +1439,26 @@ class GenerationValidator:
                 details=details,
             )
 
+        # Relationship cardinality is evaluated independently from
+        # foreign-key validity. Surface its failures in the final result
+        # instead of leaving them only in rule-level evidence.
+        for result in rule_results:
+            if (
+                result["status"] != "FAILED"
+                or result["category"] != "RELATIONSHIP_CARDINALITY"
+            ):
+                continue
+
+            details = result.get("details") or {}
+            reasons = details.get("reasons") or [
+                details.get("reason", "Relationship cardinality failed.")
+            ]
+
+            errors.append(
+                f"Relationship conformance failed "
+                f"[{result['rule_id']}]: {'; '.join(reasons)}"
+            )
+
         evidence.rule_results = rule_results
 
         rule_status_counts = {

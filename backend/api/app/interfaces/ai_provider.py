@@ -14,6 +14,7 @@ Email: ranjoy.sen@collins.com
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Callable
 
 
 
@@ -193,6 +194,8 @@ class AIProvider(ABC):
         description: str,
         mode: str,
         count: int,
+        exclude_values: list[str] | None = None,
+        on_call_completed: Callable[[int, int, float, bool], None] | None = None,
     ) -> list[str]:
         """Generate semantic STRING values for production data generation."""
         raise NotImplementedError

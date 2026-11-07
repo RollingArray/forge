@@ -702,6 +702,7 @@ class GenerationExecutor:
                             description=description,
                             mode="UNIQUE",
                             count=missing_count,
+                            exclude_values=persisted_values,
                             on_call_completed=record_semantic_call,
                         )
 
@@ -723,6 +724,31 @@ class GenerationExecutor:
                                 f"{entity_name}.{field_name} returned "
                                 f"{len(semantic_batch)} values; "
                                 f"expected {missing_count}."
+                            )
+
+                        normalized_existing = {
+                            value.strip().casefold()
+                            for value in persisted_values
+                            if isinstance(value, str)
+                        }
+
+                        normalized_batch = [
+                            value.strip().casefold()
+                            for value in semantic_batch
+                            if isinstance(value, str)
+                        ]
+
+                        if (
+                            len(normalized_batch) != missing_count
+                            or any(not value for value in normalized_batch)
+                            or len(set(normalized_batch)) != missing_count
+                            or normalized_existing.intersection(normalized_batch)
+                        ):
+                            raise GenerationExecutionError(
+                                f"Semantic generation for "
+                                f"{entity_name}.{field_name} returned "
+                                "blank, duplicate, or previously generated "
+                                "UNIQUE values."
                             )
 
                         semantic_activity = self._generation_log_store.append(
@@ -892,7 +918,10 @@ class GenerationExecutor:
                         if (
                             group.child_entity == entity_name
                             and group.resolution_status == "MAPPED"
-                            and group.relationship_type.upper() == "ONE_TO_MANY"
+                            and group.relationship_type.upper() in {
+                                "ONE_TO_MANY",
+                                "ONE_TO_ONE",
+                            }
                             and group.parent_participation.upper() == "MANDATORY"
                         )
                     ],

@@ -39,7 +39,17 @@ class GenerationRunService:
         job_id: str,
         on_entity_completed: Callable[[Any], None] | None = None,
         on_chunk_completed: Callable[
-            [str, int, int, int, list[dict[str, Any]], float, float],
+            [
+                str,
+                int,
+                int,
+                int,
+                list[dict[str, Any]],
+                float,
+                float,
+                list[dict[str, Any]],
+                list[dict[str, object]],
+            ],
             None,
         ] | None = None,
     ) -> GenerationResult:

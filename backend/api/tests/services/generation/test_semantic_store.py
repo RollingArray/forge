@@ -30,6 +30,7 @@ def test_semantic_values_are_persisted_and_retrieved(
     ]
 
     store.save(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
@@ -38,6 +39,7 @@ def test_semantic_values_are_persisted_and_retrieved(
     )
 
     result = store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
@@ -68,6 +70,7 @@ def test_saving_multiple_fields_preserves_existing_semantic_state(
     ]
 
     store.save(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
@@ -76,6 +79,7 @@ def test_saving_multiple_fields_preserves_existing_semantic_state(
     )
 
     store.save(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_GROUP",
@@ -84,12 +88,14 @@ def test_saving_multiple_fields_preserves_existing_semantic_state(
     )
 
     first = store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
     )
 
     second = store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_GROUP",
@@ -116,6 +122,7 @@ def test_semantic_store_survives_new_store_instance(
     ]
 
     first_store.save(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
@@ -126,6 +133,7 @@ def test_semantic_store_survives_new_store_instance(
     second_store = _store(tmp_path, monkeypatch)
 
     result = second_store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
         job_id="FORGE-TEST",
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
@@ -134,3 +142,98 @@ def test_semantic_store_survives_new_store_instance(
     assert result is not None
     assert result["values"] == values
     assert result["mode"] == "UNIQUE"
+
+
+def test_append_unique_rejects_duplicates_in_first_batch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = _store(tmp_path, monkeypatch)
+
+    try:
+        store.append_unique(
+            data_model_id="FORGE-DATA-MODEL-TEST",
+            job_id="FORGE-TEST",
+            entity_name="PRODUCT",
+            field_name="PRODUCT_NAME",
+            values=["Hydraulic Pump", " hydraulic pump "],
+        )
+    except ValueError as exc:
+        assert "Duplicate UNIQUE semantic values" in str(exc)
+    else:
+        raise AssertionError("Expected duplicate first batch to be rejected.")
+
+    assert store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    ) is None
+
+
+def test_append_unique_rejects_duplicates_across_batches(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = _store(tmp_path, monkeypatch)
+
+    store.append_unique(
+        data_model_id="FORGE-DATA-MODEL-TEST",
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+        values=["Hydraulic Pump", "Flight Control Computer"],
+    )
+
+    try:
+        store.append_unique(
+            data_model_id="FORGE-DATA-MODEL-TEST",
+            job_id="FORGE-TEST",
+            entity_name="PRODUCT",
+            field_name="PRODUCT_NAME",
+            values=["Landing Gear Assembly", " hydraulic pump "],
+        )
+    except ValueError as exc:
+        assert "Duplicate UNIQUE semantic values" in str(exc)
+    else:
+        raise AssertionError("Expected cross-batch duplicate to be rejected.")
+
+    result = store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+
+    assert result is not None
+    assert result["values"] == [
+        "Hydraulic Pump",
+        "Flight Control Computer",
+    ]
+
+
+def test_append_unique_rejects_blank_values_in_first_batch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = _store(tmp_path, monkeypatch)
+
+    try:
+        store.append_unique(
+            data_model_id="FORGE-DATA-MODEL-TEST",
+            job_id="FORGE-TEST",
+            entity_name="PRODUCT",
+            field_name="PRODUCT_NAME",
+            values=["Hydraulic Pump", "   "],
+        )
+    except ValueError as exc:
+        assert "non-empty strings" in str(exc)
+    else:
+        raise AssertionError("Expected blank semantic value to be rejected.")
+
+    assert store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    ) is None

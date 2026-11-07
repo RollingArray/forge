@@ -97,6 +97,54 @@ class GenerationSemanticStore:
 
         current = fields.get(key)
 
+        if current is not None and current.get("mode") != "UNIQUE":
+            raise ValueError(
+                f"Cannot append UNIQUE values to semantic field {key!r} "
+                f"with mode {current.get('mode')!r}."
+            )
+
+        current_values = (
+            current.get("values", [])
+            if current is not None
+            else []
+        )
+
+        if not isinstance(current_values, list):
+            raise ValueError(
+                f"Persisted semantic values are invalid for {key!r}."
+            )
+
+        if not isinstance(values, list):
+            raise ValueError(
+                f"Semantic values must be a list for {key!r}."
+            )
+
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in [*current_values, *values]
+        ):
+            raise ValueError(
+                f"Semantic values must be non-empty strings for {key!r}."
+            )
+
+        normalized_existing = {
+            value.strip().casefold()
+            for value in current_values
+        }
+
+        normalized_batch = [
+            value.strip().casefold()
+            for value in values
+        ]
+
+        if (
+            len(set(normalized_batch)) != len(normalized_batch)
+            or normalized_existing.intersection(normalized_batch)
+        ):
+            raise ValueError(
+                f"Duplicate UNIQUE semantic values detected for {key!r}."
+            )
+
         if current is None:
             self.save(
                 data_model_id=data_model_id,
@@ -112,13 +160,6 @@ class GenerationSemanticStore:
             raise ValueError(
                 f"Cannot append UNIQUE values to semantic field {key!r} "
                 f"with mode {current.get('mode')!r}."
-            )
-
-        current_values = current.get("values", [])
-
-        if not isinstance(current_values, list):
-            raise ValueError(
-                f"Persisted semantic values are invalid for {key!r}."
             )
 
         fields[key] = {

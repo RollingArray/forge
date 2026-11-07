@@ -15,6 +15,7 @@ Email: ranjoy.sen@collins.com
 from __future__ import annotations
 
 import json
+from typing import Callable
 from time import perf_counter
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -2077,7 +2078,8 @@ class OllamaAIProvider(AIProvider):
         description: str,
         mode: str,
         count: int,
-        on_call_completed: callable | None = None,
+        exclude_values: list[str] | None = None,
+        on_call_completed: Callable[[int, int, float, bool], None] | None = None,
     ) -> list[str]:
         """Generate semantic STRING values for production generation."""
 
@@ -2100,7 +2102,21 @@ class OllamaAIProvider(AIProvider):
             )
 
         collected_values: list[str] = []
-        collected_set: set[str] = set()
+
+        excluded_values = [
+            value.strip()
+            for value in (exclude_values or [])
+            if isinstance(value, str) and value.strip()
+        ]
+
+        collected_set = (
+            {
+                value.strip().casefold()
+                for value in excluded_values
+            }
+            if normalized_mode == "UNIQUE"
+            else set()
+        )
 
         # Bound repeated refill calls when the model returns duplicate values
         # or persistently underproduces. The initial request plus up to 5
@@ -2138,8 +2154,15 @@ class OllamaAIProvider(AIProvider):
                             f"Description: {normalized_description}"
                             + (
                                 "\nPreviously generated values (do not repeat):\n"
-                                + json.dumps(collected_values, ensure_ascii=False)
-                                if collected_values
+                                + json.dumps(
+                                    [
+                                        *excluded_values,
+                                        *collected_values,
+                                    ],
+                                    ensure_ascii=False,
+                                )
+                                if normalized_mode == "UNIQUE"
+                                and (excluded_values or collected_values)
                                 else ""
                             )
                         ),
@@ -2260,8 +2283,14 @@ class OllamaAIProvider(AIProvider):
             for value in values:
                 normalized_value = value.strip()
 
-                if normalized_value not in collected_set:
-                    collected_set.add(normalized_value)
+                comparison_value = (
+                    normalized_value.casefold()
+                    if normalized_mode == "UNIQUE"
+                    else normalized_value
+                )
+
+                if comparison_value not in collected_set:
+                    collected_set.add(comparison_value)
                     collected_values.append(normalized_value)
 
                     if len(collected_values) == count:
