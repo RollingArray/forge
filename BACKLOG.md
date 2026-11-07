@@ -8,8 +8,42 @@
 - [pending] **Generation: Population planning and identity capacity**
   Review composite identities, categorical domains, relationship-backed identity dimensions, and feasibility calculations.
 
+- [pending] **Implement end-to-end MANY_TO_MANY relationship support**
+
+  Implement logical MANY_TO_MANY relationships using an explicitly defined junction/association entity and its physical foreign-key mappings.
+
+  Scope:
+  - Resolve logical relationships to the appropriate junction entity and its two endpoint foreign keys.
+  - Validate junction mappings against the identities of both participating entities.
+  - Generate valid associations with configurable or deterministic distribution.
+  - Enforce mandatory and optional participation on both sides.
+  - Prevent duplicate association pairs.
+  - Support composite junction identities.
+  - Preserve referential integrity across chunks and generation recovery.
+  - Validate association cardinality and participation.
+  - Include MANY_TO_MANY relationship fidelity in generation quality metrics.
+
+  Acceptance:
+  - Every mandatory participating entity instance has at least one association.
+  - Every association references existing records on both sides.
+  - Duplicate association pairs are rejected.
+  - Association distribution satisfies configured requirements.
+  - Validation and quality reports measure both endpoints correctly.
+  - Tests cover chunk boundaries, composite identities, optional participation, and recovery.
+
+
 - [pending] **Generation: Artifact integrity and recovery**
   Investigate chunk writes, checkpoint commits, artifact consolidation, reconciliation, and interrupted-job recovery.
+
+  Scope:
+  - Verify atomicity and durability of chunk and consolidated CSV writes.
+  - Reconcile consolidated artifact row counts with checkpoint committed rows and entity targets.
+  - Verify checkpoint and job-progress consistency during startup recovery and resume.
+  - Test missing, truncated, uncommitted, and schema-inconsistent chunks.
+  - Verify recovery behaviour when checkpoint persistence or artifact consolidation fails.
+  - Verify interrupted-entity last-chunk discard and regeneration behaviour.
+  - Verify that recovery never exposes incomplete artifacts as valid consolidated output.
+  - Verify that quality-analysis failure after full row generation does not misrepresent the generated row count or artifact integrity.
 
 - [pending] **Generation: Quality measurement**
   Review population, relationship, distribution, statistical fidelity, identity-space utilization, and performance measurements.
@@ -47,6 +81,16 @@
 - Random generator state is not restored when resuming an interrupted entity, which can cause resumed output to differ from uninterrupted output.
 - Chunk writing and consolidated CSV artifact recovery require further reliability review.
 
+### Artifact integrity and recovery
+
+- Chunk CSV files are written directly to their final paths rather than through temporary files and atomic replacement. An interrupted write can leave a truncated chunk.
+- Consolidated entity CSV files are also written directly to their final paths. A read or schema failure during consolidation can leave a partial consolidated artifact.
+- Consolidation does not compare its actual output row count with the checkpoint's committed row count or the entity target.
+- The artifact reader checks committed chunk presence but does not independently establish all recovery invariants, including contiguous chunk numbering, consistent schema, and expected row counts.
+- Recovery reconciliation has safeguards for contiguous chunks, missing files, and truncated chunks, but dedicated service-level recovery tests were not found in the inspected test suite.
+- Direct test coverage was not found for checkpoint/job-progress divergence, checkpoint save failure, interrupted recovery, or consolidation failure scenarios.
+- The recovery policy discards the last committed chunk of an interrupted active entity. Its correctness and expected regeneration behaviour require explicit acceptance testing.
+
 ### Numeric generation and validation
 
 - DECIMAL specifications do not fully support precision and scale.
@@ -61,6 +105,9 @@
 - Statistical profiling retains all field values in memory.
 - Quality status can display High Fidelity without evidence-based criteria.
 - Missing population fidelity measurements can be displayed as zero.
+- Quality-profile construction runs after validation and can raise an exception that prevents the generation result from being returned.
+- Quality analysis has no dedicated test file in the inspected test suite; quality failure and partial-artifact scenarios need explicit coverage.
+- Validator sections handle selected conversion and comparison errors, but some malformed values and artifact-reader failures can still escape as exceptions.
 - Identity-space capacity can be inflated by duplicate categorical values.
 
 ### Activity logging
@@ -123,6 +170,24 @@
 
 - [pending] **Report unavailable quality metrics correctly**
   Do not represent missing measurements as zero or report High Fidelity without supporting evidence.
+
+- [pending] **Make artifact chunk writes atomic**
+  Prevent interrupted chunk writes from exposing truncated files at committed artifact paths.
+
+- [pending] **Make consolidated artifact writes atomic**
+  Build consolidated CSV output separately and publish it only after successful completion and integrity checks.
+
+- [pending] **Reconcile consolidated artifact row counts**
+  Verify consolidated row counts against checkpoint committed rows and entity targets before treating artifacts as usable.
+
+- [pending] **Correct generation failure-state classification**
+  Distinguish generation/execution failures from unexpected exceptions during validation execution, quality analysis, artifact finalization, and persistence. Preserve accurate generated-row counts, validation outcomes, and artifact state.
+
+- [pending] **Harden validator exception handling**
+  Ensure malformed values and artifact-reading failures are reported consistently without silently terminating validation or misrepresenting validation outcomes.
+
+- [pending] **Test artifact recovery and consolidation failure scenarios**
+  Cover missing and truncated committed chunks, uncommitted chunks, schema mismatches, row-count mismatches, checkpoint/job-progress divergence, and checkpoint persistence failures.
 
 - [done] **Support population scaling updates in Entity Edit**
   Enabled editing of FIXED and SCALABLE population modes alongside entity description and population count. Updates record only actual changes with before/after metadata, while unchanged submissions avoid unnecessary persistence and activity records. Verified scaling-only and combined updates through the FORGE UI.
