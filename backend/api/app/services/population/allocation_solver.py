@@ -1,7 +1,6 @@
 """Deterministic integer allocation for entity populations."""
 
 from dataclasses import dataclass
-from heapq import heappop, heappush
 from math import prod
 from typing import Mapping, Sequence
 
@@ -82,6 +81,114 @@ def _constraint_violations(
     return violations
 
 
+def _build_growth_candidate(
+    seed: str,
+    allocations: Mapping[str, int],
+    maximums: Mapping[str, int | None],
+    constraints: Sequence[object],
+    fixed_populations: Mapping[str, int],
+    max_added: int,
+) -> dict[str, int] | None:
+    """Build the smallest monotonic coordinated move for one growth seed."""
+
+    candidate = dict(fixed_populations)
+    candidate.update(allocations)
+    initial_total = sum(candidate.values())
+
+    if seed not in allocations:
+        return None
+
+    seed_maximum = maximums.get(seed)
+    if seed_maximum is not None and allocations[seed] >= seed_maximum:
+        return None
+
+    candidate[seed] += 1
+
+    def increase(name: str, value: int) -> bool:
+        if name not in allocations:
+            return False
+
+        maximum = maximums.get(name)
+        if maximum is not None and value > maximum:
+            return False
+
+        candidate[name] = max(candidate[name], value)
+
+        added = sum(candidate.values()) - initial_total
+        return added <= max_added
+
+    # Constraint repair is monotonic. Revisit constraints until all
+    # population inequalities are satisfied.
+    while True:
+        changed = False
+
+        for constraint in constraints:
+            kind = getattr(constraint, "kind", None)
+            entity = getattr(constraint, "entity", None)
+            related = tuple(
+                getattr(constraint, "related_entities", ())
+            )
+
+            if entity not in candidate:
+                return None
+
+            value = candidate[entity]
+
+            if kind == "PARENT_REQUIRED_FOR_POSITIVE_CHILD":
+                if value > 0:
+                    for parent in related:
+                        if parent not in candidate:
+                            return None
+                        if candidate[parent] <= 0:
+                            if not increase(parent, 1):
+                                return None
+                            changed = True
+
+            elif kind == "CHILD_AT_LEAST_PARENT":
+                if related:
+                    parent = related[0]
+                    if parent not in candidate:
+                        return None
+                    required = candidate[parent]
+                    if value < required:
+                        if not increase(entity, required):
+                            return None
+                        changed = True
+
+            elif kind == "CHILD_AT_MOST_PARENT":
+                if related:
+                    parent = related[0]
+                    if parent not in candidate:
+                        return None
+                    required = candidate[entity]
+                    if candidate[parent] < required:
+                        if not increase(parent, required):
+                            return None
+                        changed = True
+
+            elif kind == "IDENTITY_CAPACITY":
+                # Validate capacity after all other population repairs.
+                # A coordinated move may increase the required parent
+                # keyspace later in this same candidate.
+                continue
+
+            else:
+                return None
+
+        added = sum(candidate.values()) - initial_total
+
+        if added > max_added:
+            return None
+
+        if not changed:
+            break
+
+    if _constraint_violations(candidate, constraints):
+        return None
+
+    return candidate
+
+
 def _distribute_residual(
     residual: int,
     allocations: dict[str, int],
@@ -91,68 +198,63 @@ def _distribute_residual(
     fixed_populations: Mapping[str, int],
 ) -> int:
     """
-    Distribute residual records using weighted fairness.
+    Distribute residual records through constraint-aware growth moves.
 
-    A higher priority gives an entity a proportionally larger allocation.
-    Candidate increments are accepted only when all supported population
-    constraints remain satisfied.
+    Each move may increment multiple scalable entities to preserve
+    population constraints. Feasible moves are selected using weighted
+    fairness based on the initiating entity's current allocation.
     """
-
-    heap: list[tuple[float, int, str]] = []
-
-    for name, count in allocations.items():
-        maximum = maximums.get(name)
-        if maximum is None or count < maximum:
-            priority = priorities[name]
-            heappush(heap, (count / priority, -priority, name))
 
     remaining = residual
 
-    while remaining > 0 and heap:
-        blocked: list[str] = []
-        progressed = False
+    while remaining > 0:
+        feasible_moves: list[
+            tuple[float, int, str, dict[str, int], int]
+        ] = []
 
-        while heap:
-            _, _, name = heappop(heap)
-            current = allocations[name]
-            maximum = maximums.get(name)
-
-            if maximum is not None and current >= maximum:
-                continue
-
-            candidate = dict(fixed_populations)
-            candidate.update(allocations)
-            candidate[name] = current + 1
-
-            if _constraint_violations(candidate, constraints):
-                blocked.append(name)
-                continue
-
-            allocations[name] = current + 1
-            remaining -= 1
-
-            priority = priorities[name]
-            heappush(
-                heap,
-                (allocations[name] / priority, -priority, name),
+        for name in allocations:
+            candidate = _build_growth_candidate(
+                seed=name,
+                allocations=allocations,
+                maximums=maximums,
+                constraints=constraints,
+                fixed_populations=fixed_populations,
+                max_added=remaining,
             )
 
-            for blocked_name in blocked:
-                blocked_priority = priorities[blocked_name]
-                heappush(
-                    heap,
-                    (
-                        allocations[blocked_name] / blocked_priority,
-                        -blocked_priority,
-                        blocked_name,
-                    ),
+            if candidate is None:
+                continue
+
+            added = sum(candidate.values()) - sum(
+                fixed_populations.values()
+            ) - sum(allocations.values())
+
+            if added <= 0 or added > remaining:
+                continue
+
+            priority = priorities[name]
+            feasible_moves.append(
+                (
+                    allocations[name] / priority,
+                    -priority,
+                    name,
+                    candidate,
+                    added,
                 )
+            )
 
-            progressed = True
+        if not feasible_moves:
             break
 
-        if not progressed:
-            break
+        _, _, _, selected, added = min(
+            feasible_moves,
+            key=lambda item: (item[0], item[1], item[2]),
+        )
+
+        for name in allocations:
+            allocations[name] = selected[name]
+
+        remaining -= added
 
     return remaining
 
