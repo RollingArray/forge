@@ -50,6 +50,7 @@ Only one work package may be [active] at any time.
 
 #### WP-01: Specification integrity
 Priority: P0
+Status: [done]
 
 Scope:
 - SPEC-01: Canonical specification validation before generation.
@@ -57,11 +58,20 @@ Scope:
 - TEST-09: Specification preflight and candidate validation tests.
 
 Exit criteria:
-- Invalid specifications cannot create generation jobs or artifacts.
-- Warning-only specifications remain eligible for generation.
-- Invalid field changes cannot corrupt an existing valid specification.
-- API/service regression tests pass.
-- The behavior is verified through the FORGE UI.
+- [done] Invalid specifications cannot create generation jobs or artifacts.
+- [done] Warning-only specifications remain eligible for generation.
+- [done] Invalid field changes cannot corrupt an existing valid specification.
+- [done] API/service regression tests pass.
+- [done] The behavior is verified through the FORGE UI.
+
+Completion evidence:
+- Canonical generation preflight and whole-candidate validation are covered
+  by the existing specification validation and preflight regression tests.
+- Unsupported field types now produce explicit validation errors.
+- Constraint diagnostics identify the specific invalid entity, field,
+  operator, comparison value or numeric value.
+- 73 related regression tests passed.
+- Both additional validation fixes were verified through the FORGE UI.
 
 #### WP-02: Generated data correctness
 Priority: P0
@@ -228,16 +238,23 @@ They do not indicate that corrective work or end-to-end acceptance has passed.
   - Keep validation errors and warnings visible.
   - Do not misrepresent generated artifact completeness.
 
-- [pending] SPEC-01: Enforce canonical specification validation as a
+- [done] SPEC-01: Enforce canonical specification validation as a
   generation preflight gate.
+
+  Verified behavior: invalid specifications block generation before job
+  creation; warnings alone do not block generation; actionable findings
+  are returned.
 
   Acceptance:
   - Invalid specifications cannot create generation jobs or artifacts.
   - Warnings alone do not block generation.
   - The user receives actionable validation findings.
 
-- [pending] SPEC-02: Validate the complete candidate specification before
+- [done] SPEC-02: Validate the complete candidate specification before
   field create/update persistence.
+
+  Verified behavior: invalid candidate specifications are rejected and
+  existing valid specification state is preserved.
 
   Acceptance:
   - Invalid candidate specifications are rejected.
@@ -534,8 +551,9 @@ Positive controls:
 - [test-gap] TEST-07: Add activity repository persistence and concurrency tests.
 - [test-gap] TEST-08: Add activity index recovery tests for malformed complete
   JSONL records.
-- [test-gap] TEST-09: Add specification preflight and whole-candidate
-  validation tests.
+- [done] TEST-09: Specification preflight and whole-candidate validation
+  regression coverage is in place and passed as part of the 73-test
+  WP-01-related regression run.
 - [test-gap] TEST-10: Add validator tests for nulls, malformed typed values,
   domain bounds, artifact-reader failures and NOT_EVALUATED semantics.
   Verify that validator exceptions do not silently terminate validation or
@@ -558,6 +576,18 @@ behavior already adequately tested.
 ---
 
 ## 6. Completed work
+
+### Specification validation (WP-01)
+
+- [done] WP01-VAL-001: Detect unsupported field types.
+  Unsupported field types now produce an explicit Entity validation error
+  identifying the field, unsupported type and supported vocabulary.
+  Verified through the FORGE UI.
+
+- [done] WP01-DIAG-001: Improve constraint diagnostic precision.
+  Constraint findings now distinguish missing or unknown entities and
+  fields, unsupported operators, missing comparison values and invalid
+  numeric values. Verified through the FORGE UI.
 
 ### Activity logging
 
