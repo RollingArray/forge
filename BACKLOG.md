@@ -91,6 +91,12 @@ Exit criteria:
 - Relevant regression tests pass.
 - The supported behavior is verified through the FORGE UI.
 
+Progress:
+- Population allocation solver implementation and regression verification
+  completed. See Section 6, Population allocation (WP-02).
+- WP-02 remains open for semantic uniqueness, exact decimal handling,
+  remaining identity-capacity acceptance, and outstanding test coverage.
+
 #### WP-03: Execution, artifacts and recovery
 Priority: P0
 
@@ -626,6 +632,54 @@ behavior already adequately tested.
   refills missing values and persists semantic values. Existing tests cover
   cross-chunk uniqueness and resume behavior.
   This does not close SEM-01 or SEM-02.
+
+### Population allocation (WP-02)
+
+- [done] WP02-POP-001: Implement bounded, constraint-aware integer
+  population target allocation.
+
+  Replaced the previous allocation approach with a bounded integer solver
+  that supports coordinated allocation across entities while respecting
+  the supported population, relationship and identity constraints.
+
+  Verified solver behavior:
+  - Preserve FIXED entity populations.
+  - Respect minimum and maximum population bounds.
+  - Enforce mandatory parent participation.
+  - Respect identity capacity constraints.
+  - Preserve independent identity dimensions, including repeated references
+    to the same parent.
+  - Produce an exact requested total for FEASIBLE allocations.
+  - Distinguish FEASIBLE, INFEASIBLE and UNRESOLVED outcomes.
+  - Produce deterministic allocations for identical inputs.
+  - Independently verify the resulting allocation against its constraints.
+
+  Automated verification:
+  - 37 focused solver and integration tests passed.
+  - 4 bounded solver contract tests passed.
+  - 51 population regression tests passed.
+  - Enterprise model with 40 entities, 52 relationships, 52 foreign keys,
+    62 population constraints and 40 identity capacity definitions passed
+    independent constraint verification.
+  - Exact target totals and deterministic results verified for
+    100,000, 1,000,000 and 5,000,000 records.
+
+  FORGE UI verification:
+  - 40-entity enterprise model: 5,000,000 requested and candidate records,
+    zero gap, 40/40 entities feasible.
+  - 15-entity model: 1,000,000 requested and candidate records,
+    zero gap, 15/15 entities feasible.
+  - FIXED BUSINESS_UNIT population remained 4 in both scenarios.
+
+  Remaining verification:
+  - Dedicated finite maximum-capacity scenario.
+  - Explicit allocator handling of unsupported relationship semantics.
+  - UI driver selection currently defaults silently to the first entity.
+  - Review the Minimum Allowed label because displayed minimums can be
+    candidate-dependent.
+
+  This implementation does not by itself close all WP-02 acceptance
+  criteria or the separate semantic and decimal work items.
 
 ---
 
