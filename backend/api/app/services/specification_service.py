@@ -35,6 +35,9 @@ from app.models.specification_foreign_key_model import (
 )
 from app.constants.activity import ActivityType
 from app.services.activity_service import ActivityService
+from app.services.specification_validation_service import SpecificationValidationService
+from app.services.specification_validation_error import SpecificationValidationError
+from app.services.specification_defaults import apply_specification_defaults
 from app.services.relationship_endpoint import parse_relationship_endpoint
 from app.repositories.json_data_model_repository import (
     JsonDataModelRepository,
@@ -190,6 +193,7 @@ class SpecificationService:
         data_model_repository: DataModelRepository | None = None,
         specification_repository: SpecificationRepository | None = None,
         activity_service: ActivityService | None = None,
+        specification_validation_service: SpecificationValidationService | None = None,
     ) -> None:
         self._data_model_repository = (
             data_model_repository
@@ -205,6 +209,11 @@ class SpecificationService:
             activity_service
             if activity_service is not None
             else ActivityService()
+        )
+        self._specification_validation_service = (
+            specification_validation_service
+            if specification_validation_service is not None
+            else SpecificationValidationService()
         )
 
     def get_specification(
@@ -230,16 +239,25 @@ class SpecificationService:
         self,
         data_model_id: str,
         specification: dict[str, Any],
+        *,
+        default_assumptions: list[str] | None = None,
     ) -> dict[str, Any] | None:
-        """Persist a complete, previously validated canonical specification."""
+        """Persist a canonical specification after applying deterministic defaults."""
         with self._specification_repository.transaction(data_model_id):
 
             if self.get_specification(data_model_id=data_model_id) is None:
                 return None
 
+            candidate, applied_assumptions = apply_specification_defaults(
+                specification,
+            )
+
+            if default_assumptions is not None:
+                default_assumptions.extend(applied_assumptions)
+
             return self._specification_repository.save(
                 data_model_id=data_model_id,
-                specification=deepcopy(specification),
+                specification=candidate,
             )
 
     def create_entity(
@@ -571,6 +589,17 @@ class SpecificationService:
 
             return candidate_entity
 
+    def _validate_candidate_specification(
+        self,
+        candidate: dict[str, Any],
+    ) -> None:
+        """Reject candidates that fail canonical validation."""
+        result = self._specification_validation_service.validate(
+            candidate
+        )
+        if not result.get("can_continue", False):
+            raise SpecificationValidationError(result)
+
     def create_field(
         self,
         data_model_id: str,
@@ -647,6 +676,8 @@ class SpecificationService:
                 "fields",
                 [],
             ).append(field)
+
+            self._validate_candidate_specification(candidate)
 
             self._specification_repository.save(
                 data_model_id=data_model_id,
@@ -761,6 +792,8 @@ class SpecificationService:
 
             if not changes:
                 return candidate_field
+
+            self._validate_candidate_specification(candidate)
 
             self._specification_repository.save(
                 data_model_id=data_model_id,

@@ -40,6 +40,8 @@ from app.services.generation_validation_store import GenerationValidationStore
 from app.services.generation_event_broker import GenerationEventBroker
 from app.services.generation_log_store import GenerationLogStore
 from app.services.specification_service import SpecificationService
+from app.services.specification_validation_service import SpecificationValidationService
+from app.services.specification_validation_error import SpecificationValidationError
 
 
 class GenerationService:
@@ -54,11 +56,17 @@ class GenerationService:
         checkpoint_store: GenerationCheckpointStore | None = None,
         event_broker: GenerationEventBroker | None = None,
         generation_log_store: GenerationLogStore | None = None,
+        specification_validation_service: SpecificationValidationService | None = None,
     ) -> None:
         self._specification_service = (
             specification_service
             if specification_service is not None
             else SpecificationService()
+        )
+        self._specification_validation_service = (
+            specification_validation_service
+            if specification_validation_service is not None
+            else SpecificationValidationService()
         )
         self._generation_planner = (
             generation_planner
@@ -498,6 +506,17 @@ class GenerationService:
             generation=specification.get("generation", {}),
         )
 
+    def _validate_specification(
+        self,
+        specification: dict,
+    ) -> None:
+        """Enforce canonical validation before generation."""
+        result = self._specification_validation_service.validate(
+            specification
+        )
+        if not result.get("can_continue", False):
+            raise SpecificationValidationError(result)
+
     def create_job(
         self,
         data_model_id: str,
@@ -511,6 +530,8 @@ class GenerationService:
 
         if specification is None:
             return None
+
+        self._validate_specification(specification)
 
         plan = self._generation_planner.build(
             specification=specification,
@@ -614,6 +635,8 @@ class GenerationService:
                         "Data model specification was not found."
                     )
 
+                self._validate_specification(specification)
+
                 self._reconcile_recovery_checkpoint(
                     data_model_id=data_model_id,
                     job=job,
@@ -665,6 +688,8 @@ class GenerationService:
                     "Cannot resume generation: data model specification "
                     "was not found."
                 )
+
+            self._validate_specification(specification)
 
             self._reconcile_recovery_checkpoint(
                 data_model_id=data_model_id,
@@ -724,6 +749,8 @@ class GenerationService:
                 error_count=1,
             )
             return job
+
+        self._validate_specification(specification)
 
         self._generation_log_store.append(
             data_model_id=data_model_id,

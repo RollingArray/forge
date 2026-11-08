@@ -36,6 +36,7 @@ from app.services.generation_event_broker import GenerationEventBroker
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
 from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
+from app.services.specification_validation_error import SpecificationValidationError
 
 
 def _count_csv_data_rows(path: Path) -> int:
@@ -209,6 +210,11 @@ async def create_generation_job(
             data_model_id=data_model_id,
             user_id=user.user_id,
         )
+    except SpecificationValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.result,
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -825,6 +831,11 @@ async def start_generation_job(
             data_model_id=data_model_id,
             job_id=job_id,
         )
+    except SpecificationValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.result,
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

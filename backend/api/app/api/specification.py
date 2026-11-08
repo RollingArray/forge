@@ -63,6 +63,7 @@ from app.services.population_service import PopulationService
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
 from app.services.specification_import_service import SpecificationImportService
+from app.services.specification_validation_error import SpecificationValidationError
 
 
 router = APIRouter(
@@ -141,9 +142,11 @@ async def save_specification(
 
     # Semantic validation is available separately. Persist structurally valid
     # specifications so users can correct semantic findings in Model Studio.
+    default_assumptions: list[str] = []
     saved = specification_service.save_specification(
         data_model_id=data_model_id,
         specification=candidate,
+        default_assumptions=default_assumptions,
     )
 
     if saved is None:
@@ -178,6 +181,7 @@ async def save_specification(
                     else "save_specification"
                 ),
                 "outcome": "success",
+                "default_assumptions": default_assumptions,
                 "specification_revision": (
                     specification_import_repository.revision(saved)
                 ),
@@ -524,6 +528,11 @@ async def create_field(
             entity_name=entity_name,
             request=request,
         )
+    except SpecificationValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.result,
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -569,6 +578,11 @@ async def update_field(
             field_name=field_name,
             request=request,
         )
+    except SpecificationValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.result,
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

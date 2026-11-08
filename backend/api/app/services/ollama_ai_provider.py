@@ -36,6 +36,7 @@ from app.prompts.semantic_prompt import (
     SEMANTIC_GENERATION_SYSTEM_PROMPT,
     SEMANTIC_PREVIEW_SYSTEM_PROMPT,
 )
+from app.services.specification_defaults import apply_specification_defaults
 from app.interfaces.ai_provider import (
     AIPromptRefinement,
     AIPromptRefinementQuestion,
@@ -696,35 +697,10 @@ class OllamaAIProvider(AIProvider):
 
             # Apply established FORGE defaults deterministically.
             # Preserve explicitly supplied population values.
-            entities = specification.get("entities")
-            if isinstance(entities, list):
-                for entity in entities:
-                    if not isinstance(entity, dict):
-                        continue
-                    population = entity.get("population")
-                    if not isinstance(population, dict):
-                        population = {}
-                        entity["population"] = population
-
-                    if population.get("count") is None:
-                        population["count"] = 100
-                        assumption = (
-                            "FORGE default applied: entity "
-                            f"{entity.get('name', 'unnamed')} population.count = 100; "
-                            "the user did not specify a count."
-                        )
-                        if assumption not in assumptions:
-                            assumptions.append(assumption)
-
-                    if "scaling" not in population:
-                        population["scaling"] = "SCALABLE"
-                        assumption = (
-                            "FORGE default applied: entity "
-                            f"{entity.get('name', 'unnamed')} population.scaling = SCALABLE; "
-                            "the user did not explicitly request FIXED scaling."
-                        )
-                        if assumption not in assumptions:
-                            assumptions.append(assumption)
+            specification, assumptions = apply_specification_defaults(
+                specification,
+                assumptions,
+            )
 
             generation = specification.get("generation")
             if isinstance(generation, dict):
