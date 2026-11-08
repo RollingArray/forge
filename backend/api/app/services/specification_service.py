@@ -677,6 +677,21 @@ class SpecificationService:
                 [],
             ).append(field)
 
+            # The first identity field establishes the entity identity.
+            # Never replace an identity that has already been defined.
+            if request.identity is not None:
+                current_identity = candidate_entity.get("identity") or {}
+                current_identity_fields = (
+                    current_identity.get("fields", [])
+                    if isinstance(current_identity, dict)
+                    else []
+                )
+
+                if not current_identity_fields:
+                    candidate_entity["identity"] = {
+                        "fields": [request.name],
+                    }
+
             self._validate_candidate_specification(candidate)
 
             self._specification_repository.save(

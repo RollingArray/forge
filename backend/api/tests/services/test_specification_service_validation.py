@@ -138,6 +138,69 @@ def test_create_field_persists_valid_candidate():
     assert any(field["name"] == "DESCRIPTION" for field in saved_fields)
 
 
+def test_create_first_identifier_field_establishes_entity_identity():
+    service, repository, _ = build_service()
+    repository.specification["entities"][0]["fields"] = []
+
+    request = CreateFieldRequest.model_validate({
+        "name": "PRODUCT_ID",
+        "type": "IDENTIFIER",
+        "identity": {"strategy": "SEQUENTIAL_ID"},
+    })
+
+    result = service.create_field(
+        data_model_id=DATA_MODEL_ID,
+        actor_user_id=ACTOR_USER_ID,
+        entity_name=ENTITY_NAME,
+        request=request,
+    )
+
+    assert result["name"] == "PRODUCT_ID"
+    assert len(repository.saved) == 1
+
+    saved_entity = repository.saved[0]["entities"][0]
+    assert saved_entity["identity"]["fields"] == ["PRODUCT_ID"]
+    assert saved_entity["fields"][0]["identity"] == {
+        "strategy": "SEQUENTIAL_ID"
+    }
+
+
+def test_create_identifier_field_preserves_existing_composite_identity():
+    service, repository, _ = build_service()
+
+    entity = repository.specification["entities"][0]
+    entity["fields"].append({
+        "name": "TENANT_ID",
+        "type": "STRING",
+    })
+    entity["identity"] = {
+        "fields": ["ORGANIZATION_ID", "TENANT_ID"],
+    }
+
+    request = CreateFieldRequest.model_validate({
+        "name": "SECONDARY_ID",
+        "type": "IDENTIFIER",
+        "identity": {"strategy": "SEQUENTIAL_ID"},
+    })
+
+    service.create_field(
+        data_model_id=DATA_MODEL_ID,
+        actor_user_id=ACTOR_USER_ID,
+        entity_name=ENTITY_NAME,
+        request=request,
+    )
+
+    saved_entity = repository.saved[0]["entities"][0]
+    assert saved_entity["identity"]["fields"] == [
+        "ORGANIZATION_ID",
+        "TENANT_ID",
+    ]
+    assert any(
+        field["name"] == "SECONDARY_ID"
+        for field in saved_entity["fields"]
+    )
+
+
 def test_update_field_rejects_invalid_candidate_without_persisting():
     service, repository, original = build_service()
 

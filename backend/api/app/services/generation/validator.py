@@ -902,7 +902,98 @@ class GenerationValidator:
         }
 
         # ------------------------------------------------------------
-        # 9. Rule-level conformance outcomes
+        # 9. Semantic UNIQUE field validation
+        # ------------------------------------------------------------
+
+        semantic_unique_metrics: dict[str, Any] = {}
+
+        for entity in entities:
+            entity_name = entity.get("name")
+            fields = entity.get("fields", [])
+
+            if not isinstance(entity_name, str) or not isinstance(fields, list):
+                continue
+
+            for field in fields:
+                if not isinstance(field, dict):
+                    continue
+
+                field_name = field.get("name")
+                generation = field.get("generation") or {}
+
+                if not isinstance(generation, dict):
+                    continue
+
+                if generation.get("generator") != "SEMANTIC":
+                    continue
+
+                parameters = generation.get("parameters") or {}
+                if not isinstance(parameters, dict):
+                    continue
+
+                mode = parameters.get("mode")
+                if not isinstance(mode, str) or mode.strip().upper() != "UNIQUE":
+                    continue
+
+                field_id = f"{entity_name}.{field_name}"
+                seen_values: dict[str, int] = {}
+                duplicate_count = 0
+                missing_value_count = 0
+                rows_checked = 0
+                evaluation_error = None
+
+                if not isinstance(field_name, str) or not field_name.strip():
+                    evaluation_error = "Semantic UNIQUE field has an invalid name."
+                else:
+                    try:
+                        for row_number, row in enumerate(
+                            self._iter_typed_rows(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                entity_name=entity_name,
+                                field_types=field_types.get(entity_name, {}),
+                            ),
+                            start=1,
+                        ):
+                            rows_checked += 1
+
+                            if field_name not in row:
+                                missing_value_count += 1
+                                continue
+
+                            value = row[field_name]
+                            if value is None:
+                                missing_value_count += 1
+                                continue
+
+                            normalized = str(value).strip().casefold()
+                            if not normalized:
+                                missing_value_count += 1
+                                continue
+
+                            if normalized in seen_values:
+                                duplicate_count += 1
+                            else:
+                                seen_values[normalized] = row_number
+
+                    except Exception as exc:
+                        evaluation_error = (
+                            f"Unable to evaluate committed semantic values: {exc}"
+                        )
+
+                metric = {
+                    "entity": entity_name,
+                    "field": field_name,
+                    "rows_checked": rows_checked,
+                    "unique_values": len(seen_values),
+                    "duplicate_count": duplicate_count,
+                    "missing_value_count": missing_value_count,
+                    "evaluation_error": evaluation_error,
+                }
+                semantic_unique_metrics[field_id] = metric
+
+        # ------------------------------------------------------------
+        # 10. Rule-level conformance outcomes
         # ------------------------------------------------------------
 
         rule_results: list[dict[str, Any]] = []
@@ -921,6 +1012,31 @@ class GenerationValidator:
                 "evaluated": status != "NOT_EVALUATED",
                 "details": details or {},
             })
+
+        for field_id, metric in semantic_unique_metrics.items():
+            if metric["duplicate_count"]:
+                status = "FAILED"
+            elif (
+                metric["evaluation_error"]
+                or metric["rows_checked"] == 0
+                or metric["missing_value_count"]
+            ):
+                status = "NOT_EVALUATED"
+            else:
+                status = "PASSED"
+
+            record_rule(
+                f"semantic_unique:{field_id}",
+                "SEMANTIC_UNIQUENESS",
+                status,
+                details=metric,
+            )
+
+            if status == "FAILED":
+                errors.append(
+                    f"{field_id}: semantic UNIQUE field contains "
+                    f"{metric['duplicate_count']} duplicate value(s)."
+                )
 
         for entity_name, metric in completeness_entities.items():
             record_rule(

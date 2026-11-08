@@ -106,6 +106,294 @@ def _commit_chunks(
     )
 
 
+
+
+def _semantic_unique_specification(
+    *,
+    field_name: str = "DESCRIPTION",
+) -> dict:
+    return {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 3},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {
+                        "name": field_name,
+                        "type": "STRING",
+                        "generation": {
+                            "strategy": "RANDOM",
+                            "generator": "SEMANTIC",
+                            "parameters": {
+                                "description": "Unique product description",
+                                "mode": "UNIQUE",
+                            },
+                        },
+                    },
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+
+def _semantic_rule(result, field_name: str = "DESCRIPTION") -> dict:
+    rule_id = f"semantic_unique:PRODUCT.{field_name}"
+    return next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == rule_id
+    )
+
+
+def test_semantic_unique_validation_detects_duplicates_across_chunks(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-CROSS-CHUNK"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": "Beta"},
+        ],
+    )
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=2,
+        rows=[
+            {"ID": "3", "DESCRIPTION": "Alpha"},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert not result.valid
+    assert rule["status"] == "FAILED"
+    assert rule["details"]["rows_checked"] == 3
+    assert rule["details"]["duplicate_count"] == 1
+    assert any("semantic UNIQUE field" in error for error in result.errors)
+
+
+def test_semantic_unique_validation_normalizes_case_and_whitespace(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-NORMALIZATION"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": "  aLPHa  "},
+            {"ID": "3", "DESCRIPTION": "Beta"},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert not result.valid
+    assert rule["status"] == "FAILED"
+    assert rule["details"]["duplicate_count"] == 1
+
+
+def test_semantic_unique_duplicate_fails_even_when_values_are_missing(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-DUPLICATE-AND-MISSING"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": ""},
+            {"ID": "3", "DESCRIPTION": " alpha "},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert rule["status"] == "FAILED"
+    assert rule["details"]["duplicate_count"] == 1
+    assert rule["details"]["missing_value_count"] == 1
+    assert not result.valid
+
+
+def test_semantic_unique_validation_passes_for_unique_values(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-PASS"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": "Beta"},
+            {"ID": "3", "DESCRIPTION": "Gamma"},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert rule["status"] == "PASSED"
+    assert rule["details"]["rows_checked"] == 3
+    assert rule["details"]["unique_values"] == 3
+
+
+def test_semantic_unique_validation_does_not_pass_missing_values(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-MISSING"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": ""},
+            {"ID": "3", "DESCRIPTION": "Gamma"},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert rule["status"] == "NOT_EVALUATED"
+    assert rule["details"]["missing_value_count"] == 1
+
+
+def test_semantic_unique_validation_does_not_pass_unreadable_artifacts(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    job_id = "SEM-UNIQUE-UNREADABLE"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "Alpha"},
+            {"ID": "2", "DESCRIPTION": "Beta"},
+            {"ID": "3", "DESCRIPTION": "Gamma"},
+        ],
+    )
+
+    specification = _semantic_unique_specification()
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    validator = _validator(tmp_path)
+    original_iter = validator._iter_typed_rows
+
+    def fail_on_semantic_scan(**kwargs):
+        import inspect
+
+        caller = inspect.currentframe().f_back
+        if (
+            caller is not None
+            and caller.f_code.co_name == "validate"
+            and caller.f_lineno >= 900
+            and kwargs.get("entity_name") == "PRODUCT"
+        ):
+            raise OSError("simulated committed artifact read failure")
+
+        yield from original_iter(**kwargs)
+
+    monkeypatch.setattr(validator, "_iter_typed_rows", fail_on_semantic_scan)
+
+    result = validator.validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+    assert rule["status"] == "NOT_EVALUATED"
+    assert "simulated committed artifact read failure" in (
+        rule["details"]["evaluation_error"]
+    )
+
+
 def test_validation_counts_committed_rows(
     tmp_path: Path,
 ) -> None:
