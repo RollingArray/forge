@@ -522,8 +522,10 @@ def analyze_specification_constraints(
             ))
             covered.update(child_fields)
 
-            if fk["parent"] not in parent_entities:
-                parent_entities.append(fk["parent"])
+            # Preserve repetitions: each FK is an independent identity
+            # component, even when multiple components reference the same
+            # parent entity. Capacity is the product of these keyspaces.
+            parent_entities.append(fk["parent"])
 
         for field_name in identity_fields:
             if field_name in covered:

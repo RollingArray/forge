@@ -46,6 +46,7 @@ class PopulationService:
             relationships=specification.get("relationships", []),
             dependencies_by_entity=dependencies,
             entities=entities,
+            specification=specification,
         )
 
         result = asdict(plan)
@@ -92,6 +93,7 @@ class PopulationService:
             relationships=specification.get("relationships", []),
             dependencies_by_entity=dependencies,
             entities=entities,
+            specification=specification,
         )
 
         result = asdict(plan)

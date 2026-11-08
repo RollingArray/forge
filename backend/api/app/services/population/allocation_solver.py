@@ -1,6 +1,7 @@
 """Deterministic integer allocation for entity populations."""
 
 from dataclasses import dataclass
+from fractions import Fraction
 from math import prod
 from typing import Mapping, Sequence
 
@@ -167,10 +168,108 @@ def _build_growth_candidate(
                         changed = True
 
             elif kind == "IDENTITY_CAPACITY":
-                # Validate capacity after all other population repairs.
-                # A coordinated move may increase the required parent
-                # keyspace later in this same candidate.
-                continue
+                multiplier = getattr(constraint, "multiplier", 1)
+                capacity = multiplier * prod(
+                    candidate.get(parent, 0) for parent in related
+                )
+                if value > capacity:
+                    if not related or multiplier <= 0:
+                        return None
+
+                    # Each occurrence is an independent identity component.
+                    # Preserve repetitions so PARENT, PARENT represents PARENT².
+                    multiplicities: dict[str, int] = {}
+                    for parent in related:
+                        if parent not in candidate:
+                            return None
+                        multiplicities[parent] = multiplicities.get(parent, 0) + 1
+
+                    scalable = {
+                        parent: exponent
+                        for parent, exponent in multiplicities.items()
+                        if parent in allocations
+                    }
+                    if not scalable:
+                        return None
+
+                    # A zero fixed keyspace makes the Cartesian product zero
+                    # and cannot be repaired by growing another parent.
+                    if any(
+                        candidate[parent] <= 0 and parent not in scalable
+                        for parent in multiplicities
+                    ):
+                        return None
+
+                    # One scalable keyspace: solve the required integer root
+                    # directly, avoiding a row-by-row increment loop.
+                    if len(scalable) == 1:
+                        parent, exponent = next(iter(scalable.items()))
+                        fixed_factor = multiplier * prod(
+                            candidate[name] ** count
+                            for name, count in multiplicities.items()
+                            if name != parent
+                        )
+                        if fixed_factor <= 0:
+                            return None
+
+                        required_power = (
+                            value + fixed_factor - 1
+                        ) // fixed_factor
+
+                        low = candidate[parent]
+                        high = max(low, 1)
+                        while high ** exponent < required_power:
+                            high *= 2
+
+                        while low < high:
+                            middle = (low + high) // 2
+                            if middle ** exponent >= required_power:
+                                high = middle
+                            else:
+                                low = middle + 1
+
+                        if not increase(parent, low):
+                            return None
+                        changed = True
+
+                    else:
+                        # For multiple scalable dimensions, choose the next
+                        # increment with the greatest exact multiplicative gain.
+                        while True:
+                            capacity = multiplier * prod(
+                                candidate[parent] for parent in related
+                            )
+                            if value <= capacity:
+                                break
+
+                            zero_keyspaces = [
+                                parent
+                                for parent in scalable
+                                if candidate[parent] <= 0
+                            ]
+
+                            if zero_keyspaces:
+                                selected_parent = sorted(zero_keyspaces)[0]
+                            else:
+                                choices = []
+                                for parent, exponent in scalable.items():
+                                    current = candidate[parent]
+                                    gain = Fraction(
+                                        (current + 1) ** exponent,
+                                        current ** exponent,
+                                    )
+                                    choices.append((gain, parent))
+
+                                _, selected_parent = max(
+                                    choices,
+                                    key=lambda item: (item[0], item[1]),
+                                )
+                            if not increase(
+                                selected_parent,
+                                candidate[selected_parent] + 1,
+                            ):
+                                return None
+                            changed = True
 
             else:
                 return None
@@ -398,9 +497,16 @@ def allocate_integer_populations(
         for name in minimums
     }
 
+    # Identity capacity can be repaired by growing scalable parent
+    # keyspaces. Other initial constraint violations remain blocking.
+    blocking_constraints = tuple(
+        constraint
+        for constraint in constraints
+        if getattr(constraint, "kind", None) != "IDENTITY_CAPACITY"
+    )
     initial_violations = _constraint_violations(
         allocations,
-        constraints,
+        blocking_constraints,
     )
 
     if initial_violations:
@@ -430,8 +536,13 @@ def allocate_integer_populations(
     allocations.update(scalable_allocations)
 
     allocated_total = sum(allocations.values())
+    final_violations = _constraint_violations(allocations, constraints)
 
-    feasible = remaining == 0 and allocated_total == target
+    feasible = (
+        remaining == 0
+        and allocated_total == target
+        and not final_violations
+    )
 
     return AllocationResult(
         target=target,
@@ -447,6 +558,11 @@ def allocate_integer_populations(
                 f"Only {allocated_total:,} of {target:,} requested records "
                 "could be allocated without violating supported population "
                 "constraints or derived capacities."
+                + (
+                    " " + " ".join(final_violations)
+                    if final_violations
+                    else ""
+                )
             )
         ),
     )

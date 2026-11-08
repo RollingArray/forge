@@ -6,6 +6,7 @@ The planning semantics in this module preserve Experiment 023.
 """
 
 from dataclasses import dataclass
+from math import prod
 from typing import Any
 
 from .capacity import (
@@ -229,11 +230,103 @@ def _resolve_populations(
     return resolved
 
 
+def _analyze_specification_capacities(
+    specification: dict[str, Any],
+    populations: dict[str, EntityPopulation],
+    *,
+    derive_limits: bool = True,
+) -> tuple[list[CapacityRequirement], list[CapacityLimit]]:
+    """Derive population bounds from the canonical identity analysis."""
+
+    from .constraint_analysis import analyze_specification_constraints
+
+    analysis = analyze_specification_constraints(specification)
+
+    # Capacity is evaluated per identity. An unrelated unresolved
+    # relationship must not suppress bounds for otherwise supported
+    # identity components. Unsupported identities are skipped individually
+    # below, rather than receiving an assumed capacity.
+    requirements: list[CapacityRequirement] = []
+    limits: list[CapacityLimit] = []
+
+    # A positive child population requires at least one key in every
+    # referenced parent keyspace. It does not require one parent key per
+    # child row unless the complete identity semantics establish that.
+    for dependency in analysis.foreign_key_dependencies:
+        child_population = populations.get(dependency.child_entity)
+        if (
+            child_population is None
+            or child_population.requested is None
+            or child_population.requested <= 0
+        ):
+            continue
+
+        requirements.append(
+            CapacityRequirement(
+                entity=dependency.parent_entity,
+                minimum=1,
+                relationship=dependency.name,
+                reason=(
+                    f"A positive {dependency.child_entity} population "
+                    f"requires at least one {dependency.parent_entity} "
+                    "identity key."
+                ),
+            )
+        )
+
+    # EntityGenerator constructs identity combinations as a Cartesian
+    # product of independent FK and finite local identity components.
+    # The allocator's baseline pass uses temporary population values only
+    # to derive minimum requirements. Those values must not become finite
+    # identity limits. The AUTO pass derives limits from fixed populations.
+    if not derive_limits:
+        return requirements, limits
+
+    for capacity in analysis.identity_capacities:
+        if not capacity.supported or capacity.unbounded:
+            continue
+
+        parent_populations: list[int] = []
+        capacity_is_known = True
+
+        for parent_entity in capacity.parent_entities:
+            parent_population = populations.get(parent_entity)
+            if (
+                parent_population is None
+                or parent_population.requested is None
+            ):
+                capacity_is_known = False
+                break
+            parent_populations.append(parent_population.requested)
+
+        if not capacity_is_known:
+            continue
+
+        maximum = capacity.finite_multiplier * prod(parent_populations)
+
+        limits.append(
+            CapacityLimit(
+                entity=capacity.entity,
+                maximum=maximum,
+                relationship="identity_components",
+                reason=(
+                    f"The {capacity.entity} identity supports at most "
+                    f"{maximum:,} distinct combinations from its "
+                    "independent identity components."
+                ),
+            )
+        )
+
+    return requirements, limits
+
+
 def build_population_plan(
     populations: dict[str, Any],
     relationships: list[dict[str, Any]],
     dependencies_by_entity: dict[str, tuple[Any, ...]] | None = None,
     entities: dict[str, Any] | None = None,
+    specification: dict[str, Any] | None = None,
+    derive_capacity_limits: bool = True,
 ) -> PopulationPlan:
     """Build a population plan from population and model semantics."""
 
@@ -259,7 +352,18 @@ def build_population_plan(
     capacity_minimums: dict[str, int] = {}
     maximums: dict[str, int] = {}
 
-    if dependencies_by_entity and entities:
+    if specification is not None:
+        (
+            capacity_requirements,
+            capacity_limits,
+        ) = _analyze_specification_capacities(
+            specification=specification,
+            populations=normalized,
+            derive_limits=derive_capacity_limits,
+        )
+    elif dependencies_by_entity and entities:
+        # Backward-compatible path for callers that provide only the
+        # legacy population, entity, and FK metadata.
         (
             capacity_requirements,
             capacity_limits,
@@ -269,13 +373,13 @@ def build_population_plan(
             populations=normalized,
         )
 
-        capacity_minimums = minimum_capacity_by_entity(
-            capacity_requirements,
-        )
+    capacity_minimums = minimum_capacity_by_entity(
+        capacity_requirements,
+    )
 
-        maximums = maximum_capacity_by_entity(
-            capacity_limits,
-        )
+    maximums = maximum_capacity_by_entity(
+        capacity_limits,
+    )
 
     minimums = _merge_minimums(
         relationship_minimums=relationship_minimums,

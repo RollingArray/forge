@@ -365,3 +365,134 @@ def test_allocation_is_deterministic_for_repeated_runs() -> None:
     assert second.feasible
     assert first.populations == second.populations
     assert first.allocated_total == second.allocated_total == 100
+
+
+def test_identity_capacity_grows_two_distinct_parent_keyspaces() -> None:
+    constraints = [
+        SimpleNamespace(
+            kind="IDENTITY_CAPACITY",
+            entity="CHILD",
+            related_entities=("PARENT_A", "PARENT_B"),
+            multiplier=1,
+        ),
+    ]
+
+    result = allocate_integer_populations(
+        target=65,
+        minimums={
+            "CHILD": 50,
+            "PARENT_A": 1,
+            "PARENT_B": 1,
+        },
+        constraints=constraints,
+    )
+
+    assert result.feasible
+    assert result.allocated_total == 65
+    assert (
+        result.populations["PARENT_A"]
+        * result.populations["PARENT_B"]
+        >= 50
+    )
+
+
+def test_identity_capacity_grows_repeated_parent_keyspace() -> None:
+    constraints = [
+        SimpleNamespace(
+            kind="IDENTITY_CAPACITY",
+            entity="CHILD",
+            related_entities=("PARENT", "PARENT"),
+            multiplier=1,
+        ),
+    ]
+
+    result = allocate_integer_populations(
+        target=58,
+        minimums={"CHILD": 50, "PARENT": 1},
+        constraints=constraints,
+    )
+
+    assert result.feasible
+    assert result.populations == {"CHILD": 50, "PARENT": 8}
+
+
+def test_identity_capacity_cannot_repair_fixed_zero_parent() -> None:
+    constraints = [
+        SimpleNamespace(
+            kind="IDENTITY_CAPACITY",
+            entity="CHILD",
+            related_entities=("PARENT_A", "PARENT_B"),
+            multiplier=1,
+        ),
+    ]
+
+    result = allocate_integer_populations(
+        target=60,
+        minimums={"CHILD": 50, "PARENT_B": 1},
+        fixed={"PARENT_A": 0},
+        constraints=constraints,
+    )
+
+    assert not result.feasible
+    assert result.populations["PARENT_A"] == 0
+
+
+def test_identity_capacity_respects_parent_maximum() -> None:
+    constraints = [
+        SimpleNamespace(
+            kind="IDENTITY_CAPACITY",
+            entity="CHILD",
+            related_entities=("PARENT_A", "PARENT_B"),
+            multiplier=1,
+        ),
+    ]
+
+    result = allocate_integer_populations(
+        target=65,
+        minimums={
+            "CHILD": 50,
+            "PARENT_A": 1,
+            "PARENT_B": 1,
+        },
+        maximums={
+            "PARENT_A": 5,
+            "PARENT_B": 5,
+        },
+        constraints=constraints,
+    )
+
+    assert not result.feasible
+    assert (
+        result.populations["PARENT_A"]
+        * result.populations["PARENT_B"]
+        < 50
+    )
+
+
+def test_identity_capacity_repair_respects_remaining_target() -> None:
+    constraints = [
+        SimpleNamespace(
+            kind="IDENTITY_CAPACITY",
+            entity="CHILD",
+            related_entities=("PARENT_A", "PARENT_B"),
+            multiplier=1,
+        ),
+    ]
+
+    result = allocate_integer_populations(
+        target=60,
+        minimums={
+            "CHILD": 50,
+            "PARENT_A": 1,
+            "PARENT_B": 1,
+        },
+        constraints=constraints,
+    )
+
+    assert not result.feasible
+    assert result.allocated_total <= 60
+    assert (
+        result.populations["PARENT_A"]
+        * result.populations["PARENT_B"]
+        < 50
+    )

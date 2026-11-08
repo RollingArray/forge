@@ -112,4 +112,5 @@ def build_plan_from_specification(
         relationships=relationships,
         dependencies_by_entity=dependencies,
         entities=entities,
+        specification=specification,
     )

@@ -262,3 +262,335 @@ def test_target_can_be_met_by_independent_entity_growth(
     assert result.populations["EMPLOYEE"] == 1
     assert result.populations["EMPLOYEE_PROFILE"] == 1
     assert result.populations["ASSET"] == 2
+
+
+def _multi_component_identity_specification(
+    parent_names: tuple[str, ...],
+    child_population: int,
+) -> dict:
+    """Build a child identity from independent FK components."""
+
+    entities = [
+        _entity(name, f"{name}_ID")
+        for name in dict.fromkeys(parent_names)
+    ]
+
+    child_fields = tuple(
+        f"PARENT_{index}_ID"
+        for index in range(len(parent_names))
+    )
+
+    child = {
+        "name": "CHILD",
+        "fields": [
+            {
+                "name": field_name,
+                "type": "IDENTIFIER",
+                "identity": {"strategy": "SEQUENTIAL_ID"},
+            }
+            for field_name in child_fields
+        ],
+        "identity": {"fields": list(child_fields)},
+        "population": {
+            "count": child_population,
+            "scaling": "FIXED",
+        },
+    }
+
+    entities.append(child)
+
+    foreign_keys = [
+        _fk(
+            f"FK_CHILD_PARENT_{index}",
+            "CHILD",
+            child_field,
+            parent_name,
+            f"{parent_name}_ID",
+        )
+        for index, (child_field, parent_name) in enumerate(
+            zip(child_fields, parent_names),
+            start=1,
+        )
+    ]
+
+    return {
+        "entities": entities,
+        "foreign_keys": foreign_keys,
+        "relationships": [],
+    }
+
+
+def test_identity_capacity_preserves_repeated_parent_components() -> None:
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=50,
+    )
+
+    analysis = analyze_specification_constraints(specification)
+
+    assert analysis.structurally_valid
+    assert analysis.allocation_supported
+
+    child_capacity = next(
+        item
+        for item in analysis.identity_capacities
+        if item.entity == "CHILD"
+    )
+
+    assert child_capacity.parent_entities == ("PARENT", "PARENT")
+
+    identity_constraint = next(
+        item
+        for item in analysis.population_constraints
+        if item.kind == "IDENTITY_CAPACITY"
+        and item.entity == "CHILD"
+    )
+
+    assert identity_constraint.related_entities == ("PARENT", "PARENT")
+
+
+def test_two_independent_same_parent_fks_allow_cartesian_identity_capacity() -> None:
+    from app.services.population.allocator import _constraint_violations
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=50,
+    )
+
+    analysis = analyze_specification_constraints(specification)
+
+    violations = _constraint_violations(
+        {"PARENT": 10, "CHILD": 50},
+        analysis.population_constraints,
+    )
+
+    assert violations == []
+
+
+def test_two_independent_parent_fks_allow_product_of_parent_keyspaces() -> None:
+    from app.services.population.allocator import _constraint_violations
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
+
+    specification = _multi_component_identity_specification(
+        ("PARENT_A", "PARENT_B"),
+        child_population=50,
+    )
+
+    analysis = analyze_specification_constraints(specification)
+
+    violations = _constraint_violations(
+        {
+            "PARENT_A": 10,
+            "PARENT_B": 10,
+            "CHILD": 50,
+        },
+        analysis.population_constraints,
+    )
+
+    assert violations == []
+
+
+def test_standard_population_plan_uses_cartesian_identity_capacity() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=50,
+    )
+
+    for entity in specification["entities"]:
+        if entity["name"] == "PARENT":
+            entity["population"] = {"count": 10, "scaling": "FIXED"}
+        elif entity["name"] == "CHILD":
+            entity["population"] = {"count": 50, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert plan.maximums.get("CHILD") == 100
+    assert plan.populations["CHILD"].status.value == "FEASIBLE"
+
+
+def test_standard_population_plan_requires_parent_key_for_positive_child() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=5,
+    )
+
+    for entity in specification["entities"]:
+        if entity["name"] == "PARENT":
+            entity["population"] = {"count": 0, "scaling": "FIXED"}
+        elif entity["name"] == "CHILD":
+            entity["population"] = {"count": 5, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert plan.minimums["PARENT"] == 1
+    assert plan.populations["PARENT"].status.value == "INFEASIBLE"
+
+
+def test_standard_population_plan_leaves_auto_parent_capacity_unresolved() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=5,
+    )
+
+    for entity in specification["entities"]:
+        if entity["name"] == "PARENT":
+            entity["population"] = {"count": None, "scaling": "SCALABLE"}
+        elif entity["name"] == "CHILD":
+            entity["population"] = {"count": 5, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert "CHILD" not in plan.maximums
+    assert plan.minimums["PARENT"] == 1
+    assert plan.populations["PARENT"].status.value == "AUTO"
+    assert plan.populations["PARENT"].resolved == 1
+
+
+def test_standard_population_plan_multiplies_finite_local_identity_capacity() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=25,
+    )
+
+    parent = specification["entities"][0]
+    parent["population"] = {"count": 10, "scaling": "FIXED"}
+
+    child = specification["entities"][1]
+    child["fields"].append({
+        "name": "LOCAL_CODE",
+        "type": "STRING",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {"values": ["A", "B", "C"]},
+        },
+    })
+    child["identity"]["fields"].append("LOCAL_CODE")
+    child["population"] = {"count": 25, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert plan.maximums["CHILD"] == 30
+    assert plan.populations["CHILD"].status.value == "FEASIBLE"
+
+
+def test_standard_population_plan_does_not_cap_sequential_local_identity() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=25,
+    )
+
+    parent = specification["entities"][0]
+    parent["population"] = {"count": 10, "scaling": "FIXED"}
+
+    child = specification["entities"][1]
+    child["fields"].append({
+        "name": "LOCAL_ID",
+        "type": "IDENTIFIER",
+        "identity": {"strategy": "SEQUENTIAL_ID"},
+    })
+    child["identity"]["fields"].append("LOCAL_ID")
+    child["population"] = {"count": 25, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert "CHILD" not in plan.maximums
+    assert plan.populations["CHILD"].status.value == "FEASIBLE"
+
+
+def test_legacy_population_planner_path_remains_available() -> None:
+    from app.services.population.adapter import (
+        build_dependencies_by_entity,
+        build_entities_metadata,
+    )
+    from app.services.population.planner import build_population_plan
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=5,
+    )
+    populations = {
+        entity["name"]: entity["population"]
+        for entity in specification["entities"]
+    }
+
+    plan = build_population_plan(
+        populations=populations,
+        relationships=[],
+        dependencies_by_entity=build_dependencies_by_entity(specification),
+        entities=build_entities_metadata(specification),
+    )
+
+    # Legacy metadata-only callers retain the old per-FK behavior.
+    assert isinstance(plan.maximums, dict)
+    assert isinstance(plan.capacity_requirements, list)
+    assert isinstance(plan.capacity_limits, list)
+
+
+def test_candidate_allocator_uses_cartesian_capacity_for_repeated_parent_fks() -> None:
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=50,
+    )
+
+    parent = next(
+        entity for entity in specification["entities"]
+        if entity["name"] == "PARENT"
+    )
+    parent["population"] = {"count": 1, "scaling": "SCALABLE"}
+
+    result = allocate_population_target(
+        specification=specification,
+        target=60,
+        driver="PARENT",
+    )
+
+    assert result.status == "FEASIBLE"
+    assert result.feasible_target
+    assert result.populations == {"CHILD": 50, "PARENT": 10}
+    assert result.allocated_total == 60
+
+
+def test_unrelated_unsupported_identity_does_not_suppress_supported_capacity() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT", "PARENT"),
+        child_population=50,
+    )
+
+    for entity in specification["entities"]:
+        if entity["name"] == "PARENT":
+            entity["population"] = {"count": 10, "scaling": "FIXED"}
+        elif entity["name"] == "CHILD":
+            entity["population"] = {"count": 50, "scaling": "FIXED"}
+
+    unrelated = _entity("OTHER", "OTHER_ID")
+    unrelated["fields"].append(
+        {"name": "OTHER_CODE", "type": "STRING"}
+    )
+    unrelated["identity"] = {"fields": ["OTHER_ID", "OTHER_CODE"]}
+    specification["entities"].append(unrelated)
+
+    plan = build_plan_from_specification(specification)
+
+    assert plan.maximums.get("CHILD") == 100

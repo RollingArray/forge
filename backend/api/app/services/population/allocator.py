@@ -224,6 +224,8 @@ def _build_planner_pass(
         relationships=inputs["relationships"],
         dependencies_by_entity=inputs["dependencies"],
         entities=inputs["entities"],
+        specification=specification,
+        derive_capacity_limits=(scalable_mode == "AUTO"),
     )
 
 
