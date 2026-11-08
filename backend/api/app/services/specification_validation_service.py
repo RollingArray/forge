@@ -932,20 +932,30 @@ class SpecificationValidationService:
             operator = constraint.get("operator")
             value = constraint.get("value")
             field_type = field_types_by_entity.get(entity, {}).get(field)
-            valid = (
-                bool(entity)
-                and bool(field)
-                and entity in entity_names
-                and field in fields_by_entity.get(entity, set())
-                and operator in supported_operators.get(field_type, set())
-                and "value" in constraint
-            )
-            reason = (
-                "references a missing entity or field, uses an unsupported "
-                "operator for its field type, or omits its comparison value."
-            )
+            reason = None
 
-            if valid and field_type in {"INTEGER", "DECIMAL"}:
+            if not entity:
+                reason = "constraint entity is required."
+            elif entity not in entity_names:
+                reason = f"referenced entity '{entity}' does not exist."
+            elif not field:
+                reason = "constraint field is required."
+            elif field not in fields_by_entity.get(entity, set()):
+                reason = (
+                    f"referenced field '{entity}.{field}' does not exist."
+                )
+            elif (
+                not isinstance(operator, str)
+                or operator not in supported_operators.get(field_type, set())
+            ):
+                reason = (
+                    f"operator {operator!r} is not supported for "
+                    f"field type {field_type!r}."
+                )
+            elif "value" not in constraint:
+                reason = "comparison value is required."
+
+            if reason is None and field_type in {"INTEGER", "DECIMAL"}:
                 try:
                     if isinstance(value, bool):
                         raise ValueError("Boolean values are not numeric.")
@@ -955,12 +965,11 @@ class SpecificationValidationService:
                     if field_type == "INTEGER" and not number.is_integer():
                         raise ValueError("Value must be an integer.")
                 except (TypeError, ValueError, OverflowError):
-                    valid = False
                     reason = (
                         f"comparison value must be a valid {field_type.lower()}."
                     )
 
-            if valid:
+            if reason is None:
                 add(
                     "passed",
                     "Constraint",
