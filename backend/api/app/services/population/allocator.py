@@ -491,9 +491,12 @@ def allocate_population_target(
     candidate = allocation.populations
 
     if not allocation.feasible:
+        solver_status = getattr(allocation, "status", "UNRESOLVED")
+        if solver_status not in {"INFEASIBLE", "UNRESOLVED"}:
+            solver_status = "UNRESOLVED"
         return result(
             candidate,
-            "INFEASIBLE",
+            solver_status,
             allocation.reason,
             (
                 f"Derived minimum total: {allocation.minimum_total:,}.",

@@ -1,4 +1,11 @@
-"""Deterministic integer allocation for entity populations."""
+"""Bounded-time, deterministic population allocation with constraint closure.
+
+The fairness policy is a deterministic approximation to weighted max-min
+fairness over normalized populations (population / priority). Hard population
+constraints and exact-target verification take precedence over fairness.
+"""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from fractions import Fraction
@@ -15,6 +22,7 @@ class AllocationResult:
     maximum_total: int | None
     feasible: bool
     reason: str | None = None
+    status: str = "UNRESOLVED"
 
 
 def _validate_count(value: object, name: str) -> int:
@@ -31,55 +39,271 @@ def _validate_names(names: Mapping[str, object], label: str) -> None:
             raise ValueError(f"{label} contains an invalid entity name.")
 
 
+def _compile_population_constraints(constraints: Sequence[object]) -> tuple[tuple, ...]:
+    return tuple(
+        (
+            getattr(item, "kind", None),
+            getattr(item, "entity", None),
+            tuple(getattr(item, "related_entities", ())),
+            getattr(item, "multiplier", 1),
+        )
+        for item in constraints
+    )
+
+
 def _constraint_violations(
-    populations: Mapping[str, int],
-    constraints: Sequence[object],
+    populations: Mapping[str, int], constraints: Sequence[object]
 ) -> list[str]:
-    """Return violations of the supported population-level constraints."""
-
+    """Independently verify every supported population-level constraint."""
     violations: list[str] = []
-
-    for constraint in constraints:
-        kind = getattr(constraint, "kind", None)
-        entity = getattr(constraint, "entity", None)
-        related = tuple(getattr(constraint, "related_entities", ()))
-        value = populations.get(entity, 0)
-
+    for kind, entity, related, multiplier in _compile_population_constraints(constraints):
+        if entity not in populations:
+            violations.append(f"Constraint references unknown entity {entity!r}.")
+            continue
+        value = populations[entity]
         if kind == "PARENT_REQUIRED_FOR_POSITIVE_CHILD":
             if value > 0:
                 for parent in related:
-                    if populations.get(parent, 0) <= 0:
-                        violations.append(
-                            f"{entity} requires a positive {parent} population."
-                        )
-
+                    if parent not in populations or populations[parent] <= 0:
+                        violations.append(f"{entity} requires a positive {parent} population.")
         elif kind == "CHILD_AT_LEAST_PARENT":
-            if related and value < populations.get(related[0], 0):
-                violations.append(
-                    f"{entity} must have at least as many rows as {related[0]}."
-                )
-
+            if related and (related[0] not in populations or value < populations[related[0]]):
+                violations.append(f"{entity} must have at least as many rows as {related[0]}.")
         elif kind == "CHILD_AT_MOST_PARENT":
-            if related and value > populations.get(related[0], 0):
-                violations.append(
-                    f"{entity} cannot exceed the population of {related[0]}."
-                )
-
+            if related and (related[0] not in populations or value > populations[related[0]]):
+                violations.append(f"{entity} cannot exceed the population of {related[0]}.")
         elif kind == "IDENTITY_CAPACITY":
-            capacity = getattr(constraint, "multiplier", 1) * prod(
-                populations.get(parent, 0) for parent in related
-            )
+            if isinstance(multiplier, bool) or not isinstance(multiplier, int) or multiplier < 0:
+                violations.append(f"{entity} has an invalid identity-capacity multiplier.")
+                continue
+            if any(parent not in populations for parent in related):
+                violations.append(f"{entity} identity capacity references an unknown parent.")
+                continue
+            capacity = multiplier * prod(populations[parent] for parent in related)
             if value > capacity:
                 violations.append(
                     f"{entity} exceeds its derived identity capacity of {capacity:,}."
                 )
-
         else:
-            violations.append(
-                f"Unsupported population constraint kind: {kind}."
-            )
-
+            violations.append(f"Unsupported population constraint kind: {kind}.")
     return violations
+
+
+_INFEASIBLE_REPAIR = object()
+
+
+def _identity_parent_repair(
+    *,
+    child_value: int,
+    related: tuple[str, ...],
+    multiplier: int,
+    candidate: dict[str, int],
+    scalable: set[str],
+    maximums: Mapping[str, int | None],
+    budget: int,
+) -> dict[str, int] | None | object:
+    """Find a low-cost integer parent-keyspace repair within ``budget``.
+
+    Repeated parents remain repeated through their exponent. The common
+    enterprise case has one or two distinct parent keyspaces; the general
+    bounded water-fill below handles additional dimensions deterministically.
+    """
+    if multiplier < 0:
+        return _INFEASIBLE_REPAIR
+    if not related:
+        return _INFEASIBLE_REPAIR if child_value > multiplier else dict(candidate)
+    multiplicities: dict[str, int] = {}
+    for parent in related:
+        if parent not in candidate:
+            return None
+        multiplicities[parent] = multiplicities.get(parent, 0) + 1
+
+    adjustable = [name for name in sorted(multiplicities) if name in scalable]
+    if not adjustable:
+        capacity = multiplier * prod(candidate[name] ** exponent for name, exponent in multiplicities.items())
+        return _INFEASIBLE_REPAIR if child_value > capacity else dict(candidate)
+
+    fixed_factor = multiplier
+    for name, exponent in multiplicities.items():
+        if name not in adjustable:
+            fixed_factor *= candidate[name] ** exponent
+    if fixed_factor <= 0:
+        return _INFEASIBLE_REPAIR
+
+    def capacity_after(additions: int) -> tuple[int, dict[str, int]]:
+        """Approximate the maximum Cartesian product for a fixed cost in O(d)."""
+        values = {name: candidate[name] for name in adjustable}
+        if additions <= 0:
+            capacity = fixed_factor
+            for name in adjustable:
+                capacity *= values[name] ** multiplicities[name]
+            return capacity, values
+
+        # Continuous optimum for product maximization under a sum budget:
+        # each uncapped dimension approaches population / exponent = lambda.
+        # Bisection is logarithmic in numeric range and independent of rows.
+        upper = max(
+            Fraction(
+                maximums[name]
+                if maximums.get(name) is not None
+                else candidate[name] + additions,
+                multiplicities[name],
+            )
+            for name in adjustable
+        ) + additions + 1
+        lower = Fraction(0, 1)
+        for _ in range(72):
+            level = (lower + upper) / 2
+            used = 0
+            for name in adjustable:
+                wanted = max(candidate[name], int(level * multiplicities[name]))
+                maximum = maximums.get(name)
+                if maximum is not None:
+                    wanted = min(wanted, maximum)
+                used += wanted - candidate[name]
+            if used <= additions:
+                lower = level
+            else:
+                upper = level
+
+        used = 0
+        for name in adjustable:
+            wanted = max(candidate[name], int(lower * multiplicities[name]))
+            maximum = maximums.get(name)
+            if maximum is not None:
+                wanted = min(wanted, maximum)
+            values[name] = wanted
+            used += wanted - candidate[name]
+
+        # At most one rounding unit per distinct dimension is normally left.
+        # Spend any remaining budget using exact marginal-product comparisons.
+        remaining = additions - used
+        while remaining > 0:
+            choices: list[tuple[int, int, str]] = []
+            for name in adjustable:
+                maximum = maximums.get(name)
+                if maximum is not None and values[name] >= maximum:
+                    continue
+                exponent = multiplicities[name]
+                choices.append(((values[name] + 1) ** exponent,
+                                max(1, values[name]) ** exponent, name))
+            if not choices:
+                break
+            selected = choices[0]
+            for choice in choices[1:]:
+                left = choice[0] * selected[1]
+                right = selected[0] * choice[1]
+                if left > right or (left == right and choice[2] < selected[2]):
+                    selected = choice
+            values[selected[2]] += 1
+            remaining -= 1
+
+        capacity = fixed_factor
+        for name in adjustable:
+            capacity *= values[name] ** multiplicities[name]
+        return capacity, values
+
+    current_capacity = multiplier * prod(candidate[name] ** exponent for name, exponent in multiplicities.items())
+    if child_value <= current_capacity:
+        return dict(candidate)
+
+    # Determine whether the maximum bounded parent keyspace can ever suffice.
+    maximum_values = dict(candidate)
+    for name in adjustable:
+        maximum = maximums.get(name)
+        if maximum is None:
+            maximum_values[name] = candidate[name] + budget
+        else:
+            maximum_values[name] = maximum
+    maximum_capacity = multiplier * prod(
+        maximum_values[name] ** exponent for name, exponent in multiplicities.items()
+    )
+    if maximum_capacity < child_value:
+        return _INFEASIBLE_REPAIR
+
+    low, high = 1, budget
+    if high <= 0 or capacity_after(high)[0] < child_value:
+        return None
+    while low < high:
+        middle = (low + high) // 2
+        if capacity_after(middle)[0] >= child_value:
+            high = middle
+        else:
+            low = middle + 1
+    _, repaired = capacity_after(low)
+    result = dict(candidate)
+    result.update(repaired)
+    return result
+
+
+def _close_constraints(
+    populations: Mapping[str, int],
+    *,
+    scalable_names: set[str],
+    maximums: Mapping[str, int | None],
+    constraints: tuple[tuple, ...],
+    target: int,
+) -> tuple[dict[str, int] | None, str | None]:
+    """Apply monotonic constraint closure; never grows fixed populations."""
+    result = dict(populations)
+    max_passes = max(8, 4 * (len(constraints) + len(result) + 1))
+    for _ in range(max_passes):
+        changed = False
+        for kind, entity, related, multiplier in constraints:
+            if entity not in result or any(parent not in result for parent in related):
+                return None, "UNRESOLVED: a constraint references an unknown entity."
+            required: dict[str, int] = {}
+            value = result[entity]
+            if kind == "PARENT_REQUIRED_FOR_POSITIVE_CHILD":
+                if value > 0:
+                    required.update({parent: max(1, result[parent]) for parent in related})
+            elif kind == "CHILD_AT_LEAST_PARENT":
+                if related:
+                    required[entity] = max(value, result[related[0]])
+            elif kind == "CHILD_AT_MOST_PARENT":
+                if related:
+                    parent = related[0]
+                    required[parent] = max(result[parent], value)
+            elif kind == "IDENTITY_CAPACITY":
+                if isinstance(multiplier, bool) or not isinstance(multiplier, int) or multiplier < 0:
+                    return None, "UNRESOLVED: invalid identity-capacity multiplier."
+                capacity = multiplier * prod(result[parent] for parent in related)
+                if value > capacity:
+                    repaired = _identity_parent_repair(
+                        child_value=value,
+                        related=related,
+                        multiplier=multiplier,
+                        candidate=result,
+                        scalable=scalable_names,
+                        maximums=maximums,
+                        budget=max(0, target - sum(result.values())),
+                    )
+                    if repaired is _INFEASIBLE_REPAIR:
+                        return None, "INFEASIBLE: maximum supported parent keyspaces cannot satisfy identity capacity."
+                    if repaired is None:
+                        return None, "UNRESOLVED: identity capacity cannot be repaired within the target and supported bounds."
+                    if repaired != result:
+                        result = repaired
+                        changed = True
+            else:
+                return None, f"UNRESOLVED: unsupported population constraint kind {kind!r}."
+
+            for name, wanted in required.items():
+                if wanted <= result[name]:
+                    continue
+                if name not in scalable_names:
+                    return None, f"INFEASIBLE: constraint requires increasing fixed entity {name}."
+                maximum = maximums.get(name)
+                if maximum is not None and wanted > maximum:
+                    return None, f"INFEASIBLE: constraint requires {name}={wanted}, above maximum {maximum}."
+                result[name] = wanted
+                changed = True
+
+            if sum(result.values()) > target:
+                return None, "UNRESOLVED: constraint closure exceeds the remaining target budget."
+        if not changed:
+            return result, None
+    return None, "UNRESOLVED: constraint closure exceeded its bounded propagation passes."
 
 
 def _build_growth_candidate(
@@ -90,272 +314,57 @@ def _build_growth_candidate(
     fixed_populations: Mapping[str, int],
     max_added: int,
 ) -> dict[str, int] | None:
-    """Build the smallest monotonic coordinated move for one growth seed."""
-
-    candidate = dict(fixed_populations)
-    candidate.update(allocations)
-    initial_total = sum(candidate.values())
-
-    if seed not in allocations:
+    """Compatibility helper: build one constraint-closed seed increment."""
+    if seed not in allocations or max_added <= 0:
         return None
-
-    seed_maximum = maximums.get(seed)
-    if seed_maximum is not None and allocations[seed] >= seed_maximum:
+    base = dict(fixed_populations)
+    base.update(allocations)
+    maximum = maximums.get(seed)
+    if maximum is not None and base[seed] >= maximum:
         return None
-
-    candidate[seed] += 1
-
-    def increase(name: str, value: int) -> bool:
-        if name not in allocations:
-            return False
-
-        maximum = maximums.get(name)
-        if maximum is not None and value > maximum:
-            return False
-
-        candidate[name] = max(candidate[name], value)
-
-        added = sum(candidate.values()) - initial_total
-        return added <= max_added
-
-    # Constraint repair is monotonic. Revisit constraints until all
-    # population inequalities are satisfied.
-    while True:
-        changed = False
-
-        for constraint in constraints:
-            kind = getattr(constraint, "kind", None)
-            entity = getattr(constraint, "entity", None)
-            related = tuple(
-                getattr(constraint, "related_entities", ())
-            )
-
-            if entity not in candidate:
-                return None
-
-            value = candidate[entity]
-
-            if kind == "PARENT_REQUIRED_FOR_POSITIVE_CHILD":
-                if value > 0:
-                    for parent in related:
-                        if parent not in candidate:
-                            return None
-                        if candidate[parent] <= 0:
-                            if not increase(parent, 1):
-                                return None
-                            changed = True
-
-            elif kind == "CHILD_AT_LEAST_PARENT":
-                if related:
-                    parent = related[0]
-                    if parent not in candidate:
-                        return None
-                    required = candidate[parent]
-                    if value < required:
-                        if not increase(entity, required):
-                            return None
-                        changed = True
-
-            elif kind == "CHILD_AT_MOST_PARENT":
-                if related:
-                    parent = related[0]
-                    if parent not in candidate:
-                        return None
-                    required = candidate[entity]
-                    if candidate[parent] < required:
-                        if not increase(parent, required):
-                            return None
-                        changed = True
-
-            elif kind == "IDENTITY_CAPACITY":
-                multiplier = getattr(constraint, "multiplier", 1)
-                capacity = multiplier * prod(
-                    candidate.get(parent, 0) for parent in related
-                )
-                if value > capacity:
-                    if not related or multiplier <= 0:
-                        return None
-
-                    # Each occurrence is an independent identity component.
-                    # Preserve repetitions so PARENT, PARENT represents PARENT².
-                    multiplicities: dict[str, int] = {}
-                    for parent in related:
-                        if parent not in candidate:
-                            return None
-                        multiplicities[parent] = multiplicities.get(parent, 0) + 1
-
-                    scalable = {
-                        parent: exponent
-                        for parent, exponent in multiplicities.items()
-                        if parent in allocations
-                    }
-                    if not scalable:
-                        return None
-
-                    # A zero fixed keyspace makes the Cartesian product zero
-                    # and cannot be repaired by growing another parent.
-                    if any(
-                        candidate[parent] <= 0 and parent not in scalable
-                        for parent in multiplicities
-                    ):
-                        return None
-
-                    # One scalable keyspace: solve the required integer root
-                    # directly, avoiding a row-by-row increment loop.
-                    if len(scalable) == 1:
-                        parent, exponent = next(iter(scalable.items()))
-                        fixed_factor = multiplier * prod(
-                            candidate[name] ** count
-                            for name, count in multiplicities.items()
-                            if name != parent
-                        )
-                        if fixed_factor <= 0:
-                            return None
-
-                        required_power = (
-                            value + fixed_factor - 1
-                        ) // fixed_factor
-
-                        low = candidate[parent]
-                        high = max(low, 1)
-                        while high ** exponent < required_power:
-                            high *= 2
-
-                        while low < high:
-                            middle = (low + high) // 2
-                            if middle ** exponent >= required_power:
-                                high = middle
-                            else:
-                                low = middle + 1
-
-                        if not increase(parent, low):
-                            return None
-                        changed = True
-
-                    else:
-                        # For multiple scalable dimensions, choose the next
-                        # increment with the greatest exact multiplicative gain.
-                        while True:
-                            capacity = multiplier * prod(
-                                candidate[parent] for parent in related
-                            )
-                            if value <= capacity:
-                                break
-
-                            zero_keyspaces = [
-                                parent
-                                for parent in scalable
-                                if candidate[parent] <= 0
-                            ]
-
-                            if zero_keyspaces:
-                                selected_parent = sorted(zero_keyspaces)[0]
-                            else:
-                                choices = []
-                                for parent, exponent in scalable.items():
-                                    current = candidate[parent]
-                                    gain = Fraction(
-                                        (current + 1) ** exponent,
-                                        current ** exponent,
-                                    )
-                                    choices.append((gain, parent))
-
-                                _, selected_parent = max(
-                                    choices,
-                                    key=lambda item: (item[0], item[1]),
-                                )
-                            if not increase(
-                                selected_parent,
-                                candidate[selected_parent] + 1,
-                            ):
-                                return None
-                            changed = True
-
-            else:
-                return None
-
-        added = sum(candidate.values()) - initial_total
-
-        if added > max_added:
-            return None
-
-        if not changed:
-            break
-
-    if _constraint_violations(candidate, constraints):
+    proposed = dict(base)
+    proposed[seed] += 1
+    closed, reason = _close_constraints(
+        proposed,
+        scalable_names=set(allocations),
+        maximums=maximums,
+        constraints=_compile_population_constraints(constraints),
+        target=sum(base.values()) + max_added,
+    )
+    if closed is None or reason is not None:
         return None
+    if sum(closed.values()) - sum(base.values()) > max_added:
+        return None
+    return closed
 
-    return candidate
 
-
-def _distribute_residual(
-    residual: int,
-    allocations: dict[str, int],
-    maximums: Mapping[str, int | None],
+def _waterline_candidate(
+    base: Mapping[str, int],
+    level: int,
+    *,
     priorities: Mapping[str, int],
-    constraints: Sequence[object],
-    fixed_populations: Mapping[str, int],
-) -> int:
-    """
-    Distribute residual records through constraint-aware growth moves.
-
-    Each move may increment multiple scalable entities to preserve
-    population constraints. Feasible moves are selected using weighted
-    fairness based on the initiating entity's current allocation.
-    """
-
-    remaining = residual
-
-    while remaining > 0:
-        feasible_moves: list[
-            tuple[float, int, str, dict[str, int], int]
-        ] = []
-
-        for name in allocations:
-            candidate = _build_growth_candidate(
-                seed=name,
-                allocations=allocations,
-                maximums=maximums,
-                constraints=constraints,
-                fixed_populations=fixed_populations,
-                max_added=remaining,
-            )
-
-            if candidate is None:
-                continue
-
-            added = sum(candidate.values()) - sum(
-                fixed_populations.values()
-            ) - sum(allocations.values())
-
-            if added <= 0 or added > remaining:
-                continue
-
-            priority = priorities[name]
-            feasible_moves.append(
-                (
-                    allocations[name] / priority,
-                    -priority,
-                    name,
-                    candidate,
-                    added,
-                )
-            )
-
-        if not feasible_moves:
-            break
-
-        _, _, _, selected, added = min(
-            feasible_moves,
-            key=lambda item: (item[0], item[1], item[2]),
-        )
-
-        for name in allocations:
-            allocations[name] = selected[name]
-
-        remaining -= added
-
-    return remaining
+    maximums: Mapping[str, int | None],
+    scalable_names: set[str],
+    constraints: tuple[tuple, ...],
+    target: int,
+) -> dict[str, int] | None:
+    proposed = dict(base)
+    for name in sorted(scalable_names):
+        wanted = level * priorities[name]
+        maximum = maximums.get(name)
+        if maximum is not None:
+            wanted = min(wanted, maximum)
+        proposed[name] = max(proposed[name], wanted)
+    closed, reason = _close_constraints(
+        proposed,
+        scalable_names=scalable_names,
+        maximums=maximums,
+        constraints=constraints,
+        target=target,
+    )
+    if closed is None or reason is not None or sum(closed.values()) > target:
+        return None
+    return closed
 
 
 def allocate_integer_populations(
@@ -367,21 +376,13 @@ def allocate_integer_populations(
     priorities: Mapping[str, int] | None = None,
     constraints: Sequence[object] = (),
 ) -> AllocationResult:
-    """
-    Allocate an exact dataset target across fixed and scalable entities.
-
-    Scalable entities start at their minimum populations. Residual records
-    are distributed equally by default, or proportionally to positive
-    integer priorities when supplied.
-
-    Existing population counts are deliberately not accepted as weights.
-    """
-
+    """Allocate an exact target with bounded closure and weighted fairness."""
     target = _validate_count(target, "target")
     maximums = maximums or {}
     fixed = fixed or {}
     priorities = priorities or {}
     constraints = tuple(constraints)
+    compiled = _compile_population_constraints(constraints)
 
     _validate_names(minimums, "minimums")
     _validate_names(maximums, "maximums")
@@ -390,179 +391,141 @@ def allocate_integer_populations(
 
     overlap = set(minimums) & set(fixed)
     if overlap:
-        raise ValueError(
-            "Entities cannot be both scalable and fixed: "
-            + ", ".join(sorted(overlap))
-        )
-
+        raise ValueError("Entities cannot be both scalable and fixed: " + ", ".join(sorted(overlap)))
     unknown_maximums = set(maximums) - set(minimums)
     if unknown_maximums:
-        raise ValueError(
-            "Maximums supplied for unknown scalable entities: "
-            + ", ".join(sorted(unknown_maximums))
-        )
-
+        raise ValueError("Maximums supplied for unknown scalable entities: " + ", ".join(sorted(unknown_maximums)))
     unknown_priorities = set(priorities) - set(minimums)
     if unknown_priorities:
-        raise ValueError(
-            "Priorities supplied for unknown scalable entities: "
-            + ", ".join(sorted(unknown_priorities))
-        )
-
-    for name, value in minimums.items():
-        _validate_count(value, f"minimum for '{name}'")
-
-    for name, value in fixed.items():
-        _validate_count(value, f"fixed population for '{name}'")
+        raise ValueError("Priorities supplied for unknown scalable entities: " + ", ".join(sorted(unknown_priorities)))
 
     normalized_maximums: dict[str, int | None] = {}
-
-    for name in minimums:
+    normalized_priorities: dict[str, int] = {}
+    for name, minimum in minimums.items():
+        _validate_count(minimum, f"minimum for '{name}'")
         maximum = maximums.get(name)
         if maximum is not None:
             maximum = _validate_count(maximum, f"maximum for '{name}'")
-            if maximum < minimums[name]:
-                raise ValueError(
-                    f"Maximum for '{name}' is below its minimum."
-                )
+            if maximum < minimum:
+                raise ValueError(f"Maximum for '{name}' is below its minimum.")
         normalized_maximums[name] = maximum
-
-    normalized_priorities: dict[str, int] = {}
-
-    for name in minimums:
         priority = priorities.get(name, 1)
-        if (
-            isinstance(priority, bool)
-            or not isinstance(priority, int)
-            or priority <= 0
-        ):
-            raise ValueError(
-                f"Priority for '{name}' must be a positive integer."
-            )
+        if isinstance(priority, bool) or not isinstance(priority, int) or priority <= 0:
+            raise ValueError(f"Priority for '{name}' must be a positive integer.")
         normalized_priorities[name] = priority
+    for name, value in fixed.items():
+        _validate_count(value, f"fixed population for '{name}'")
 
     minimum_total = sum(fixed.values()) + sum(minimums.values())
-
     finite_maximum_total = sum(fixed.values())
-    has_unbounded_entity = False
-
+    unbounded = False
     for name, maximum in normalized_maximums.items():
         if maximum is None:
-            has_unbounded_entity = True
+            unbounded = True
         else:
             finite_maximum_total += maximum
+    maximum_total = None if unbounded else finite_maximum_total
 
-    maximum_total = (
-        None if has_unbounded_entity else finite_maximum_total
-    )
-
-    allocations = dict(fixed)
-    allocations.update(minimums)
-
+    initial = dict(fixed)
+    initial.update(minimums)
     if target < minimum_total:
-        return AllocationResult(
-            target=target,
-            populations=allocations,
-            allocated_total=sum(allocations.values()),
-            minimum_total=minimum_total,
-            maximum_total=maximum_total,
-            feasible=False,
-            reason=(
-                f"Target {target:,} is below the minimum required "
-                f"population of {minimum_total:,}."
-            ),
-        )
-
+        return AllocationResult(target, initial, minimum_total, minimum_total, maximum_total, False,
+                                f"Target {target:,} is below the minimum required population of {minimum_total:,}.", "INFEASIBLE")
     if maximum_total is not None and target > maximum_total:
-        for name, maximum in normalized_maximums.items():
-            allocations[name] = maximum
+        capped = dict(fixed)
+        capped.update({name: maximum for name, maximum in normalized_maximums.items()})
+        return AllocationResult(target, capped, sum(capped.values()), minimum_total, maximum_total, False,
+                                f"Target {target:,} exceeds the maximum supported population of {maximum_total:,}.", "INFEASIBLE")
 
-        return AllocationResult(
-            target=target,
-            populations=allocations,
-            allocated_total=sum(allocations.values()),
-            minimum_total=minimum_total,
-            maximum_total=maximum_total,
-            feasible=False,
-            reason=(
-                f"Target {target:,} exceeds the maximum supported "
-                f"population of {maximum_total:,}."
-            ),
-        )
-
-    residual = target - minimum_total
-
-    scalable_allocations = {
-        name: allocations[name]
-        for name in minimums
-    }
-
-    # Identity capacity can be repaired by growing scalable parent
-    # keyspaces. Other initial constraint violations remain blocking.
-    blocking_constraints = tuple(
-        constraint
-        for constraint in constraints
-        if getattr(constraint, "kind", None) != "IDENTITY_CAPACITY"
-    )
-    initial_violations = _constraint_violations(
-        allocations,
-        blocking_constraints,
-    )
-
-    if initial_violations:
-        return AllocationResult(
-            target=target,
-            populations=allocations,
-            allocated_total=sum(allocations.values()),
-            minimum_total=minimum_total,
-            maximum_total=maximum_total,
-            feasible=False,
-            reason=(
-                "The minimum population allocation already violates "
-                "supported population constraints: "
-                + " ".join(initial_violations)
-            ),
-        )
-
-    remaining = _distribute_residual(
-        residual=residual,
-        allocations=scalable_allocations,
+    scalable_names = set(minimums)
+    closed, closure_reason = _close_constraints(
+        initial,
+        scalable_names=scalable_names,
         maximums=normalized_maximums,
-        priorities=normalized_priorities,
-        constraints=constraints,
-        fixed_populations=fixed,
-    )
-
-    allocations.update(scalable_allocations)
-
-    allocated_total = sum(allocations.values())
-    final_violations = _constraint_violations(allocations, constraints)
-
-    feasible = (
-        remaining == 0
-        and allocated_total == target
-        and not final_violations
-    )
-
-    return AllocationResult(
+        constraints=compiled,
         target=target,
-        populations=allocations,
-        allocated_total=allocated_total,
-        minimum_total=minimum_total,
-        maximum_total=maximum_total,
-        feasible=feasible,
-        reason=(
-            None
-            if feasible
-            else (
-                f"Only {allocated_total:,} of {target:,} requested records "
-                "could be allocated without violating supported population "
-                "constraints or derived capacities."
-                + (
-                    " " + " ".join(final_violations)
-                    if final_violations
-                    else ""
-                )
-            )
-        ),
     )
+    if closed is None:
+        status = "INFEASIBLE" if closure_reason and closure_reason.startswith("INFEASIBLE:") else "UNRESOLVED"
+        return AllocationResult(target, initial, sum(initial.values()), minimum_total, maximum_total, False,
+                                closure_reason, status)
+    if sum(closed.values()) > target:
+        return AllocationResult(target, closed, sum(closed.values()), minimum_total, maximum_total, False,
+                                "Minimum constraint closure exceeds the requested target.", "INFEASIBLE")
+
+    # Integer normalized waterline. Binary search is logarithmic in target;
+    # each candidate performs bounded constraint propagation.
+    low, high = 0, target + 1
+    best = closed
+    while low + 1 < high:
+        middle = (low + high) // 2
+        candidate = _waterline_candidate(
+            closed, middle, priorities=normalized_priorities,
+            maximums=normalized_maximums, scalable_names=scalable_names,
+            constraints=compiled, target=target,
+        )
+        if candidate is not None and sum(candidate.values()) <= target:
+            low = middle
+            best = candidate
+        else:
+            high = middle
+
+    current = dict(best)
+    remaining = target - sum(current.values())
+    # The waterline leaves a bounded rounding tail in ordinary use. A hard
+    # operation cap prevents pathological priority inputs from creating a
+    # row-by-row runtime proportional to the requested dataset size.
+    max_tail_steps = min(
+        4_096,
+        max(256, 8 * len(scalable_names) + 4 * len(compiled)),
+    )
+    steps = 0
+    while remaining > 0 and steps < max_tail_steps:
+        steps += 1
+        moves: list[tuple[Fraction, int, str, dict[str, int], int]] = []
+        for name in sorted(scalable_names):
+            maximum = normalized_maximums.get(name)
+            if maximum is not None and current[name] >= maximum:
+                continue
+            proposed = dict(current)
+            proposed[name] += 1
+            candidate, reason = _close_constraints(
+                proposed,
+                scalable_names=scalable_names,
+                maximums=normalized_maximums,
+                constraints=compiled,
+                target=target,
+            )
+            if candidate is None or reason is not None:
+                continue
+            cost = sum(candidate.values()) - sum(current.values())
+            if 0 < cost <= remaining:
+                moves.append((Fraction(current[name], normalized_priorities[name]),
+                              -normalized_priorities[name], name, candidate, cost))
+        if not moves:
+            break
+        _, _, _, selected, cost = min(moves, key=lambda item: (item[0], item[1], item[2]))
+        current = selected
+        remaining -= cost
+
+    allocated_total = sum(current.values())
+    violations = _constraint_violations(current, constraints)
+    fixed_changed = any(current.get(name) != value for name, value in fixed.items())
+    bounds_violated = any(
+        current.get(name, 0) < minimums[name]
+        or (normalized_maximums[name] is not None and current.get(name, 0) > normalized_maximums[name])
+        for name in minimums
+    )
+    exact = allocated_total == target
+    if exact and not violations and not fixed_changed and not bounds_violated:
+        return AllocationResult(target, current, allocated_total, minimum_total, maximum_total, True, None, "FEASIBLE")
+
+    reason = (
+        f"The bounded allocator established {allocated_total:,} of {target:,} requested rows. "
+        "It could not establish an exact valid allocation within its bounded fairness tail."
+    )
+    if violations:
+        reason += " " + " ".join(violations)
+    if steps >= max_tail_steps and remaining > 0:
+        reason += " The bounded residual-step budget was exhausted."
+    return AllocationResult(target, current, allocated_total, minimum_total, maximum_total, False, reason, "UNRESOLVED")
