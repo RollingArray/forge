@@ -9,6 +9,7 @@ No LLM or UI logic belongs in this service.
 import math
 from typing import Any
 
+from app.services.field_generation_validation import validate_field_generation
 from app.services.relationship_endpoint import parse_relationship_endpoint
 
 
@@ -47,6 +48,25 @@ class SpecificationValidationService:
             )
 
         entities = specification.get("entities", [])
+
+        foreign_key_source_fields: set[tuple[str, str]] = set()
+        foreign_keys = specification.get("foreign_keys", [])
+        if isinstance(foreign_keys, list):
+            for foreign_key in foreign_keys:
+                if not isinstance(foreign_key, dict):
+                    continue
+                source = foreign_key.get("source")
+                if not isinstance(source, dict):
+                    continue
+                source_entity = source.get("entity")
+                source_fields = source.get("fields")
+                if isinstance(source_entity, str) and isinstance(source_fields, list):
+                    foreign_key_source_fields.update(
+                        (source_entity, field_name)
+                        for field_name in source_fields
+                        if isinstance(field_name, str)
+                    )
+
         entity_names: set[str] = set()
 
         for entity in entities:
@@ -82,7 +102,74 @@ class SpecificationValidationService:
                 fields_by_entity=fields_by_entity,
                 add=add,
             )
+
             entity_name = str(entity.get("name", "")).strip()
+            fields = entity.get("fields", [])
+
+            if entity_name and isinstance(fields, list):
+                for field_definition in fields:
+                    if not isinstance(field_definition, dict):
+                        continue
+
+                    field_name = str(
+                        field_definition.get("name", "")
+                    ).strip()
+                    field_type = field_definition.get("type")
+
+                    supported_field_types = {
+                        "IDENTIFIER",
+                        "STRING",
+                        "INTEGER",
+                        "DECIMAL",
+                        "BOOLEAN",
+                        "CATEGORICAL",
+                    }
+
+                    # Missing types are reported by entity validation.
+                    if field_type is None or (
+                        isinstance(field_type, str) and not field_type.strip()
+                    ):
+                        continue
+
+                    if (
+                        not isinstance(field_type, str)
+                        or field_type not in supported_field_types
+                    ):
+                        add(
+                            "error",
+                            "Entity",
+                            "Unsupported field type",
+                            (
+                                f"Field '{field_name or 'Unnamed'}' uses "
+                                f"unsupported type {field_type!r}. Supported "
+                                "types are IDENTIFIER, STRING, INTEGER, "
+                                "DECIMAL, BOOLEAN and CATEGORICAL."
+                            ),
+                            entity_name,
+                            field_name or None,
+                        )
+                        continue
+
+                    is_fk_source = (
+                        entity_name,
+                        field_name,
+                    ) in foreign_key_source_fields
+
+                    for error in validate_field_generation(
+                        field_definition,
+                        require_generation=(
+                            not is_fk_source or field_type == "IDENTIFIER"
+                        ),
+                    ):
+                        add(
+                            "error",
+                            "Generation",
+                            "Invalid field generation configuration",
+                            error,
+                            entity_name,
+                            field_name or None,
+                        )
+
             if entity_name:
                 field_types_by_entity[entity_name] = {
                     str(field.get("name", "")).strip(): str(
