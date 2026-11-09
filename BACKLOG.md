@@ -96,6 +96,7 @@ Progress:
   completed. See Section 6, Population allocation (WP-02).
 - WP-02 remains open for semantic uniqueness, exact decimal handling,
   remaining identity-capacity acceptance, and outstanding test coverage.
+- Confirmed allocation diagnostic gap recorded as WP02-POP-002 below.
 
 #### WP-03: Execution, artifacts and recovery
 Priority: P0
@@ -680,6 +681,35 @@ behavior already adequately tested.
 
   This implementation does not by itself close all WP-02 acceptance
   criteria or the separate semantic and decimal work items.
+
+- [open] WP02-POP-002: Surface allocation support diagnostics and
+  distinguish unsupported semantics from target infeasibility.
+
+  Confirmed behavior:
+  - The allocator blocks unsupported relationship and identity semantics
+    by returning UNRESOLVED before allocation.
+  - The backend response includes allocation_status and
+    allocation_diagnostics.
+  - The frontend candidate model does not declare these response fields.
+  - The candidate decision UI displays target_reason only.
+  - The current generic guidance recommends changing the population
+    driver, even when the underlying cause is unsupported model semantics.
+  - The allocator currently collects diagnostic reasons from unsupported
+    relationships, but does not collect equivalent reasons from unsupported
+    identity capacities.
+
+  Acceptance criteria:
+  - Expose allocation status and diagnostics in the frontend model.
+  - Return meaningful diagnostics for unsupported identity capacities
+    as well as unsupported relationships.
+  - Distinguish INFEASIBLE from UNRESOLVED in the UI.
+  - Display corrective guidance appropriate to the actual failure.
+  - Verify unsupported relationship and identity scenarios through
+    the FORGE UI.
+
+  This is a diagnostic and user experience gap. The existing support gate
+  prevents these unsupported scenarios from being reported as FEASIBLE.
+  No solver correctness defect has been established by this finding.
 
 ---
 
