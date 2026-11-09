@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LoginShellComponent } from './components/login-shell/login-shell.component';
 import { MagicLinkService } from '../../core/services/magic-link.service';
@@ -13,6 +13,9 @@ import { MagicLinkService } from '../../core/services/magic-link.service';
 })
 export class LoginComponent {
   readonly email = signal('');
+  readonly isEmailValid = computed(() =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email().trim()),
+  );
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly linkSent = signal(false);
@@ -22,7 +25,7 @@ export class LoginComponent {
   async continue(): Promise<void> {
     const value = this.email().trim();
 
-    if (!value || this.isLoading() || this.linkSent()) {
+    if (!this.isEmailValid() || this.isLoading() || this.linkSent()) {
       return;
     }
 
