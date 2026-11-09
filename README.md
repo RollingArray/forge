@@ -401,6 +401,89 @@ The project follows a few important engineering principles.
 - Keep population feasibility separate from generation execution.
 - Measure generated-data quality independently.
 
+## Login E2E Testing
+
+Follow these steps whenever application code or E2E tests are updated.
+
+### 1. Stop the existing E2E deployment
+
+```bash
+cd /Users/e10936535/forge
+scripts/stop-extracted-e2e-deployment.sh
+```
+
+Verify that both ports are free before continuing:
+
+```bash
+for port in 18865 18866; do
+  if lsof -nP -iTCP:$port -sTCP:LISTEN 2>/dev/null | grep -q LISTEN; then
+    echo "FAIL: Port $port is still in use. Stop the process before continuing."
+    exit 1
+  fi
+done
+
+echo "PASS: E2E ports are free."
+```
+
+If either port is occupied, do not archive or rebuild. Identify and stop the existing E2E process first.
+
+### 2. Build the frontend
+
+```bash
+npm --prefix frontend run build
+```
+
+### 3. Rebuild the isolated E2E deployment
+
+Archive the previous deployment to preserve it, then build a fresh package:
+
+```bash
+if [ -d dist/forge-e2e ]; then
+  mv dist/forge-e2e "dist/forge-e2e-archive-$(date +%Y%m%d-%H%M%S)"
+fi
+
+python3 scripts/build-e2e-deployment.py
+```
+
+### 4. Start the deployment
+
+Run in a dedicated terminal and keep it open during testing:
+
+```bash
+scripts/run-extracted-e2e-deployment.sh
+```
+
+UI: http://127.0.0.1:18866
+
+### 5. Run the tests
+
+In another terminal:
+
+```bash
+cd /Users/e10936535/forge/frontend
+npx playwright test --config=playwright.login-e2e.config.ts
+```
+
+Individual suites:
+
+```bash
+npx playwright test --config=playwright.login-ui.config.ts
+npx playwright test --config=playwright.multi-user.config.ts
+npx playwright test --config=playwright.real-email.config.ts
+```
+
+The real-email test requires SMTP to be configured in the isolated deployment runtime.
+
+### 6. Stop the deployment
+
+Press `Ctrl+C` in the deployment terminal, or run:
+
+```bash
+cd /Users/e10936535/forge
+scripts/stop-extracted-e2e-deployment.sh
+```
+
+
 ## Troubleshooting
 
 ### Python module not found
