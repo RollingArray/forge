@@ -22,8 +22,33 @@ import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 
 interface ApiErrorBody {
-  detail?: string;
+  detail?: unknown;
   message?: string;
+}
+
+interface ValidationGateDetail {
+  can_continue?: boolean;
+  errors?: number;
+  unsupported?: number;
+}
+
+function getValidationGateDetail(
+  error: HttpErrorResponse,
+): ValidationGateDetail | null {
+  const body = error.error as ApiErrorBody | null | undefined;
+
+  if (!body || typeof body !== 'object' || !body.detail ||
+      typeof body.detail !== 'object') {
+    return null;
+  }
+
+  const detail = body.detail as ValidationGateDetail;
+
+  return detail.can_continue === false &&
+    typeof detail.errors === 'number' &&
+    typeof detail.unsupported === 'number'
+    ? detail
+    : null;
 }
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
@@ -47,7 +72,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         !handledDeleteConflict
       ) {
         notificationService.error(
-          getErrorTitle(error.status),
+          getErrorTitle(error),
           getErrorMessage(error),
           error.status || null,
         );
@@ -58,7 +83,13 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   );
 };
 
-function getErrorTitle(status: number): string {
+function getErrorTitle(error: HttpErrorResponse): string {
+  if (getValidationGateDetail(error)) {
+    return 'Model validation required';
+  }
+
+  const status = error.status;
+
   switch (status) {
     case 400:
       return 'Request could not be completed';
@@ -91,6 +122,16 @@ function getErrorMessage(error: HttpErrorResponse): string {
   }
 
   if (body && typeof body === 'object') {
+    const validation = getValidationGateDetail(error);
+
+    if (validation) {
+      const errorLabel = validation.errors === 1 ? 'error' : 'errors';
+      const unsupportedLabel =
+        validation.unsupported === 1 ? 'unsupported capability' : 'unsupported capabilities';
+
+      return `The model cannot proceed: ${validation.errors} validation ${errorLabel} and ${validation.unsupported} ${unsupportedLabel}. Review Model Validation before continuing.`;
+    }
+
     if (typeof body.detail === 'string' && body.detail.trim()) {
       return body.detail;
     }

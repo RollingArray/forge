@@ -58,21 +58,21 @@
       </span>
     </div>
   } @else if (error(); as message) {
-    <section class="state-card error-state">
-      <div class="state-icon">!</div>
+    <section class="forge-state-card error-state">
+      <div class="forge-state-icon">!</div>
 
-      <div class="state-content">
-        <span class="state-eyebrow">VALIDATION ERROR</span>
+      <div class="forge-state-content">
+        <span class="forge-state-eyebrow">VALIDATION ERROR</span>
         <h2>Validation could not be completed</h2>
         <p>{{ message }}</p>
       </div>
     </section>
   } @else {
-    <section class="state-card loading-state">
+    <section class="forge-state-card loading-state">
       <div class="loading-spinner"></div>
 
-      <div class="state-content">
-        <span class="state-eyebrow">VALIDATING MODEL</span>
+      <div class="forge-state-content">
+        <span class="forge-state-eyebrow">VALIDATING MODEL</span>
         <h2>Validating model specification</h2>
         <p>
           Running deterministic checks against the canonical FORGE specification.

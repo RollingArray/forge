@@ -9,7 +9,7 @@
  * ============================================================================
  */
 
-export type ValidationSeverity = 'error' | 'warning' | 'passed';
+export type ValidationSeverity = 'error' | 'unsupported' | 'warning' | 'passed';
 
 export type ValidationCategory =
   | 'Specification'
@@ -26,6 +26,7 @@ export interface SpecificationValidationFinding {
   category: ValidationCategory;
   title: string;
   details: string;
+  remediation?: string | null;
   entity?: string | null;
   field?: string | null;
 }
@@ -36,6 +37,7 @@ export interface SpecificationValidationEntity {
   checks: number;
   errors: number;
   warnings: number;
+  unsupported: number;
 }
 
 export interface SpecificationValidationResult {
@@ -44,6 +46,7 @@ export interface SpecificationValidationResult {
   vocabularyVersion: string;
   errors: number;
   warnings: number;
+  unsupported: number;
   passed: number;
   totalChecks: number;
   entitiesValidated: number;

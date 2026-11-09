@@ -286,6 +286,61 @@ input {
   border-bottom: 0;
 }
 
+/* Shared FORGE State Card */
+.forge-state-card {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--forge-border);
+  border-radius: 10px;
+  background: var(--forge-surface);
+}
+
+.forge-state-content {
+  min-width: 0;
+}
+
+.forge-state-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--forge-text-eyebrow);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.forge-state-card h2 {
+  margin: 0;
+  color: var(--forge-text-heading);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.forge-state-card p {
+  margin: 5px 0 0;
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.forge-state-icon {
+  display: flex;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+  font-size: 14px;
+  font-weight: 800;
+}
+
 /* Shared AI Column Surface */
 .ai-column {
   border: 1px solid #d8cef2;

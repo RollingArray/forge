@@ -10,6 +10,7 @@
  */
 
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,6 +20,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 import { PopulationService } from './services/population.service';
 import { EntityPopulationTableComponent } from './components/entity-population-table/entity-population-table.component';
@@ -27,6 +29,7 @@ import { PopulationTargetComponent } from './components/population-target/popula
 import { PopulationCandidateDecisionComponent } from './components/population-candidate-decision/population-candidate-decision.component';
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
+import { ForgeButtonComponent } from '../../shared/components/forge-button/forge-button.component';
 import {
   WorkflowStep,
   WorkflowStepItem,
@@ -35,12 +38,20 @@ import {
   PopulationCandidatePlan,
 } from './models/population.models';
 
+interface PopulationLoadFailure {
+  title: string;
+  message: string;
+  errors?: number;
+  unsupported?: number;
+}
+
 @Component({
   selector: 'app-population',
   standalone: true,
   imports: [
     WorkflowPageComponent,
     WorkflowRowComponent,
+    ForgeButtonComponent,
     DecimalPipe,
     EntityPopulationTableComponent,
     PopulationSummaryComponent,
@@ -69,8 +80,18 @@ export class PopulationComponent {
   readonly dataModelId =
     this.route.snapshot.paramMap.get('dataModelId') ?? '';
 
+  readonly populationLoadFailure =
+    signal<PopulationLoadFailure | null>(null);
+
   readonly populationPlan = toSignal(
-    this.populationService.getPopulationPlan(this.dataModelId),
+    this.populationService.getPopulationPlan(this.dataModelId).pipe(
+      catchError((error: unknown) => {
+        this.populationLoadFailure.set(
+          this.buildPopulationLoadFailure(error),
+        );
+        return of(null);
+      }),
+    ),
     { initialValue: null },
   );
 
@@ -224,6 +245,55 @@ export class PopulationComponent {
     }
   }
 
+  private buildPopulationLoadFailure(
+    error: unknown,
+  ): PopulationLoadFailure {
+    if (error instanceof HttpErrorResponse) {
+      const body = error.error as
+        | { detail?: unknown }
+        | null
+        | undefined;
+      const detail = body?.detail;
+
+      if (detail && typeof detail === 'object') {
+        const validation = detail as {
+          can_continue?: boolean;
+          errors?: number;
+          unsupported?: number;
+        };
+
+        if (
+          validation.can_continue === false &&
+          typeof validation.errors === 'number' &&
+          typeof validation.unsupported === 'number'
+        ) {
+          const errorLabel =
+            validation.errors === 1 ? 'error' : 'errors';
+          const unsupportedLabel =
+            validation.unsupported === 1
+              ? 'unsupported capability'
+              : 'unsupported capabilities';
+
+          return {
+            title: 'Population planning is blocked',
+            message:
+              `This model has ${validation.errors} validation ${errorLabel} ` +
+              `and ${validation.unsupported} ${unsupportedLabel}. ` +
+              'Resolve these findings in Model Validation before continuing.',
+            errors: validation.errors,
+            unsupported: validation.unsupported,
+          };
+        }
+      }
+    }
+
+    return {
+      title: 'Unable to load population plan',
+      message:
+        'FORGE could not load the population plan. Return to Model Validation and try again.',
+    };
+  }
+
   backToValidation(): void {
     if (!this.dataModelId) {
       return;
@@ -232,8 +302,7 @@ export class PopulationComponent {
     this.router.navigate([
       '/workspace',
       this.dataModelId,
-      'data-model',
-      'validation',
+      'model-validation',
     ]);
   }
 

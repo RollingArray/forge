@@ -23,15 +23,21 @@ import { WorkspaceScrollAreaComponent } from '../../../../shared/components/work
 export class ModelValidationStatusChartComponent {
   readonly validation = input.required<SpecificationValidationResult>();
 
-  readonly chartLabels = ['Passed', 'Warnings', 'Errors'];
+  readonly chartLabels = ['Passed', 'Warnings', 'Errors', 'Unsupported'];
 
   readonly chartDatasets = computed(() => [
     {
-      data: [this.validation().passed, this.validation().warnings, this.validation().errors],
+      data: [
+        this.validation().passed,
+        this.validation().warnings,
+        this.validation().errors,
+        this.validation().unsupported,
+      ],
       backgroundColor: [
         this.cssColor('--forge-success'),
         this.cssColor('--forge-warning'),
         this.cssColor('--forge-error'),
+        this.cssColor('--forge-error-strong'),
       ],
       borderWidth: 0,
       hoverOffset: 4,
@@ -55,16 +61,18 @@ export class ModelValidationStatusChartComponent {
             size: 10,
           },
           generateLabels: () => {
-            const labels = ['Passed', 'Warnings', 'Errors'];
+            const labels = ['Passed', 'Warnings', 'Errors', 'Unsupported'];
             const values = [
               this.validation().passed,
               this.validation().warnings,
               this.validation().errors,
+              this.validation().unsupported,
             ];
             const colors = [
               this.cssColor('--forge-success'),
               this.cssColor('--forge-warning'),
               this.cssColor('--forge-error'),
+              this.cssColor('--forge-error-strong'),
             ];
 
             return labels.map((label, index) => ({

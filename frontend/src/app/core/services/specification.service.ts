@@ -207,6 +207,7 @@ export class SpecificationService {
         vocabulary_version: string;
         errors: number;
         warnings: number;
+        unsupported: number;
         passed: number;
         total_checks: number;
         entities_validated: number;
@@ -229,6 +230,7 @@ export class SpecificationService {
           vocabularyVersion: response.vocabulary_version,
           errors: response.errors,
           warnings: response.warnings,
+          unsupported: response.unsupported,
           passed: response.passed,
           totalChecks: response.total_checks,
           entitiesValidated: response.entities_validated,

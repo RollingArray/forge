@@ -12,7 +12,9 @@
       [description]="
         validation().canContinue
           ? 'Specification is ready for population planning.'
-          : 'Specification requires attention before continuing.'
+          : validation().unsupported > 0
+            ? validation().errors + ' error(s) and ' + validation().unsupported + ' unsupported capability finding(s) must be resolved before continuing.'
+            : validation().errors + ' specification error(s) must be corrected before continuing.'
       "
       [status]="validation().canContinue ? 'success' : 'error'"
     />

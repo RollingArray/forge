@@ -22,11 +22,12 @@
         <article
           class="finding-row"
           [class.finding-error]="finding.severity === 'error'"
+          [class.finding-unsupported]="finding.severity === 'unsupported'"
           [class.finding-warning]="finding.severity === 'warning'"
           [class.finding-passed]="finding.severity === 'passed'"
         >
           <div class="finding-icon" [attr.data-severity]="finding.severity">
-            @if (finding.severity === 'error') {
+            @if (finding.severity === 'error' || finding.severity === 'unsupported') {
               !
             } @else if (finding.severity === 'warning') {
               !
@@ -45,6 +46,13 @@
             </div>
 
             <p>{{ finding.details }}</p>
+
+            @if (finding.remediation) {
+              <div class="finding-remediation">
+                <strong>Suggested action</strong>
+                <span>{{ finding.remediation }}</span>
+              </div>
+            }
 
             @if (finding.entity || finding.field) {
               <div class="finding-context">

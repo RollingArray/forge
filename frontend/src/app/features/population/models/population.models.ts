@@ -68,5 +68,7 @@ export interface PopulationCandidatePlan extends PopulationPlan {
   allocated_total: number;
   target_feasible: boolean;
   target_reason: string | null;
+  allocation_status: 'FEASIBLE' | 'INFEASIBLE' | 'UNRESOLVED';
+  allocation_diagnostics: string[];
   feasible: boolean;
 }

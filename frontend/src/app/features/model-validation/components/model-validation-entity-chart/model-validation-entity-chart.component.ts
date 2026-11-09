@@ -45,7 +45,7 @@ export class ModelValidationEntityChartComponent {
         (entity) =>
           Math.max(
             0,
-            entity.checks - entity.errors - entity.warnings,
+            entity.checks - entity.errors - entity.warnings - entity.unsupported,
           ),
       ),
       backgroundColor: this.cssColor('--forge-success'),
@@ -69,6 +69,16 @@ export class ModelValidationEntityChartComponent {
         (entity) => entity.errors,
       ),
       backgroundColor: this.cssColor('--forge-error'),
+      borderWidth: 0,
+      borderRadius: 3,
+      stack: 'validation',
+    },
+    {
+      label: 'Unsupported',
+      data: this.validation().entities.map(
+        (entity) => entity.unsupported,
+      ),
+      backgroundColor: this.cssColor('--forge-error-strong'),
       borderWidth: 0,
       borderRadius: 3,
       stack: 'validation',

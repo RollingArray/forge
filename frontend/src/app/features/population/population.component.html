@@ -61,6 +61,23 @@
         [originalPlan]="populationPlan()!"
       />
     </app-workflow-row>
+  } @else if (populationLoadFailure(); as failure) {
+    <section class="forge-state-card error-state" role="alert">
+      <div class="forge-state-icon">!</div>
+
+      <div class="forge-state-content">
+        <span class="forge-state-eyebrow">POPULATION PLAN BLOCKED</span>
+        <h2>{{ failure.title }}</h2>
+        <p>{{ failure.message }}</p>
+
+        <app-forge-button
+          label="Return to Model Validation"
+          icon="arrow_back"
+          variant="secondary"
+          (clicked)="backToValidation()"
+        />
+      </div>
+    </section>
   } @else {
     <section class="loading-card">
       <h2>Loading population plan…</h2>

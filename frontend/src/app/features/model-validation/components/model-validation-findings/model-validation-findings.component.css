@@ -51,6 +51,12 @@ app-workspace-scroll-area {
   color: var(--forge-error-strong);
 }
 
+.finding-icon[data-severity='unsupported'] {
+  background: var(--forge-error-soft);
+  color: var(--forge-error-strong);
+  border: 1px dashed var(--forge-error);
+}
+
 .finding-icon[data-severity='warning'] {
   background: var(--forge-warning-soft);
   color: var(--forge-warning-strong);
@@ -96,6 +102,27 @@ app-workspace-scroll-area {
   line-height: 1.55;
 }
 
+.finding-remediation {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 9px;
+  padding: 9px 11px;
+  border-left: 2px solid var(--forge-error);
+  border-radius: 0 5px 5px 0;
+  background: var(--forge-surface-subtle);
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.finding-remediation strong {
+  color: var(--forge-text-heading);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .finding-context {
   display: flex;
   gap: 7px;
@@ -121,6 +148,10 @@ app-workspace-scroll-area {
 }
 
 .severity-label[data-severity='error'] {
+  color: var(--forge-error-strong);
+}
+
+.severity-label[data-severity='unsupported'] {
   color: var(--forge-error-strong);
 }
 

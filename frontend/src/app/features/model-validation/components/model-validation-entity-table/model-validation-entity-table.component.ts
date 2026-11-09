@@ -11,6 +11,7 @@ export interface ModelValidationEntityTableRow {
   checks: number;
   errors: number;
   warnings: number;
+  unsupported: number;
   status: 'valid' | 'warning' | 'error';
 }
 
@@ -51,6 +52,11 @@ export class ModelValidationEntityTableComponent {
       key: 'warnings',
       label: 'Warnings',
       type: 'warning-count',
+    },
+    {
+      key: 'unsupported',
+      label: 'Unsupported',
+      type: 'number',
     },
     {
       key: 'status',

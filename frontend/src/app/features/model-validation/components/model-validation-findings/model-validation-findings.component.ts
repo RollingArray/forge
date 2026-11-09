@@ -15,7 +15,7 @@ import {
   WorkspaceToolbarFilter,
 } from '../../../../shared/components/workspace-table-toolbar/workspace-table-toolbar.component';
 
-export type ValidationFilter = 'all' | 'error' | 'warning' | 'passed';
+export type ValidationFilter = 'all' | 'error' | 'unsupported' | 'warning' | 'passed';
 
 @Component({
   selector: 'app-model-validation-findings',
@@ -44,6 +44,7 @@ export class ModelValidationFindingsComponent {
       icon: 'fact_check',
       count: this.filterCount('all'),
       active: this.activeFilter() === 'all',
+      variant: 'primary',
     },
     {
       id: 'error',
@@ -51,6 +52,14 @@ export class ModelValidationFindingsComponent {
       icon: 'error',
       count: this.filterCount('error'),
       active: this.activeFilter() === 'error',
+      variant: 'danger',
+    },
+    {
+      id: 'unsupported',
+      label: 'Unsupported',
+      icon: 'block',
+      count: this.filterCount('unsupported'),
+      active: this.activeFilter() === 'unsupported',
       variant: 'danger',
     },
     {
@@ -92,6 +101,7 @@ export class ModelValidationFindingsComponent {
         finding.category,
         finding.title,
         finding.details,
+        finding.remediation ?? '',
         finding.entity ?? '',
         finding.field ?? '',
       ]
@@ -105,6 +115,7 @@ export class ModelValidationFindingsComponent {
     if (
       filter === 'all' ||
       filter === 'error' ||
+      filter === 'unsupported' ||
       filter === 'warning' ||
       filter === 'passed'
     ) {

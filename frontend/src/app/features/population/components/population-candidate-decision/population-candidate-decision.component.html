@@ -12,15 +12,19 @@
   <div class="candidate-decision-content">
     <div class="candidate-decision-header">
       <strong>
-        {{
-          candidate().feasible
-            ? 'Candidate plan is feasible'
-            : 'Target cannot be achieved with this driver'
-        }}
+        @if (candidate().feasible) {
+          Candidate plan is feasible
+        } @else if (candidate().allocation_status === 'UNRESOLVED') {
+          Allocation cannot be verified
+        } @else if (candidate().allocation_status === 'INFEASIBLE') {
+          Target cannot be achieved with this driver
+        } @else {
+          Allocation needs review
+        }
       </strong>
 
       <span class="candidate-decision-status">
-        {{ candidate().feasible ? 'FEASIBLE' : 'NEEDS REVIEW' }}
+        {{ candidate().feasible ? 'FEASIBLE' : candidate().allocation_status === 'FEASIBLE' ? 'NEEDS REVIEW' : candidate().allocation_status }}
       </span>
     </div>
 
@@ -32,7 +36,38 @@
         <strong>{{ entityCount() }}</strong>
         entities and the resulting population satisfies the model constraints.
       </p>
-    } @else {
+    } @else if (candidate().allocation_status === 'UNRESOLVED') {
+      <p>
+        FORGE cannot verify this allocation because the specification contains
+        relationship or identity semantics that the allocator cannot currently establish.
+      </p>
+
+      @if (candidate().target_reason) {
+        <div class="candidate-decision-reason">
+          <span class="material-symbols-outlined">info</span>
+          <span>{{ candidate().target_reason }}</span>
+        </div>
+      }
+
+      @if (candidate().allocation_diagnostics.length > 0) {
+        <div class="candidate-decision-reason">
+          <span class="material-symbols-outlined">report_problem</span>
+          <ul class="candidate-decision-diagnostics">
+            @for (diagnostic of candidate().allocation_diagnostics; track $index) {
+              <li>{{ diagnostic }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="candidate-decision-guidance">
+        <strong>What you can do</strong>
+        <span>
+          Review the specification diagnostics and correct the unsupported or invalid
+          relationship and identity definitions before requesting another allocation.
+        </span>
+      </div>
+    } @else if (candidate().allocation_status === 'INFEASIBLE') {
       <p>
         The requested target of
         <strong>{{ candidate().target | number }}</strong>
@@ -51,8 +86,21 @@
       <div class="candidate-decision-guidance">
         <strong>What you can do</strong>
         <span>
-          Increase the target, or choose a different population driver that allows more of the model
-          to scale.
+          Review the target and population constraints, or choose a different population
+          driver that allows more of the model to scale.
+        </span>
+      </div>
+    } @else {
+      <p>
+        The allocation solver produced a candidate, but one or more entity
+        populations did not pass the overall feasibility checks.
+      </p>
+
+      <div class="candidate-decision-guidance">
+        <strong>What you can do</strong>
+        <span>
+          Review the population plan and entity-level feasibility details before
+          proceeding with generation.
         </span>
       </div>
     }
