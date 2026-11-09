@@ -97,6 +97,11 @@ Progress:
 - WP-02 remains open for semantic uniqueness, exact decimal handling,
   remaining identity-capacity acceptance, and outstanding test coverage.
 - Confirmed allocation diagnostic gap recorded as WP02-POP-002 below.
+- WP02-POP-002 frontend implementation is now in place. Allocation status
+  and diagnostics are exposed, and the candidate decision UI distinguishes
+  FEASIBLE, INFEASIBLE and UNRESOLVED outcomes.
+- Remaining work: backend regression coverage for unsupported identity and
+  relationship diagnostic paths, followed by UI acceptance of both scenarios.
 
 #### WP-03: Execution, artifacts and recovery
 Priority: P0
@@ -682,7 +687,7 @@ behavior already adequately tested.
   This implementation does not by itself close all WP-02 acceptance
   criteria or the separate semantic and decimal work items.
 
-- [open] WP02-POP-002: Surface allocation support diagnostics and
+- [pending] WP02-POP-002: Surface allocation support diagnostics and
   distinguish unsupported semantics from target infeasibility.
 
   Confirmed behavior:
@@ -700,19 +705,45 @@ behavior already adequately tested.
     UNRESOLVED, and a solver-feasible candidate that fails overall
     population feasibility.
 
+  Implementation progress:
+  - [done] Frontend population models expose allocation status and diagnostics.
+  - [done] Candidate decision UI distinguishes the allocation outcomes and
+    overall population feasibility.
+  - [done] Corrective guidance is presented according to the failure category.
+  - [pending] Add or confirm backend regression tests for unsupported identity
+    and relationship diagnostic paths.
+  - [pending] Verify unsupported identity and relationship scenarios through
+    the FORGE UI.
+
   Acceptance criteria:
-  - Expose allocation status and diagnostics in the frontend model.
-  - Add backend regression tests for unsupported identity and relationship
-    diagnostic paths.
-  - Distinguish INFEASIBLE from UNRESOLVED in the UI.
-  - Preserve the overall feasible check when presenting success.
-  - Display corrective guidance appropriate to the actual failure.
-  - Verify unsupported relationship and identity scenarios through
+  - [done] Expose allocation status and diagnostics in the frontend model.
+  - [pending] Add or confirm backend regression tests for unsupported identity
+    and relationship diagnostic paths.
+  - [done] Distinguish INFEASIBLE from UNRESOLVED in the UI.
+  - [done] Preserve the overall feasible check when presenting success.
+  - [done] Display corrective guidance appropriate to the actual failure.
+  - [pending] Verify unsupported relationship and identity scenarios through
     the FORGE UI.
 
   This is a diagnostic and user experience gap. The existing support gate
   prevents these unsupported scenarios from being reported as FEASIBLE.
   No solver correctness defect has been established by this finding.
+
+### Model Validation and Population workflow
+
+- [done] UI-01: Handle the population-plan validation gate during initial load.
+  A structured HTTP 422 response no longer leaves Population in a permanent
+  loading state. The blocked state presents the validation summary and a
+  return-to-validation action.
+- [done] Use the shared state-card presentation for Model Validation loading
+  and error states and the Population blocked state.
+- [done] Represent unsupported capabilities separately in Model Validation
+  findings, counts, charts and filters.
+- [done] Correct the Population return navigation to the registered
+  `/workspace/:dataModelId/model-validation` route.
+- [done] Verify the blocked Population state and return navigation through
+  the FORGE UI using `RC_WP01_MASTER_NEGATIVE_V3`
+  (`2b73c96a-2261-4f27-b43e-e5d438c9887c`).
 
 ---
 
