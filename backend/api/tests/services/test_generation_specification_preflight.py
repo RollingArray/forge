@@ -218,3 +218,20 @@ def test_invalid_specification_blocks_interrupted_job_before_reconciliation():
     service._job_store.save.assert_not_called()
     log_store.append.assert_not_called()
     checkpoint_store.create_checkpoint.assert_not_called()
+
+
+def test_invalid_specification_blocks_generation_readiness_before_planning():
+    (
+        service,
+        validator,
+        planner,
+        checkpoint_store,
+        log_store,
+    ) = build_service(can_continue=False)
+
+    with pytest.raises(SpecificationValidationError):
+        service.get_readiness(data_model_id=DATA_MODEL_ID)
+
+    assert validator.calls == 1
+    planner.build.assert_not_called()
+

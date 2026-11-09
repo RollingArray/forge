@@ -6,11 +6,16 @@ The canonical specification is authoritative.
 No LLM or UI logic belongs in this service.
 """
 
-import math
+from decimal import Decimal, InvalidOperation
 from typing import Any
+
+from app.services.dependency_ordering import DependencyCycleError, resolve_dependency_order
 
 from app.services.field_generation_validation import validate_field_generation
 from app.services.relationship_endpoint import parse_relationship_endpoint
+from app.services.population.constraint_analysis import (
+    analyze_specification_constraints,
+)
 
 
 class SpecificationValidationService:
@@ -30,6 +35,7 @@ class SpecificationValidationService:
             details: str,
             entity: str | None = None,
             field: str | None = None,
+            remediation: str | None = None,
         ) -> None:
             nonlocal sequence
 
@@ -44,10 +50,119 @@ class SpecificationValidationService:
                     "details": details,
                     "entity": entity,
                     "field": field,
+                    "remediation": remediation,
                 }
             )
 
+        if not isinstance(specification, dict):
+            add(
+                "error",
+                "Specification",
+                "Invalid specification structure",
+                "The specification must be an object.",
+            )
+            specification = {}
+
         entities = specification.get("entities", [])
+        if not isinstance(entities, list):
+            add(
+                "error",
+                "Specification",
+                "Invalid entities collection",
+                "The specification entities value must be a list.",
+            )
+            entities = []
+
+        if not entities:
+            add(
+                "error",
+                "Specification",
+                "No entities defined",
+                "The specification must contain at least one entity.",
+            )
+
+        valid_entities = []
+        for index, entity in enumerate(entities, start=1):
+            if not isinstance(entity, dict):
+                add(
+                    "error",
+                    "Entity",
+                    "Invalid entity definition",
+                    f"Entity entry {index} must be an object.",
+                )
+                continue
+            valid_entities.append(entity)
+
+        entities = valid_entities
+
+        foreign_keys = specification.get("foreign_keys", [])
+        if not isinstance(foreign_keys, list):
+            add(
+                "error",
+                "Foreign Key",
+                "Invalid foreign key collection",
+                "The foreign_keys value must be a list.",
+            )
+            foreign_keys = []
+
+        relationships = specification.get("relationships", [])
+        if not isinstance(relationships, list):
+            add(
+                "error",
+                "Relationship",
+                "Invalid relationship collection",
+                "The relationships value must be a list.",
+            )
+            relationships = []
+
+        constraints = specification.get("constraints", [])
+        if not isinstance(constraints, list):
+            add(
+                "error",
+                "Constraint",
+                "Invalid constraint collection",
+                "The constraints value must be a list.",
+            )
+            constraints = []
+
+        additional_sections = (
+            ("dependencies", "Dependency"),
+            ("statistical_behavior", "Statistical behavior"),
+            ("scenarios", "Scenario"),
+        )
+        normalized_additional_sections = {}
+
+        for section_name, label in additional_sections:
+            section = specification.get(section_name, [])
+
+            if not isinstance(section, list):
+                add(
+                    "error",
+                    "Specification",
+                    f"Invalid {section_name} collection",
+                    f"The {section_name} value must be a list of objects.",
+                )
+                section = []
+
+            normalized_additional_sections[section_name] = section
+
+            for index, item in enumerate(section, start=1):
+                if not isinstance(item, dict):
+                    add(
+                        "error",
+                        "Specification",
+                        f"Invalid {label.lower()} definition",
+                        f"{section_name} entry {index} must be an object.",
+                    )
+
+        specification = {
+            **specification,
+            "entities": entities,
+            "foreign_keys": foreign_keys,
+            "relationships": relationships,
+            "constraints": constraints,
+            **normalized_additional_sections,
+        }
 
         foreign_key_source_fields: set[tuple[str, str]] = set()
         foreign_keys = specification.get("foreign_keys", [])
@@ -62,7 +177,7 @@ class SpecificationValidationService:
                 source_fields = source.get("fields")
                 if isinstance(source_entity, str) and isinstance(source_fields, list):
                     foreign_key_source_fields.update(
-                        (source_entity, field_name)
+                        (source_entity.strip(), field_name)
                         for field_name in source_fields
                         if isinstance(field_name, str)
                     )
@@ -70,14 +185,15 @@ class SpecificationValidationService:
         entity_names: set[str] = set()
 
         for entity in entities:
-            name = str(entity.get("name", "")).strip()
+            raw_name = entity.get("name")
+            name = raw_name.strip() if isinstance(raw_name, str) else ""
 
             if not name:
                 add(
                     "error",
                     "Entity",
-                    "Entity name is missing",
-                    "Every entity must have a non-empty name.",
+                    "Invalid entity name",
+                    "Every entity must have a non-empty string name.",
                 )
                 continue
 
@@ -96,6 +212,10 @@ class SpecificationValidationService:
         field_types_by_entity: dict[str, dict[str, str]] = {}
 
         for entity in entities:
+            raw_entity_name = entity.get("name")
+            if not isinstance(raw_entity_name, str) or not raw_entity_name.strip():
+                continue
+
             self._validate_entity(
                 entity=entity,
                 entity_names=entity_names,
@@ -103,7 +223,12 @@ class SpecificationValidationService:
                 add=add,
             )
 
-            entity_name = str(entity.get("name", "")).strip()
+            raw_entity_name = entity.get("name")
+            entity_name = (
+                raw_entity_name.strip()
+                if isinstance(raw_entity_name, str)
+                else ""
+            )
             fields = entity.get("fields", [])
 
             if entity_name and isinstance(fields, list):
@@ -111,9 +236,12 @@ class SpecificationValidationService:
                     if not isinstance(field_definition, dict):
                         continue
 
-                    field_name = str(
-                        field_definition.get("name", "")
-                    ).strip()
+                    raw_field_name = field_definition.get("name")
+                    field_name = (
+                        raw_field_name.strip()
+                        if isinstance(raw_field_name, str)
+                        else ""
+                    )
                     field_type = field_definition.get("type")
 
                     supported_field_types = {
@@ -171,15 +299,20 @@ class SpecificationValidationService:
                         )
 
             if entity_name:
+                safe_fields = entity.get("fields", [])
+                if not isinstance(safe_fields, list):
+                    safe_fields = []
                 field_types_by_entity[entity_name] = {
-                    str(field.get("name", "")).strip(): str(
-                        field.get("type", "")
-                    ).strip().upper()
-                    for field in entity.get("fields", [])
-                    if str(field.get("name", "")).strip()
+                    field["name"].strip(): field["type"].strip().upper()
+                    for field in safe_fields
+                    if isinstance(field, dict)
+                    and isinstance(field.get("name"), str)
+                    and field["name"].strip()
+                    and isinstance(field.get("type"), str)
                 }
 
-        version = str(specification.get("version", "")).strip()
+        raw_version = specification.get("version")
+        version = raw_version.strip() if isinstance(raw_version, str) else ""
 
         if version:
             add(
@@ -196,9 +329,12 @@ class SpecificationValidationService:
                 "A specification version is required.",
             )
 
-        vocabulary_version = str(
-            specification.get("vocabulary_version", "")
-        ).strip()
+        raw_vocabulary_version = specification.get("vocabulary_version")
+        vocabulary_version = (
+            raw_vocabulary_version.strip()
+            if isinstance(raw_vocabulary_version, str)
+            else ""
+        )
 
         if vocabulary_version:
             add(
@@ -215,34 +351,58 @@ class SpecificationValidationService:
                 "A vocabulary version is required.",
             )
 
-        model = specification.get("model", {})
+        model = specification.get("model")
+        model_is_object = isinstance(model, dict)
+        if not model_is_object:
+            add(
+                "error",
+                "Model",
+                "Invalid model definition",
+                "The specification model value must be an object.",
+            )
+            model = {}
 
-        if str(model.get("name", "")).strip():
+        model_name_value = model.get("name")
+        model_name = (
+            model_name_value.strip()
+            if isinstance(model_name_value, str)
+            else ""
+        )
+        if model_is_object and model_name:
             add(
                 "passed",
                 "Model",
                 "Model definition is valid",
-                f"Model '{model['name']}' is defined.",
+                f"Model '{model_name}' is defined.",
             )
-        else:
+        elif model_is_object:
             add(
                 "error",
                 "Model",
                 "Model name is missing",
-                "The specification must identify the model.",
+                "The specification must identify the model with a non-empty string.",
             )
 
-        generation = specification.get("generation", {})
+        generation = specification.get("generation")
+        generation_is_object = isinstance(generation, dict)
+        if not generation_is_object:
+            add(
+                "error",
+                "Generation",
+                "Invalid generation definition",
+                "The specification generation value must be an object.",
+            )
+            generation = {}
         seed = generation.get("seed")
 
-        if isinstance(seed, int) and not isinstance(seed, bool):
+        if generation_is_object and isinstance(seed, int) and not isinstance(seed, bool):
             add(
                 "passed",
                 "Generation",
                 "Generation seed is valid",
                 f"Seed {seed} is configured.",
             )
-        else:
+        elif generation_is_object:
             add(
                 "error",
                 "Generation",
@@ -257,7 +417,7 @@ class SpecificationValidationService:
             add=add,
         )
 
-        self._validate_foreign_keys(
+        valid_foreign_key_names = self._validate_foreign_keys(
             specification=specification,
             entity_names=entity_names,
             fields_by_entity=fields_by_entity,
@@ -269,6 +429,16 @@ class SpecificationValidationService:
             entity_names=entity_names,
             fields_by_entity=fields_by_entity,
             field_types_by_entity=field_types_by_entity,
+            add=add,
+        )
+
+        # Capability analysis is independent of structural validation.
+        # Run it even when structural findings exist so users see all
+        # specification issues in one validation pass.
+        # Population settings are neutralized inside the capability pass.
+        self._validate_capabilities(
+            specification=specification,
+            valid_foreign_key_names=valid_foreign_key_names,
             add=add,
         )
 
@@ -287,22 +457,356 @@ class SpecificationValidationService:
             for finding in findings
         )
 
+        unsupported = sum(
+            finding["severity"] == "unsupported"
+            for finding in findings
+        )
+
         return {
-            "model_name": model.get("name", "Untitled Model"),
+            "model_name": model_name or "Untitled Model",
             "specification_version": version or "Unknown",
             "vocabulary_version": vocabulary_version or "Unknown",
             "errors": errors,
             "warnings": warnings,
+            "unsupported": unsupported,
             "passed": passed,
             "total_checks": len(findings),
             "entities_validated": len(entities),
-            "can_continue": errors == 0,
+            "can_continue": errors == 0 and unsupported == 0,
             "findings": findings,
             "entities": self._build_entity_results(
                 entities,
                 findings,
             ),
         }
+
+    def _validate_capabilities(
+        self,
+        specification: dict[str, Any],
+        valid_foreign_key_names: set[str],
+        add,
+    ) -> None:
+        """Validate identity and relationship capabilities without populations.
+
+        Structural validators own malformed entity/FK/relationship definitions.
+        This pass contributes identity capability, FK identity composition,
+        relationship mapping, and dependency-cycle findings without repeating
+        structural diagnostics.
+        """
+        safe_entities: list[dict[str, Any]] = []
+        safe_entity_names: set[str] = set()
+
+        for entity in specification.get("entities", []):
+            if not isinstance(entity, dict):
+                continue
+            name = entity.get("name")
+            if not isinstance(name, str) or not name.strip():
+                continue
+            fields = entity.get("fields", [])
+            if not isinstance(fields, list):
+                fields = []
+            safe_fields = []
+            for field_spec in fields:
+                if not isinstance(field_spec, dict):
+                    continue
+                field_name = field_spec.get("name")
+                if not isinstance(field_name, str) or not field_name.strip():
+                    continue
+                normalized_field = dict(field_spec)
+                if not isinstance(normalized_field.get("identity"), dict):
+                    normalized_field["identity"] = {}
+                if not isinstance(normalized_field.get("generation"), dict):
+                    normalized_field["generation"] = {}
+                generation = normalized_field["generation"]
+                if not isinstance(generation.get("parameters"), dict):
+                    generation["parameters"] = {}
+                safe_fields.append(normalized_field)
+
+            identity = entity.get("identity")
+            if not isinstance(identity, dict):
+                identity = {"fields": []}
+            else:
+                identity_fields = identity.get("fields", [])
+                if not isinstance(identity_fields, list):
+                    identity_fields = []
+                identity = {
+                    **identity,
+                    "fields": [
+                        item for item in identity_fields
+                        if isinstance(item, str) and item.strip()
+                    ],
+                }
+
+            safe_entities.append({
+                **entity,
+                "name": name.strip(),
+                "fields": safe_fields,
+                "identity": identity,
+                "population": {"count": None, "scaling": "SCALABLE"},
+            })
+            safe_entity_names.add(name.strip())
+
+        safe_foreign_keys = []
+        raw_foreign_keys = specification.get("foreign_keys", [])
+        if isinstance(raw_foreign_keys, list):
+            for foreign_key in raw_foreign_keys:
+                if not isinstance(foreign_key, dict):
+                    continue
+                source = foreign_key.get("source")
+                target = foreign_key.get("target")
+                if not isinstance(source, dict) or not isinstance(target, dict):
+                    continue
+                child = source.get("entity")
+                parent = target.get("entity")
+                child_fields = source.get("fields")
+                parent_fields = target.get("fields")
+                if (
+                    not isinstance(child, str)
+                    or not isinstance(parent, str)
+                    or child.strip() not in safe_entity_names
+                    or parent.strip() not in safe_entity_names
+                    or not isinstance(child_fields, list)
+                    or not isinstance(parent_fields, list)
+                    or not child_fields
+                    or len(child_fields) != len(parent_fields)
+                    or not all(isinstance(item, str) and item.strip() for item in child_fields)
+                    or not all(isinstance(item, str) and item.strip() for item in parent_fields)
+                ):
+                    continue
+                safe_foreign_keys.append({
+                    **foreign_key,
+                    "source": {**source, "entity": child.strip()},
+                    "target": {**target, "entity": parent.strip()},
+                })
+
+        raw_relationships = specification.get("relationships", [])
+        safe_relationships = (
+            raw_relationships if isinstance(raw_relationships, list) else []
+        )
+        capability_specification = {
+            **specification,
+            "entities": safe_entities,
+            "foreign_keys": safe_foreign_keys,
+            "relationships": safe_relationships,
+        }
+
+        try:
+            analysis = analyze_specification_constraints(capability_specification)
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
+            add(
+                "error",
+                "Specification",
+                "Capability validation could not complete",
+                (
+                    "FORGE could not complete identity and relationship "
+                    f"capability validation: {exc}"
+                ),
+                remediation=(
+                    "Correct malformed identity, foreign-key, or relationship "
+                    "definitions in Model Studio and validate again."
+                ),
+            )
+            return
+
+        structural_diagnostics_owned_by_validator = {
+            # Entity structure is authoritatively checked by _validate_entity.
+            "INVALID_ENTITIES",
+            "EMPTY_ENTITIES",
+            "INVALID_ENTITY",
+            "DUPLICATE_ENTITY",
+            # Foreign-key structure is authoritatively checked by
+            # _validate_foreign_keys.
+            "INVALID_FOREIGN_KEYS",
+            "INVALID_FOREIGN_KEY",
+            "INVALID_FOREIGN_KEY_ENDPOINT",
+            "INVALID_FOREIGN_KEY_MAPPING",
+            "SELF_REFERENCING_FOREIGN_KEY",
+            "DUPLICATE_FOREIGN_KEY_FIELD",
+            "FOREIGN_KEY_FIELD_MISSING",
+            "FOREIGN_KEY_PARENT_IDENTITY_MISSING",
+            "FOREIGN_KEY_TARGET_IDENTITY_MISMATCH",
+            # Relationship declaration structure is checked by
+            # _validate_relationships.
+            "INVALID_RELATIONSHIPS",
+            "INVALID_RELATIONSHIP",
+            "INVALID_RELATIONSHIP_ENDPOINT",
+            "INVALID_RELATIONSHIP_PARTICIPATION",
+            "UNSUPPORTED_RELATIONSHIP_TYPE",
+            "UNKNOWN_RELATIONSHIP_ENTITY",
+            "UNKNOWN_RELATIONSHIP_FIELD",
+            # Identity field structure is checked by _validate_entity.
+            "INVALID_IDENTITY_FIELDS",
+            "IDENTITY_FIELD_MISSING",
+        }
+
+        population_diagnostics_owned_by_planner = {
+            "INVALID_POPULATION_COUNT",
+            "UNSUPPORTED_SCALING",
+            "FIXED_COUNT_MISSING",
+        }
+
+        suppressed_diagnostics = (
+            structural_diagnostics_owned_by_validator
+            | population_diagnostics_owned_by_planner
+        )
+
+        for diagnostic in analysis.diagnostics:
+            code = diagnostic.get("code", "CAPABILITY_VALIDATION")
+            if code in suppressed_diagnostics:
+                continue
+
+            message = diagnostic.get("message", "Capability check failed.")
+            subject = diagnostic.get("subject", "")
+            is_relationship = (
+                "RELATIONSHIP" in code
+                or code == "UNSUPPORTED_MANY_TO_MANY"
+            )
+            is_unsupported = (
+                code == "UNSUPPORTED_LOCAL_IDENTITY"
+                or code == "UNSUPPORTED_MANY_TO_MANY"
+            )
+
+            if code == "UNSUPPORTED_LOCAL_IDENTITY":
+                category = "Generation"
+                remediation = (
+                    "Choose an identity configuration supported by FORGE, "
+                    "such as a sequential identifier or a supported finite "
+                    "identity domain."
+                )
+            elif is_relationship:
+                category = "Relationship"
+                remediation = (
+                    "Correct the relationship endpoints and cardinality, or "
+                    "add one complete ordered foreign-key mapping in the "
+                    "direction required by the declared relationship."
+                    if not is_unsupported
+                    else "Model the association explicitly using supported "
+                    "junction-entity and foreign-key definitions."
+                )
+            else:
+                category = "Entity" if "IDENTITY" in code else "Foreign Key"
+                remediation = (
+                    "Correct the identity or foreign-key definition in "
+                    "Model Studio and validate the specification again."
+                )
+
+            entity = None
+            field = None
+            if category == "Generation" and isinstance(subject, str) and "." in subject:
+                entity, field = subject.split(".", 1)
+            elif category == "Entity":
+                entity = subject or None
+
+            severity = "unsupported" if is_unsupported else "error"
+            add(
+                severity,
+                category,
+                code.replace("_", " ").title(),
+                message,
+                entity,
+                field,
+                remediation,
+            )
+
+        # A relationship is reported as passed only after the canonical
+        # resolver has established exactly one complete ordered FK mapping.
+        seen_mapped: set[tuple[str, str, str, str]] = set()
+        for relationship in analysis.relationships:
+            if (
+                relationship.status != "MAPPED"
+                or not relationship.fk_name
+                or relationship.fk_name not in valid_foreign_key_names
+            ):
+                continue
+            key = (
+                relationship.source,
+                relationship.target,
+                relationship.relationship_type,
+                relationship.fk_name,
+            )
+            if key in seen_mapped:
+                continue
+            seen_mapped.add(key)
+            add(
+                "passed",
+                "Relationship",
+                "Relationship mapping is valid",
+                (
+                    f"{relationship.source} → {relationship.target} is mapped "
+                    f"through {relationship.fk_name} ({relationship.fk_direction}). "
+                    f"Child entity: {relationship.child_entity}; parent entity: "
+                    f"{relationship.parent_entity}. Endpoint fields match in "
+                    "the declared order. Row-level cardinality and participation "
+                    "remain subject to generation-time verification."
+                ),
+                relationship.child_entity,
+            )
+
+        self._validate_dependency_cycles(
+            specification=capability_specification,
+            add=add,
+        )
+
+    def _validate_dependency_cycles(
+        self,
+        specification: dict[str, Any],
+        add,
+    ) -> None:
+        """Reject FK dependency graphs that cannot be topologically ordered."""
+
+        entities = specification.get("entities", [])
+        foreign_keys = specification.get("foreign_keys", [])
+
+        entity_names = {
+            entity.get("name")
+            for entity in entities
+            if isinstance(entity, dict)
+            and isinstance(entity.get("name"), str)
+            and entity.get("name")
+        }
+
+        dependencies: list[tuple[str, str]] = []
+
+        for foreign_key in foreign_keys:
+            if not isinstance(foreign_key, dict):
+                continue
+
+            source = foreign_key.get("source")
+            target = foreign_key.get("target")
+
+            if not isinstance(source, dict) or not isinstance(target, dict):
+                continue
+
+            child = source.get("entity")
+            parent = target.get("entity")
+
+            if (
+                isinstance(child, str)
+                and isinstance(parent, str)
+                and child in entity_names
+                and parent in entity_names
+            ):
+                dependencies.append((parent, child))
+
+        try:
+            resolve_dependency_order(
+                sorted(entity_names),
+                dependencies,
+            )
+        except DependencyCycleError as exc:
+            add(
+                "error",
+                "Foreign Key",
+                "Foreign-key dependency cycle detected",
+                (
+                    "FORGE cannot establish a valid generation order because "
+                    "the foreign-key dependency graph contains a cycle "
+                    f"involving: {', '.join(exc.unresolved_entities)}. "
+                    "Revise the dependencies so parent entities can be "
+                    "generated before their dependent child entities."
+                ),
+            )
+
 
     def _validate_entity(
         self,
@@ -311,25 +815,59 @@ class SpecificationValidationService:
         fields_by_entity: dict[str, set[str]],
         add,
     ) -> None:
-        name = str(entity.get("name", "")).strip()
+        raw_name = entity.get("name")
+        name = raw_name.strip() if isinstance(raw_name, str) else ""
 
         if not name:
+            add(
+                "error",
+                "Entity",
+                "Invalid entity name",
+                "Entity name must be a non-empty string.",
+            )
             return
 
         fields = entity.get("fields", [])
         field_names: set[str] = set()
         valid = True
 
-        for field in fields:
-            field_name = str(field.get("name", "")).strip()
+        if not isinstance(fields, list):
+            add(
+                "error",
+                "Entity",
+                "Invalid field collection",
+                f"Entity '{name}' fields must be a list.",
+                name,
+            )
+            fields = []
+            valid = False
+
+        for index, field in enumerate(fields, start=1):
+            if not isinstance(field, dict):
+                add(
+                    "error",
+                    "Entity",
+                    "Invalid field definition",
+                    f"Field entry {index} in entity '{name}' must be an object.",
+                    name,
+                )
+                valid = False
+                continue
+
+            raw_field_name = field.get("name")
+            field_name = (
+                raw_field_name.strip()
+                if isinstance(raw_field_name, str)
+                else ""
+            )
 
             if not field_name:
                 valid = False
                 add(
                     "error",
                     "Entity",
-                    "Field name is missing",
-                    f"Entity '{name}' contains a field without a name.",
+                    "Invalid field name",
+                    f"Entity '{name}' contains a field without a non-empty string name.",
                     name,
                 )
                 continue
@@ -360,14 +898,50 @@ class SpecificationValidationService:
 
         fields_by_entity[name] = field_names
 
-        identity = entity.get("identity", {})
-        identity_fields = (
-            identity.get("fields", [])
-            if isinstance(identity, dict)
-            else []
-        )
+        identity = entity.get("identity")
+        if identity is None:
+            identity_fields: list[str] = []
+            identity_missing = True
+        elif not isinstance(identity, dict):
+            valid = False
+            identity_fields = []
+            identity_missing = False
+            add(
+                "error",
+                "Entity",
+                "Invalid identity definition",
+                f"Entity '{name}' identity must be an object containing a fields list.",
+                name,
+            )
+        else:
+            raw_identity_fields = identity.get("fields", [])
+            identity_missing = isinstance(raw_identity_fields, list) and not raw_identity_fields
+            if not isinstance(raw_identity_fields, list):
+                valid = False
+                identity_fields = []
+                add(
+                    "error",
+                    "Entity",
+                    "Invalid identity fields",
+                    f"Entity '{name}' identity.fields must be a list of field names.",
+                    name,
+                )
+            else:
+                identity_fields = [
+                    item for item in raw_identity_fields
+                    if isinstance(item, str) and item.strip()
+                ]
+                if len(identity_fields) != len(raw_identity_fields):
+                    valid = False
+                    add(
+                        "error",
+                        "Entity",
+                        "Invalid identity field",
+                        f"Entity '{name}' identity fields must be non-empty strings.",
+                        name,
+                    )
 
-        if not identity_fields:
+        if identity_missing:
             valid = False
             add(
                 "error",
@@ -376,7 +950,7 @@ class SpecificationValidationService:
                 f"Entity '{name}' does not define an identity field.",
                 name,
             )
-        else:
+        elif identity_fields:
             if len(identity_fields) != len(set(identity_fields)):
                 valid = False
                 add(
@@ -388,16 +962,7 @@ class SpecificationValidationService:
                 )
 
             for identity_field in identity_fields:
-                if not isinstance(identity_field, str) or not identity_field:
-                    valid = False
-                    add(
-                        "error",
-                        "Entity",
-                        "Invalid identity field",
-                        f"Entity '{name}' contains an invalid identity field.",
-                        name,
-                    )
-                elif identity_field not in field_names:
+                if identity_field not in field_names:
                     valid = False
                     add(
                         "error",
@@ -408,44 +973,11 @@ class SpecificationValidationService:
                         identity_field,
                     )
 
-        population_config = entity.get("population")
-        population = (
-            population_config.get("count")
-            if isinstance(population_config, dict)
-            else None
-        )
-
-        if population is None:
-            # Population selection belongs to population planning, not
-            # specification authoring. Missing counts must not block a model.
-            add(
-                "warning",
-                "Entity",
-                "Population count is not specified",
-                f"Entity '{name}' has no requested population count. "
-                "Choose or resolve its population during population planning "
-                "before generation.",
-                name,
-            )
-        elif (
-            not isinstance(population, int)
-            or isinstance(population, bool)
-            or population < 0
-        ):
-            valid = False
-            add(
-                "error",
-                "Entity",
-                "Population count is invalid",
-                f"Entity '{name}' must define a non-negative integer population count.",
-                name,
-            )
-
         if valid:
             add(
                 "passed",
                 "Entity",
-                "Entity definition is valid",
+                "Entity structure is valid",
                 f"{len(fields)} fields and {len(identity_fields)} identity field(s) are defined.",
                 name,
             )
@@ -468,8 +1000,18 @@ class SpecificationValidationService:
             "MANY_TO_MANY",
         }
         valid_participation = {"MANDATORY", "OPTIONAL"}
+        seen_relationships: set[tuple] = set()
 
-        for relationship in relationships:
+        for index, relationship in enumerate(relationships, start=1):
+            if not isinstance(relationship, dict):
+                add(
+                    "error",
+                    "Relationship",
+                    "Invalid relationship definition",
+                    f"Relationship entry {index} must be an object.",
+                )
+                continue
+
             endpoints: dict[str, Any] = {}
             endpoint_valid: dict[str, bool] = {}
 
@@ -542,7 +1084,7 @@ class SpecificationValidationService:
             )
 
             relationship_type = relationship.get("type")
-            if relationship_type not in valid_types:
+            if not isinstance(relationship_type, str) or relationship_type not in valid_types:
                 add(
                     "error",
                     "Relationship",
@@ -565,7 +1107,38 @@ class SpecificationValidationService:
                 "MANDATORY",
             )
 
-            if source_participation not in valid_participation:
+            if (
+                source_endpoint is not None
+                and target_endpoint is not None
+                and isinstance(relationship_type, str)
+                and isinstance(source_participation, str)
+                and isinstance(target_participation, str)
+            ):
+                relationship_key = (
+                    source_endpoint.entity,
+                    source_endpoint.fields,
+                    target_endpoint.entity,
+                    target_endpoint.fields,
+                    relationship_type.strip().upper(),
+                    source_participation.strip().upper(),
+                    target_participation.strip().upper(),
+                )
+                if relationship_key in seen_relationships:
+                    add(
+                        "error",
+                        "Relationship",
+                        "Duplicate relationship definition",
+                        (
+                            f"Relationship {source_endpoint.reference} → "
+                            f"{target_endpoint.reference} is declared more than once."
+                        ),
+                        source_entity,
+                        source_field,
+                    )
+                else:
+                    seen_relationships.add(relationship_key)
+
+            if not isinstance(source_participation, str) or source_participation not in valid_participation:
                 add(
                     "error",
                     "Relationship",
@@ -579,7 +1152,7 @@ class SpecificationValidationService:
                     source_field,
                 )
 
-            if target_participation not in valid_participation:
+            if not isinstance(target_participation, str) or target_participation not in valid_participation:
                 add(
                     "error",
                     "Relationship",
@@ -593,28 +1166,6 @@ class SpecificationValidationService:
                     source_field,
                 )
 
-            if (
-                all(endpoint_valid.values())
-                and source_endpoint is not None
-                and target_endpoint is not None
-                and relationship_type in valid_types
-                and source_participation in valid_participation
-                and target_participation in valid_participation
-            ):
-                add(
-                    "passed",
-                    "Relationship",
-                    "Relationship is valid",
-                    (
-                        f"{source_endpoint.reference} → "
-                        f"{target_endpoint.reference} "
-                        f"({relationship_type}, "
-                        f"{source_participation} → "
-                        f"{target_participation})."
-                    ),
-                    source_entity,
-                    source_field,
-                )
 
     def _validate_foreign_keys(
         self,
@@ -622,21 +1173,33 @@ class SpecificationValidationService:
         entity_names: set[str],
         fields_by_entity: dict[str, set[str]],
         add,
-    ) -> None:
+    ) -> set[str]:
         foreign_keys = specification.get("foreign_keys", [])
+        valid_foreign_key_names: set[str] = set()
         seen_names: set[str] = set()
         seen_mappings: set[tuple] = set()
+        name_counts: dict[str, int] = {}
+        for item in foreign_keys:
+            if isinstance(item, dict) and isinstance(item.get("name"), str):
+                candidate_name = item["name"].strip()
+                if candidate_name:
+                    name_counts[candidate_name] = name_counts.get(candidate_name, 0) + 1
         seen_source_fields: dict[tuple[str, str], str] = {}
 
-        field_maps = {
-            entity.get("name"): {
+        field_maps = {}
+        for entity in specification.get("entities", []):
+            if not isinstance(entity, dict):
+                continue
+            entity_name = entity.get("name")
+            fields = entity.get("fields", [])
+            if not isinstance(entity_name, str) or not isinstance(fields, list):
+                continue
+            field_maps[entity_name.strip()] = {
                 field.get("name"): field
-                for field in entity.get("fields", [])
+                for field in fields
                 if isinstance(field, dict)
+                and isinstance(field.get("name"), str)
             }
-            for entity in specification.get("entities", [])
-            if entity.get("name")
-        }
 
         for foreign_key in foreign_keys:
             if not isinstance(foreign_key, dict):
@@ -753,7 +1316,17 @@ class SpecificationValidationService:
                     source_entity or None,
                 )
 
-            if name and name in seen_names:
+            if name and name_counts.get(name, 0) > 1:
+                valid = False
+                if name not in seen_names:
+                    add(
+                        "error",
+                        "Foreign Key",
+                        "Duplicate foreign key name",
+                        f"Foreign key '{name}' is defined more than once.",
+                        source_entity or None,
+                    )
+            elif name and name in seen_names:
                 valid = False
                 add(
                     "error",
@@ -914,7 +1487,9 @@ class SpecificationValidationService:
                 (
                     entity.get("identity", {})
                     for entity in specification.get("entities", [])
-                    if entity.get("name") == target_entity
+                    if isinstance(entity, dict)
+                    and isinstance(entity.get("name"), str)
+                    and entity["name"].strip() == target_entity
                 ),
                 {},
             )
@@ -989,14 +1564,18 @@ class SpecificationValidationService:
                     )
 
             if valid:
+                valid_foreign_key_names.add(name)
                 add(
                     "passed",
                     "Foreign Key",
-                    "Foreign key is valid",
+                    "Foreign key declaration is valid",
+                    f"Foreign key '{name}' maps "
                     f"{source_entity}.{', '.join(source_fields)} "
-                    f"maps to {target_entity}.{', '.join(target_fields)}.",
+                    f"to {target_entity}.{', '.join(target_fields)}.",
                     source_entity,
                 )
+
+        return valid_foreign_key_names
 
     def _validate_constraints(
         self,
@@ -1013,7 +1592,18 @@ class SpecificationValidationService:
             "CATEGORICAL": {"==", "!="},
         }
 
-        for constraint in specification.get("constraints", []):
+        constraints = specification.get("constraints", [])
+
+        for index, constraint in enumerate(constraints, start=1):
+            if not isinstance(constraint, dict):
+                add(
+                    "error",
+                    "Constraint",
+                    "Invalid constraint definition",
+                    f"Constraint entry {index} must be an object.",
+                )
+                continue
+
             entity = str(constraint.get("entity", "")).strip()
             field = str(constraint.get("field", "")).strip()
             operator = constraint.get("operator")
@@ -1044,14 +1634,17 @@ class SpecificationValidationService:
 
             if reason is None and field_type in {"INTEGER", "DECIMAL"}:
                 try:
-                    if isinstance(value, bool):
-                        raise ValueError("Boolean values are not numeric.")
-                    number = float(value)
-                    if not math.isfinite(number):
+                    if isinstance(value, bool) or value is None:
+                        raise ValueError("Boolean or null values are not numeric.")
+                    number = Decimal(str(value))
+                    if not number.is_finite():
                         raise ValueError("Value must be finite.")
-                    if field_type == "INTEGER" and not number.is_integer():
+                    if (
+                        field_type == "INTEGER"
+                        and number != number.to_integral_value()
+                    ):
                         raise ValueError("Value must be an integer.")
-                except (TypeError, ValueError, OverflowError):
+                except (InvalidOperation, TypeError, ValueError):
                     reason = (
                         f"comparison value must be a valid {field_type.lower()}."
                     )
@@ -1123,12 +1716,17 @@ class SpecificationValidationService:
                 for finding in entity_findings
             )
 
+            unsupported = sum(
+                finding["severity"] == "unsupported"
+                for finding in entity_findings
+            )
+
             results.append(
                 {
                     "name": name,
                     "status": (
                         "error"
-                        if errors > 0
+                        if errors > 0 or unsupported > 0
                         else "warning"
                         if warnings > 0
                         else "valid"
@@ -1136,6 +1734,7 @@ class SpecificationValidationService:
                     "checks": len(entity_findings),
                     "errors": errors,
                     "warnings": warnings,
+                    "unsupported": unsupported,
                 }
             )
 

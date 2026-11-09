@@ -688,21 +688,24 @@ behavior already adequately tested.
   Confirmed behavior:
   - The allocator blocks unsupported relationship and identity semantics
     by returning UNRESOLVED before allocation.
-  - The backend response includes allocation_status and
+  - The backend response already includes allocation_status and
     allocation_diagnostics.
-  - The frontend candidate model does not declare these response fields.
-  - The candidate decision UI displays target_reason only.
-  - The current generic guidance recommends changing the population
-    driver, even when the underlying cause is unsupported model semantics.
-  - The allocator currently collects diagnostic reasons from unsupported
-    relationships, but does not collect equivalent reasons from unsupported
-    identity capacities.
+  - Unsupported identity configurations with structural ERROR diagnostics
+    are returned through the structural validation gate.
+  - Unsupported relationship semantics are returned through the allocation
+    support gate with relationship-specific reasons.
+  - The frontend candidate model and decision UI previously did not expose
+    these response fields or distinguish the failure categories.
+  - The candidate decision UI now distinguishes FEASIBLE, INFEASIBLE,
+    UNRESOLVED, and a solver-feasible candidate that fails overall
+    population feasibility.
 
   Acceptance criteria:
   - Expose allocation status and diagnostics in the frontend model.
-  - Return meaningful diagnostics for unsupported identity capacities
-    as well as unsupported relationships.
+  - Add backend regression tests for unsupported identity and relationship
+    diagnostic paths.
   - Distinguish INFEASIBLE from UNRESOLVED in the UI.
+  - Preserve the overall feasible check when presenting success.
   - Display corrective guidance appropriate to the actual failure.
   - Verify unsupported relationship and identity scenarios through
     the FORGE UI.

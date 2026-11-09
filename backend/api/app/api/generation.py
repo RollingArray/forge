@@ -170,6 +170,11 @@ async def get_generation_readiness(
         readiness = generation_service.get_readiness(
             data_model_id=data_model_id,
         )
+    except SpecificationValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.result,
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

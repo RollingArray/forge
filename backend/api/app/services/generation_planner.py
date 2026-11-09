@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.services.field_generation_validation import validate_field_generation
+from app.services.dependency_ordering import DependencyCycleError, resolve_dependency_order
 
 from app.services.relationship_endpoint import (
     ForeignKeyMapping,
@@ -109,37 +110,26 @@ class GenerationPlan:
     def generation_order(self) -> tuple[str, ...]:
         """Return entities in dependency-safe generation order."""
 
-        plans = {entity.entity_name: entity for entity in self.entities}
-        remaining = set(plans)
-        resolved: set[str] = set()
-        order: list[str] = []
+        entity_names = [
+            entity.entity_name for entity in self.entities
+        ]
+        dependencies = [
+            (dependency.parent_entity, entity.entity_name)
+            for entity in self.entities
+            for dependency in entity.dependencies
+        ]
 
-        while remaining:
-            ready = [
-                entity_name
-                for entity_name in remaining
-                if all(
-                    dependency.parent_entity in resolved
-                    for dependency in plans[entity_name].dependencies
-                )
-            ]
-
-            if not ready:
-                unresolved = sorted(remaining)
-                raise GenerationPlanningError(
-                    "Unable to resolve FORGE generation dependencies. "
-                    f"Possible dependency cycle involving: {unresolved}"
-                )
-
-            for entity_plan in plans.values():
-                if entity_plan.entity_name not in ready:
-                    continue
-
-                order.append(entity_plan.entity_name)
-                resolved.add(entity_plan.entity_name)
-                remaining.remove(entity_plan.entity_name)
-
-        return tuple(order)
+        try:
+            return resolve_dependency_order(
+                entity_names,
+                dependencies,
+            )
+        except DependencyCycleError as exc:
+            unresolved = list(exc.unresolved_entities)
+            raise GenerationPlanningError(
+                "Unable to resolve FORGE generation dependencies. "
+                f"Possible dependency cycle involving: {unresolved}"
+            ) from exc
 
 
 def _validate_generation_configuration(

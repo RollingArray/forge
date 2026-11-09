@@ -81,6 +81,30 @@ specification_import_service = SpecificationImportService()
 specification_import_repository = JsonSpecificationRepository()
 
 
+def _require_valid_specification_for_progression(
+    data_model_id: str,
+) -> dict:
+    """Block population progression when canonical validation fails."""
+
+    specification = specification_service.get_specification(
+        data_model_id=data_model_id,
+    )
+    if specification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    result = specification_validation_service.validate(specification)
+    if not result.get("can_continue", False):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=result,
+        )
+
+    return specification
+
+
 
 
 @router.get(
@@ -284,6 +308,8 @@ async def get_population_plan(
             detail="Data model not found.",
         )
 
+    _require_valid_specification_for_progression(data_model_id)
+
     population_plan = population_service.get_population_plan(
         data_model_id=data_model_id,
     )
@@ -316,6 +342,8 @@ async def build_population_candidate(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Data model not found.",
         )
+
+    _require_valid_specification_for_progression(data_model_id)
 
     candidate = population_service.build_candidate_plan(
         data_model_id=data_model_id,
@@ -351,6 +379,8 @@ async def accept_population_plan(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Data model not found.",
         )
+
+    _require_valid_specification_for_progression(data_model_id)
 
     try:
         specification = specification_service.accept_population_plan(

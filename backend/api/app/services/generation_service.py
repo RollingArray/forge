@@ -472,6 +472,8 @@ class GenerationService:
         if specification is None:
             return None
 
+        self._validate_specification(specification)
+
         plan = self._generation_planner.build(
             specification=specification,
         )

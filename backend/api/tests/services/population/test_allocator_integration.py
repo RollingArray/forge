@@ -594,3 +594,66 @@ def test_unrelated_unsupported_identity_does_not_suppress_supported_capacity() -
     plan = build_plan_from_specification(specification)
 
     assert plan.maximums.get("CHILD") == 100
+
+def test_unsupported_identity_returns_structural_diagnostics() -> None:
+    specification = {
+        "entities": [_entity("CUSTOMER", "CUSTOMER_ID")],
+        "foreign_keys": [],
+        "relationships": [],
+    }
+
+    customer = specification["entities"][0]
+    customer["fields"].append(
+        {"name": "CODE", "type": "STRING"}
+    )
+    customer["identity"] = {
+        "fields": ["CUSTOMER_ID", "CODE"]
+    }
+
+    result = allocate_population_target(
+        specification=specification,
+        target=10,
+        driver="CUSTOMER",
+    )
+
+    assert result.status == "UNRESOLVED"
+    assert result.diagnostics
+    assert any(
+        "CODE" in diagnostic and "identity" in diagnostic.lower()
+        for diagnostic in result.diagnostics
+    )
+
+
+def test_unsupported_many_to_many_returns_relationship_diagnostics() -> None:
+    specification = {
+        "entities": [
+            _entity("CUSTOMER", "CUSTOMER_ID"),
+            _entity("ORDER", "ORDER_ID"),
+        ],
+        "foreign_keys": [],
+        "relationships": [
+            _relationship(
+                "CUSTOMER",
+                "CUSTOMER_ID",
+                "ORDER",
+                "ORDER_ID",
+                "MANY_TO_MANY",
+            )
+        ],
+    }
+
+    result = allocate_population_target(
+        specification=specification,
+        target=10,
+        driver="CUSTOMER",
+    )
+
+    assert result.status == "UNRESOLVED"
+    assert result.diagnostics
+    assert any(
+        "association" in diagnostic.lower()
+        or "junction" in diagnostic.lower()
+        or "many-to-many" in diagnostic.lower()
+        for diagnostic in result.diagnostics
+    )
+

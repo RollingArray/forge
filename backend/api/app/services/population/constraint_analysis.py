@@ -527,6 +527,8 @@ def analyze_specification_constraints(
             # parent entity. Capacity is the product of these keyspaces.
             parent_entities.append(fk["parent"])
 
+        diagnosed_identity_fields: set[str] = set()
+
         for field_name in identity_fields:
             if field_name in covered:
                 continue
@@ -534,6 +536,7 @@ def analyze_specification_constraints(
             field_spec = fields_by_name.get(field_name)
             if field_spec is None:
                 supported = False
+                diagnosed_identity_fields.add(field_name)
                 _diagnostic(
                     result, "IDENTITY_FIELD_MISSING", "ERROR",
                     f"Identity field {field_name!r} is missing from entity fields.",
@@ -545,6 +548,7 @@ def analyze_specification_constraints(
                 capacity = _local_identity_capacity(field_spec)
             except ValueError as exc:
                 supported = False
+                diagnosed_identity_fields.add(field_name)
                 _diagnostic(
                     result, "UNSUPPORTED_LOCAL_IDENTITY", "ERROR",
                     str(exc), f"{entity_name}.{field_name}",
@@ -561,7 +565,10 @@ def analyze_specification_constraints(
             else:
                 finite_multiplier *= capacity
 
-        if covered != identity_set:
+        unexplained_identity_fields = (
+            identity_set - covered - diagnosed_identity_fields
+        )
+        if unexplained_identity_fields:
             supported = False
             _diagnostic(
                 result, "IDENTITY_COVERAGE_INCOMPLETE", "ERROR",
