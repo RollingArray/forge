@@ -42,13 +42,19 @@ export default defineConfig({
           {
             name: 'setup',
             testMatch: '**/*.setup.ts',
+            testIgnore: '**/isolated/**',
           },
         ]
       : []),
 
     {
       name: 'chromium',
-      testIgnore: '**/*.setup.ts',
+      testIgnore: [
+        '**/*.setup.ts',
+        '**/isolated/**',
+        '**/multi-user/**',
+        '**/real-email/**',
+      ],
       ...(hasAuthState ? {} : { dependencies: ['setup'] }),
       use: {
         ...devices['Desktop Chrome'],
