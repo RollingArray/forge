@@ -160,7 +160,7 @@ def main() -> None:
     )
     email_config.setdefault("magic_link", {})[
         "frontend_base_url"
-    ] = "http://127.0.0.1:18866"
+    ] = "http://127.0.0.1:18876"
 
     config_dir = STAGE / "backend" / "api" / "config"
     write_json(config_dir / "authentication.json", auth_config)

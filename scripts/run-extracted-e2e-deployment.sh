@@ -65,6 +65,20 @@ echo "========== 1. EXTRACT ISOLATED E2E PACKAGE =========="
 mkdir -p "$LIVE_ROOT"
 unzip -q "$ZIP" -d "$LIVE_ROOT"
 
+EMAIL_CONFIG_PATH="$APP_ROOT/backend/api/config/email.json" \
+FRONTEND_BASE_URL="http://127.0.0.1:${NGINX_PORT}" \
+python3 - <<'PYCONFIG'
+import json
+import os
+from pathlib import Path
+
+path = Path(os.environ["EMAIL_CONFIG_PATH"])
+config = json.loads(path.read_text(encoding="utf-8"))
+config.setdefault("magic_link", {})["frontend_base_url"] = os.environ["FRONTEND_BASE_URL"]
+path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+print("Configured isolated magic-link URL:", os.environ["FRONTEND_BASE_URL"])
+PYCONFIG
+
 [[ -f "$APP_ROOT/frontend/index.html" ]] || fail \
   "Extracted Angular index.html is missing."
 [[ -f "$APP_ROOT/backend/api/app/main.py" ]] || fail \
