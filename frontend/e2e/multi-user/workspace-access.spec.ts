@@ -2,10 +2,12 @@ import { test, expect, type BrowserContext } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const BASE_URL = 'http://127.0.0.1:18866';
+const BASE_URL =
+  process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
+
 const BOOTSTRAP_KEY_PATH = resolve(
-  __dirname,
-  '../../../dist/forge-e2e/e2e-bootstrap.key',
+  process.env.FORGE_E2E_BOOTSTRAP_KEY_FILE ??
+    resolve(__dirname, '../../../dist/forge-e2e/e2e-bootstrap.key'),
 );
 
 const bootstrapKey = readFileSync(BOOTSTRAP_KEY_PATH, 'utf8').trim();
@@ -107,7 +109,7 @@ test('Owner, Contributor and Viewer authenticate independently and load Workspac
 
       const page = await context.newPage();
 
-      await page.goto('/workspace');
+      await page.goto(`${BASE_URL}/workspace`);
 
       await expect(page.locator('.user-name')).toHaveText(
         identity.displayName,
