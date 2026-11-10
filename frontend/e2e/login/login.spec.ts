@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-const LOGIN_URL = 'http://localhost:4200/login';
 const TEST_EMAIL = 'forge.e2e@example.com';
 
 test.describe('S01 - Login', () => {
@@ -12,7 +11,7 @@ test.describe('S01 - Login', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(LOGIN_URL, { waitUntil: 'networkidle' });
+    await page.goto('/login', { waitUntil: 'networkidle' });
   });
 
   test('LG-01: renders login screen and required controls', async ({ page }) => {
