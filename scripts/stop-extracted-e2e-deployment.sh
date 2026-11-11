@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-ROOT="/Users/e10936535/forge"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LIVE_ROOT="$ROOT/dist/forge-e2e/forge-e2e-live-test"
 API_PID_FILE="$LIVE_ROOT/api.pid"
 NGINX_CONF="$LIVE_ROOT/nginx.conf"

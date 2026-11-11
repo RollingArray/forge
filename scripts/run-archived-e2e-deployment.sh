@@ -1,11 +1,11 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-ROOT="/Users/e10936535/forge"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ARCHIVE_ARG="${1:-}"
 API_PORT=18865
 NGINX_PORT=18866
-UV="/opt/homebrew/bin/uv"
+UV="${UV_BIN:-$(command -v uv || true)}"
 
 fail() {
   echo "FAIL: $*" >&2

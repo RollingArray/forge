@@ -8,7 +8,7 @@ RUNTIME_ARG="${FORGE_E2E_RUNTIME_DIR:-$E2E_ROOT/forge-e2e-full-suite}"
 API_PORT="${FORGE_E2E_API_PORT:-18875}"
 UI_PORT="${FORGE_E2E_UI_PORT:-18876}"
 export FORGE_FRONTEND_BASE_URL="${FORGE_FRONTEND_BASE_URL:-http://127.0.0.1:${UI_PORT}}"
-UV="${UV_BIN:-/opt/homebrew/bin/uv}"
+UV="${UV_BIN:-$(command -v uv || true)}"
 
 if [[ "$RUNTIME_ARG" = /* ]]; then
   LIVE_ROOT="$RUNTIME_ARG"

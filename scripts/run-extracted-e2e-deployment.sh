@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-ROOT="/Users/e10936535/forge"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 E2E_ROOT="$ROOT/dist/forge-e2e"
 ZIP="$E2E_ROOT/forge-e2e-deployment.zip"
 KEY_FILE="$E2E_ROOT/e2e-bootstrap.key"
@@ -10,7 +10,7 @@ APP_ROOT="$LIVE_ROOT/forge-deployment"
 
 API_PORT=18865
 NGINX_PORT=18866
-UV="/opt/homebrew/bin/uv"
+UV="${UV_BIN:-$(command -v uv || true)}"
 
 API_PID=""
 NGINX_STARTED=0
