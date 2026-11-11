@@ -5,16 +5,17 @@ import { resolve } from 'node:path';
 const BASE_URL =
   process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
 
-const BOOTSTRAP_KEY_PATH = resolve(
-  process.env.FORGE_E2E_BOOTSTRAP_KEY_FILE ??
-    resolve(__dirname, '../../../dist/forge-e2e/e2e-bootstrap.key'),
+const SESSIONS_FILE = resolve(
+  process.env.FORGE_E2E_SESSIONS_FILE ??
+    resolve(__dirname, '../../../dist/test-runs/sessions.json'),
 );
 
-const bootstrapKey = readFileSync(BOOTSTRAP_KEY_PATH, 'utf8').trim();
-
-if (!bootstrapKey) {
-  throw new Error('E2E bootstrap key is empty.');
+function loadE2eSessions(): Record<string, any> {
+  return JSON.parse(
+    readFileSync(SESSIONS_FILE, 'utf8'),
+  ) as Record<string, any>;
 }
+
 
 async function attachPassScreenshot(
   testInfo: TestInfo,
@@ -63,30 +64,14 @@ test('Owner, Contributor and Viewer authenticate independently and load Workspac
   browser,
   request,
 }, testInfo) => {
+  const e2eSessions = loadE2eSessions();
   const userIds = new Set<string>();
 
   for (const identity of identities) {
     let context: BrowserContext | undefined;
 
     try {
-      const bootstrapResponse = await request.post(
-        `${BASE_URL}/api/v1/__e2e/auth/session`,
-        {
-          headers: {
-            'X-FORGE-E2E-KEY': bootstrapKey,
-          },
-          data: {
-            identity: identity.identity,
-          },
-        },
-      );
-
-      expect(
-        bootstrapResponse.status(),
-        `${identity.identity}: bootstrap session`,
-      ).toBe(200);
-
-      const session = await bootstrapResponse.json();
+      const session = e2eSessions[identity.identity];
 
       expect(session.accessToken).toBeTruthy();
       expect(session.tokenType).toBe('Bearer');
@@ -159,6 +144,7 @@ test('Owner shares a Data Model with Contributor and Viewer', async ({
   browser,
   request,
 }, testInfo) => {
+  const e2eSessions = loadE2eSessions();
   const sessions: Record<string, any> = {};
   const contexts: BrowserContext[] = [];
   const pages: Record<string, import('@playwright/test').Page> = {};
@@ -167,18 +153,7 @@ test('Owner shares a Data Model with Contributor and Viewer', async ({
   try {
     // Bootstrap all identities before starting user search.
     for (const identity of identities) {
-      const response = await request.post(
-        `${BASE_URL}/api/v1/__e2e/auth/session`,
-        {
-          headers: {
-            'X-FORGE-E2E-KEY': bootstrapKey,
-          },
-          data: { identity: identity.identity },
-        },
-      );
-
-      expect(response.status()).toBe(200);
-      sessions[identity.identity] = await response.json();
+      sessions[identity.identity] = e2eSessions[identity.identity];
     }
 
     // Create independent browser contexts.
@@ -410,6 +385,7 @@ test('Owner changes roles and revokes Data Model access', async ({
   browser,
   request,
 }, testInfo) => {
+  const e2eSessions = loadE2eSessions();
   const sessions: Record<string, any> = {};
   const contexts: BrowserContext[] = [];
   const pages: Record<string, import('@playwright/test').Page> = {};
@@ -418,18 +394,7 @@ test('Owner changes roles and revokes Data Model access', async ({
   try {
     // Bootstrap all three isolated identities.
     for (const identity of identities) {
-      const response = await request.post(
-        `${BASE_URL}/api/v1/__e2e/auth/session`,
-        {
-          headers: {
-            'X-FORGE-E2E-KEY': bootstrapKey,
-          },
-          data: { identity: identity.identity },
-        },
-      );
-
-      expect(response.status()).toBe(200);
-      sessions[identity.identity] = await response.json();
+      sessions[identity.identity] = e2eSessions[identity.identity];
     }
 
     // Create one browser context per identity.

@@ -20,11 +20,15 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html', {
-      outputFolder: 'playwright-report/isolated-e2e',
+      outputFolder: process.env.FORGE_E2E_EVIDENCE_DIR
+        ? path.resolve(process.env.FORGE_E2E_EVIDENCE_DIR, 'playwright-report')
+        : 'playwright-report/isolated-e2e',
       open: 'never',
     }],
   ],
-  outputDir: 'test-results/isolated-e2e',
+  outputDir: process.env.FORGE_E2E_EVIDENCE_DIR
+    ? path.resolve(process.env.FORGE_E2E_EVIDENCE_DIR, 'test-results')
+    : 'test-results/isolated-e2e',
   timeout: 180_000,
   expect: {
     timeout: 15_000,
