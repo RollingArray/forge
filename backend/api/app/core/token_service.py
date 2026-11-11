@@ -7,6 +7,7 @@ Email: ranjoy.sen@collins.com
 """
 
 from datetime import datetime, timedelta, timezone
+import os
 
 import jwt
 from jwt import InvalidTokenError
@@ -21,6 +22,15 @@ class TokenService:
     def __init__(self) -> None:
         configuration = load_authentication_configuration()
         self._configuration = configuration.development_token
+
+        secret = os.environ.get("FORGE_JWT_SECRET", "")
+        if len(secret.encode("utf-8")) < 32:
+            raise RuntimeError(
+                "FORGE_JWT_SECRET must be configured with at least "
+                "32 bytes before starting FORGE."
+            )
+
+        self._secret = secret
 
     def create_access_token(self, user: AuthUser) -> str:
         """Create a signed development JWT for an authenticated user."""
@@ -39,7 +49,7 @@ class TokenService:
 
         return jwt.encode(
             payload,
-            self._configuration.secret,
+            self._secret,
             algorithm=self._configuration.algorithm,
         )
 
@@ -48,7 +58,7 @@ class TokenService:
         try:
             payload = jwt.decode(
                 access_token,
-                self._configuration.secret,
+                self._secret,
                 algorithms=[self._configuration.algorithm],
             )
         except InvalidTokenError as error:

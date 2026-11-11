@@ -17,7 +17,6 @@ class DevelopmentTokenConfiguration(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    secret: str
     algorithm: str
     expiration_minutes: int
 
