@@ -220,6 +220,10 @@ echo ""
 echo "Keep this terminal open during testing."
 echo "Press Ctrl+C to stop the services."
 echo ""
+echo "NEXT: Open a NEW terminal and run:"
+echo "  cd $ROOT/frontend"
+echo "  npm run test:e2e:full"
+echo ""
 
 while kill -0 "$API_PID" 2>/dev/null; do
   sleep 2

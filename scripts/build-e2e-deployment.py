@@ -52,11 +52,9 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 def main() -> None:
-    if OUTPUT.exists():
-        fail(
-            f"{OUTPUT} already exists. Nothing was deleted or overwritten. "
-            "Inspect it before deciding how to proceed."
-        )
+    for path in (STAGE, ZIP_PATH, BOOTSTRAP_PATH):
+        if path.exists():
+            fail(f"Build artifact already exists; archive it before rebuilding: {path}")
 
     for path in REQUIRED:
         if not path.exists():
@@ -77,7 +75,7 @@ def main() -> None:
     if "e2e_auth" in main_source:
         fail("Source main.py already mentions E2E authentication.")
 
-    OUTPUT.mkdir(parents=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     (STAGE / "backend" / "api").mkdir(parents=True)
     (STAGE / "frontend").mkdir(parents=True)
     (STAGE / "backend" / "api" / "config").mkdir(parents=True)
@@ -150,10 +148,6 @@ def main() -> None:
     ai_config = json.loads(
         (source_config / "ai.json").read_text(encoding="utf-8")
     )
-    # Prevent accidental calls to the developer's local Ollama instance.
-    ai_config["base_url"] = "http://127.0.0.1:9"
-    ai_config["capability_timeout_seconds"] = 0.5
-    ai_config["generation_timeout_seconds"] = 2.0
 
     email_config = json.loads(
         (source_config / "email.json").read_text(encoding="utf-8")
