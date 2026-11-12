@@ -85,12 +85,12 @@ Scope:
 - TEST-01 through TEST-04.
 
 Exit criteria:
-- [pending] Semantic UNIQUE values remain unique across the complete dataset.
-- [pending] Corrupt semantic state cannot silently cause duplicate generation.
+- [done] Semantic UNIQUE values remain unique across the complete dataset.
+- [done] Corrupt semantic state cannot silently cause duplicate generation.
 - [done] Population capacity agrees with generation identity construction.
 - [pending] Supported decimal values and bounds retain their intended precision.
 - [done] Focused exact-decimal backend and frontend regression tests pass.
-- [pending] Remaining semantic and identity-capacity regression tests pass.
+- [done] Remaining semantic and identity-capacity backend regression tests pass.
 - [pending] Supported behavior is verified through the FORGE UI.
 
 Completion evidence:
@@ -99,6 +99,16 @@ Completion evidence:
 - WP02-POP-002 frontend implementation completed. Allocation status and
   diagnostics are exposed, and the candidate decision UI distinguishes
   FEASIBLE, INFEASIBLE and UNRESOLVED outcomes.
+- SEM-01: Semantic UNIQUE evaluation errors now fail overall validation
+  rather than allowing a fail-open result. Commit `c98810e`.
+- SEM-02: Missing UNIQUE semantic state is reconstructed from committed
+  artifacts only after validating completeness and uniqueness. Invalid
+  artifacts and corrupt existing semantic state fail closed. Commit
+  `6ad7c32`.
+- 14 validator tests passed for SEM-01; 103 generation service tests
+  passed for SEM-02, including six real-artifact resume scenarios.
+- 78 focused population and generation regression tests passed,
+  including finite local identity candidate-capacity rejection.
 - Exact DECIMAL implementation completed across the covered backend and
   frontend paths.
 - 168 focused backend pytest tests passed, covering decimal import,
@@ -108,8 +118,8 @@ Completion evidence:
 - Angular production build completed successfully.
 - Playwright acceptance remains outstanding for decimal field authoring,
   constraint authoring, persistence, generation and CSV output.
-- Semantic uniqueness and remaining identity-capacity diagnostic acceptance
-  remain outstanding.
+- SEM-01 and SEM-02 implementation and regression verification completed.
+  Remaining identity-capacity diagnostic acceptance is tracked under POP-01.
 - TEST-01 through TEST-04 require review and completion.
 
 #### WP-03: Execution, artifacts and recovery
@@ -656,7 +666,8 @@ behavior already adequately tested.
   Existing implementation checks within-batch and persisted-value collisions,
   refills missing values and persists semantic values. Existing tests cover
   cross-chunk uniqueness and resume behavior.
-  This does not close SEM-01 or SEM-02.
+  SEM-01 and SEM-02 are now closed by the additional safeguards and
+  regression evidence recorded below.
 
 ### Population allocation (WP-02)
 
@@ -697,8 +708,11 @@ behavior already adequately tested.
   - FIXED BUSINESS_UNIT population remained 4 in both scenarios.
 
   Remaining verification:
-  - Dedicated finite maximum-capacity scenario.
-  - Explicit allocator handling of unsupported relationship semantics.
+  - [done] Candidate allocation rejects a target above finite local
+    identity capacity (10 parent rows × 3 categorical values = 30
+    child rows; target 41 returns INFEASIBLE).
+  - [done] Unsupported MANY_TO_MANY semantics return UNRESOLVED with
+    relationship-specific diagnostics.
   - UI driver selection currently defaults silently to the first entity.
   - Review the Minimum Allowed label because displayed minimums can be
     candidate-dependent.
@@ -729,14 +743,14 @@ behavior already adequately tested.
   - [done] Candidate decision UI distinguishes the allocation outcomes and
     overall population feasibility.
   - [done] Corrective guidance is presented according to the failure category.
-  - [pending] Add or confirm backend regression tests for unsupported identity
-    and relationship diagnostic paths.
+  - [done] Backend regression tests cover unsupported identity and
+    relationship diagnostic paths (2 focused tests passed).
   - [pending] Verify unsupported identity and relationship scenarios through
     the FORGE UI.
 
   Acceptance criteria:
   - [done] Expose allocation status and diagnostics in the frontend model.
-  - [pending] Add or confirm backend regression tests for unsupported identity
+  - [done] Add or confirm backend regression tests for unsupported identity
     and relationship diagnostic paths.
   - [done] Distinguish INFEASIBLE from UNRESOLVED in the UI.
   - [done] Preserve the overall feasible check when presenting success.

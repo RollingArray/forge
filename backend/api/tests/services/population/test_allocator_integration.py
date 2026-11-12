@@ -491,6 +491,39 @@ def test_standard_population_plan_multiplies_finite_local_identity_capacity() ->
     assert plan.populations["CHILD"].status.value == "FEASIBLE"
 
 
+def test_candidate_allocator_rejects_target_above_finite_local_identity_capacity() -> None:
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=25,
+    )
+
+    parent = specification["entities"][0]
+    parent["population"] = {"count": 10, "scaling": "FIXED"}
+
+    child = specification["entities"][1]
+    child["fields"].append({
+        "name": "LOCAL_CODE",
+        "type": "STRING",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": "CATEGORICAL",
+            "parameters": {"values": ["A", "B", "C"]},
+        },
+    })
+    child["identity"]["fields"].append("LOCAL_CODE")
+    child["population"] = {"count": 1, "scaling": "SCALABLE"}
+
+    result = allocate_population_target(
+        specification=specification,
+        target=41,
+        driver="CHILD",
+    )
+
+    assert result.status == "INFEASIBLE"
+    assert not result.feasible_target
+    assert "Derived maximum total: 40." in result.diagnostics
+
+
 def test_standard_population_plan_does_not_cap_sequential_local_identity() -> None:
     from app.services.population.adapter import build_plan_from_specification
 
