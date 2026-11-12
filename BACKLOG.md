@@ -75,6 +75,7 @@ Completion evidence:
 
 #### WP-02: Generated data correctness
 Priority: P0
+Status: [active]
 
 Scope:
 - SEM-01 and SEM-02: Semantic UNIQUE validation and semantic-store integrity.
@@ -84,24 +85,32 @@ Scope:
 - TEST-01 through TEST-04.
 
 Exit criteria:
-- Semantic UNIQUE values remain unique across the complete dataset.
-- Corrupt semantic state cannot silently cause duplicate generation.
-- Population capacity agrees with generation identity construction.
-- Supported decimal values and bounds retain their intended precision.
-- Relevant regression tests pass.
-- The supported behavior is verified through the FORGE UI.
+- [pending] Semantic UNIQUE values remain unique across the complete dataset.
+- [pending] Corrupt semantic state cannot silently cause duplicate generation.
+- [done] Population capacity agrees with generation identity construction.
+- [pending] Supported decimal values and bounds retain their intended precision.
+- [done] Focused exact-decimal backend and frontend regression tests pass.
+- [pending] Remaining semantic and identity-capacity regression tests pass.
+- [pending] Supported behavior is verified through the FORGE UI.
 
-Progress:
+Completion evidence:
 - Population allocation solver implementation and regression verification
   completed. See Section 6, Population allocation (WP-02).
-- WP-02 remains open for semantic uniqueness, exact decimal handling,
-  remaining identity-capacity acceptance, and outstanding test coverage.
-- Confirmed allocation diagnostic gap recorded as WP02-POP-002 below.
-- WP02-POP-002 frontend implementation is now in place. Allocation status
-  and diagnostics are exposed, and the candidate decision UI distinguishes
+- WP02-POP-002 frontend implementation completed. Allocation status and
+  diagnostics are exposed, and the candidate decision UI distinguishes
   FEASIBLE, INFEASIBLE and UNRESOLVED outcomes.
-- Remaining work: backend regression coverage for unsupported identity and
-  relationship diagnostic paths, followed by UI acceptance of both scenarios.
+- Exact DECIMAL implementation completed across the covered backend and
+  frontend paths.
+- 168 focused backend pytest tests passed, covering decimal import,
+  validation, conversion, planning, persistence, checkpoint hashing and
+  exact constraint comparison.
+- 7 exact-decimal frontend utility tests passed.
+- Angular production build completed successfully.
+- Playwright acceptance remains outstanding for decimal field authoring,
+  constraint authoring, persistence, generation and CSV output.
+- Semantic uniqueness and remaining identity-capacity diagnostic acceptance
+  remain outstanding.
+- TEST-01 through TEST-04 require review and completion.
 
 #### WP-03: Execution, artifacts and recovery
 Priority: P0
@@ -480,15 +489,25 @@ Positive controls:
 - [pending] NUM-02: Preserve exact decimal representation through
   specification import, generation, validation, persistence, CSV export
   and reading.
+  - Progress (2026-11-12): Backend conversion, validation, persistence and
+    checkpoint handling updated and regression-tested. Frontend DECIMAL
+    bounds and constraint values retain exact string representations.
+    Playwright verification of the complete UI-to-CSV workflow remains open.
 
 - [pending] NUM-03: Use exact decimal handling for DECIMAL validation rather
   than binary floating-point comparisons.
+  - Progress (2026-11-12): Decimal constraint comparison and generation
+    planning now use exact Decimal handling. High-precision comparison
+    regression tests passed. UI acceptance remains open.
 
 - [pending] NUM-04: Support numeric cross-field constraints, for example
   BRGEW >= NTGEW, rather than limiting comparisons to constant values.
 
 - [pending] NUM-05: Preserve fractional numeric bounds during specification
   import without converting exact Decimal values to float.
+  - Progress (2026-11-12): Import now preserves validated decimal text.
+    Import regression tests passed, including high-precision and trailing-zero
+    representations. End-to-end UI acceptance remains open.
 
 ### 4.2 MANY_TO_MANY relationship support
 
