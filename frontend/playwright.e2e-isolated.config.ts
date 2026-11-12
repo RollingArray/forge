@@ -68,8 +68,8 @@ export default defineConfig({
       },
     },
     {
-      name: 'wp02',
-      testMatch: '**/wp02-model-setup.spec.ts',
+      name: 'data-model',
+      testMatch: '**/data-model/**/*.spec.ts',
       dependencies: ['isolated-auth-setup'],
       use: {
         ...devices['Desktop Chrome'],

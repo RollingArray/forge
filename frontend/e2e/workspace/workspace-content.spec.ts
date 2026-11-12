@@ -1,6 +1,6 @@
 import { test, expect } from './workspace.fixtures';
 
-test.describe('Workspace templates and activity', () => {
+test.describe('WS11 - Workspace Templates', () => {
   test('WS11-01: renders template cards from the Workspace API', async ({
     page,
   }) => {
@@ -36,6 +36,9 @@ test.describe('Workspace templates and activity', () => {
     }
   });
 
+});
+
+test.describe('WS12 - Workspace Activity', () => {
   test('WS12-01: renders activity entries from the Workspace API', async ({
     page,
   }) => {

@@ -1,6 +1,6 @@
 import { test, expect } from './workspace.fixtures';
 
-test.describe('Workspace data model dialog', () => {
+test.describe('WS03 - Workspace Data Model Dialog', () => {
   test('WS03-01: prevents saving an empty or whitespace-only name', async ({
     page,
   }) => {

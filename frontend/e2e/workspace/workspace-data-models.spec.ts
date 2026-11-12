@@ -1,6 +1,6 @@
 import { test, expect } from './workspace.fixtures';
 
-test.describe('Workspace data models', () => {
+test.describe('WS02 - Workspace Data Models', () => {
   test('WS02-01: displays a newly created model with its details', async ({
     page,
     workspaceModel,

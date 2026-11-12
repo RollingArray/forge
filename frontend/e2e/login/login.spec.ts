@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const TEST_EMAIL = 'forge.e2e@example.com';
 
-test.describe('S01 - Login', () => {
+test.describe('LG01 - Login', () => {
   test.use({
     storageState: {
       cookies: [],
@@ -14,18 +14,18 @@ test.describe('S01 - Login', () => {
     await page.goto('/login', { waitUntil: 'networkidle' });
   });
 
-  test('LG-01: renders login screen and required controls', async ({ page }) => {
+  test('LG01-01: renders login screen and required controls', async ({ page }) => {
     await expect(page).toHaveTitle('FORGE');
     await expect(page.locator('#email')).toBeVisible();
     await expect(page.getByRole('button', { name: /Send sign-in link/ })).toBeVisible();
     await expect(page.getByText(/Technical Data Strictly Prohibited/i)).toBeVisible();
   });
 
-  test('LG-02: prevents submission when email is empty', async ({ page }) => {
+  test('LG01-02: prevents submission when email is empty', async ({ page }) => {
     await expect(page.getByRole('button', { name: /Send sign-in link/ })).toBeDisabled();
   });
 
-  test('LG-03: rejects malformed email addresses', async ({ page }) => {
+  test('LG01-03: rejects malformed email addresses', async ({ page }) => {
     const email = page.locator('#email');
     const button = page.getByRole('button', { name: /Send sign-in link/ });
 
@@ -37,12 +37,12 @@ test.describe('S01 - Login', () => {
     await expect(button).toBeDisabled();
   });
 
-  test('LG-04: enables submission for a valid email address', async ({ page }) => {
+  test('LG01-04: enables submission for a valid email address', async ({ page }) => {
     await page.locator('#email').fill(TEST_EMAIL);
     await expect(page.getByRole('button', { name: /Send sign-in link/ })).toBeEnabled();
   });
 
-  test('LG-05: displays confirmation after successful request', async ({ page }) => {
+  test('LG01-05: displays confirmation after successful request', async ({ page }) => {
     let requestCount = 0;
 
     await page.route('**/api/**', async route => {
@@ -62,7 +62,7 @@ test.describe('S01 - Login', () => {
     expect(requestCount).toBe(1);
   });
 
-  test('LG-06: displays an error for HTTP 403', async ({ page }) => {
+  test('LG01-06: displays an error for HTTP 403', async ({ page }) => {
     await page.route('**/api/**', async route => {
       await route.fulfill({
         status: 403,
@@ -77,7 +77,7 @@ test.describe('S01 - Login', () => {
     await expect(page.getByRole('alert')).toBeVisible();
   });
 
-  test('LG-07: displays an error for HTTP 500', async ({ page }) => {
+  test('LG01-07: displays an error for HTTP 500', async ({ page }) => {
     await page.route('**/api/**', async route => {
       await route.fulfill({
         status: 500,
@@ -92,7 +92,7 @@ test.describe('S01 - Login', () => {
     await expect(page.getByRole('alert')).toBeVisible();
   });
 
-  test('LG-08: handles a network failure', async ({ page }) => {
+  test('LG01-08: handles a network failure', async ({ page }) => {
     await page.route('**/api/**', async route => {
       await route.abort('failed');
     });
@@ -103,7 +103,7 @@ test.describe('S01 - Login', () => {
     await expect(page.getByRole('alert')).toBeVisible();
   });
 
-  test('LG-09: allows changing email after successful request', async ({ page }) => {
+  test('LG01-09: allows changing email after successful request', async ({ page }) => {
     await page.route('**/api/**', async route => {
       await route.fulfill({
         status: 200,
@@ -128,7 +128,7 @@ test.describe('S01 - Login', () => {
     })).toBeEnabled();
   });
 
-  test('LG-10: disables controls and prevents duplicate requests while pending', async ({ page }) => {
+  test('LG01-10: disables controls and prevents duplicate requests while pending', async ({ page }) => {
     let requestCount = 0;
     let releaseRequest!: () => void;
 

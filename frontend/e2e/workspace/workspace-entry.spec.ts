@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Workspace entry', () => {
+test.describe('WS01 - Workspace Entry', () => {
   test('WS01-01: authenticated user can open Workspace', async ({ page }) => {
     await page.goto('/workspace');
 

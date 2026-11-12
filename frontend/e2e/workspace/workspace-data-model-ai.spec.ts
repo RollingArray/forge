@@ -80,8 +80,8 @@ async function deleteCreatedModel(
   await expect(card).toHaveCount(0, { timeout: 30_000 });
 }
 
-test.describe('Workspace Create Data Model AI assistance', () => {
-  test('WS-AI-01: shows manual fallback when AI is unavailable', async ({
+test.describe('WS04 - Workspace Data Model AI Assistance', () => {
+  test('WS04-01: shows manual fallback when AI is unavailable', async ({
     page,
   }) => {
     await mockCapabilities(page, false);
@@ -101,7 +101,7 @@ test.describe('Workspace Create Data Model AI assistance', () => {
     ).toHaveCount(0);
   });
 
-  test('WS-AI-02: disables empty generation and supports example selection', async ({
+  test('WS04-02: disables empty generation and supports example selection', async ({
     page,
   }) => {
     await mockCapabilities(page, true);
@@ -127,7 +127,7 @@ test.describe('Workspace Create Data Model AI assistance', () => {
     await expect(generateButton).toBeEnabled();
   });
 
-  test('WS-AI-03: generates and displays the complete proposal', async ({
+  test('WS04-03: generates and displays the complete proposal', async ({
     page,
   }) => {
     await mockCapabilities(page, true);
@@ -172,7 +172,7 @@ test.describe('Workspace Create Data Model AI assistance', () => {
     });
   });
 
-  test('WS-AI-04: regenerates the proposal using the original prompt', async ({
+  test('WS04-04: regenerates the proposal using the original prompt', async ({
     page,
   }) => {
     await mockCapabilities(page, true);
@@ -223,7 +223,7 @@ test.describe('Workspace Create Data Model AI assistance', () => {
     ]);
   });
 
-  test('WS-AI-05: displays generation errors and allows retry', async ({
+  test('WS04-05: displays generation errors and allows retry', async ({
     page,
   }) => {
     await mockCapabilities(page, true);
@@ -274,7 +274,7 @@ test.describe('Workspace Create Data Model AI assistance', () => {
     expect(attempts).toBe(2);
   });
 
-  test('WS-AI-06: accepts a proposal and creates the Data Model', async ({
+  test('WS04-06: accepts a proposal and creates the Data Model', async ({
     page,
   }) => {
     const modelName = `FORGE AI E2E ${Date.now()}`;

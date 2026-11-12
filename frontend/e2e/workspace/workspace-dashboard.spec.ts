@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Workspace dashboard', () => {
+test.describe('WS10 - Workspace Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/workspace');
     await expect(page.locator('app-workspace')).toBeVisible();

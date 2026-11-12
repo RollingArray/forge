@@ -9,8 +9,8 @@ const WORKSPACE_ENDPOINTS = [
   '/api/v1/workspace/activity',
 ];
 
-test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
-  async ({ page }) => {
+test.describe('LG03 - Real Email Authentication', () => {
+  test('LG03-01: corporate magic link authenticates and loads Workspace', async ({ page }) => {
     test.setTimeout(7 * 60 * 1000);
 
     let magicLinkRequestCount = 0;
@@ -18,18 +18,15 @@ test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
 
     const workspaceStatuses = new Map<string, number>();
 
-    page.on('request', request => {
+    page.on('request', (request) => {
       const url = new URL(request.url());
 
-      if (
-        url.pathname === '/api/v1/auth/magic-link' &&
-        request.method() === 'POST'
-      ) {
+      if (url.pathname === '/api/v1/auth/magic-link' && request.method() === 'POST') {
         magicLinkRequestCount += 1;
       }
     });
 
-    page.on('response', response => {
+    page.on('response', (response) => {
       const url = new URL(response.url());
 
       if (url.pathname === '/api/v1/auth/magic-link/verify') {
@@ -48,18 +45,17 @@ test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
     // Submit one real magic-link request through the UI.
     await page.locator('#email').fill(BASE_EMAIL);
 
-    const sendResponsePromise = page.waitForResponse(response => {
+    const sendResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
 
-      return (
-        url.pathname === '/api/v1/auth/magic-link' &&
-        response.request().method() === 'POST'
-      );
+      return url.pathname === '/api/v1/auth/magic-link' && response.request().method() === 'POST';
     });
 
-    await page.getByRole('button', {
-      name: /Send sign-in link/i,
-    }).click();
+    await page
+      .getByRole('button', {
+        name: /Send sign-in link/i,
+      })
+      .click();
 
     const sendResponse = await sendResponsePromise;
 
@@ -87,36 +83,25 @@ test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
     // The user manually pastes the real email URL into the visible browser.
     await page.bringToFront();
 
-    await page.waitForFunction(
-      () => window.location.pathname === '/workspace',
-      null,
-      {
-        timeout: 240_000,
-        polling: 500,
-      },
-    );
+    await page.waitForFunction(() => window.location.pathname === '/workspace', null, {
+      timeout: 240_000,
+      polling: 500,
+    });
 
     // Confirm that the backend accepted the actual email token.
     expect(verificationStatus).toBe(200);
 
     // Confirm that all four real Workspace API requests succeeded.
-    await expect.poll(
-      () => workspaceStatuses.size,
-      { timeout: 30_000 },
-    ).toBe(WORKSPACE_ENDPOINTS.length);
+    await expect
+      .poll(() => workspaceStatuses.size, { timeout: 30_000 })
+      .toBe(WORKSPACE_ENDPOINTS.length);
 
     for (const endpoint of WORKSPACE_ENDPOINTS) {
       const status = workspaceStatuses.get(endpoint);
 
-      expect(
-        status,
-        'Workspace API failed: ' + endpoint,
-      ).toBeGreaterThanOrEqual(200);
+      expect(status, 'Workspace API failed: ' + endpoint).toBeGreaterThanOrEqual(200);
 
-      expect(
-        status,
-        'Workspace API failed: ' + endpoint,
-      ).toBeLessThan(300);
+      expect(status, 'Workspace API failed: ' + endpoint).toBeLessThan(300);
     }
 
     // Read session properties without exposing the actual JWT.
@@ -130,9 +115,7 @@ test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
       const session = JSON.parse(stored);
 
       return {
-        hasAccessToken:
-          typeof session.accessToken === 'string' &&
-          session.accessToken.length > 0,
+        hasAccessToken: typeof session.accessToken === 'string' && session.accessToken.length > 0,
         tokenType: session.tokenType,
         email: session.user?.email,
         displayName: session.user?.displayName,
@@ -146,24 +129,6 @@ test('REAL EMAIL E2E: corporate magic link authenticates and loads Workspace',
     expect(sessionSummary?.displayName?.trim().length).toBeGreaterThan(0);
 
     await expect(page).toHaveURL(/\/workspace$/);
-    await expect(page.locator('.user-name')).toHaveText(
-      sessionSummary!.displayName,
-    );
-
-    console.log('');
-    console.log('PASS: Real magic-link verification returned HTTP 200.');
-    console.log('PASS: Actual JWT session persisted in browser storage.');
-    console.log('PASS: Authenticated email matches the requested email.');
-    console.log('PASS: Workspace welcome header displays the AD profile name.');
-
-    for (const endpoint of WORKSPACE_ENDPOINTS) {
-      console.log(
-        'PASS: ' + endpoint + ' returned HTTP ' +
-        workspaceStatuses.get(endpoint),
-      );
-    }
-
-    console.log('');
-    console.log('PASS: Complete real-email login E2E journey.');
-  },
-);
+    await expect(page.locator('.user-name')).toHaveText(sessionSummary!.displayName);
+  });
+});

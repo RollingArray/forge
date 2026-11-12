@@ -16,7 +16,7 @@ interface DataModelSuggestionResponse {
   reasoning: string;
 }
 
-test.describe('Workspace Create Data Model real AI integration', () => {
+test.describe('WS05 - Workspace Data Model AI Integration', () => {
   test.setTimeout(240_000);
 
   async function openAiDialog(page: Page): Promise<Locator> {
@@ -192,7 +192,7 @@ test.describe('Workspace Create Data Model real AI integration', () => {
     });
   }
 
-  test('WS-AI-REAL-01: understands a custom prompt, regenerates and saves the real proposal', async ({
+  test('WS05-01: understands a custom prompt, regenerates and saves the real proposal', async ({
     page,
   }) => {
     const uniqueId = Date.now().toString();
@@ -343,7 +343,7 @@ test.describe('Workspace Create Data Model real AI integration', () => {
     }
   });
 
-  test('WS-AI-REAL-02: generates a real proposal from a dialog example prompt', async ({
+  test('WS05-02: generates a real proposal from a dialog example prompt', async ({
     page,
   }) => {
     const dialog = await openAiDialog(page);
@@ -403,7 +403,7 @@ test.describe('Workspace Create Data Model real AI integration', () => {
     await expect(dialog).toHaveCount(0);
   });
 
-  test('WS-AI-REAL-03: understands a Sales Order business domain', async ({
+  test('WS05-03: understands a Sales Order business domain', async ({
     page,
   }) => {
     const prompt =
@@ -416,7 +416,7 @@ test.describe('Workspace Create Data Model real AI integration', () => {
     ]);
   });
 
-  test('WS-AI-REAL-04: understands a Manufacturing business domain', async ({
+  test('WS05-04: understands a Manufacturing business domain', async ({
     page,
   }) => {
     const prompt =
@@ -429,7 +429,7 @@ test.describe('Workspace Create Data Model real AI integration', () => {
     ]);
   });
 
-  test('WS-AI-REAL-05: handles an ambiguous prompt without assuming an industry', async ({
+  test('WS05-05: handles an ambiguous prompt without assuming an industry', async ({
     page,
   }) => {
     const prompt =

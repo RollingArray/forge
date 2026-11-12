@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('S01 - Magic Link Verification', () => {
+test.describe('LG02 - Magic Link Verification', () => {
   test.use({
     storageState: {
       cookies: [],
@@ -8,7 +8,7 @@ test.describe('S01 - Magic Link Verification', () => {
     }
   });
 
-  test('LG-11: displays an error when the verification token is missing', async ({ page }) => {
+  test('LG02-01: displays an error when the verification token is missing', async ({ page }) => {
     await page.goto('/login/verify', { waitUntil: 'networkidle' });
 
     await expect(page.getByRole('heading', { name: 'Unable to sign in' })).toBeVisible();
@@ -17,7 +17,7 @@ test.describe('S01 - Magic Link Verification', () => {
     })).toBeVisible();
   });
 
-  test('LG-12: displays an error when the verification token is invalid or expired', async ({ page }) => {
+  test('LG02-02: displays an error when the verification token is invalid or expired', async ({ page }) => {
     let verificationRequestCount = 0;
 
     await page.route('**/auth/magic-link/verify', async route => {
@@ -43,7 +43,7 @@ test.describe('S01 - Magic Link Verification', () => {
     })).toBeVisible();
   });
 
-  test('LG-13: request-new-link action returns the user to Login', async ({ page }) => {
+  test('LG02-03: request-new-link action returns the user to Login', async ({ page }) => {
     await page.route('**/auth/magic-link/verify', async route => {
       await route.fulfill({
         status: 401,
@@ -70,7 +70,7 @@ test.describe('S01 - Magic Link Verification', () => {
     await expect(page.locator('#email')).toBeVisible();
   });
 
-  test('LG-14: persists the verified session and navigates to Workspace', async ({ page }) => {
+  test('LG02-04: persists the verified session and navigates to Workspace', async ({ page }) => {
     const session = {
       accessToken: 'e2e-mocked-access-token',
       tokenType: 'Bearer',
@@ -143,7 +143,7 @@ test.describe('S01 - Magic Link Verification', () => {
     await expect(page.locator('.user-name')).toHaveText('FORGE E2E User');
   });
 
-  test('LG-15: displays organization profile lookup failure for HTTP 502', async ({ page }) => {
+  test('LG02-05: displays organization profile lookup failure for HTTP 502', async ({ page }) => {
     await page.route('**/auth/magic-link/verify', async route => {
       await route.fulfill({
         status: 502,
@@ -174,7 +174,7 @@ test.describe('S01 - Magic Link Verification', () => {
   });
 
   for (const status of [400, 403, 404]) {
-    test(`LG-16: handles invalid or expired verification links with HTTP ${status}`, async ({ page }) => {
+    test(`LG02-06: handles invalid or expired verification links with HTTP ${status}`, async ({ page }) => {
       await page.route('**/auth/magic-link/verify', async route => {
         await route.fulfill({
           status,
@@ -205,7 +205,7 @@ test.describe('S01 - Magic Link Verification', () => {
     });
   }
 
-  test('LG-17: handles network failure without creating a session', async ({ page }) => {
+  test('LG02-07: handles network failure without creating a session', async ({ page }) => {
     await page.route('**/auth/magic-link/verify', async route => {
       await route.abort('failed');
     });
