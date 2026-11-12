@@ -607,6 +607,77 @@ class GenerationExecutor:
                         persisted.get("values", []) if persisted is not None else []
                     )
 
+                    # Recover missing UNIQUE semantic state from committed
+                    # artifacts before requesting additional semantic values.
+                    if persisted is None and chunk_start > 0:
+                        recovered_values: list[str] = []
+
+                        try:
+                            committed_rows = self._artifact_reader.iter_entity_chunks(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                entity_name=entity_name,
+                            )
+
+                            for row in committed_rows:
+                                if field_name not in row:
+                                    raise GenerationExecutionError(
+                                        f"Cannot recover semantic state for "
+                                        f"{entity_name}.{field_name}: committed "
+                                        f"artifact is missing the field."
+                                    )
+
+                                value = row[field_name]
+
+                                if not isinstance(value, str) or not value.strip():
+                                    raise GenerationExecutionError(
+                                        f"Cannot recover semantic state for "
+                                        f"{entity_name}.{field_name}: committed "
+                                        f"artifact contains a blank or invalid value."
+                                    )
+
+                                recovered_values.append(value)
+
+                        except GenerationExecutionError:
+                            raise
+                        except Exception as exc:
+                            raise GenerationExecutionError(
+                                f"Could not recover semantic state for "
+                                f"{entity_name}.{field_name} from committed "
+                                f"artifacts: {exc}"
+                            ) from exc
+
+                        if len(recovered_values) != chunk_start:
+                            raise GenerationExecutionError(
+                                f"Cannot recover semantic state for "
+                                f"{entity_name}.{field_name}: found "
+                                f"{len(recovered_values)} committed values, "
+                                f"expected {chunk_start}."
+                            )
+
+                        normalized_values = [
+                            value.strip().casefold()
+                            for value in recovered_values
+                        ]
+
+                        if len(set(normalized_values)) != len(normalized_values):
+                            raise GenerationExecutionError(
+                                f"Cannot recover semantic state for "
+                                f"{entity_name}.{field_name}: committed "
+                                f"artifacts contain duplicate UNIQUE values."
+                            )
+
+                        self._semantic_store.save(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field_name,
+                            mode="UNIQUE",
+                            values=recovered_values,
+                        )
+
+                        persisted_values = recovered_values
+
                     if persisted is not None and persisted.get("mode") != "UNIQUE":
                         raise GenerationExecutionError(
                             f"Persisted semantic state is invalid for "

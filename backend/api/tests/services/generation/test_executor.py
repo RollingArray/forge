@@ -824,11 +824,29 @@ def test_executor_resumes_partial_entity_from_checkpoint() -> None:
     ) == semantic_values[100:125]
 
 
-def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
+@pytest.mark.parametrize(
+    "failure_case",
+    [
+        None,
+        "duplicate",
+        "blank",
+        "missing_field",
+        "missing_chunk",
+        "corrupt_store",
+    ],
+)
+def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
+    tmp_path,
+    failure_case,
+):
     from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.executor import GenerationExecutionError
     from app.services.generation.artifact_writer import GenerationArtifactWriter
     from app.services.generation_checkpoint_store import GenerationCheckpointStore
-    from app.services.generation_semantic_store import GenerationSemanticStore
+    from app.services.generation_semantic_store import (
+        GenerationSemanticStore,
+        SemanticStoreIntegrityError,
+    )
 
     data_model_id = "FORGE-REAL-RESUME-MODEL"
     job_id = "FORGE-REAL-RESUME-TEST"
@@ -855,15 +873,6 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
         f"Product {index:03d}"
         for index in range(1, 126)
     ]
-
-    semantic_store.save(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        entity_name="PRODUCT",
-        field_name="PRODUCT_NAME",
-        mode="UNIQUE",
-        values=semantic_values,
-    )
 
     artifact_writer.write_chunk(
         data_model_id,
@@ -908,6 +917,9 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
         },
         chunk_size=50,
     )
+
+    semantic_path = semantic_store._semantic_path(data_model_id, job_id)
+    assert not semantic_path.exists()
 
     specification = {
         "entities": [
@@ -955,9 +967,72 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
         ),
     )
 
+    class RecordingAIService:
+        def __init__(self) -> None:
+            self.calls = []
+
+        def generate_semantic_values(
+            self,
+            *,
+            description,
+            mode,
+            count,
+            exclude_values=None,
+            on_call_completed=None,
+        ):
+            self.calls.append({
+                "description": description,
+                "mode": mode,
+                "count": count,
+                "exclude_values": list(exclude_values or []),
+            })
+            return semantic_values[100:125]
+
+    ai_service = RecordingAIService()
+
+    chunks_directory = (
+        tmp_path
+        / "data_model"
+        / data_model_id
+        / "generation"
+        / job_id
+        / "generated"
+        / "PRODUCT"
+        / "chunks"
+    )
+
+    chunk_one = chunks_directory / "chunk_000001.csv"
+    chunk_two = chunks_directory / "chunk_000002.csv"
+
+    if failure_case == "duplicate":
+        content = chunk_one.read_text(encoding="utf-8")
+        content = content.replace("Product 002", "Product 001", 1)
+        chunk_one.write_text(content, encoding="utf-8")
+
+    elif failure_case == "blank":
+        content = chunk_one.read_text(encoding="utf-8")
+        content = content.replace("Product 002", "", 1)
+        chunk_one.write_text(content, encoding="utf-8")
+
+    elif failure_case == "missing_field":
+        content = chunk_one.read_text(encoding="utf-8")
+        content = content.replace(
+            "PRODUCT_ID,PRODUCT_NAME",
+            "PRODUCT_ID",
+            1,
+        )
+        chunk_one.write_text(content, encoding="utf-8")
+
+    elif failure_case == "missing_chunk":
+        chunk_two.unlink()
+
+    elif failure_case == "corrupt_store":
+        semantic_path.parent.mkdir(parents=True, exist_ok=True)
+        semantic_path.write_text("{ invalid json", encoding="utf-8")
+
     executor = GenerationExecutor(
         seed=42,
-        ai_service=None,
+        ai_service=ai_service,
         semantic_store=semantic_store,
         checkpoint_store=checkpoint_store,
         artifact_reader=artifact_reader,
@@ -1008,6 +1083,36 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
             chunk_size=chunk_size,
         )
 
+    if failure_case is not None:
+        expected_error = {
+            "corrupt_store": SemanticStoreIntegrityError,
+            "missing_chunk": ValueError,
+        }.get(failure_case, GenerationExecutionError)
+
+        original_semantic_content = (
+            semantic_path.read_text(encoding="utf-8")
+            if failure_case == "corrupt_store"
+            else None
+        )
+
+        with pytest.raises(expected_error):
+            executor.execute(
+                data_model_id=data_model_id,
+                specification=specification,
+                plan=plan,
+                job_id=job_id,
+                on_chunk_completed=commit_resumed_chunk,
+            )
+
+        assert ai_service.calls == []
+
+        if failure_case == "corrupt_store":
+            assert semantic_path.read_text(
+                encoding="utf-8"
+            ) == original_semantic_content
+
+        return
+
     result = executor.execute(
         data_model_id=data_model_id,
         specification=specification,
@@ -1015,6 +1120,20 @@ def test_resume_with_real_artifacts_restores_typed_identity_keys(tmp_path):
         job_id=job_id,
         on_chunk_completed=commit_resumed_chunk,
     )
+
+    assert len(ai_service.calls) == 1
+    assert ai_service.calls[0]["mode"] == "UNIQUE"
+    assert ai_service.calls[0]["count"] == 25
+    assert ai_service.calls[0]["exclude_values"] == semantic_values[:100]
+
+    recovered = semantic_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+    assert recovered is not None
+    assert recovered["values"] == semantic_values
 
     saved_checkpoint = checkpoint_store.get(
         data_model_id=data_model_id,
