@@ -13,6 +13,7 @@ fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 CANDIDATES="$OUTPUT/candidates"
 TEST_RUNS="$OUTPUT/test-runs"
 ACTIVE_RUN="$TEST_RUNS/active.json"
+PREPARE_ONLY=0
 
 
 check_corporate_ollama() {
@@ -613,6 +614,22 @@ PY_ACTIVE
 
   chmod 0600 "$ACTIVE_RUN"
 
+  if [[ "$PREPARE_ONLY" -eq 1 ]]; then
+    printf '\n%s\n' '============================================================'
+    printf 'FORGE candidate runtime is READY (prepare-only mode)\n'
+    printf 'Candidate: %s\n' "$candidate_id"
+    printf 'API: http://127.0.0.1:18875/health\n'
+    printf 'UI:  http://127.0.0.1:18876\n'
+    printf 'Sessions: %s/sessions.json\n' "$run_dir"
+    printf 'Evidence: %s/evidence\n' "$run_dir"
+    printf '\nRun WP-02 using the isolated Playwright configuration.\n'
+    printf 'The candidate services will remain running.\n'
+    printf '%s\n' '============================================================'
+
+    trap - EXIT INT TERM
+    return 0
+  fi
+
   printf '\n%s\n' '============================================================'
   printf 'FORGE candidate runtime is READY\n'
   printf 'Candidate: %s\n' "$candidate_id"
@@ -674,13 +691,17 @@ APPLESCRIPT
 case "${1:-}" in
   "")
     ;;
+  "--prepare-only")
+    [[ "$#" -eq 1 ]] || fail "Usage: $0 [--prepare-only|--e2e]"
+    PREPARE_ONLY=1
+    ;;
   "--e2e")
-    [[ "$#" -eq 1 ]] || fail "Usage: $0 [--e2e]"
+    [[ "$#" -eq 1 ]] || fail "Usage: $0 [--prepare-only|--e2e]"
     run_e2e
     exit 0
     ;;
   *)
-    fail "Unknown argument: $1. Usage: $0 [--e2e]"
+    fail "Unknown argument: $1. Usage: $0 [--prepare-only|--e2e]"
     ;;
 esac
 
