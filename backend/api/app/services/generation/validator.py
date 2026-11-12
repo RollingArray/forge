@@ -1037,6 +1037,11 @@ class GenerationValidator:
                     f"{field_id}: semantic UNIQUE field contains "
                     f"{metric['duplicate_count']} duplicate value(s)."
                 )
+            elif metric["evaluation_error"]:
+                errors.append(
+                    f"{field_id}: could not evaluate semantic unique "
+                    f"field: {metric['evaluation_error']}"
+                )
 
         for entity_name, metric in completeness_entities.items():
             record_rule(

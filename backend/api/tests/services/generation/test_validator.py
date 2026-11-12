@@ -393,6 +393,11 @@ def test_semantic_unique_validation_does_not_pass_unreadable_artifacts(
     assert "simulated committed artifact read failure" in (
         rule["details"]["evaluation_error"]
     )
+    assert not result.valid
+    assert any(
+        "could not evaluate semantic unique" in error.lower()
+        for error in result.errors
+    )
 
 
 def test_validation_counts_committed_rows(
