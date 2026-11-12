@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { ForgeSpecificationField } from '../../../../core/interfaces/forge-specification-field.interface';
 import { AIFieldProposal } from '../../../../core/interfaces/ai-field-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
+import { compareExactDecimals } from '../../../../shared/utils/exact-decimal';
 import { FieldAiAssistPanelComponent } from '../field-ai-assist-panel/field-ai-assist-panel.component';
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { DistributionPreviewComponent } from '../../../../shared/components/distribution-preview/distribution-preview.component';
@@ -340,6 +341,15 @@ export class FieldDialogComponent {
       this.distribution() === 'DISCRETE_UNIFORM' ||
       this.distribution() === 'NORMAL'
     ) {
+      if (this.type() === 'DECIMAL') {
+        const comparison = compareExactDecimals(
+          this.minimum(),
+          this.maximum(),
+        );
+
+        return comparison !== null && comparison <= 0;
+      }
+
       const minimum = this.toNumber(this.minimum());
       const maximum = this.toNumber(this.maximum());
 
@@ -427,15 +437,30 @@ export class FieldDialogComponent {
         this.distribution() === 'DISCRETE_UNIFORM' ||
         this.distribution() === 'NORMAL'
       ) {
-        const minimum = this.toNumber(this.minimum());
-        const maximum = this.toNumber(this.maximum());
+        if (this.type() === 'DECIMAL') {
+          const comparison = compareExactDecimals(
+            this.minimum(),
+            this.maximum(),
+          );
 
-        if (minimum === undefined || maximum === undefined) {
-          return 'Enter both minimum and maximum values.';
-        }
+          if (comparison === null) {
+            return 'Enter valid minimum and maximum decimal values.';
+          }
 
-        if (minimum > maximum) {
-          return 'Maximum must be greater than or equal to minimum.';
+          if (comparison > 0) {
+            return 'Maximum must be greater than or equal to minimum.';
+          }
+        } else {
+          const minimum = this.toNumber(this.minimum());
+          const maximum = this.toNumber(this.maximum());
+
+          if (minimum === undefined || maximum === undefined) {
+            return 'Enter both minimum and maximum values.';
+          }
+
+          if (minimum > maximum) {
+            return 'Maximum must be greater than or equal to minimum.';
+          }
         }
       }
     }
@@ -738,8 +763,13 @@ export class FieldDialogComponent {
       this.distribution() === 'DISCRETE_UNIFORM' ||
       this.distribution() === 'NORMAL'
     ) {
-      parameters['minimum'] = this.toNumber(this.minimum());
-      parameters['maximum'] = this.toNumber(this.maximum());
+      if (this.type() === 'DECIMAL') {
+        parameters['minimum'] = this.minimum().trim();
+        parameters['maximum'] = this.maximum().trim();
+      } else {
+        parameters['minimum'] = this.toNumber(this.minimum());
+        parameters['maximum'] = this.toNumber(this.maximum());
+      }
     }
 
     if (this.type() === 'CATEGORICAL') {

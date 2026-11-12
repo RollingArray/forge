@@ -494,7 +494,8 @@
 
                   <input
                     id="minimum"
-                    type="number"
+                    [type]="type() === 'DECIMAL' ? 'text' : 'number'"
+                    [attr.inputmode]="type() === 'DECIMAL' ? 'decimal' : 'numeric'"
                     [ngModel]="minimum()"
                     (ngModelChange)="minimum.set(normalizeNumberInput($event))"
                     placeholder="e.g. 1"
@@ -506,7 +507,8 @@
 
                   <input
                     id="maximum"
-                    type="number"
+                    [type]="type() === 'DECIMAL' ? 'text' : 'number'"
+                    [attr.inputmode]="type() === 'DECIMAL' ? 'decimal' : 'numeric'"
                     [ngModel]="maximum()"
                     (ngModelChange)="maximum.set(normalizeNumberInput($event))"
                     placeholder="e.g. 100"

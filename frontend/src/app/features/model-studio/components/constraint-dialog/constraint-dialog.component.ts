@@ -28,6 +28,7 @@ import { ForgeConstraint } from '../../../../core/interfaces/forge-constraint.in
 import { ForgeSpecificationEntity } from '../../../../core/interfaces/forge-specification-entity.interface';
 import { AIConstraintProposalResponse } from '../../../../core/interfaces/ai-constraint-proposal.interface';
 import { AIService } from '../../../../core/services/ai.service';
+import { isExactDecimalString } from '../../../../shared/utils/exact-decimal';
 import { AiAssistPanelComponent } from '../../../../shared/components/ai-assist-panel/ai-assist-panel.component';
 import { ChoiceCardComponent } from '../../../../shared/components/choice-card/choice-card.component';
 import { ChoiceDividerComponent } from '../../../../shared/components/choice-divider/choice-divider.component';
@@ -246,10 +247,7 @@ export class ConstraintDialogComponent {
     }
 
     if (fieldType === 'DECIMAL') {
-      return (
-        comparisonValue !== '' &&
-        Number.isFinite(Number(comparisonValue))
-      );
+      return isExactDecimalString(comparisonValue);
     }
 
     return false;
@@ -417,7 +415,10 @@ export class ConstraintDialogComponent {
       entity: this.entity().name,
       field: this.field(),
       operator: this.operator(),
-      value: this.value(),
+      value:
+        this.selectedField()?.type === 'DECIMAL'
+          ? this.value().trim()
+          : this.value(),
     });
   }
 
