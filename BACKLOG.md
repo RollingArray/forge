@@ -80,6 +80,8 @@ Status: [active]
 Scope:
 - SEM-01 and SEM-02: Semantic UNIQUE validation and semantic-store integrity.
 - POP-01: Correct identity capacity for independent foreign-key dimensions.
+- NUM-01: Optional DECIMAL precision and scale authoring, validation and
+  generation.
 - NUM-02, NUM-03 and NUM-05: Exact decimal representation and numeric
   boundary preservation across supported workflows.
 - TEST-01 through TEST-04.
@@ -88,7 +90,7 @@ Exit criteria:
 - [done] Semantic UNIQUE values remain unique across the complete dataset.
 - [done] Corrupt semantic state cannot silently cause duplicate generation.
 - [done] Population capacity agrees with generation identity construction.
-- [pending] Supported decimal values and bounds retain their intended precision.
+- [done] Supported decimal values and bounds retain their intended precision.
 - [done] Focused exact-decimal backend and frontend regression tests pass.
 - [done] Remaining semantic and identity-capacity backend regression tests pass.
 - [pending] Supported behavior is verified through the FORGE UI.
@@ -111,6 +113,19 @@ Completion evidence:
   including finite local identity candidate-capacity rejection.
 - Exact DECIMAL implementation completed across the covered backend and
   frontend paths.
+- NUM-01: Optional DECIMAL precision and scale implemented across backend
+  validation, exact scaled-integer generation, and frontend field authoring.
+  Supports UNIFORM and NORMAL distributions while preserving legacy
+  behavior when precision and scale are omitted.
+- NUM-01 frontend supports precision/scale validation, editing, AI proposal
+  restoration, serialization and reset behavior.
+- 172 focused backend regression tests passed for decimal precision,
+  field-generation validation and generation services.
+- Full backend API suite: 386 tests passed.
+- Angular production build passed. Frontend unit tests: 8 passed and 1
+  failed in the app scaffold title assertion (`app.spec.ts`); its status
+  before this change has not been established.
+- NUM-01 FORGE UI acceptance remains outstanding.
 - 168 focused backend pytest tests passed, covering decimal import,
   validation, conversion, planning, persistence, checkpoint hashing and
   exact constraint comparison.
@@ -198,7 +213,6 @@ Exit criteria:
 The following work is not automatically part of RC 1.0:
 - REL-01: Full logical MANY_TO_MANY relationship support.
 - SEM-03: Semantic uniqueness as an additional quality metric.
-- NUM-01: Optional DECIMAL precision and scale enhancement.
 - NUM-04: Numeric cross-field constraints.
 
 These remain visible in the engineering backlog. They may be promoted into RC scope only through an explicit decision.
