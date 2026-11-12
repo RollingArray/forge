@@ -216,6 +216,19 @@ class SpecificationImportService:
         return result
 
     @staticmethod
+    def _optional_decimal_text(value: str) -> str | None:
+        stripped = value.strip()
+        if not stripped:
+            return None
+        try:
+            number = Decimal(stripped)
+        except InvalidOperation as exc:
+            raise ValueError("must be a numeric value.") from exc
+        if not number.is_finite():
+            raise ValueError("must be a finite numeric value.")
+        return stripped
+
+    @staticmethod
     def _json_array(value: str, column: str) -> list[Any]:
         try:
             parsed = json.loads(value)
@@ -460,8 +473,17 @@ class SpecificationImportService:
                 raise ValueError(
                     f"{field_type} fields use distribution, not generator."
                 )
-            minimum = self._optional_number(values.get("minimum", ""))
-            maximum = self._optional_number(values.get("maximum", ""))
+            if field_type == "INTEGER":
+                minimum = self._optional_number(values.get("minimum", ""))
+                maximum = self._optional_number(values.get("maximum", ""))
+            else:
+                minimum = self._optional_decimal_text(
+                    values.get("minimum", "")
+                )
+                maximum = self._optional_decimal_text(
+                    values.get("maximum", "")
+                )
+
             if minimum is not None:
                 parameters["minimum"] = minimum
             if maximum is not None:
@@ -1250,7 +1272,7 @@ class SpecificationImportService:
                     if parsed_value is None:
                         raise ValueError("Constraint value is required.")
                 elif field_type == "DECIMAL":
-                    parsed_value = self._optional_number(raw_value)
+                    parsed_value = self._optional_decimal_text(raw_value)
                     if parsed_value is None:
                         raise ValueError("Constraint value is required.")
                 else:

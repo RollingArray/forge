@@ -142,8 +142,20 @@ def validate_field_generation(
                 f"{', '.join(sorted(allowed))}."
             )
 
-        minimum = _finite_number(parameters.get("minimum"))
-        maximum = _finite_number(parameters.get("maximum"))
+        minimum_raw = parameters.get("minimum")
+        maximum_raw = parameters.get("maximum")
+
+        if field_type == "DECIMAL" and (
+            not isinstance(minimum_raw, str)
+            or not isinstance(maximum_raw, str)
+        ):
+            errors.append(
+                "DECIMAL minimum and maximum must be decimal strings."
+            )
+            return errors
+
+        minimum = _finite_number(minimum_raw)
+        maximum = _finite_number(maximum_raw)
 
         if minimum is None or maximum is None:
             errors.append(

@@ -645,14 +645,27 @@ def _parse_constraint(
         )
 
     value = constraint["value"]
-    if field_type in {"INTEGER", "DECIMAL"}:
+    if field_type == "DECIMAL":
+        try:
+            if not isinstance(value, str):
+                raise ValueError("DECIMAL comparison values must be strings.")
+            number = Decimal(value)
+            if not number.is_finite():
+                raise ValueError("Value must be finite.")
+        except (ArithmeticError, TypeError, ValueError) as exc:
+            raise GenerationPlanningError(
+                f"{entity}.{field}: comparison value must be a valid "
+                f"{field_type.lower()}."
+            ) from exc
+
+    elif field_type == "INTEGER":
         try:
             if isinstance(value, bool):
                 raise ValueError("Boolean values are not numeric.")
             number = float(value)
             if not math.isfinite(number):
                 raise ValueError("Value must be finite.")
-            if field_type == "INTEGER" and not number.is_integer():
+            if not number.is_integer():
                 raise ValueError("Value must be an integer.")
         except (TypeError, ValueError, OverflowError) as exc:
             raise GenerationPlanningError(

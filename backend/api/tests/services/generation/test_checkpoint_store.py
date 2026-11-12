@@ -2,6 +2,7 @@ from pathlib import Path
 
 from app.services.generation_checkpoint_store import (
     GenerationCheckpointStore,
+    compute_specification_hash,
 )
 
 
@@ -187,3 +188,52 @@ def test_get_committed_rows_returns_durable_entity_progress(
         job_id="FORGE-TEST",
         entity_name="CUSTOMER",
     ) == 0
+
+
+def test_checkpoint_specification_hash_preserves_decimal_representation():
+    specification = {
+        "entities": [
+            {
+                "fields": [
+                    {
+                        "name": "PRICE",
+                        "type": "DECIMAL",
+                        "generation": {"min": "0.1000"},
+                    }
+                ]
+            }
+        ]
+    }
+    equivalent_order = {
+        "entities": [
+            {
+                "fields": [
+                    {
+                        "generation": {"min": "0.1000"},
+                        "type": "DECIMAL",
+                        "name": "PRICE",
+                    }
+                ]
+            }
+        ]
+    }
+    different_representation = {
+        "entities": [
+            {
+                "fields": [
+                    {
+                        "name": "PRICE",
+                        "type": "DECIMAL",
+                        "generation": {"min": "0.1"},
+                    }
+                ]
+            }
+        ]
+    }
+
+    original_hash = compute_specification_hash(specification)
+
+    assert original_hash == compute_specification_hash(equivalent_order)
+    assert original_hash != compute_specification_hash(
+        different_representation
+    )

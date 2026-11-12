@@ -64,7 +64,7 @@ from app.services.field_generation_validation import (
             "generation": {
                 "strategy": "RANDOM",
                 "distribution": "UNIFORM",
-                "parameters": {"minimum": 0.0, "maximum": 99.99},
+                "parameters": {"minimum": "0.0", "maximum": "99.99"},
             },
         },
         {
@@ -72,7 +72,7 @@ from app.services.field_generation_validation import (
             "generation": {
                 "strategy": "RANDOM",
                 "distribution": "NORMAL",
-                "parameters": {"minimum": -10.5, "maximum": 10.5},
+                "parameters": {"minimum": "-10.5", "maximum": "10.5"},
             },
         },
         {
@@ -286,13 +286,13 @@ def test_string_generators_require_their_mandatory_parameters(
         (
             "DECIMAL",
             "UNIFORM",
-            {"minimum": 10, "maximum": 1},
+            {"minimum": "10", "maximum": "1"},
             "minimum cannot exceed maximum.",
         ),
         (
             "DECIMAL",
             "DISCRETE_UNIFORM",
-            {"minimum": 0, "maximum": 10},
+            {"minimum": "0", "maximum": "10"},
             "DECIMAL supports only RANDOM with distributions NORMAL, UNIFORM.",
         ),
     ],
@@ -353,3 +353,64 @@ def test_integer_bounds_accept_numeric_strings():
     }
 
     assert validate_field_generation(field) == []
+
+
+@pytest.mark.parametrize(
+    ("minimum", "maximum"),
+    [
+        (0.0, "10.0"),
+        ("0.0", 10.0),
+        (0, 10),
+    ],
+)
+def test_decimal_bounds_reject_json_numeric_values(minimum, maximum):
+    field = {
+        "type": "DECIMAL",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+                "minimum": minimum,
+                "maximum": maximum,
+            },
+        },
+    }
+
+    assert (
+        "DECIMAL minimum and maximum must be decimal strings."
+        in validate_field_generation(field)
+    )
+
+
+def test_decimal_bounds_accept_exact_decimal_strings():
+    field = {
+        "type": "DECIMAL",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+                "minimum": "0.123456789123456789",
+                "maximum": "9.876543219876543219",
+            },
+        },
+    }
+
+    assert validate_field_generation(field) == []
+
+
+def test_decimal_bounds_preserve_trailing_zero_representation():
+    field = {
+        "type": "DECIMAL",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": "UNIFORM",
+            "parameters": {
+                "minimum": "12.3400",
+                "maximum": "20.0000",
+            },
+        },
+    }
+
+    assert validate_field_generation(field) == []
+    assert field["generation"]["parameters"]["minimum"] == "12.3400"
+    assert field["generation"]["parameters"]["maximum"] == "20.0000"

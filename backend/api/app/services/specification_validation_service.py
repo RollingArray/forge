@@ -1635,18 +1635,32 @@ class SpecificationValidationService:
             if reason is None and field_type in {"INTEGER", "DECIMAL"}:
                 try:
                     if isinstance(value, bool) or value is None:
-                        raise ValueError("Boolean or null values are not numeric.")
-                    number = Decimal(str(value))
+                        raise ValueError(
+                            "Boolean or null values are not numeric."
+                        )
+
+                    if field_type == "DECIMAL":
+                        if not isinstance(value, str):
+                            raise ValueError(
+                                "DECIMAL constraint values must be strings."
+                            )
+                        number = Decimal(value)
+                    else:
+                        number = Decimal(str(value))
+
                     if not number.is_finite():
                         raise ValueError("Value must be finite.")
+
                     if (
                         field_type == "INTEGER"
                         and number != number.to_integral_value()
                     ):
                         raise ValueError("Value must be an integer.")
+
                 except (InvalidOperation, TypeError, ValueError):
                     reason = (
-                        f"comparison value must be a valid {field_type.lower()}."
+                        "comparison value must be a valid "
+                        f"{'decimal string' if field_type == 'DECIMAL' else 'integer'}."
                     )
 
             if reason is None:

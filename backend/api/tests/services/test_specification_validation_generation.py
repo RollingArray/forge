@@ -1559,3 +1559,54 @@ def test_capability_validation_normalizes_fk_entity_endpoints():
         finding["title"] == "Capability validation could not complete"
         for finding in result["findings"]
     )
+
+
+def _make_decimal_constraint_specification(value):
+    specification = make_specification(
+        [
+            {
+                "name": "TEST_ID",
+                "type": "IDENTIFIER",
+                "identity": {"strategy": "SEQUENTIAL_ID"},
+            },
+            {
+                "name": "TEST_DECIMAL",
+                "type": "DECIMAL",
+                "generation": {
+                    "strategy": "RANDOM",
+                    "distribution": "UNIFORM",
+                    "parameters": {
+                        "minimum": "0.0000",
+                        "maximum": "100.0000",
+                    },
+                },
+            },
+        ]
+    )
+    specification["constraints"] = [
+        {
+            "entity": "TEST_ENTITY",
+            "field": "TEST_DECIMAL",
+            "operator": ">",
+            "value": value,
+        }
+    ]
+    return specification
+
+
+def test_decimal_constraint_accepts_exact_decimal_string():
+    finding = get_constraint_finding(
+        _make_decimal_constraint_specification("12.3400")
+    )
+
+    assert finding["severity"] == "passed"
+
+
+@pytest.mark.parametrize("value", [12.34, 12, True])
+def test_decimal_constraint_rejects_non_string_values(value):
+    finding = get_constraint_finding(
+        _make_decimal_constraint_specification(value)
+    )
+
+    assert finding["severity"] == "error"
+    assert "decimal string" in finding["details"].lower()

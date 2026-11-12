@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import pytest
 from pathlib import Path
 
 from app.services.generation.artifact_reader import (
@@ -550,7 +551,7 @@ def test_validation_converts_numeric_csv_values_for_constraints(
                 "entity": "PRODUCT",
                 "field": "PRICE",
                 "operator": ">",
-                "value": 0,
+                "value": "0",
             },
         ],
     }
@@ -611,7 +612,7 @@ def test_validation_detects_constraint_violation(
                 "entity": "PRODUCT",
                 "field": "PRICE",
                 "operator": ">",
-                "value": 0,
+                "value": "0",
             },
         ],
     }
@@ -816,3 +817,74 @@ def test_validation_detects_orphan_foreign_key(
         "references missing CUSTOMER key" in error
         for error in result.errors
     )
+
+
+@pytest.mark.parametrize(
+    ("actual", "operator", "expected"),
+    [
+        (
+            "0.100000000000000001",
+            "<",
+            "0.100000000000000002",
+        ),
+        (
+            "0.100000000000000002",
+            ">",
+            "0.100000000000000001",
+        ),
+    ],
+)
+def test_validation_compares_decimal_constraints_exactly(
+    tmp_path: Path,
+    actual: str,
+    operator: str,
+    expected: str,
+) -> None:
+    job_id = "DECIMAL-EXACT"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "PRICE": actual},
+        ],
+    )
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {"name": "PRICE", "type": "DECIMAL"},
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+        "constraints": [
+            {
+                "entity": "PRODUCT",
+                "field": "PRICE",
+                "operator": operator,
+                "value": expected,
+            },
+        ],
+    }
+
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    assert result.valid
+    assert result.errors == []
