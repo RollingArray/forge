@@ -3,6 +3,8 @@
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from app.services.decimal_precision import decimal_to_scaled_integer
+
 
 def _finite_number(value: Any) -> Decimal | None:
     """Return a finite decimal value, excluding booleans and invalid inputs."""
@@ -46,6 +48,55 @@ def validate_field_generation(
     parameters = parameters or {}
 
     errors: list[str] = []
+
+    precision_present = "precision" in parameters
+    scale_present = "scale" in parameters
+
+    if field_type != "DECIMAL" and (precision_present or scale_present):
+        errors.append(
+            "precision and scale are only supported for DECIMAL fields."
+        )
+
+    elif field_type == "DECIMAL":
+        if precision_present != scale_present:
+            errors.append(
+                "DECIMAL precision and scale must be provided together."
+            )
+        elif precision_present:
+            precision = parameters.get("precision")
+            scale = parameters.get("scale")
+
+            if (
+                isinstance(precision, bool)
+                or not isinstance(precision, int)
+                or precision < 1
+                or isinstance(scale, bool)
+                or not isinstance(scale, int)
+                or scale < 0
+                or scale > precision
+            ):
+                errors.append(
+                    "DECIMAL precision must be positive and scale must "
+                    "be non-negative and no greater than precision."
+                )
+            else:
+                for bound_name in ("minimum", "maximum"):
+                    bound = _finite_number(parameters.get(bound_name))
+                    if bound is None:
+                        continue
+
+                    scaled = decimal_to_scaled_integer(bound, scale)
+
+                    if scaled is None:
+                        errors.append(
+                            f"DECIMAL {bound_name} cannot be represented "
+                            f"at scale {scale}."
+                        )
+                    elif abs(scaled) >= 10 ** precision:
+                        errors.append(
+                            f"DECIMAL {bound_name} exceeds precision "
+                            f"{precision} at scale {scale}."
+                        )
 
     # FK source fields receive their values through FK assignment. Their
     # configuration structure must still be valid, but scalar generation

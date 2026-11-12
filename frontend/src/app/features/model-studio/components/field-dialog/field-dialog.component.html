@@ -515,6 +515,44 @@
                   />
                 </label>
               </div>
+
+              @if (type() === 'DECIMAL') {
+                <div class="configuration-heading">
+                  <span>Decimal precision (optional)</span>
+                  <small>
+                    Define the maximum total digits and fractional digits.
+                    Leave both blank for unrestricted decimal precision.
+                  </small>
+                </div>
+
+                <div class="parameter-grid">
+                  <label for="decimal-precision">
+                    <small>Precision</small>
+                    <input
+                      id="decimal-precision"
+                      type="number"
+                      min="1"
+                      step="1"
+                      [ngModel]="precision()"
+                      (ngModelChange)="precision.set(normalizeNumberInput($event))"
+                      placeholder="e.g. 10"
+                    />
+                  </label>
+
+                  <label for="decimal-scale">
+                    <small>Scale</small>
+                    <input
+                      id="decimal-scale"
+                      type="number"
+                      min="0"
+                      step="1"
+                      [ngModel]="scale()"
+                      (ngModelChange)="scale.set(normalizeNumberInput($event))"
+                      placeholder="e.g. 2"
+                    />
+                  </label>
+                </div>
+              }
             </div>
           }
         </section>

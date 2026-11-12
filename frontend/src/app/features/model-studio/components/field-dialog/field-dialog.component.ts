@@ -90,6 +90,8 @@ export class FieldDialogComponent {
 
   readonly minimum = signal('');
   readonly maximum = signal('');
+  readonly precision = signal('');
+  readonly scale = signal('');
   readonly pattern = signal('');
   readonly semanticDescription = signal('');
   readonly semanticMode = signal<'UNIQUE' | 'VOCABULARY'>(
@@ -150,6 +152,17 @@ export class FieldDialogComponent {
       );
 
       const parameters = generation.parameters ?? {};
+
+      this.precision.set(
+        parameters['precision'] !== undefined
+          ? String(parameters['precision'])
+          : '',
+      );
+      this.scale.set(
+        parameters['scale'] !== undefined
+          ? String(parameters['scale'])
+          : '',
+      );
 
       this.minimum.set(
         parameters['minimum'] !== undefined
@@ -347,7 +360,11 @@ export class FieldDialogComponent {
           this.maximum(),
         );
 
-        return comparison !== null && comparison <= 0;
+        return (
+          comparison !== null &&
+          comparison <= 0 &&
+          this.decimalPrecisionScaleValidationMessage() === null
+        );
       }
 
       const minimum = this.toNumber(this.minimum());
@@ -361,6 +378,63 @@ export class FieldDialogComponent {
     }
 
     return false;
+  }
+
+  private decimalPrecisionScaleValidationMessage(): string | null {
+    const precisionText = this.precision().trim();
+    const scaleText = this.scale().trim();
+
+    if (!precisionText && !scaleText) {
+      return null;
+    }
+
+    if (!precisionText || !scaleText) {
+      return 'Enter both DECIMAL precision and scale, or leave both blank.';
+    }
+
+    if (!/^\d+$/.test(precisionText) || !/^\d+$/.test(scaleText)) {
+      return 'Precision and scale must be whole numbers.';
+    }
+
+    const precision = Number(precisionText);
+    const scale = Number(scaleText);
+
+    if (
+      !Number.isSafeInteger(precision) ||
+      !Number.isSafeInteger(scale) ||
+      precision < 1 ||
+      scale < 0 ||
+      scale > precision
+    ) {
+      return 'Precision must be positive. Scale must be between 0 and precision.';
+    }
+
+    for (const [label, value] of [
+      ['Minimum', this.minimum()],
+      ['Maximum', this.maximum()],
+    ] as const) {
+      const match = /^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))$/.exec(
+        value.trim(),
+      );
+
+      if (!match) {
+        continue;
+      }
+
+      const integerPart = (match[2] ?? '0').replace(/^0+/, '');
+      const fractionalPart = (match[3] ?? match[4] ?? '')
+        .replace(/0+$/, '');
+
+      if (fractionalPart.length > scale) {
+        return `${label} cannot be represented at scale ${scale}.`;
+      }
+
+      if (integerPart.length > precision - scale) {
+        return `${label} exceeds DECIMAL precision ${precision} and scale ${scale}.`;
+      }
+    }
+
+    return null;
   }
 
   private isCategoricalConfigurationValid(): boolean {
@@ -449,6 +523,13 @@ export class FieldDialogComponent {
 
           if (comparison > 0) {
             return 'Maximum must be greater than or equal to minimum.';
+          }
+
+          const precisionError =
+            this.decimalPrecisionScaleValidationMessage();
+
+          if (precisionError) {
+            return precisionError;
           }
         } else {
           const minimum = this.toNumber(this.minimum());
@@ -664,6 +745,17 @@ export class FieldDialogComponent {
 
     const parameters = generation.parameters ?? {};
 
+    this.precision.set(
+      parameters['precision'] !== undefined
+        ? String(parameters['precision'])
+        : '',
+    );
+    this.scale.set(
+      parameters['scale'] !== undefined
+        ? String(parameters['scale'])
+        : '',
+    );
+
     if (parameters['minimum'] !== undefined) {
       this.minimum.set(String(parameters['minimum']));
     }
@@ -766,6 +858,11 @@ export class FieldDialogComponent {
       if (this.type() === 'DECIMAL') {
         parameters['minimum'] = this.minimum().trim();
         parameters['maximum'] = this.maximum().trim();
+
+        if (this.precision().trim() && this.scale().trim()) {
+          parameters['precision'] = Number(this.precision());
+          parameters['scale'] = Number(this.scale());
+        }
       } else {
         parameters['minimum'] = this.toNumber(this.minimum());
         parameters['maximum'] = this.toNumber(this.maximum());
@@ -868,6 +965,8 @@ export class FieldDialogComponent {
     this.generator.set('');
     this.minimum.set('');
     this.maximum.set('');
+    this.precision.set('');
+    this.scale.set('');
     this.pattern.set('');
     this.semanticDescription.set('');
     this.semanticMode.set('VOCABULARY');

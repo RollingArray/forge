@@ -6,8 +6,13 @@ Purpose: Deterministic scalar field generation for FORGE.
 from __future__ import annotations
 
 import random
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from typing import Any
+
+from app.services.decimal_precision import (
+    decimal_to_scaled_integer,
+    scaled_integer_to_decimal,
+)
 
 
 class GenerationError(ValueError):
@@ -310,6 +315,94 @@ class Generator:
             parameters=parameters,
             field_type="Decimal",
         )
+
+        precision_present = "precision" in parameters
+        scale_present = "scale" in parameters
+
+        if precision_present != scale_present:
+            raise GenerationError(
+                f"DECIMAL precision and scale must be provided together: "
+                f"{field_name}"
+            )
+
+        if precision_present:
+            precision = parameters.get("precision")
+            scale = parameters.get("scale")
+
+            if (
+                isinstance(precision, bool)
+                or not isinstance(precision, int)
+                or precision < 1
+                or isinstance(scale, bool)
+                or not isinstance(scale, int)
+                or scale < 0
+                or scale > precision
+            ):
+                raise GenerationError(
+                    f"Invalid DECIMAL precision or scale for {field_name}."
+                )
+
+            minimum_units = decimal_to_scaled_integer(minimum, scale)
+            maximum_units = decimal_to_scaled_integer(maximum, scale)
+
+            if minimum_units is None or maximum_units is None:
+                raise GenerationError(
+                    f"DECIMAL bounds cannot be represented at scale "
+                    f"{scale}: {field_name}"
+                )
+
+            if (
+                abs(minimum_units) >= 10 ** precision
+                or abs(maximum_units) >= 10 ** precision
+            ):
+                raise GenerationError(
+                    f"DECIMAL bounds exceed precision {precision} "
+                    f"at scale {scale}: {field_name}"
+                )
+
+            if minimum_units == maximum_units:
+                return scaled_integer_to_decimal(minimum_units, scale)
+
+            if distribution == "UNIFORM":
+                generated_units = self._random.randint(
+                    minimum_units,
+                    maximum_units,
+                )
+                return scaled_integer_to_decimal(generated_units, scale)
+
+            # Bounded normal distribution sampled on the exact decimal grid.
+            with localcontext() as context:
+                context.prec = max(
+                    28,
+                    len(
+                        str(max(abs(minimum_units), abs(maximum_units)))
+                    ) + 24,
+                )
+
+                midpoint = (
+                    Decimal(minimum_units) + Decimal(maximum_units)
+                ) / Decimal("2")
+
+                standard_deviation = (
+                    Decimal(maximum_units - minimum_units) / Decimal("6")
+                )
+
+                while True:
+                    standard_normal = Decimal(
+                        str(self._random.gauss(0.0, 1.0))
+                    )
+                    candidate_units = int(
+                        (
+                            midpoint
+                            + standard_deviation * standard_normal
+                        ).to_integral_value()
+                    )
+
+                    if minimum_units <= candidate_units <= maximum_units:
+                        return scaled_integer_to_decimal(
+                            candidate_units,
+                            scale,
+                        )
 
         if minimum == maximum:
             return minimum
