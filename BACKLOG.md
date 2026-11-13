@@ -641,7 +641,16 @@ Positive controls:
     capacity behavior; a parent population of 10 supports a child capacity
     of 100 for two independent same-parent FK dimensions.
   - 55 population tests and 164 combined generation/population tests passed.
-- [test-gap] TEST-05: Add generation-service recovery orchestration tests.
+- [done] TEST-05: Generation-service recovery orchestration tests cover
+  startup recovery, interrupted-job resume, retry/idempotence, missing
+  specifications, checkpoint reconciliation failures, and persistence-failure
+  rollback.
+  - Startup recovery and resume restore the previous in-memory lifecycle state
+    when job persistence fails.
+  - Failed resume releases its worker reservation; failed startup recovery can
+    be retried safely in the same service instance.
+  - Seven dedicated recovery tests passed; 228 generation service tests and
+    413 full API tests passed, with 8 existing Starlette deprecation warnings.
 - [test-gap] TEST-06: Add artifact row-count and schema reconciliation tests.
 - [test-gap] TEST-07: Add activity repository persistence and concurrency tests.
 - [test-gap] TEST-08: Add activity index recovery tests for malformed complete

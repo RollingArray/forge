@@ -645,9 +645,19 @@ class GenerationService:
                     specification=specification,
                 )
 
+                previous_status = job.status
+                previous_error = job.error
+
                 job.status = GenerationJobStatus.INTERRUPTED
                 job.error = None
-                self._job_store.save(job)
+
+                try:
+                    self._job_store.save(job)
+                except Exception:
+                    job.status = previous_status
+                    job.error = previous_error
+                    raise
+
                 self._jobs[job.job_id] = job
                 recovered += 1
             except Exception as exc:
@@ -705,14 +715,22 @@ class GenerationService:
                         f"Generation job '{job_id}' already has a scheduled "
                         "or active worker."
                     )
+
+                previous_status = job.status
+                previous_error = job.error
+
                 self._active_workers.add(worker_key)
                 job.status = GenerationJobStatus.RUNNING
                 job.error = None
+
                 try:
                     self._job_store.save(job)
                 except Exception:
                     self._active_workers.discard(worker_key)
+                    job.status = previous_status
+                    job.error = previous_error
                     raise
+
                 self._jobs[job.job_id] = job
 
             return job
