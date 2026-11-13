@@ -658,7 +658,12 @@ Positive controls:
   - Added direct writer coverage for 75-row consolidation and schema mismatch.
   - Six dedicated tests passed; full API suite passed: 419 tests, with 8
     existing Starlette deprecation warnings.
-- [test-gap] TEST-07: Add activity repository persistence and concurrency tests.
+- [done] TEST-07: Activity repository persistence and concurrency coverage.
+  - Added eight tests covering serialization, repository restart, append
+    integrity, workspace and data-model isolation, retrieval ordering and
+    limits, concurrent thread writes, and concurrent process writes.
+  - Dedicated tests: 8 passed; full API suite: 427 passed, with 8 existing
+    Starlette deprecation warnings.
 - [test-gap] TEST-08: Add activity index recovery tests for malformed complete
   JSONL records.
 - [done] TEST-09: Specification preflight and whole-candidate validation
