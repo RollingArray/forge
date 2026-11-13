@@ -699,8 +699,20 @@ Positive controls:
   - Validator regression suite: 35 passed.
   - Full API suite: 449 passed, with 8 existing Starlette deprecation
     warnings.
-- [test-gap] TEST-11: Add regression tests for GEN-VAL-01, ensuring
+- [done] TEST-11: Regression coverage for GEN-VAL-01 ensures
   post-generation validation exceptions do not misclassify completed generation.
+
+  Progress (2026-11-13):
+  - Added regression coverage for exceptions after generation when all
+    target rows are recoverable from committed artifacts.
+  - Corrected recovery status classification: fully recovered output is
+    COMPLETED, partial output is PARTIALLY_COMPLETED, and zero usable rows
+    remains FAILED.
+  - Preserved the validation exception in the job error and corrected
+    terminal log classification for fully recovered output.
+  - Generation service test suite: 250 passed.
+  - Full API suite: 450 passed, with 8 existing Starlette deprecation
+    warnings.
 - [test-gap] TEST-12: Add end-to-end MANY_TO_MANY tests when that capability
   is implemented.
 - [test-gap] TEST-13: Add quality reporting regression tests for zero-target

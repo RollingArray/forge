@@ -1471,11 +1471,15 @@ class GenerationService:
                 if job.total_target_rows > 0
                 else 0.0
             )
-            job.status = (
-                GenerationJobStatus.PARTIALLY_COMPLETED
-                if usable_rows > 0
-                else GenerationJobStatus.FAILED
-            )
+            if usable_rows <= 0:
+                job.status = GenerationJobStatus.FAILED
+            elif (
+                job.total_target_rows > 0
+                and usable_rows >= job.total_target_rows
+            ):
+                job.status = GenerationJobStatus.COMPLETED
+            else:
+                job.status = GenerationJobStatus.PARTIALLY_COMPLETED
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)
 
@@ -1498,6 +1502,9 @@ class GenerationService:
             is_partial = (
                 job.status == GenerationJobStatus.PARTIALLY_COMPLETED
             )
+            is_completed = (
+                job.status == GenerationJobStatus.COMPLETED
+            )
             self._generation_log_store.append(
                 data_model_id=job.data_model_id,
                 job_id=job.job_id,
@@ -1506,11 +1513,13 @@ class GenerationService:
                     stage=(
                         "CHUNK_COMMITTED"
                         if is_partial
+                        else "COMPLETED"
+                        if is_completed
                         else "FAILED"
                     ),
                     status=(
                         "COMPLETED"
-                        if is_partial
+                        if is_partial or is_completed
                         else "FAILED"
                     ),
                     generated_rows=usable_rows,

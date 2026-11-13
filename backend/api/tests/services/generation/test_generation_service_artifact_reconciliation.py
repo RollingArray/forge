@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 import app.services.generation_service as generation_service_module
+import app.services.generation.artifact_writer as artifact_writer_module
 from app.models.generation_model import (
     GenerationEntityProgress,
     GenerationEntityStatus,
@@ -68,6 +69,16 @@ def build_reconciliation_case(
         generation_service_module,
         "__file__",
         str(fake_source_path),
+    )
+
+    fake_artifact_writer_path = (
+        tmp_path / "app" / "services" / "generation"
+        / "artifact_writer.py"
+    )
+    monkeypatch.setattr(
+        artifact_writer_module,
+        "__file__",
+        str(fake_artifact_writer_path),
     )
 
     checkpoint_store = GenerationCheckpointStore()
@@ -253,3 +264,52 @@ def test_reconciliation_discards_chunk_with_schema_mismatch(
     assert entity_state["committed_rows"] == 50
     assert job.entities[0].generated_rows == 50
     assert not (chunks_dir / "chunk_000002.csv").exists()
+
+
+def test_post_generation_validation_exception_preserves_completed_generation(
+    tmp_path,
+    monkeypatch,
+):
+    service, checkpoint_store, job, _ = build_reconciliation_case(
+        tmp_path,
+        monkeypatch,
+        second_chunk_fields=["ID", "NAME"],
+        second_chunk_rows=valid_second_chunk_rows(),
+    )
+
+    class RaisingRunService:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self, **kwargs):
+            raise RuntimeError("Post-generation validation failed.")
+
+    monkeypatch.setattr(
+        generation_service_module,
+        "GenerationRunService",
+        RaisingRunService,
+    )
+
+    service._specification_service = SimpleNamespace(
+        get_specification=lambda **kwargs: SPECIFICATION,
+    )
+    service._generation_log_store = MagicMock()
+    service._event_broker = MagicMock()
+
+    job.status = GenerationJobStatus.RUNNING
+    service._jobs[job.job_id] = job
+
+    service._execute_job_reserved(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+    )
+
+    assert job.status == GenerationJobStatus.COMPLETED
+    assert job.total_generated_rows == 75
+    assert job.progress == 1.0
+    assert job.entities[0].generated_rows == 75
+    assert job.entities[0].status == GenerationEntityStatus.COMPLETED
+    assert job.error == "Post-generation validation failed."
+
+    service._job_store.save.assert_called()
+    service._generation_log_store.append.assert_called()
