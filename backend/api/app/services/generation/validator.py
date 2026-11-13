@@ -26,6 +26,7 @@ class ValidationEvidence:
     constraints: dict[str, Any] = field(default_factory=dict)
     domain_validity: dict[str, Any] = field(default_factory=dict)
     null_completeness: dict[str, Any] = field(default_factory=dict)
+    conversion_errors: list[dict[str, Any]] = field(default_factory=list)
     coverage: dict[str, Any] = field(default_factory=dict)
     rule_results: list[dict[str, Any]] = field(default_factory=list)
 
@@ -40,6 +41,7 @@ class ValidationEvidence:
             "constraints": self.constraints,
             "domain_validity": self.domain_validity,
             "null_completeness": self.null_completeness,
+            "conversion_errors": self.conversion_errors,
             "coverage": self.coverage,
             "rule_results": self.rule_results,
         }
@@ -106,6 +108,25 @@ class GenerationValidator:
             }
             for entity in entities
         }
+
+        conversion_errors: dict[
+            tuple[str, int, str], dict[str, Any]
+        ] = {}
+
+        def iter_typed_rows(
+            *,
+            data_model_id: str,
+            job_id: str,
+            entity_name: str,
+            field_types: dict[str, Any],
+        ):
+            return self._iter_typed_rows(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entity_name=entity_name,
+                field_types=field_types,
+                conversion_errors=conversion_errors,
+            )
 
         # ------------------------------------------------------------
         # 1. Population counts
@@ -184,7 +205,7 @@ class GenerationValidator:
             rows_checked = 0
 
             for row_number, row in enumerate(
-                self._iter_typed_rows(
+                iter_typed_rows(
                     data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
@@ -361,7 +382,7 @@ class GenerationValidator:
                 continue
 
             for row_number, row in enumerate(
-                self._iter_typed_rows(
+                iter_typed_rows(
                     data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
@@ -457,7 +478,7 @@ class GenerationValidator:
             rows_checked = 0
             rows_with_missing_fields = 0
 
-            artifact_rows = self._iter_typed_rows(
+            artifact_rows = iter_typed_rows(
                 data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
@@ -629,7 +650,7 @@ class GenerationValidator:
                 missing_count = 0
 
                 for row_number, row in enumerate(
-                    self._iter_typed_rows(
+                    iter_typed_rows(
                         data_model_id=data_model_id,
                         job_id=job_id,
                         entity_name=entity_name,
@@ -641,6 +662,13 @@ class GenerationValidator:
                     start=1,
                 ):
                     rows_checked += 1
+
+                    if (
+                        entity_name,
+                        row_number,
+                        field_name,
+                    ) in conversion_errors:
+                        continue
 
                     if field_name not in row:
                         missing_count += 1
@@ -731,7 +759,7 @@ class GenerationValidator:
                 rows_checked = 0
                 missing_count = 0
 
-                for row in self._iter_typed_rows(
+                for row in iter_typed_rows(
                     data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=entity_name,
@@ -865,23 +893,60 @@ class GenerationValidator:
                     for value in key
                 )
 
-            parent_keys = {
-                key
-                for key in (
-                    tuple(row[field] for field in parent_fields)
-                    for row in self._iter_typed_rows(
-                        data_model_id=data_model_id,
-                        job_id=job_id,
-                        entity_name=parent_entity,
-                        field_types=parent_field_types,
-                    )
+            parent_conversion_error_rows = {
+                row_number
+                for error_entity, row_number, error_field in conversion_errors
+                if (
+                    error_entity == parent_entity
+                    and error_field in parent_fields
                 )
-                if key_is_complete(key)
             }
+            parent_conversion_error_count = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == parent_entity
+                    and error_field in parent_fields
+                )
+            )
+
+            parent_keys: set[tuple[Any, ...]] = set()
+            for row_number, row in enumerate(
+                iter_typed_rows(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    entity_name=parent_entity,
+                    field_types=parent_field_types,
+                ),
+                start=1,
+            ):
+                if row_number in parent_conversion_error_rows:
+                    continue
+
+                parent_key = tuple(row[field] for field in parent_fields)
+                if key_is_complete(parent_key):
+                    parent_keys.add(parent_key)
 
             child_field_types = field_types.get(
                 child_entity,
                 {},
+            )
+
+            child_conversion_error_rows = {
+                row_number
+                for error_entity, row_number, error_field in conversion_errors
+                if (
+                    error_entity == child_entity
+                    and error_field in child_fields
+                )
+            }
+            child_conversion_error_count = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == child_entity
+                    and error_field in child_fields
+                )
             )
 
             source_rows_checked = 0
@@ -895,7 +960,7 @@ class GenerationValidator:
             )
 
             for row_number, row in enumerate(
-                self._iter_typed_rows(
+                iter_typed_rows(
                     data_model_id=data_model_id,
                     job_id=job_id,
                     entity_name=child_entity,
@@ -904,6 +969,9 @@ class GenerationValidator:
                 start=1,
             ):
                 source_rows_checked += 1
+
+                if row_number in child_conversion_error_rows:
+                    continue
 
                 try:
                     child_key = tuple(
@@ -949,7 +1017,10 @@ class GenerationValidator:
                     )
                     continue
 
-                if child_key not in parent_keys:
+                if (
+                    child_key not in parent_keys
+                    and not parent_conversion_error_count
+                ):
                     invalid_reference_count += 1
                     errors.append(
                         f"{child_entity}: FK "
@@ -965,6 +1036,16 @@ class GenerationValidator:
                 "target_fields": list(parent_fields),
                 "source_rows_checked": source_rows_checked,
                 "target_keys_available": len(parent_keys),
+                "parent_conversion_error_count": (
+                    parent_conversion_error_count
+                ),
+                "child_conversion_error_count": (
+                    child_conversion_error_count
+                ),
+                "conversion_error_count": (
+                    parent_conversion_error_count
+                    + child_conversion_error_count
+                ),
                 "invalid_reference_count": invalid_reference_count,
                 "missing_field_count": missing_field_count,
                 "null_reference_count": null_reference_count,
@@ -1090,7 +1171,7 @@ class GenerationValidator:
                 else:
                     try:
                         for row_number, row in enumerate(
-                            self._iter_typed_rows(
+                            iter_typed_rows(
                                 data_model_id=data_model_id,
                                 job_id=job_id,
                                 entity_name=entity_name,
@@ -1134,6 +1215,68 @@ class GenerationValidator:
                     "evaluation_error": evaluation_error,
                 }
                 semantic_unique_metrics[field_id] = metric
+
+        # Surface conversion failures in evidence and rule metrics.
+        for entity_name, metric in identity_entities.items():
+            identity_fields = set(metric.get("identity_fields", []))
+            metric["conversion_error_count"] = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == entity_name
+                    and error_field in identity_fields
+                )
+            )
+
+        for metric in constraint_metrics.values():
+            metric["conversion_error_count"] = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == metric["entity"]
+                    and error_field == metric["field"]
+                )
+            )
+
+        for metric in domain_fields.values():
+            artifact_error_count = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == metric["entity"]
+                    and error_field == metric["field"]
+                )
+            )
+            metric["conversion_error_count"] += artifact_error_count
+
+        for metric in semantic_unique_metrics.values():
+            metric["conversion_error_count"] = sum(
+                1
+                for error_entity, _, error_field in conversion_errors
+                if (
+                    error_entity == metric["entity"]
+                    and error_field == metric["field"]
+                )
+            )
+            if (
+                metric["conversion_error_count"]
+                and metric["evaluation_error"] is None
+            ):
+                metric["evaluation_error"] = (
+                    "One or more artifact values could not be converted "
+                    "to the declared field type."
+                )
+
+        evidence.conversion_errors = list(conversion_errors.values())
+
+        for conversion_error in evidence.conversion_errors:
+            errors.append(
+                f"{conversion_error['entity']}."
+                f"{conversion_error['field']}: invalid "
+                f"{conversion_error['field_type']} artifact value "
+                f"at row {conversion_error['row_number']}: "
+                f"{conversion_error['error']}"
+            )
 
         # ------------------------------------------------------------
         # 10. Rule-level conformance outcomes
@@ -1195,7 +1338,9 @@ class GenerationValidator:
             )
 
         for entity_name, metric in identity_entities.items():
-            if metric["rows_checked"] == 0:
+            if metric.get("conversion_error_count"):
+                status = "NOT_EVALUATED"
+            elif metric["rows_checked"] == 0:
                 status = "NOT_EVALUATED"
             elif (
                 metric["duplicate_count"]
@@ -1214,7 +1359,10 @@ class GenerationValidator:
             )
 
         for name, metric in constraint_metrics.items():
-            if metric["evaluation_error_count"]:
+            if (
+                metric["evaluation_error_count"]
+                or metric.get("conversion_error_count")
+            ):
                 status = "NOT_EVALUATED"
             elif metric["violation_count"] or metric["missing_field_count"]:
                 status = "FAILED"
@@ -1267,7 +1415,10 @@ class GenerationValidator:
                 status = "FAILED"
             elif metric["invalid_reference_count"]:
                 status = "FAILED"
-            elif metric["source_rows_checked"] == 0:
+            elif (
+                metric["conversion_error_count"]
+                or metric["source_rows_checked"] == 0
+            ):
                 status = "NOT_EVALUATED"
             else:
                 status = "PASSED"
@@ -1434,18 +1585,83 @@ class GenerationValidator:
                             missing_target_fields
                         )
                     else:
-                        child_rows = list(self._iter_typed_rows(
+                        child_rows = list(iter_typed_rows(
                             data_model_id=data_model_id,
                             job_id=job_id,
                             entity_name=child_entity,
                             field_types=field_types[child_entity],
                         ))
-                        parent_rows = list(self._iter_typed_rows(
+                        parent_rows = list(iter_typed_rows(
                             data_model_id=data_model_id,
                             job_id=job_id,
                             entity_name=parent_entity,
                             field_types=field_types[parent_entity],
                         ))
+
+                        child_conversion_error_rows = {
+                            row_number
+                            for error_entity, row_number, error_field
+                            in conversion_errors
+                            if (
+                                error_entity == child_entity
+                                and error_field in child_fields
+                            )
+                        }
+                        parent_conversion_error_rows = {
+                            row_number
+                            for error_entity, row_number, error_field
+                            in conversion_errors
+                            if (
+                                error_entity == parent_entity
+                                and error_field in parent_fields
+                            )
+                        }
+                        child_conversion_error_count = sum(
+                            1
+                            for error_entity, _, error_field
+                            in conversion_errors
+                            if (
+                                error_entity == child_entity
+                                and error_field in child_fields
+                            )
+                        )
+                        parent_conversion_error_count = sum(
+                            1
+                            for error_entity, _, error_field
+                            in conversion_errors
+                            if (
+                                error_entity == parent_entity
+                                and error_field in parent_fields
+                            )
+                        )
+
+                        valid_child_rows = [
+                            row
+                            for row_number, row in enumerate(
+                                child_rows, start=1
+                            )
+                            if row_number not in child_conversion_error_rows
+                        ]
+                        valid_parent_rows = [
+                            row
+                            for row_number, row in enumerate(
+                                parent_rows, start=1
+                            )
+                            if row_number not in parent_conversion_error_rows
+                        ]
+
+                        details.update({
+                            "child_conversion_error_count": (
+                                child_conversion_error_count
+                            ),
+                            "parent_conversion_error_count": (
+                                parent_conversion_error_count
+                            ),
+                            "conversion_error_count": (
+                                child_conversion_error_count
+                                + parent_conversion_error_count
+                            ),
+                        })
 
                         def has_blank_component(value: Any) -> bool:
                             return (
@@ -1536,7 +1752,7 @@ class GenerationValidator:
                         else:
                             parent_values = [
                                 row_key(row, parent_fields)
-                                for row in parent_rows
+                                for row in valid_parent_rows
                             ]
                             parent_non_null = [
                                 key for key in parent_values
@@ -1553,7 +1769,7 @@ class GenerationValidator:
 
                             child_values = [
                                 row_key(row, child_fields)
-                                for row in child_rows
+                                for row in valid_child_rows
                             ]
                             child_null_count = sum(
                                 1 for key in child_values
@@ -1567,6 +1783,8 @@ class GenerationValidator:
                             parent_value_set = set(parent_non_null)
                             dangling_values = (
                                 set(child_non_null) - parent_value_set
+                                if not parent_conversion_error_count
+                                else set()
                             )
 
                             child_reference_counts: dict[
@@ -1587,9 +1805,13 @@ class GenerationValidator:
                                 for count in child_reference_counts.values()
                                 if count > 1
                             )
-                            parents_without_children = sum(
-                                1 for key in parent_value_set
-                                if child_reference_counts.get(key, 0) == 0
+                            parents_without_children = (
+                                sum(
+                                    1 for key in parent_value_set
+                                    if child_reference_counts.get(key, 0) == 0
+                                )
+                                if not child_conversion_error_count
+                                else None
                             )
 
                             details.update({
@@ -1673,6 +1895,16 @@ class GenerationValidator:
                                 details["reason"] = (
                                     "Row-level relationship checks found "
                                     "one or more conformance violations."
+                                )
+                            elif (
+                                child_conversion_error_count
+                                or parent_conversion_error_count
+                            ):
+                                status = "NOT_EVALUATED"
+                                details["reason"] = (
+                                    "One or more relationship endpoint values "
+                                    "could not be converted to their declared "
+                                    "types; conformance cannot be established."
                                 )
                             else:
                                 status = "PASSED"
@@ -1771,11 +2003,17 @@ class GenerationValidator:
         job_id: str,
         entity_name: str,
         field_types: dict[str, Any],
+        conversion_errors: dict[
+            tuple[str, int, str], dict[str, Any]
+        ] | None = None,
     ):
-        for row in self._artifact_reader.iter_entity_chunks(
-            data_model_id=data_model_id,
-            job_id=job_id,
-            entity_name=entity_name,
+        for row_number, row in enumerate(
+            self._artifact_reader.iter_entity_chunks(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                entity_name=entity_name,
+            ),
+            start=1,
         ):
             typed_row = {}
 
@@ -1783,10 +2021,29 @@ class GenerationValidator:
                 if isinstance(value, str) and not value.strip():
                     value = None
 
-                typed_row[field_name] = self._convert_value(
-                    value,
-                    field_types.get(field_name),
-                )
+                field_type = field_types.get(field_name)
+
+                try:
+                    typed_row[field_name] = self._convert_value(
+                        value,
+                        field_type,
+                    )
+                except (TypeError, ValueError) as exc:
+                    if conversion_errors is None:
+                        raise
+
+                    conversion_errors[
+                        (entity_name, row_number, field_name)
+                    ] = {
+                        "entity": entity_name,
+                        "row_number": row_number,
+                        "field": field_name,
+                        "field_type": field_type,
+                        "raw_value": value,
+                        "error_type": type(exc).__name__,
+                        "error": str(exc),
+                    }
+                    typed_row[field_name] = value
 
             yield typed_row
 

@@ -1123,3 +1123,462 @@ def test_validation_rejects_partially_null_optional_composite_foreign_key(
         "partially null composite key" in error
         for error in result.errors
     )
+
+
+@pytest.mark.parametrize(
+    ("score", "expected_status", "expected_valid"),
+    [
+        ("0", "PASSED", True),
+        ("100", "PASSED", True),
+        ("-1", "FAILED", False),
+        ("101", "FAILED", False),
+    ],
+    ids=[
+        "minimum-boundary",
+        "maximum-boundary",
+        "below-minimum",
+        "above-maximum",
+    ],
+)
+def test_validation_enforces_inclusive_domain_bounds(
+    tmp_path: Path,
+    score: str,
+    expected_status: str,
+    expected_valid: bool,
+) -> None:
+    job_id = "DOMAIN-BOUNDS"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {
+                        "name": "SCORE",
+                        "type": "INTEGER",
+                        "min": 0,
+                        "max": 100,
+                    },
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[{"ID": "1", "SCORE": score}],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == "domain:PRODUCT.SCORE"
+    )
+
+    assert rule["status"] == expected_status
+    assert rule["evaluated"] is (expected_status != "NOT_EVALUATED")
+    assert result.valid is expected_valid
+
+
+def test_validation_marks_invalid_domain_bound_not_evaluated(
+    tmp_path: Path,
+) -> None:
+    job_id = "DOMAIN-INVALID-BOUND"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {
+                        "name": "SCORE",
+                        "type": "INTEGER",
+                        "min": "not-an-integer",
+                        "max": 100,
+                    },
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[{"ID": "1", "SCORE": "50"}],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == "domain:PRODUCT.SCORE"
+    )
+
+    assert rule["status"] == "NOT_EVALUATED"
+    assert rule["evaluated"] is False
+    assert rule["details"]["conversion_error_count"] == 1
+    assert not result.valid
+    assert any("domain rule conversion failed" in error for error in result.errors)
+
+
+@pytest.mark.parametrize(
+    ("field_type", "raw_value", "domain"),
+    [
+        ("INTEGER", "not-an-integer", {"min": 0, "max": 10}),
+        ("DECIMAL", "not-a-decimal", {"min": "0", "max": "10"}),
+        ("BOOLEAN", "not-a-boolean", {"allowed_values": [True, False]}),
+    ],
+    ids=["malformed-integer", "malformed-decimal", "malformed-boolean"],
+)
+def test_validation_reports_malformed_typed_artifact_values(
+    tmp_path: Path,
+    field_type: str,
+    raw_value: str,
+    domain: dict,
+) -> None:
+    job_id = f"MALFORMED-{field_type}"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {
+                        "name": "VALUE",
+                        "type": field_type,
+                        **domain,
+                    },
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[{"ID": "1", "VALUE": raw_value}],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == "domain:PRODUCT.VALUE"
+    )
+
+    assert rule["status"] == "NOT_EVALUATED"
+    assert rule["evaluated"] is False
+
+    identity_rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == "identity:PRODUCT"
+    )
+    assert identity_rule["status"] == "PASSED"
+    assert identity_rule["details"]["conversion_error_count"] == 0
+
+    assert len(result.evidence.conversion_errors) == 1
+    conversion_error = result.evidence.conversion_errors[0]
+    assert conversion_error["entity"] == "PRODUCT"
+    assert conversion_error["row_number"] == 1
+    assert conversion_error["field"] == "VALUE"
+    assert conversion_error["field_type"] == field_type
+    assert conversion_error["raw_value"] == raw_value
+
+    assert not result.valid
+    assert any("VALUE" in error for error in result.errors)
+
+
+@pytest.mark.parametrize(
+    ("field_type", "raw_value", "expected_error_type"),
+    [
+        ("INTEGER", "not-an-integer", "ValueError"),
+        ("DECIMAL", "not-a-decimal", "ValueError"),
+        ("BOOLEAN", "not-a-boolean", "ValueError"),
+    ],
+    ids=["integer", "decimal", "boolean"],
+)
+def test_typed_row_iterator_records_conversion_errors_and_continues(
+    tmp_path: Path,
+    field_type: str,
+    raw_value: str,
+    expected_error_type: str,
+) -> None:
+    job_id = f"ITERATOR-{field_type}"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 2},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {"name": "VALUE", "type": field_type},
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "VALUE": raw_value},
+            {
+                "ID": "2",
+                "VALUE": "7" if field_type != "BOOLEAN" else "true",
+            },
+        ],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    validator = _validator(tmp_path)
+    conversion_errors = {}
+
+    rows = list(
+        validator._iter_typed_rows(
+            data_model_id="TEST-MODEL",
+            job_id=job_id,
+            entity_name="PRODUCT",
+            field_types={
+                "ID": "INTEGER",
+                "VALUE": field_type,
+            },
+            conversion_errors=conversion_errors,
+        )
+    )
+
+    assert len(rows) == 2
+    assert rows[0]["ID"] == 1
+    assert rows[0]["VALUE"] == raw_value
+    assert rows[1]["ID"] == 2
+
+    if field_type == "BOOLEAN":
+        assert rows[1]["VALUE"] is True
+    else:
+        assert rows[1]["VALUE"] == 7
+
+    error = conversion_errors[("PRODUCT", 1, "VALUE")]
+    assert error["entity"] == "PRODUCT"
+    assert error["row_number"] == 1
+    assert error["field"] == "VALUE"
+    assert error["field_type"] == field_type
+    assert error["raw_value"] == raw_value
+    assert error["error_type"] == expected_error_type
+    assert error["error"]
+
+
+def test_validation_marks_constraint_not_evaluated_for_malformed_value(
+    tmp_path: Path,
+) -> None:
+    job_id = "CONSTRAINT-MALFORMED-VALUE"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "INTEGER"},
+                    {"name": "PRICE", "type": "INTEGER"},
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+        "constraints": [
+            {
+                "entity": "PRODUCT",
+                "field": "PRICE",
+                "operator": ">",
+                "value": 0,
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[{"ID": "1", "PRICE": "not-an-integer"}],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["category"] == "CONSTRAINT"
+        and rule["details"]["entity"] == "PRODUCT"
+        and rule["details"]["field"] == "PRICE"
+    )
+
+    assert rule["status"] == "NOT_EVALUATED"
+    assert rule["evaluated"] is False
+    assert rule["details"]["conversion_error_count"] == 1
+    assert len(result.evidence.conversion_errors) == 1
+    assert result.evidence.conversion_errors[0]["field"] == "PRICE"
+    assert not result.valid
+
+
+def test_semantic_unique_is_not_evaluated_for_malformed_value(
+    tmp_path: Path,
+) -> None:
+    job_id = "SEM-UNIQUE-MALFORMED"
+
+    specification = _semantic_unique_specification()
+    specification["entities"][0]["population"]["count"] = 1
+    specification["entities"][0]["fields"][1]["type"] = "INTEGER"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        chunk_number=1,
+        rows=[
+            {"ID": "1", "DESCRIPTION": "not-an-integer"},
+        ],
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    rule = _semantic_rule(result)
+
+    assert rule["status"] == "NOT_EVALUATED"
+    assert rule["evaluated"] is False
+    assert rule["details"]["conversion_error_count"] == 1
+    assert rule["details"]["evaluation_error"]
+    assert len(result.evidence.conversion_errors) == 1
+    assert result.evidence.conversion_errors[0]["field"] == "DESCRIPTION"
+    assert not result.valid
+
+
+@pytest.mark.parametrize(
+    "malformed_endpoint",
+    ["parent", "child"],
+    ids=["malformed-parent-key", "malformed-child-key"],
+)
+def test_malformed_foreign_key_endpoint_is_not_evaluated(
+    tmp_path: Path,
+    malformed_endpoint: str,
+) -> None:
+    if malformed_endpoint == "parent":
+        parent_rows = [
+            {"PARENT_ID": "not-an-integer"},
+            {"PARENT_ID": "1"},
+        ]
+        child_rows = [
+            {"ID": "101", "PARENT_REF": "1"},
+        ]
+    else:
+        parent_rows = [
+            {"PARENT_ID": "1"},
+        ]
+        child_rows = [
+            {"ID": "101", "PARENT_REF": "not-an-integer"},
+        ]
+
+    result = _run_foreign_key_nullability_case(
+        tmp_path=tmp_path,
+        parent_fields=["PARENT_ID"],
+        child_reference_fields=["PARENT_REF"],
+        parent_rows=parent_rows,
+        child_rows=child_rows,
+        child_participation="OPTIONAL",
+    )
+
+    foreign_key_rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["category"] == "FOREIGN_KEY"
+    )
+    relationship_rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["category"] == "RELATIONSHIP_CARDINALITY"
+    )
+
+    assert foreign_key_rule["status"] == "NOT_EVALUATED"
+    assert foreign_key_rule["evaluated"] is False
+    assert foreign_key_rule["details"]["conversion_error_count"] == 1
+    assert foreign_key_rule["details"]["invalid_reference_count"] == 0
+
+    assert relationship_rule["status"] == "NOT_EVALUATED"
+    assert relationship_rule["evaluated"] is False
+    assert relationship_rule["details"]["conversion_error_count"] == 1
+    assert relationship_rule["details"]["dangling_reference_count"] == 0
+
+    assert len(result.evidence.conversion_errors) == 1
+    assert not result.valid

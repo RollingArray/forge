@@ -676,11 +676,9 @@ Positive controls:
 - [done] TEST-09: Specification preflight and whole-candidate validation
   regression coverage is in place and passed as part of the 73-test
   WP-01-related regression run.
-- [test-gap] TEST-10: Complete validator coverage for null handling,
-  malformed typed values, domain bounds, artifact-reader failures and
-  NOT_EVALUATED semantics.
-  Verify that validator exceptions do not silently terminate validation or
-  misrepresent conformance.
+- [done] TEST-10: Validator coverage for null handling, malformed typed
+  values, domain bounds, artifact-reader failures and NOT_EVALUATED
+  semantics.
 
   Progress (2026-11-13):
   - Added tests for null and blank identity components.
@@ -691,8 +689,16 @@ Positive controls:
   - 170 tests passed across the generation service and
     specification-validation generation test suites.
   - Implementation and regression tests committed as `64106e9` (`fix(validation): handle nullable identities and foreign keys`).
-  - Remaining scope: malformed typed values, domain bounds, artifact-reader
-    failures, NOT_EVALUATED semantics and validator exception handling.
+  - Added inclusive domain-boundary and invalid-domain-definition tests.
+  - Added malformed INTEGER, DECIMAL and BOOLEAN artifact-value tests,
+    including conversion-error evidence and continued row processing.
+  - Added NOT_EVALUATED coverage for malformed constraint, semantic UNIQUE,
+    foreign-key and relationship-cardinality evaluations.
+  - Confirmed unreadable artifacts during semantic UNIQUE evaluation
+    produce NOT_EVALUATED rather than a passing result.
+  - Validator regression suite: 35 passed.
+  - Full API suite: 449 passed, with 8 existing Starlette deprecation
+    warnings.
 - [test-gap] TEST-11: Add regression tests for GEN-VAL-01, ensuring
   post-generation validation exceptions do not misclassify completed generation.
 - [test-gap] TEST-12: Add end-to-end MANY_TO_MANY tests when that capability
