@@ -180,6 +180,7 @@ class GenerationValidator:
             seen: set[tuple[Any, ...]] = set()
             duplicate_count = 0
             missing_field_count = 0
+            null_component_count = 0
             rows_checked = 0
 
             for row_number, row in enumerate(
@@ -207,6 +208,30 @@ class GenerationValidator:
                     )
                     continue
 
+                null_component_count += sum(
+                    1
+                    for value in identity
+                    if value is None
+                    or (
+                        isinstance(value, str)
+                        and not value.strip()
+                    )
+                )
+
+                if any(
+                    value is None
+                    or (
+                        isinstance(value, str)
+                        and not value.strip()
+                    )
+                    for value in identity
+                ):
+                    errors.append(
+                        f"{entity_name}: identity contains a null or "
+                        f"blank component at row {row_number}."
+                    )
+                    continue
+
                 if identity in seen:
                     duplicate_count += 1
                     errors.append(
@@ -221,6 +246,7 @@ class GenerationValidator:
                 "unique_identities": len(seen),
                 "duplicate_count": duplicate_count,
                 "missing_field_count": missing_field_count,
+                "null_component_count": null_component_count,
                 "identity_fields": list(identity_fields),
             }
 
@@ -237,6 +263,10 @@ class GenerationValidator:
             ),
             "missing_field_count": sum(
                 metric["missing_field_count"]
+                for metric in identity_entities.values()
+            ),
+            "null_component_count": sum(
+                metric["null_component_count"]
                 for metric in identity_entities.values()
             ),
         }
@@ -753,6 +783,55 @@ class GenerationValidator:
 
 
 
+        try:
+            canonical_foreign_keys = normalize_foreign_key_mappings(
+                foreign_keys
+            )
+            canonical_foreign_key_error = None
+        except ValueError as exc:
+            canonical_foreign_keys = ()
+            canonical_foreign_key_error = str(exc)
+
+        relationships = specification.get("relationships", [])
+        if not isinstance(relationships, list):
+            relationships = []
+
+        foreign_key_child_participation: dict[str, str] = {}
+
+        if canonical_foreign_key_error is None:
+            for relationship in relationships:
+                resolution = resolve_relationship_mapping(
+                    relationship,
+                    canonical_foreign_keys,
+                )
+
+                if (
+                    resolution.status != "MAPPED"
+                    or resolution.foreign_key is None
+                    or resolution.direction is None
+                ):
+                    continue
+
+                child_participation = (
+                    resolution.source_participation
+                    if resolution.direction == "FORWARD"
+                    else resolution.target_participation
+                )
+
+                fk_name = resolution.foreign_key.name
+                existing = foreign_key_child_participation.get(fk_name)
+
+                # Conflicting declarations must fail closed.
+                if (
+                    existing == "MANDATORY"
+                    or child_participation == "MANDATORY"
+                ):
+                    foreign_key_child_participation[fk_name] = "MANDATORY"
+                else:
+                    foreign_key_child_participation[fk_name] = (
+                        child_participation
+                    )
+
         relationship_metrics: dict[str, Any] = {}
 
         for foreign_key in foreign_keys:
@@ -771,17 +850,33 @@ class GenerationValidator:
                 {},
             )
 
+            def has_blank_component(value: Any) -> bool:
+                return (
+                    value is None
+                    or (
+                        isinstance(value, str)
+                        and not value.strip()
+                    )
+                )
+
+            def key_is_complete(key: tuple[Any, ...]) -> bool:
+                return not any(
+                    has_blank_component(value)
+                    for value in key
+                )
+
             parent_keys = {
-                tuple(
-                    row[field]
-                    for field in parent_fields
+                key
+                for key in (
+                    tuple(row[field] for field in parent_fields)
+                    for row in self._iter_typed_rows(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                        entity_name=parent_entity,
+                        field_types=parent_field_types,
+                    )
                 )
-                for row in self._iter_typed_rows(
-                    data_model_id=data_model_id,
-                    job_id=job_id,
-                    entity_name=parent_entity,
-                    field_types=parent_field_types,
-                )
+                if key_is_complete(key)
             }
 
             child_field_types = field_types.get(
@@ -792,6 +887,12 @@ class GenerationValidator:
             source_rows_checked = 0
             invalid_reference_count = 0
             missing_field_count = 0
+            null_reference_count = 0
+            partial_null_reference_count = 0
+            child_participation = foreign_key_child_participation.get(
+                name,
+                "MANDATORY",
+            )
 
             for row_number, row in enumerate(
                 self._iter_typed_rows(
@@ -819,6 +920,35 @@ class GenerationValidator:
                     )
                     continue
 
+                null_component_count = sum(
+                    1
+                    for value in child_key
+                    if has_blank_component(value)
+                )
+
+                if null_component_count == len(child_key):
+                    null_reference_count += 1
+
+                    if child_participation == "OPTIONAL":
+                        continue
+
+                    invalid_reference_count += 1
+                    errors.append(
+                        f"{child_entity}: FK {name} has a null or blank "
+                        f"reference despite MANDATORY child participation "
+                        f"at row {row_number}."
+                    )
+                    continue
+
+                if null_component_count:
+                    partial_null_reference_count += 1
+                    invalid_reference_count += 1
+                    errors.append(
+                        f"{child_entity}: FK {name} has a partially null "
+                        f"composite key {child_key!r} at row {row_number}."
+                    )
+                    continue
+
                 if child_key not in parent_keys:
                     invalid_reference_count += 1
                     errors.append(
@@ -837,6 +967,11 @@ class GenerationValidator:
                 "target_keys_available": len(parent_keys),
                 "invalid_reference_count": invalid_reference_count,
                 "missing_field_count": missing_field_count,
+                "null_reference_count": null_reference_count,
+                "partial_null_reference_count": (
+                    partial_null_reference_count
+                ),
+                "child_participation": child_participation,
             }
 
         evidence.foreign_keys = {
@@ -852,6 +987,14 @@ class GenerationValidator:
             ),
             "missing_field_count": sum(
                 metric["missing_field_count"]
+                for metric in relationship_metrics.values()
+            ),
+            "null_reference_count": sum(
+                metric["null_reference_count"]
+                for metric in relationship_metrics.values()
+            ),
+            "partial_null_reference_count": sum(
+                metric["partial_null_reference_count"]
                 for metric in relationship_metrics.values()
             ),
         }
@@ -1054,7 +1197,11 @@ class GenerationValidator:
         for entity_name, metric in identity_entities.items():
             if metric["rows_checked"] == 0:
                 status = "NOT_EVALUATED"
-            elif metric["duplicate_count"] or metric["missing_field_count"]:
+            elif (
+                metric["duplicate_count"]
+                or metric["missing_field_count"]
+                or metric["null_component_count"]
+            ):
                 status = "FAILED"
             else:
                 status = "PASSED"
@@ -1134,23 +1281,6 @@ class GenerationValidator:
 
         # Evaluate relationship cardinality through the canonical resolver.
         # FK integrity rules above remain separate.
-        try:
-            canonical_foreign_keys = normalize_foreign_key_mappings(
-                foreign_keys
-            )
-            canonical_foreign_key_error = None
-        except ValueError as exc:
-            canonical_foreign_keys = ()
-            canonical_foreign_key_error = str(exc)
-
-        relationships = specification.get("relationships", [])
-
-        if relationships is None:
-            relationships = []
-
-        if not isinstance(relationships, list):
-            relationships = []
-
         for index, relationship in enumerate(relationships, start=1):
             relationship_data = (
                 relationship if isinstance(relationship, dict) else {}
@@ -1647,13 +1777,18 @@ class GenerationValidator:
             job_id=job_id,
             entity_name=entity_name,
         ):
-            yield {
-                field_name: self._convert_value(
+            typed_row = {}
+
+            for field_name, value in row.items():
+                if isinstance(value, str) and not value.strip():
+                    value = None
+
+                typed_row[field_name] = self._convert_value(
                     value,
                     field_types.get(field_name),
                 )
-                for field_name, value in row.items()
-            }
+
+            yield typed_row
 
     @staticmethod
     def _convert_value(

@@ -21,7 +21,7 @@ def _write_chunk(
     job_id: str,
     entity_name: str,
     chunk_number: int,
-    rows: list[dict[str, str]],
+    rows: list[dict[str, str | None]],
 ) -> None:
     directory = (
         root
@@ -893,3 +893,233 @@ def test_validation_compares_decimal_constraints_exactly(
 
     assert result.valid
     assert result.errors == []
+
+
+@pytest.mark.parametrize(
+    "identity_value",
+    ["", "   "],
+    ids=["empty-identity", "whitespace-identity"],
+)
+def test_validation_rejects_blank_identity_components(
+    tmp_path: Path,
+    identity_value: str,
+) -> None:
+    job_id = "BLANK-IDENTITY"
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="CUSTOMER",
+        chunk_number=1,
+        rows=[
+            {"ID": identity_value},
+        ],
+    )
+
+    specification = {
+        "entities": [
+            {
+                "name": "CUSTOMER",
+                "population": {"count": 1},
+                "fields": [
+                    {"name": "ID", "type": "STRING"},
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+    }
+
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    result = _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+    assert not result.valid
+    assert any(
+        "identity contains a null or blank component" in error
+        for error in result.errors
+    )
+
+    identity_metric = result.evidence.primary_keys["entities"]["CUSTOMER"]
+    assert identity_metric["null_component_count"] == 1
+
+    identity_rule = next(
+        rule
+        for rule in result.evidence.rule_results
+        if rule["rule_id"] == "identity:CUSTOMER"
+    )
+    assert identity_rule["status"] == "FAILED"
+
+def _run_foreign_key_nullability_case(
+    *,
+    tmp_path: Path,
+    parent_fields: list[str],
+    child_reference_fields: list[str],
+    parent_rows: list[dict[str, str | None]],
+    child_rows: list[dict[str, str | None]],
+    child_participation: str,
+):
+    job_id = "JOB-FK-NULLABILITY"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PARENT",
+                "population": {"count": len(parent_rows)},
+                "fields": [
+                    {"name": field, "type": "INTEGER"}
+                    for field in parent_fields
+                ],
+                "identity": {"fields": parent_fields},
+            },
+            {
+                "name": "CHILD",
+                "population": {"count": len(child_rows)},
+                "fields": [
+                    {"name": field, "type": "INTEGER"}
+                    for field in ["ID", *child_reference_fields]
+                ],
+                "identity": {"fields": ["ID"]},
+            },
+        ],
+        "foreign_keys": [
+            {
+                "name": "FK_CHILD_PARENT",
+                "source": {
+                    "entity": "CHILD",
+                    "fields": child_reference_fields,
+                },
+                "target": {
+                    "entity": "PARENT",
+                    "fields": parent_fields,
+                },
+            },
+        ],
+        "relationships": [
+            {
+                "source": {
+                    "entity": "CHILD",
+                    "fields": child_reference_fields,
+                },
+                "target": {
+                    "entity": "PARENT",
+                    "fields": parent_fields,
+                },
+                "type": "MANY_TO_ONE",
+                "source_participation": child_participation,
+                "target_participation": "OPTIONAL",
+            },
+        ],
+    }
+
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="PARENT",
+        chunk_number=1,
+        rows=parent_rows,
+    )
+    _write_chunk(
+        root=tmp_path,
+        job_id=job_id,
+        entity_name="CHILD",
+        chunk_number=1,
+        rows=child_rows,
+    )
+    _commit_chunks(
+        root=tmp_path,
+        job_id=job_id,
+        specification=specification,
+    )
+
+    return _validator(tmp_path).validate(
+        specification=specification,
+        data_model_id="TEST-MODEL",
+        job_id=job_id,
+    )
+
+
+def test_validation_accepts_null_optional_single_column_foreign_key(
+    tmp_path: Path,
+) -> None:
+    result = _run_foreign_key_nullability_case(
+        tmp_path=tmp_path,
+        parent_fields=["PARENT_ID"],
+        child_reference_fields=["PARENT_REF"],
+        parent_rows=[{"PARENT_ID": "1"}],
+        child_rows=[{"ID": "101", "PARENT_REF": None}],
+        child_participation="OPTIONAL",
+    )
+
+    assert result.valid
+    assert result.errors == []
+
+
+def test_validation_rejects_null_mandatory_single_column_foreign_key(
+    tmp_path: Path,
+) -> None:
+    result = _run_foreign_key_nullability_case(
+        tmp_path=tmp_path,
+        parent_fields=["PARENT_ID"],
+        child_reference_fields=["PARENT_REF"],
+        parent_rows=[{"PARENT_ID": "1"}],
+        child_rows=[{"ID": "101", "PARENT_REF": None}],
+        child_participation="MANDATORY",
+    )
+
+    assert not result.valid
+    assert any(
+        "null or blank reference despite MANDATORY child participation"
+        in error
+        for error in result.errors
+    )
+
+
+def test_validation_accepts_fully_null_optional_composite_foreign_key(
+    tmp_path: Path,
+) -> None:
+    result = _run_foreign_key_nullability_case(
+        tmp_path=tmp_path,
+        parent_fields=["PARENT_KEY_A", "PARENT_KEY_B"],
+        child_reference_fields=["PARENT_REF_A", "PARENT_REF_B"],
+        parent_rows=[{"PARENT_KEY_A": "1", "PARENT_KEY_B": "10"}],
+        child_rows=[{
+            "ID": "101",
+            "PARENT_REF_A": None,
+            "PARENT_REF_B": None,
+        }],
+        child_participation="OPTIONAL",
+    )
+
+    assert result.valid
+    assert result.errors == []
+
+
+def test_validation_rejects_partially_null_optional_composite_foreign_key(
+    tmp_path: Path,
+) -> None:
+    result = _run_foreign_key_nullability_case(
+        tmp_path=tmp_path,
+        parent_fields=["PARENT_KEY_A", "PARENT_KEY_B"],
+        child_reference_fields=["PARENT_REF_A", "PARENT_REF_B"],
+        parent_rows=[{"PARENT_KEY_A": "1", "PARENT_KEY_B": "10"}],
+        child_rows=[{
+            "ID": "101",
+            "PARENT_REF_A": "1",
+            "PARENT_REF_B": None,
+        }],
+        child_participation="OPTIONAL",
+    )
+
+    assert not result.valid
+    assert any(
+        "partially null composite key" in error
+        for error in result.errors
+    )
