@@ -1,6 +1,9 @@
+import json
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+import pytest
 
 from app.repositories.json_activity_repository import JsonActivityRepository
 
@@ -302,3 +305,171 @@ def test_concurrent_process_writes_preserve_all_activities(
     assert len({
         activity.title for activity in activities
     }) == expected_count
+
+
+def activity_partition_paths(repository, activity):
+    return repository._partition_paths(
+        scope="workspace",
+        identity=activity.owner_user_id,
+        year=activity.timestamp.strftime("%Y"),
+        month=activity.timestamp.strftime("%m"),
+    )
+
+
+def test_missing_activity_index_is_rebuilt_from_events(
+    tmp_path: Path,
+) -> None:
+    repository = build_repository(tmp_path)
+
+    created = [
+        create_activity(repository, f"missing-index-{index}")
+        for index in range(2)
+    ]
+
+    event_path, index_path = activity_partition_paths(
+        repository, created[0]
+    )
+    index_path.unlink()
+
+    recovered = repository.get_recent_by_owner_user_id(OWNER_ID)
+
+    assert {item.activity_id for item in recovered} == {
+        item.activity_id for item in created
+    }
+    assert index_path.exists()
+
+    entries = [
+        json.loads(line)
+        for line in index_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(entries) == 2
+    assert event_path.exists()
+
+
+def test_corrupt_activity_index_is_rebuilt_from_events(
+    tmp_path: Path,
+) -> None:
+    repository = build_repository(tmp_path)
+
+    created = create_activity(repository, "corrupt-index")
+    _, index_path = activity_partition_paths(repository, created)
+
+    index_path.write_text('{"invalid": }\n', encoding="utf-8")
+
+    recovered = repository.get_recent_by_owner_user_id(OWNER_ID)
+
+    assert len(recovered) == 1
+    assert recovered[0].activity_id == created.activity_id
+
+    entries = [
+        json.loads(line)
+        for line in index_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(entries) == 1
+    assert entries[0]["activity_id"] == created.activity_id
+    assert entries[0]["offset"] == 0
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    [
+        ("offset", 1),
+        ("length", 0),
+    ],
+)
+def test_invalid_activity_index_offsets_are_rebuilt(
+    tmp_path: Path,
+    field: str,
+    invalid_value: int,
+) -> None:
+    repository = build_repository(tmp_path)
+
+    created = create_activity(repository, f"invalid-{field}")
+    _, index_path = activity_partition_paths(repository, created)
+
+    entries = [
+        json.loads(line)
+        for line in index_path.read_text(encoding="utf-8").splitlines()
+    ]
+    entries[0][field] = invalid_value
+    index_path.write_text(
+        json.dumps(entries[0]) + "\n",
+        encoding="utf-8",
+    )
+
+    recovered = repository.get_recent_by_owner_user_id(OWNER_ID)
+
+    assert len(recovered) == 1
+    assert recovered[0].activity_id == created.activity_id
+
+    rebuilt_entry = json.loads(
+        index_path.read_text(encoding="utf-8").splitlines()[0]
+    )
+    assert rebuilt_entry["offset"] == 0
+    assert rebuilt_entry["length"] > 0
+
+
+@pytest.mark.parametrize(
+    "malformed_position",
+    ["after_valid_record", "between_valid_records"],
+)
+def test_malformed_complete_event_blocks_index_rebuild(
+    tmp_path: Path,
+    malformed_position: str,
+) -> None:
+    repository = build_repository(tmp_path)
+
+    created = [
+        create_activity(repository, f"malformed-source-{index}")
+        for index in range(
+            2 if malformed_position == "between_valid_records" else 1
+        )
+    ]
+
+    event_path, index_path = activity_partition_paths(
+        repository, created[0]
+    )
+    valid_lines = event_path.read_bytes().splitlines(keepends=True)
+    malformed_line = b'{"activity_id": invalid}\n'
+
+    if malformed_position == "between_valid_records":
+        corrupted_content = (
+            valid_lines[0] + malformed_line + valid_lines[1]
+        )
+    else:
+        corrupted_content = valid_lines[0] + malformed_line
+
+    event_path.write_bytes(corrupted_content)
+    index_path.unlink()
+
+    with pytest.raises(json.JSONDecodeError):
+        repository.get_recent_by_owner_user_id(OWNER_ID)
+
+    # Corrupt authoritative data must not be silently discarded or rewritten.
+    assert event_path.read_bytes() == corrupted_content
+
+    # A partial index must not be published as a successful reconstruction.
+    assert not index_path.exists()
+
+
+def test_incomplete_event_tail_is_removed_before_index_rebuild(
+    tmp_path: Path,
+) -> None:
+    repository = build_repository(tmp_path)
+
+    created = create_activity(repository, "incomplete-tail")
+    event_path, index_path = activity_partition_paths(
+        repository, created
+    )
+
+    valid_content = event_path.read_bytes()
+    event_path.write_bytes(valid_content + b'{"activity_id":"unfinished"')
+
+    index_path.unlink()
+
+    recovered = repository.get_recent_by_owner_user_id(OWNER_ID)
+
+    assert len(recovered) == 1
+    assert recovered[0].activity_id == created.activity_id
+    assert event_path.read_bytes() == valid_content
+    assert index_path.exists()

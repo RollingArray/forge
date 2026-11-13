@@ -664,8 +664,15 @@ Positive controls:
     limits, concurrent thread writes, and concurrent process writes.
   - Dedicated tests: 8 passed; full API suite: 427 passed, with 8 existing
     Starlette deprecation warnings.
-- [test-gap] TEST-08: Add activity index recovery tests for malformed complete
-  JSONL records.
+- [done] TEST-08: Activity index recovery and malformed complete JSONL
+  record coverage.
+  - Added seven test cases covering missing and corrupt indexes, invalid
+    offsets and lengths, malformed complete event records, and incomplete
+    trailing event data.
+  - Malformed complete records block index reconstruction without modifying
+    the authoritative event log; incomplete trailing records are repaired.
+  - Dedicated repository tests: 15 passed; full API suite: 434 passed,
+    with 8 existing Starlette deprecation warnings.
 - [done] TEST-09: Specification preflight and whole-candidate validation
   regression coverage is in place and passed as part of the 73-test
   WP-01-related regression run.
