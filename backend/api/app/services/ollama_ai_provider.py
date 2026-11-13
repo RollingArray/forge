@@ -2085,14 +2085,7 @@ class OllamaAIProvider(AIProvider):
             if isinstance(value, str) and value.strip()
         ]
 
-        collected_set = (
-            {
-                value.strip().casefold()
-                for value in excluded_values
-            }
-            if normalized_mode == "UNIQUE"
-            else set()
-        )
+        collected_set = {value.casefold() for value in excluded_values}
 
         # Bound repeated refill calls when the model returns duplicate values
         # or persistently underproduces. The initial request plus up to 5
@@ -2137,8 +2130,7 @@ class OllamaAIProvider(AIProvider):
                                     ],
                                     ensure_ascii=False,
                                 )
-                                if normalized_mode == "UNIQUE"
-                                and (excluded_values or collected_values)
+                                if excluded_values or collected_values
                                 else ""
                             )
                         ),
@@ -2259,11 +2251,7 @@ class OllamaAIProvider(AIProvider):
             for value in values:
                 normalized_value = value.strip()
 
-                comparison_value = (
-                    normalized_value.casefold()
-                    if normalized_mode == "UNIQUE"
-                    else normalized_value
-                )
+                comparison_value = normalized_value.casefold()
 
                 if comparison_value not in collected_set:
                     collected_set.add(comparison_value)

@@ -89,6 +89,10 @@ VOCABULARY:
   appropriate to the description.
 - Values must be distinct.
 - Do not add numbering, commentary, explanations, or markdown.
+- Every value must be distinct, including values from previous batches.
+- When the user request includes previously generated values, never repeat them.
+- For bounded domains such as countries, use valid members of the domain
+  and provide as many distinct members as possible.
 
 Return ONLY valid JSON:
 
@@ -99,4 +103,3 @@ Return ONLY valid JSON:
   ]
 }
 """.strip()
-

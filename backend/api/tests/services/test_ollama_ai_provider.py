@@ -545,3 +545,64 @@ def test_real_generation_configuration_validation_rejects_invalid_field_without_
         match="IDENTIFIER requires SEQUENTIAL_ID",
     ):
         GenerationPlanner().validate_generation_configuration(specification)
+
+
+def test_vocabulary_refill_excludes_previously_generated_values(monkeypatch):
+    first = [f"Country {i}" for i in range(49)]
+    refill = ["Country 48", "Country 49"]
+
+    provider, calls = _provider(monkeypatch, [first, refill])
+
+    result = provider.generate_semantic_values(
+        description="Country name",
+        mode="VOCABULARY",
+        count=50,
+    )
+
+    assert len(result) == 50
+    assert len({value.casefold() for value in result}) == 50
+    assert len(calls) == 2
+
+    second_prompt = calls[1]["messages"][1]["content"]
+    assert "Previously generated values (do not repeat):" in second_prompt
+
+    previous = json.loads(
+        second_prompt.split("Previously generated values (do not repeat):\n", 1)[1]
+    )
+    assert previous == first
+
+
+def test_vocabulary_generation_deduplicates_case_insensitively(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [
+            ["India", "Germany", "india", "France"],
+            ["INDIA", "Japan", "Brazil"],
+        ],
+    )
+
+    result = provider.generate_semantic_values(
+        description="Country name",
+        mode="VOCABULARY",
+        count=5,
+    )
+
+    assert result == ["India", "Germany", "France", "Japan", "Brazil"]
+    assert len(calls) == 2
+
+
+def test_vocabulary_generation_honors_previous_values(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [["india", "France", "Japan"]],
+    )
+
+    result = provider.generate_semantic_values(
+        description="Country name",
+        mode="VOCABULARY",
+        count=2,
+        exclude_values=["India"],
+    )
+
+    assert result == ["France", "Japan"]
+    assert len(calls) == 1
