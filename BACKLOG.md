@@ -632,8 +632,15 @@ Positive controls:
   - 11 new parameterized INTEGER test cases added; existing categorical
     planner coverage strengthened without adding a duplicate test.
   - 51 population integration and solver tests passed.
-- [test-gap] TEST-04: Add population analyzer tests for multiple independent
-  foreign-key identity dimensions referencing the same parent.
+- [done] TEST-04: Population analyzer coverage verifies multiple independent
+  foreign-key identity dimensions referencing the same parent and distinct
+  parents.
+  - Directly asserts component child/parent field mappings, repeated parent
+    references, support status, and IDENTITY_CAPACITY constraint metadata.
+  - Existing feasibility and planner checks retain Cartesian identity
+    capacity behavior; a parent population of 10 supports a child capacity
+    of 100 for two independent same-parent FK dimensions.
+  - 55 population tests and 164 combined generation/population tests passed.
 - [test-gap] TEST-05: Add generation-service recovery orchestration tests.
 - [test-gap] TEST-06: Add artifact row-count and schema reconciliation tests.
 - [test-gap] TEST-07: Add activity repository persistence and concurrency tests.

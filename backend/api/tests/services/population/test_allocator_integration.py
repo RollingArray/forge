@@ -530,6 +530,32 @@ def test_two_independent_same_parent_fks_allow_cartesian_identity_capacity() -> 
 
     analysis = analyze_specification_constraints(specification)
 
+    assert analysis.structurally_valid
+    assert analysis.allocation_supported
+
+    child_capacity = next(
+        item for item in analysis.identity_capacities
+        if item.entity == "CHILD"
+    )
+    assert child_capacity.supported
+    assert child_capacity.parent_entities == ("PARENT", "PARENT")
+    assert child_capacity.finite_multiplier == 1
+    assert not child_capacity.unbounded
+    assert [
+        (item.fields, item.parent_entity, item.parent_fields)
+        for item in child_capacity.components
+    ] == [
+        (("PARENT_0_ID",), "PARENT", ("PARENT_ID",)),
+        (("PARENT_1_ID",), "PARENT", ("PARENT_ID",)),
+    ]
+
+    identity_constraint = next(
+        item for item in analysis.population_constraints
+        if item.kind == "IDENTITY_CAPACITY" and item.entity == "CHILD"
+    )
+    assert identity_constraint.related_entities == ("PARENT", "PARENT")
+    assert identity_constraint.multiplier == 1
+
     violations = _constraint_violations(
         {"PARENT": 10, "CHILD": 50},
         analysis.population_constraints,
@@ -550,6 +576,32 @@ def test_two_independent_parent_fks_allow_product_of_parent_keyspaces() -> None:
     )
 
     analysis = analyze_specification_constraints(specification)
+
+    assert analysis.structurally_valid
+    assert analysis.allocation_supported
+
+    child_capacity = next(
+        item for item in analysis.identity_capacities
+        if item.entity == "CHILD"
+    )
+    assert child_capacity.supported
+    assert child_capacity.parent_entities == ("PARENT_A", "PARENT_B")
+    assert child_capacity.finite_multiplier == 1
+    assert not child_capacity.unbounded
+    assert [
+        (item.fields, item.parent_entity, item.parent_fields)
+        for item in child_capacity.components
+    ] == [
+        (("PARENT_0_ID",), "PARENT_A", ("PARENT_A_ID",)),
+        (("PARENT_1_ID",), "PARENT_B", ("PARENT_B_ID",)),
+    ]
+
+    identity_constraint = next(
+        item for item in analysis.population_constraints
+        if item.kind == "IDENTITY_CAPACITY" and item.entity == "CHILD"
+    )
+    assert identity_constraint.related_entities == ("PARENT_A", "PARENT_B")
+    assert identity_constraint.multiplier == 1
 
     violations = _constraint_violations(
         {
