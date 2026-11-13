@@ -839,6 +839,7 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
     tmp_path,
     failure_case,
 ):
+    from copy import deepcopy
     from app.services.generation.artifact_reader import GenerationArtifactReader
     from app.services.generation.executor import GenerationExecutionError
     from app.services.generation.artifact_writer import GenerationArtifactWriter
@@ -916,6 +917,10 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
             }
         },
         chunk_size=50,
+    )
+
+    checkpoint_before_recovery = deepcopy(
+        checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
     )
 
     semantic_path = semantic_store._semantic_path(data_model_id, job_id)
@@ -1105,6 +1110,11 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
             )
 
         assert ai_service.calls == []
+
+        assert checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        ) == checkpoint_before_recovery
 
         if failure_case == "corrupt_store":
             assert semantic_path.read_text(

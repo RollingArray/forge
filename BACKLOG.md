@@ -595,10 +595,43 @@ Positive controls:
 
 ## 5. Test gaps
 
-- [test-gap] TEST-01: Add semantic store corruption and resume tests.
-- [test-gap] TEST-02: Add final dataset semantic UNIQUE validation tests.
-- [test-gap] TEST-03: Add population analyzer tests for categorical and
+- [done] TEST-01: Semantic store corruption and recovery tests are in place.
+
+  Completion evidence (2026-11-13):
+  - Tests cover corrupt JSON, malformed records, wrong job IDs,
+    unsupported schema versions and duplicate persisted UNIQUE values.
+  - Recovery reconstructs semantic values from committed artifacts
+    and resumes from the first uncommitted chunk.
+  - Failure cases cover duplicate and blank values, missing fields,
+    missing chunks and corrupt semantic state.
+  - Failed recovery does not invoke AI generation or modify the
+    checkpoint; corrupt semantic state is preserved unchanged.
+  - 36 focused semantic-store and executor tests passed.
+  - 164 tests passed across the generation and population suites.
+- [done] TEST-02: Final dataset semantic UNIQUE validation coverage is in place.
+
+  Completion evidence (2026-11-13):
+  - Detects duplicate semantic UNIQUE values across committed chunks.
+  - Normalizes case and surrounding whitespace when checking duplicates.
+  - Reports duplicate and missing values together as validation failures.
+  - Passes when all semantic UNIQUE values are distinct.
+  - Reports NOT_EVALUATED, rather than passing, when values are missing
+    or committed artifacts cannot be read.
+  - Six dedicated semantic UNIQUE scenarios are covered.
+  - 20 generation validator tests passed.
+- [done] TEST-03: Population analyzer tests cover categorical and
   bounded integer identity capacity.
+
+  Completion evidence (2026-11-13):
+  - Direct analyzer coverage verifies categorical capacity (3 distinct
+    values) and bounded INTEGER capacity for UNIFORM and DISCRETE_UNIFORM.
+  - Seven invalid INTEGER-bound cases are rejected with field-specific
+    diagnostics.
+  - Planner and allocator integration tests verify combined parent/local
+    capacity and rejection above finite capacity.
+  - 11 new parameterized INTEGER test cases added; existing categorical
+    planner coverage strengthened without adding a duplicate test.
+  - 51 population integration and solver tests passed.
 - [test-gap] TEST-04: Add population analyzer tests for multiple independent
   foreign-key identity dimensions referencing the same parent.
 - [test-gap] TEST-05: Add generation-service recovery orchestration tests.
@@ -609,10 +642,23 @@ Positive controls:
 - [done] TEST-09: Specification preflight and whole-candidate validation
   regression coverage is in place and passed as part of the 73-test
   WP-01-related regression run.
-- [test-gap] TEST-10: Add validator tests for nulls, malformed typed values,
-  domain bounds, artifact-reader failures and NOT_EVALUATED semantics.
+- [test-gap] TEST-10: Complete validator coverage for null handling,
+  malformed typed values, domain bounds, artifact-reader failures and
+  NOT_EVALUATED semantics.
   Verify that validator exceptions do not silently terminate validation or
   misrepresent conformance.
+
+  Progress (2026-11-13):
+  - Added tests for null and blank identity components.
+  - Added single-column FK nullability tests for OPTIONAL and MANDATORY
+    child participation.
+  - Added composite FK tests for fully null and partially null references.
+  - 20 validator tests passed.
+  - 170 tests passed across the generation service and
+    specification-validation generation test suites.
+  - Implementation and regression tests committed as `64106e9` (`fix(validation): handle nullable identities and foreign keys`).
+  - Remaining scope: malformed typed values, domain bounds, artifact-reader
+    failures, NOT_EVALUATED semantics and validator exception handling.
 - [test-gap] TEST-11: Add regression tests for GEN-VAL-01, ensuring
   post-generation validation exceptions do not misclassify completed generation.
 - [test-gap] TEST-12: Add end-to-end MANY_TO_MANY tests when that capability

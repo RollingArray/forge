@@ -320,6 +320,170 @@ def _multi_component_identity_specification(
     }
 
 
+def _add_integer_local_identity(
+    specification: dict,
+    *,
+    distribution: str = "UNIFORM",
+    minimum=1,
+    maximum=10,
+) -> dict:
+    child = next(
+        entity for entity in specification["entities"]
+        if entity["name"] == "CHILD"
+    )
+    child["fields"].append({
+        "name": "LOCAL_NUMBER",
+        "type": "INTEGER",
+        "generation": {
+            "strategy": "RANDOM",
+            "distribution": distribution,
+            "parameters": {
+                "minimum": minimum,
+                "maximum": maximum,
+            },
+        },
+    })
+    child["identity"]["fields"].append("LOCAL_NUMBER")
+    return specification
+
+
+@pytest.mark.parametrize(
+    "distribution",
+    ["UNIFORM", "DISCRETE_UNIFORM"],
+)
+def test_integer_identity_capacity_is_inclusive(
+    distribution: str,
+) -> None:
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=25,
+    )
+    _add_integer_local_identity(
+        specification,
+        distribution=distribution,
+        minimum=1,
+        maximum=10,
+    )
+
+    analysis = analyze_specification_constraints(specification)
+
+    assert analysis.structurally_valid
+    assert analysis.allocation_supported
+
+    child_capacity = next(
+        item for item in analysis.identity_capacities
+        if item.entity == "CHILD"
+    )
+    local_component = next(
+        item for item in child_capacity.components
+        if item.kind == "LOCAL"
+    )
+
+    assert local_component.fields == ("LOCAL_NUMBER",)
+    assert local_component.capacity == 10
+    assert child_capacity.finite_multiplier == 10
+    assert not child_capacity.unbounded
+
+
+@pytest.mark.parametrize(
+    ("minimum", "maximum", "message"),
+    [
+        (None, 10, "requires numeric minimum and maximum bounds"),
+        (1, None, "requires numeric minimum and maximum bounds"),
+        (True, 10, "requires numeric minimum and maximum bounds"),
+        ("invalid", 10, "invalid numeric bounds"),
+        (1.5, 10, "bounds must be whole numbers"),
+        (1, "Infinity", "bounds must be finite"),
+        (10, 1, "minimum exceeds maximum"),
+    ],
+)
+def test_integer_identity_capacity_rejects_invalid_bounds(
+    minimum,
+    maximum,
+    message: str,
+) -> None:
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=5,
+    )
+    _add_integer_local_identity(
+        specification,
+        minimum=minimum,
+        maximum=maximum,
+    )
+
+    analysis = analyze_specification_constraints(specification)
+
+    assert not analysis.structurally_valid
+    assert not analysis.allocation_supported
+
+    diagnostic = next(
+        item for item in analysis.diagnostics
+        if item["code"] == "UNSUPPORTED_LOCAL_IDENTITY"
+    )
+    assert diagnostic["subject"] == "CHILD.LOCAL_NUMBER"
+    assert message in diagnostic["message"]
+
+
+def test_standard_population_plan_multiplies_integer_identity_capacity() -> None:
+    from app.services.population.adapter import build_plan_from_specification
+
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=25,
+    )
+    parent = specification["entities"][0]
+    parent["population"] = {"count": 10, "scaling": "FIXED"}
+
+    _add_integer_local_identity(specification)
+
+    child = next(
+        entity for entity in specification["entities"]
+        if entity["name"] == "CHILD"
+    )
+    child["population"] = {"count": 25, "scaling": "FIXED"}
+
+    plan = build_plan_from_specification(specification)
+
+    assert plan.maximums["CHILD"] == 100
+    assert plan.populations["CHILD"].status.value == "FEASIBLE"
+
+
+def test_candidate_allocator_rejects_target_above_integer_identity_capacity() -> None:
+    specification = _multi_component_identity_specification(
+        ("PARENT",),
+        child_population=1,
+    )
+    parent = specification["entities"][0]
+    parent["population"] = {"count": 10, "scaling": "FIXED"}
+
+    _add_integer_local_identity(specification)
+
+    child = next(
+        entity for entity in specification["entities"]
+        if entity["name"] == "CHILD"
+    )
+    child["population"] = {"count": 1, "scaling": "SCALABLE"}
+
+    result = allocate_population_target(
+        specification=specification,
+        target=111,
+        driver="CHILD",
+    )
+
+    assert result.status == "INFEASIBLE"
+    assert not result.feasible_target
+    assert "Derived maximum total: 110." in result.diagnostics
+
+
 def test_identity_capacity_preserves_repeated_parent_components() -> None:
     from app.services.population.constraint_analysis import (
         analyze_specification_constraints,
@@ -463,6 +627,9 @@ def test_standard_population_plan_leaves_auto_parent_capacity_unresolved() -> No
 
 def test_standard_population_plan_multiplies_finite_local_identity_capacity() -> None:
     from app.services.population.adapter import build_plan_from_specification
+    from app.services.population.constraint_analysis import (
+        analyze_specification_constraints,
+    )
 
     specification = _multi_component_identity_specification(
         ("PARENT",),
@@ -484,6 +651,24 @@ def test_standard_population_plan_multiplies_finite_local_identity_capacity() ->
     })
     child["identity"]["fields"].append("LOCAL_CODE")
     child["population"] = {"count": 25, "scaling": "FIXED"}
+
+    analysis = analyze_specification_constraints(specification)
+
+    assert analysis.structurally_valid
+    assert analysis.allocation_supported
+
+    child_capacity = next(
+        item for item in analysis.identity_capacities
+        if item.entity == "CHILD"
+    )
+    local_component = next(
+        item for item in child_capacity.components
+        if item.kind == "LOCAL"
+    )
+
+    assert local_component.fields == ("LOCAL_CODE",)
+    assert local_component.capacity == 3
+    assert child_capacity.finite_multiplier == 3
 
     plan = build_plan_from_specification(specification)
 
