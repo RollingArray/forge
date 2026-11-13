@@ -199,6 +199,7 @@ class GenerationService:
             chunks_dir = artifact_root / name / "chunks"
             prefix = 0
             max_chunks = ceil(entity.target_rows / chunk_size)
+            expected_fieldnames = None
 
             for number in range(1, max_chunks + 1):
                 if number not in committed:
@@ -218,6 +219,13 @@ class GenerationService:
                         reader = csv.DictReader(handle)
                         if not reader.fieldnames:
                             break
+
+                        current_fieldnames = reader.fieldnames
+                        if expected_fieldnames is None:
+                            expected_fieldnames = current_fieldnames
+                        elif current_fieldnames != expected_fieldnames:
+                            break
+
                         actual_rows = sum(1 for _ in reader)
                 except (OSError, UnicodeError, csv.Error):
                     break

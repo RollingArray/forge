@@ -651,7 +651,13 @@ Positive controls:
     be retried safely in the same service instance.
   - Seven dedicated recovery tests passed; 228 generation service tests and
     413 full API tests passed, with 8 existing Starlette deprecation warnings.
-- [test-gap] TEST-06: Add artifact row-count and schema reconciliation tests.
+- [done] TEST-06: Artifact row-count and schema reconciliation coverage.
+  - Recovery validates committed chunk row counts and consistent CSV schemas,
+    including column order. Invalid chunks and subsequent chunks are removed
+    from the committed prefix and artifact directory.
+  - Added direct writer coverage for 75-row consolidation and schema mismatch.
+  - Six dedicated tests passed; full API suite passed: 419 tests, with 8
+    existing Starlette deprecation warnings.
 - [test-gap] TEST-07: Add activity repository persistence and concurrency tests.
 - [test-gap] TEST-08: Add activity index recovery tests for malformed complete
   JSONL records.
