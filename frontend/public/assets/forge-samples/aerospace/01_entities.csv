@@ -5,6 +5,8 @@ BUSINESS_UNIT,Aerospace business divisions,4,FIXED
 MANUFACTURING_PLANT,Manufacturing and assembly facilities,8,SCALABLE
 PRODUCT,Aerospace products and assemblies,60,SCALABLE
 PRODUCT_REVISION,Engineering-controlled product revisions,120,SCALABLE
+PRODUCT_REVISION_QUALITY_PROFILE,Quality and certification profile for each product revision,120,SCALABLE
+PRODUCT_REVISION_PLANT,Plant qualification and production capacity for product revisions,160,SCALABLE
 PART,Manufactured and purchased aerospace components,2000,SCALABLE
 BOM,Bills of materials for product revisions,180,SCALABLE
 BOM_COMPONENT,Individual component positions within bills of materials,1200,SCALABLE
