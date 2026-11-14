@@ -123,25 +123,36 @@
                   @for (rule of group.rules; track rule.rule_id) {
                     <details class="rule-item">
                       <summary class="rule-heading">
-                        <span class="rule-id">{{ rule.rule_id }}</span>
+                        <span class="rule-heading-content">
+                          <strong class="rule-title">{{ ruleTitle(rule) }}</strong>
+                          <span class="rule-context">{{ group.label }} · {{ ruleEntity(rule) }}</span>
+                        </span>
                         <span class="rule-status" [attr.data-status]="statusClass(rule)">
                           {{ statusLabel(rule) }}
                         </span>
-                        @if (detailEntries(rule).length) {
+                        @if (detailRows(rule).length) {
                           <span class="material-symbols-outlined rule-expand-icon" aria-hidden="true">
                             expand_more
                           </span>
                         }
                       </summary>
-                      @if (detailEntries(rule).length) {
-                        <dl class="rule-details">
-                          @for (detail of detailEntries(rule); track detail.label) {
-                            <div class="detail-row">
-                              <dt>{{ detail.label }}</dt>
-                              <dd>{{ detail.value }}</dd>
-                            </div>
-                          }
-                        </dl>
+                      @if (detailRows(rule).length) {
+                        <div class="rule-evidence-panel">
+                          <div class="rule-evidence-heading">
+                            <strong>Validation evidence</strong>
+                            <span>Measured results from this rule evaluation</span>
+                          </div>
+                          <div class="rule-details-table">
+                            <app-workspace-simple-table
+                              [columns]="detailColumns"
+                              [rows]="detailRows(rule)"
+                              rowKey="key"
+                              height="auto"
+                              emptyMessage="No rule details are available."
+                            />
+                          </div>
+                          <div class="rule-technical-id">Rule ID: {{ rule.rule_id }}</div>
+                        </div>
                       }
                     </details>
                   }
@@ -155,7 +166,10 @@
                   <div class="rule-list">
                     <details class="rule-item">
                       <summary class="rule-heading">
-                        <span class="rule-id">{{ rule.rule_id }} diagnostics</span>
+                        <span class="rule-heading-content">
+                          <strong class="rule-title">{{ ruleTitle(rule) }} diagnostics</strong>
+                          <span class="rule-context">{{ group.label }} · {{ ruleEntity(rule) }}</span>
+                        </span>
                         <span class="rule-status" [attr.data-status]="statusClass(rule)">
                           {{ statusLabel(rule) }}
                         </span>
@@ -163,14 +177,22 @@
                           expand_more
                         </span>
                       </summary>
-                      <dl class="rule-details">
-                        @for (detail of detailEntries(rule); track detail.label) {
-                          <div class="detail-row">
-                            <dt>{{ detail.label }}</dt>
-                            <dd>{{ detail.value }}</dd>
-                          </div>
-                        }
-                      </dl>
+                      <div class="rule-evidence-panel">
+                        <div class="rule-evidence-heading">
+                          <strong>Diagnostic details</strong>
+                          <span>Additional information recorded during evaluation</span>
+                        </div>
+                        <div class="rule-details-table">
+                          <app-workspace-simple-table
+                            [columns]="detailColumns"
+                            [rows]="detailRows(rule)"
+                            rowKey="key"
+                            height="auto"
+                            emptyMessage="No diagnostic details are available."
+                          />
+                        </div>
+                        <div class="rule-technical-id">Rule ID: {{ rule.rule_id }}</div>
+                      </div>
                     </details>
                   </div>
                 }

@@ -54,6 +54,12 @@ interface EvidenceTableRow {
   status: string;
 }
 
+interface DetailTableRow {
+  key: string;
+  property: string;
+  value: string;
+}
+
 interface RuleCategoryGroup {
   category: string;
   label: string;
@@ -177,6 +183,11 @@ export class ValidationRuleResultsComponent {
     { key: 'missingValues', label: 'Missing Values', type: 'error-count', align: 'right' },
     { key: 'conversionErrors', label: 'Conversion Errors', type: 'error-count', align: 'right' },
     { key: 'status', label: 'Status', type: 'status', width: '110px', align: 'center' },
+  ];
+
+  readonly detailColumns: readonly WorkspaceSimpleTableColumn<DetailTableRow>[] = [
+    { key: 'property', label: 'Property', width: 'minmax(220px, 1fr)' },
+    { key: 'value', label: 'Value', width: 'minmax(0, 2fr)' },
   ];
 
   readonly rules = input.required<readonly ValidationRuleResult[]>();
@@ -437,6 +448,40 @@ export class ValidationRuleResultsComponent {
     };
   }
 
+  ruleTitle(rule: ValidationRuleResult): string {
+    const [ruleType, target = ''] = rule.rule_id.split(':', 2);
+    const targetParts = target.split('.');
+    const field = targetParts.slice(1).join('.');
+
+    if (ruleType.toLowerCase() === 'semantic_unique') {
+      return `${this.humanizeIdentifier(field || target || 'Field')} must be unique`;
+    }
+
+    const readableType = this.humanizeIdentifier(ruleType);
+    const readableTarget = target
+      ? this.humanizeIdentifier(target.replaceAll('.', ' '))
+      : '';
+
+    return readableTarget
+      ? `${readableType}: ${readableTarget}`
+      : readableType;
+  }
+
+  ruleEntity(rule: ValidationRuleResult): string {
+    const target = rule.rule_id.split(':', 2)[1] ?? '';
+    const entity = target.split('.')[0];
+
+    return entity ? this.humanizeIdentifier(entity) : 'General';
+  }
+
+  private humanizeIdentifier(value: string): string {
+    return value
+      .replaceAll('_', ' ')
+      .replaceAll('.', ' ')
+      .toLowerCase()
+      .replace(/\\b\\w/g, (character) => character.toUpperCase());
+  }
+
   hasDiagnostic(rule: ValidationRuleResult): boolean {
     return this.statusLabel(rule) !== 'Passed';
   }
@@ -521,9 +566,10 @@ export class ValidationRuleResultsComponent {
     return 'pending';
   }
 
-  detailEntries(rule: ValidationRuleResult): { label: string; value: string }[] {
+  detailRows(rule: ValidationRuleResult): DetailTableRow[] {
     return Object.entries(rule.details ?? {}).map(([key, value]) => ({
-      label: key.replaceAll('_', ' ').replace(/\b\w/g, (character) =>
+      key,
+      property: key.replaceAll('_', ' ').replace(/\b\w/g, (character) =>
         character.toUpperCase(),
       ),
       value: this.formatValue(value),

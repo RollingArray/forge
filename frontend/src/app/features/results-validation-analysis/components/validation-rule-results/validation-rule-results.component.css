@@ -211,6 +211,69 @@ app-metric-grid {
   white-space: pre-wrap;
 }
 
+/* Rule evidence detail panel */
+.rule-heading-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.rule-title {
+  color: var(--forge-text-heading);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.rule-context {
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.rule-evidence-panel {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid var(--forge-glass-border);
+  border-radius: 10px;
+  background: var(--forge-surface-subtle);
+}
+
+.rule-evidence-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.rule-evidence-heading strong {
+  color: var(--forge-text-heading);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rule-evidence-heading span {
+  color: var(--forge-text-secondary);
+  font-size: 11px;
+}
+
+.rule-details-table {
+  overflow: hidden;
+  border: 1px solid var(--forge-glass-border);
+  border-radius: 8px;
+  background: var(--forge-surface);
+}
+
+.rule-technical-id {
+  margin-top: 10px;
+  color: var(--forge-text-secondary);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
 /* Empty state */
 .empty-rule-state {
   padding: 16px 18px;
