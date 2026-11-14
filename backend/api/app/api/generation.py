@@ -26,6 +26,7 @@ from app.models.generation_model import (
     GenerationJobResponse,
     GenerationExecutionEntityResponse,
     GenerationExecutionResponse,
+    GenerationValidationResponse,
     GenerationJobStatus,
     GenerationReadinessResponse,
 )
@@ -350,6 +351,45 @@ async def get_generation_execution(
             )
             for entity in job.entities
         ],
+    )
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/validation",
+    response_model=GenerationValidationResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_validation(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationValidationResponse:
+    """Return validation results for a generation job."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    return GenerationValidationResponse(
+        data_model_id=job.data_model_id,
+        job_id=job.job_id,
+        validation=job.validation,
     )
 
 

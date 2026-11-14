@@ -118,6 +118,14 @@ class GenerationValidationSummary(BaseModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
 
 
+class GenerationValidationResponse(BaseModel):
+    """Validation report for a generation job."""
+
+    data_model_id: str
+    job_id: str
+    validation: GenerationValidationSummary | None = None
+
+
 class GenerationQualityProfile(BaseModel):
     """Measured quality profile for a completed generation."""
 
