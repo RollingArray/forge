@@ -34,7 +34,7 @@ export class ResultsQualitySummaryComponent {
   readonly metrics = (): MetricCardData[] => [
     {
       label: 'Population fidelity',
-      value: `${this.populationFidelity().toFixed(1)}%`,
+      value: this.populationFidelity(),
       description: 'Percentage of requested population achieved',
       icon: 'verified',
     },
@@ -58,7 +58,9 @@ export class ResultsQualitySummaryComponent {
     },
     {
       label: 'Rows / second',
-      value: Math.round(this.performance()).toLocaleString('en-US'),
+      value: typeof this.performance() === 'number'
+        ? Math.round(this.performance() as number).toLocaleString('en-US')
+        : this.performance(),
       description: 'Generation throughput',
       icon: 'speed',
     },
@@ -70,46 +72,83 @@ export class ResultsQualitySummaryComponent {
     },
   ];
 
-  populationFidelity(): number {
-    return Number(
-      (this.quality()?.population_fidelity as Record<string, unknown>)
-        ?.['fidelity_rate'] ?? 0,
-    ) * 100;
-  }
-
-  distributionCount(): number {
-    return Number(
-      (this.quality()?.distribution_fidelity as Record<string, unknown>)
-        ?.['fields_analyzed'] ?? 0,
-    );
-  }
-
-  relationshipCount(): number {
-    return Number(
-      (this.quality()?.relationship_fidelity as Record<string, unknown>)
-        ?.['relationships_analyzed'] ?? 0,
-    );
-  }
-
-  statisticalCount(): number {
-    return Number(
-      (this.quality()?.statistical_fidelity as Record<string, unknown>)
-        ?.['numeric_fields_analyzed'] ?? 0,
-    );
-  }
-
-  performance(): number {
-    return Number(
-      (this.quality()?.performance as Record<string, unknown>)
-        ?.['rows_per_second'] ?? 0,
-    );
-  }
-
-  identityCount(): number {
-    const identity = this.quality()?.identity_space_utilization as
+  private measurementValue(
+    dimension: keyof GenerationQualityProfile,
+    metric: string,
+  ): number | string {
+    const profile = this.quality()?.[dimension] as
       | Record<string, unknown>
       | undefined;
 
-    return Number(identity?.['entities_analyzed'] ?? 0);
+    const status = profile?.['measurement_status'];
+
+    if (status === 'FAILED') return 'Failed';
+    if (status === 'UNAVAILABLE') return 'Not available';
+    if (status === 'INVALID_CONFIGURATION') return 'Invalid configuration';
+
+    const value = profile?.[metric];
+
+    if (value === null || value === undefined || value === '') {
+      return 'Not available';
+    }
+
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 'Not available';
+  }
+
+  populationFidelity(): string {
+    const profile = this.quality()?.population_fidelity;
+    const status = profile?.['measurement_status'];
+
+    if (status === 'FAILED') return 'Failed';
+    if (status === 'UNAVAILABLE') return 'Not available';
+    if (status === 'INVALID_CONFIGURATION') return 'Invalid configuration';
+
+    const value = profile?.['fidelity_rate'];
+
+    if (value === null || value === undefined || value === '') {
+      return 'Not available';
+    }
+
+    const fidelity = Number(value);
+
+    return Number.isFinite(fidelity)
+      ? `${(fidelity * 100).toFixed(1)}%`
+      : 'Not available';
+  }
+
+  distributionCount(): number | string {
+    return this.measurementValue(
+      'distribution_fidelity',
+      'fields_analyzed',
+    );
+  }
+
+  relationshipCount(): number | string {
+    return this.measurementValue(
+      'relationship_fidelity',
+      'relationships_analyzed',
+    );
+  }
+
+  statisticalCount(): number | string {
+    return this.measurementValue(
+      'statistical_fidelity',
+      'numeric_fields_analyzed',
+    );
+  }
+
+  performance(): number | string {
+    return this.measurementValue(
+      'performance',
+      'rows_per_second',
+    );
+  }
+
+  identityCount(): number | string {
+    return this.measurementValue(
+      'identity_space_utilization',
+      'entities_analyzed',
+    );
   }
 }

@@ -24,6 +24,37 @@ import { WorkspaceSimpleTableColumn } from '../../../../shared/components/worksp
 export class PopulationFidelityVisualizationComponent {
   readonly profile = input.required<Record<string, unknown>>();
 
+  readonly measurementStatus = computed(() =>
+    this.stringValue(this.profile()['measurement_status']),
+  );
+
+  readonly measurementMessage = computed(() => {
+    const status = this.measurementStatus();
+
+    if (status === 'FAILED') {
+      return 'Population fidelity measurement failed. Other generation results remain available.';
+    }
+
+    if (status === 'UNAVAILABLE') {
+      return 'Population fidelity measurement is unavailable because no usable measurements were recorded.';
+    }
+
+    if (status === 'INVALID_CONFIGURATION') {
+      return this.stringValue(
+        this.profile()['invalid_reason'],
+        'Population fidelity configuration is invalid.',
+      );
+    }
+
+    return '';
+  });
+
+  readonly measurementFailed = computed(() =>
+    this.measurementStatus() === 'FAILED' ||
+    this.measurementStatus() === 'UNAVAILABLE' ||
+    this.measurementStatus() === 'INVALID_CONFIGURATION',
+  );
+
   readonly metrics = computed<MetricCardData[]>(() => [
     {
       label: 'Total requested',
@@ -97,19 +128,16 @@ export class PopulationFidelityVisualizationComponent {
         ? null
         : generated - requested;
 
-      let fidelity: number | null = null;
-      if (requested !== null && generated !== null) {
-        fidelity = requested === 0
-          ? (generated === 0 ? 1 : 0)
-          : Math.max(0, 1 - Math.abs(generated - requested) / requested);
-      }
+      const fidelity = this.numberValue(entity['fidelity_rate']);
 
       return {
         name,
         requested: this.formatNumber(requested),
         generated: this.formatNumber(generated),
         difference: this.formatNumber(difference),
-        fidelity: fidelity === null ? 'Not available' : `${(fidelity * 100).toFixed(1)}%`,
+        fidelity: fidelity === null
+          ? 'Not available'
+          : `${(fidelity * 100).toFixed(1)}%`,
       };
     }),
   );
@@ -191,6 +219,12 @@ export class PopulationFidelityVisualizationComponent {
 
   private formatNumber(value: number | null): string {
     return value === null ? 'Not available' : value.toLocaleString('en-US');
+  }
+
+  private stringValue(value: unknown, fallback = ''): string {
+    return typeof value === 'string' && value.trim()
+      ? value
+      : fallback;
   }
 
   private numberValue(value: unknown): number | null {

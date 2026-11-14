@@ -2,7 +2,7 @@
   <app-workspace-header
     eyebrow="RECORDED MEASUREMENTS"
     title="Quality evidence"
-    summary="Inspect the values recorded for each quality dimension."
+    summary="Inspect the measured results and supporting evidence for each quality dimension."
   />
 
   <app-content-grid [columns]="1">
@@ -17,7 +17,7 @@
               <strong>{{ section.title }}</strong>
               <span>{{ section.description }}</span>
             </span>
-            <span class="section-count">{{ section.items.length }} values</span>
+            <span class="section-count">{{ recordCount(section) }} records</span>
             <span class="expand-indicator" aria-hidden="true">+</span>
           </summary>
 
@@ -33,17 +33,82 @@
                 [profile]="distributionProfile()"
               />
             </div>
-          } @else if (section.items.length) {
-            <div class="evidence-items">
-              @for (item of section.items; track item.label) {
-                <div class="evidence-item">
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                </div>
+          } @else if (hasUnavailableMeasurement(section)) {
+            <section class="measurement-state" role="status">
+              <strong>Measurement status: {{ section.evidence['measurement_status'] }}</strong>
+              <p>{{ measurementMessage(section) }}</p>
+            </section>
+          } @else {
+            <div class="population-evidence">
+              @switch (section.key) {
+                @case ('relationship_fidelity') {
+                  <app-workspace-simple-table
+                    [columns]="relationshipColumns"
+                    [rows]="relationshipRows(section)"
+                    rowKey="key"
+                    [height]="'420px'"
+                    [showSearch]="false"
+                    emptyMessage="No relationship measurements were recorded."
+                  />
+                  @for (row of relationshipRows(section); track row.key) {
+                    @if (row.note) {
+                      <p class="evidence-note">
+                        <strong>{{ row.relationship }}:</strong> {{ row.note }}
+                      </p>
+                    }
+                  }
+                }
+                @case ('identity_space_utilization') {
+                  <app-workspace-simple-table
+                    [columns]="identityColumns"
+                    [rows]="identityRows(section)"
+                    rowKey="entity"
+                    [height]="'420px'"
+                    [showSearch]="false"
+                    emptyMessage="No entity identity-space measurements were recorded."
+                  />
+                  <p class="evidence-note">
+                    Capacity is calculated only when all identity dimensions can be determined
+                    from declared finite domains or mapped parent keys. Utilization is the
+                    proportion of that capacity occupied by generated unique identities.
+                  </p>
+                }
+                @case ('statistical_fidelity') {
+                  <app-workspace-simple-table
+                    [columns]="statisticalColumns"
+                    [rows]="statisticalRows(section)"
+                    rowKey="key"
+                    [height]="'420px'"
+                    [showSearch]="false"
+                    emptyMessage="No numeric field statistics were recorded."
+                  />
+                  <p class="evidence-note">
+                    These are descriptive statistics of generated numeric values. They do not
+                    represent a comparison against an expected statistical distribution.
+                  </p>
+                }
+                @case ('performance') {
+                  <app-workspace-simple-table
+                    [columns]="performanceColumns"
+                    [rows]="performanceRows(section)"
+                    rowKey="key"
+                    [height]="'150px'"
+                    [showSearch]="false"
+                    emptyMessage="No performance measurement was recorded."
+                  />
+                }
+                @default {
+                  <app-workspace-simple-table
+                    [columns]="detailColumns"
+                    [rows]="detailRows(section)"
+                    rowKey="label"
+                    [height]="'420px'"
+                    [showSearch]="false"
+                    emptyMessage="No detailed evidence was recorded for this dimension."
+                  />
+                }
               }
             </div>
-          } @else {
-            <p class="empty-evidence">No detailed measurements were recorded for this dimension.</p>
           }
         </details>
       </app-content-card>

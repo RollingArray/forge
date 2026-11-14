@@ -91,41 +91,57 @@ export class ResultsQualityAnalysisComponent {
     return [
       {
         label: 'Population fidelity',
-        value: this.numberValue(quality.population_fidelity, 'fidelity_rate') === null
-          ? 'Not available'
-          : `${(this.numberValue(quality.population_fidelity, 'fidelity_rate')! * 100).toFixed(1)}%`,
+        value: this.metricValue(
+          'population_fidelity',
+          'fidelity_rate',
+          (value) => `${(value * 100).toFixed(1)}%`,
+        ),
         description: 'Requested population achieved',
         icon: 'verified',
       },
       {
         label: 'Relationships analyzed',
-        value: this.numberValue(quality.relationship_fidelity, 'relationships_analyzed') ?? 'Not available',
+        value: this.metricValue(
+          'relationship_fidelity',
+          'relationships_analyzed',
+        ),
         description: 'Relationships evaluated',
         icon: 'account_tree',
       },
       {
         label: 'Distributions analyzed',
-        value: this.numberValue(quality.distribution_fidelity, 'fields_analyzed') ?? 'Not available',
+        value: this.metricValue(
+          'distribution_fidelity',
+          'fields_analyzed',
+        ),
         description: 'Fields analyzed for distributions',
         icon: 'pie_chart',
       },
       {
         label: 'Numeric fields analyzed',
-        value: this.numberValue(quality.statistical_fidelity, 'numeric_fields_analyzed') ?? 'Not available',
+        value: this.metricValue(
+          'statistical_fidelity',
+          'numeric_fields_analyzed',
+        ),
         description: 'Numeric fields evaluated',
         icon: 'query_stats',
       },
       {
         label: 'Rows / second',
-        value: this.numberValue(quality.performance, 'rows_per_second') === null
-          ? 'Not available'
-          : Math.round(this.numberValue(quality.performance, 'rows_per_second')!).toLocaleString('en-US'),
+        value: this.metricValue(
+          'performance',
+          'rows_per_second',
+          (value) => Math.round(value).toLocaleString('en-US'),
+        ),
         description: 'Generation throughput',
         icon: 'speed',
       },
       {
         label: 'Identity spaces analyzed',
-        value: this.numberValue(quality.identity_space_utilization, 'entities_analyzed') ?? 'Not available',
+        value: this.metricValue(
+          'identity_space_utilization',
+          'entities_analyzed',
+        ),
         description: 'Entity identity spaces evaluated',
         icon: 'key',
       },
@@ -153,6 +169,7 @@ export class ResultsQualityAnalysisComponent {
       title: this.titleFromKey(key),
       description: descriptions[key] ?? 'Recorded quality evidence for this dimension.',
       items: this.flattenEvidence(this.asRecord(raw)),
+      evidence: this.asRecord(raw),
     }));
   });
 
@@ -233,6 +250,25 @@ export class ResultsQualityAnalysisComponent {
           this.loading.set(false);
         },
       });
+  }
+
+  private metricValue(
+    dimension: keyof GenerationQualityProfile,
+    metric: string,
+    format?: (value: number) => string,
+  ): number | string {
+    const profile = this.asRecord(this.quality()?.[dimension]);
+    const status = profile['measurement_status'];
+
+    if (status === 'FAILED') return 'Failed';
+    if (status === 'UNAVAILABLE') return 'Not available';
+    if (status === 'INVALID_CONFIGURATION') return 'Invalid configuration';
+
+    const value = this.numberValue(profile, metric);
+
+    if (value === null) return 'Not available';
+
+    return format ? format(value) : value;
   }
 
   private numberValue(value: unknown, key: string): number | null {

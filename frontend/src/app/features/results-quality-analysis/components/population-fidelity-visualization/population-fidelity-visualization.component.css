@@ -88,3 +88,23 @@ app-chart {
     align-items: flex-end;
   }
 }
+
+
+.measurement-state {
+  padding: 14px 16px;
+  border: 1px solid var(--forge-glass-border);
+  border-radius: 8px;
+  background: var(--forge-surface-subtle);
+}
+
+.measurement-state strong {
+  color: var(--forge-text-heading);
+  font-size: 13px;
+}
+
+.measurement-state p {
+  margin: 6px 0 0;
+  color: var(--forge-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}

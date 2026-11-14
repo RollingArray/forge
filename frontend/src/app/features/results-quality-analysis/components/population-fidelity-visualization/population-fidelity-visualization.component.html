@@ -1,12 +1,19 @@
 <section class="population-overview" aria-label="Population fidelity overview">
-  <app-metric-grid [columns]="4" [metrics]="metrics()" />
+  @if (measurementFailed()) {
+    <section class="measurement-state" role="status">
+      <strong>Population measurement: {{ measurementStatus() }}</strong>
+      <p>{{ measurementMessage() }}</p>
+    </section>
+  } @else {
+    <app-metric-grid [columns]="4" [metrics]="metrics()" />
 
-  <app-workspace-simple-table
-    [columns]="tableColumns"
-    [rows]="entityRows()"
-    rowKey="name"
-    [height]="'min(45vh, 420px)'"
-    [showSearch]="false"
-    emptyMessage="No per-entity population measurements were recorded."
-  />
+    <app-workspace-simple-table
+      [columns]="tableColumns"
+      [rows]="entityRows()"
+      rowKey="name"
+      [height]="'min(45vh, 420px)'"
+      [showSearch]="false"
+      emptyMessage="No per-entity population measurements were recorded."
+    />
+  }
 </section>

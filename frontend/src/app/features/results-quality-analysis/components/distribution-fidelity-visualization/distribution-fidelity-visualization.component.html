@@ -1,5 +1,11 @@
 <section aria-label="Distribution fidelity overview">
-  <app-metric-grid [columns]="4" [metrics]="metrics()" />
+  @if (measurementFailed()) {
+    <section class="measurement-state" role="status" aria-label="Distribution measurement status">
+      <p><strong>Distribution measurement: {{ measurementStatus() }}</strong></p>
+      <p>{{ measurementMessage() }}</p>
+    </section>
+  } @else {
+    <app-metric-grid [columns]="4" [metrics]="metrics()" />
   <app-workflow-row>&nbsp;</app-workflow-row>
   <app-workflow-row [columns]="'95-105'">
     <section class="forge-card field-selection-panel" aria-label="Field distribution selection">
@@ -46,7 +52,19 @@
         [state]="selectedField() ? selectedCategoryCount() : ''"
       />
 
-      @if (selectedField()) {
+      @if (selectedField(); as field) {
+        <section class="measurement-summary" aria-label="Measurement status">
+          <p>
+            <strong>Measurement status:</strong>
+            {{ field.measurementStatus }}
+          </p>
+          @if (field.invalidReason) {
+            <p>{{ field.invalidReason }}</p>
+          }
+          @if (field.measurementStatus === 'UNAVAILABLE') {
+            <p>No artifact rows were available for this field.</p>
+          }
+        </section>
         <app-workspace-simple-table
           [columns]="categoryColumns"
           [rows]="selectedCategoryRows()"
@@ -58,6 +76,7 @@
         <p class="probability-legend">
           <span class="legend-marker" aria-hidden="true"></span>
           Observed probability compared with the specification's expected probability.
+          Unexpected categories are shown separately and have no declared expected probability.
         </p>
       } @else if (fieldRows().length) {
         <div class="detail-placeholder">
@@ -82,4 +101,5 @@
     deviation measures the difference between observed and expected frequencies. These are distinct
     indicators and do not, by themselves, establish overall statistical fidelity.
   </p>
+  }
 </section>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable
 
 from app.models.generation_model import (
@@ -14,6 +15,9 @@ from app.models.generation_model import (
 from app.services.generation.executor import GenerationExecutor
 from app.services.generation_planner import GenerationPlan
 from app.services.generation.validator import GenerationValidator
+
+
+logger = logging.getLogger(__name__)
 
 
 class GenerationRunService:
@@ -133,15 +137,23 @@ class GenerationRunService:
         else:
             status = GenerationJobStatus.FAILED
 
-        quality = self._quality_service.build_quality_profile(
-            specification=specification,
-            plan=plan,
-            data_model_id=data_model_id,
-            job_id=job_id,
-            total_generated_rows=run.generated_rows,
-            elapsed_seconds=run.elapsed_seconds,
-            validation=validation_summary.model_dump(),
-        )
+        quality = None
+        try:
+            quality = self._quality_service.build_quality_profile(
+                specification=specification,
+                plan=plan,
+                data_model_id=data_model_id,
+                job_id=job_id,
+                total_generated_rows=run.generated_rows,
+                elapsed_seconds=run.elapsed_seconds,
+                validation=validation_summary.model_dump(),
+            )
+        except Exception:
+            logger.exception(
+                "Quality profile generation failed for job %s. "
+                "Generation results and validation are preserved.",
+                job_id,
+            )
 
         return GenerationResult(
             data_model_id=data_model_id,
@@ -154,5 +166,9 @@ class GenerationRunService:
             elapsed_seconds=run.elapsed_seconds,
             entities=entities,
             validation=validation_summary,
-            quality=GenerationQualityProfile.model_validate(quality),
+            quality=(
+                GenerationQualityProfile.model_validate(quality)
+                if quality is not None
+                else None
+            ),
         )

@@ -5,4 +5,5 @@ export interface QualityEvidenceSection {
   title: string;
   description: string;
   items: QualityEvidenceItem[];
+  evidence: Record<string, unknown>;
 }

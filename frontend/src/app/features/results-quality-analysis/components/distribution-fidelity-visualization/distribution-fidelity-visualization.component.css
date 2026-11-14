@@ -124,3 +124,25 @@
     min-height: 10rem;
   }
 }
+
+.measurement-state {
+  padding: 1.25rem;
+  border: 1px solid var(--border-subtle, #d9d6e5);
+  border-radius: 0.75rem;
+  background: var(--surface-muted, #faf9fd);
+}
+
+.measurement-state p {
+  margin: 0;
+  color: var(--text-secondary, #6f6b80);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.measurement-state p + p {
+  margin-top: 0.4rem;
+}
+
+.measurement-state strong {
+  color: var(--text-primary, #242238);
+}

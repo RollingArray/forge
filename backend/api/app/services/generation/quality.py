@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 from collections import Counter
-from typing import Any
+from typing import Any, Callable
 
 from app.services.generation.artifact_reader import GenerationArtifactReader
 from app.services.generation_planner import GenerationPlan
+
+
+logger = logging.getLogger(__name__)
 
 
 class GenerationQualityService:
@@ -42,10 +46,9 @@ class GenerationQualityService:
                 "requested_rows": requested,
                 "generated_rows": actual,
                 "difference": actual - requested,
-                "fidelity_rate": (
-                    actual / requested
-                    if requested
-                    else 1.0
+                "fidelity_rate": self._population_fidelity_rate(
+                    requested=requested,
+                    actual=actual,
                 ),
             }
 
@@ -62,13 +65,28 @@ class GenerationQualityService:
             "total_requested_rows": total_requested,
             "total_generated_rows": total_generated,
             "difference": total_generated - total_requested,
-            "fidelity_rate": (
-                total_generated / total_requested
-                if total_requested
-                else 1.0
+            "fidelity_rate": self._population_fidelity_rate(
+                requested=total_requested,
+                actual=total_generated,
             ),
             "entities": entities,
         }
+
+    @staticmethod
+    def _population_fidelity_rate(
+        *,
+        requested: int,
+        actual: int,
+    ) -> float | None:
+        """Measure row-count agreement on a bounded 0-to-1 scale."""
+
+        if requested == 0:
+            return None
+
+        return max(
+            0.0,
+            1.0 - abs(actual - requested) / requested,
+        )
 
     @staticmethod
     def _field_domain_size(
@@ -180,6 +198,28 @@ class GenerationQualityService:
             ),
         }
 
+    def _measure_dimension(
+        self,
+        *,
+        dimension: str,
+        job_id: str,
+        measurement: Callable[[], dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Evaluate one quality dimension without affecting other measurements."""
+
+        try:
+            return measurement()
+        except Exception:
+            logger.exception(
+                "Quality dimension %s failed for job %s.",
+                dimension,
+                job_id,
+            )
+            return {
+                "measurement_status": "FAILED",
+                "error": "Quality measurement failed.",
+            }
+
     def build_quality_profile(
         self,
         *,
@@ -194,47 +234,61 @@ class GenerationQualityService:
         """Build the measurable FORGE quality profile."""
 
         return {
-            "population_fidelity": (
-                self.analyze_population_fidelity(
+            "population_fidelity": self._measure_dimension(
+                dimension="population_fidelity",
+                job_id=job_id,
+                measurement=lambda: self.analyze_population_fidelity(
                     specification=specification,
                     plan=plan,
                     data_model_id=data_model_id,
                     job_id=job_id,
-                )
+                ),
             ),
-            "distribution_fidelity": (
-                self.analyze_distribution_fidelity(
+            "distribution_fidelity": self._measure_dimension(
+                dimension="distribution_fidelity",
+                job_id=job_id,
+                measurement=lambda: self.analyze_distribution_fidelity(
                     specification=specification,
                     data_model_id=data_model_id,
                     job_id=job_id,
-                )
+                ),
             ),
-            "relationship_fidelity": (
-                self.analyze_relationship_fidelity(
-                    specification=specification,
-                    plan=plan,
-                    data_model_id=data_model_id,
-                    job_id=job_id,
-                )
-            ),
-            "identity_space_utilization": (
-                self.analyze_identity_space_utilization(
+            "relationship_fidelity": self._measure_dimension(
+                dimension="relationship_fidelity",
+                job_id=job_id,
+                measurement=lambda: self.analyze_relationship_fidelity(
                     specification=specification,
                     plan=plan,
                     data_model_id=data_model_id,
                     job_id=job_id,
-                )
+                ),
             ),
-            "statistical_fidelity": (
-                self.analyze_statistical_fidelity(
+            "identity_space_utilization": self._measure_dimension(
+                dimension="identity_space_utilization",
+                job_id=job_id,
+                measurement=lambda: self.analyze_identity_space_utilization(
+                    specification=specification,
+                    plan=plan,
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                ),
+            ),
+            "statistical_fidelity": self._measure_dimension(
+                dimension="statistical_fidelity",
+                job_id=job_id,
+                measurement=lambda: self.analyze_statistical_fidelity(
                     specification=specification,
                     data_model_id=data_model_id,
                     job_id=job_id,
-                )
+                ),
             ),
-            "performance": self.analyze_performance(
-                total_generated_rows=total_generated_rows,
-                elapsed_seconds=elapsed_seconds,
+            "performance": self._measure_dimension(
+                dimension="performance",
+                job_id=job_id,
+                measurement=lambda: self.analyze_performance(
+                    total_generated_rows=total_generated_rows,
+                    elapsed_seconds=elapsed_seconds,
+                ),
             ),
             "validation": validation,
         }
@@ -712,13 +766,37 @@ class GenerationQualityService:
                 field_name = field.get("name")
                 generation = field.get("generation") or {}
                 distribution = generation.get("distribution")
+
+                if distribution != "CATEGORICAL":
+                    continue
+
                 parameters = generation.get("parameters") or {}
                 values = parameters.get("values")
+                field_key = f"{entity_name}.{field_name}"
 
-                if distribution != "CATEGORICAL" or not isinstance(
-                    values,
-                    list,
-                ):
+                if not isinstance(values, list) or not values:
+                    fields[field_key] = {
+                        "entity": entity_name,
+                        "field": field_name,
+                        "distribution": distribution,
+                        "measurement_status": "INVALID_CONFIGURATION",
+                        "invalid_reason": (
+                            "Categorical distribution requires a non-empty "
+                            "list of configured values."
+                        ),
+                        "rows_observed": None,
+                        "rows_total": None,
+                        "missing_count": None,
+                        "missing_rate": None,
+                        "declared_category_count": 0,
+                        "observed_category_count": 0,
+                        "category_coverage": None,
+                        "maximum_absolute_probability_difference": None,
+                        "declared_values": values if isinstance(values, list) else [],
+                        "values": {},
+                        "unexpected_category_count": 0,
+                        "unexpected_categories": {},
+                    }
                     continue
 
                 observed_counts, rows_total, missing_count = (
@@ -740,24 +818,21 @@ class GenerationQualityService:
                 probability_differences: list[float] = []
 
                 for value_string, configured_count in configured_counts.items():
-                    expected_probability = (
-                        configured_count / configured_total
-                        if configured_total
-                        else 0.0
-                    )
-                    observed_count = observed_counts.get(
-                        value_string,
-                        0,
-                    )
+                    expected_probability = configured_count / configured_total
+                    observed_count = observed_counts.get(value_string, 0)
                     observed_probability = (
                         observed_count / observed_total
                         if observed_total
-                        else 0.0
+                        else None
                     )
-                    absolute_difference = abs(
-                        observed_probability - expected_probability
+                    absolute_difference = (
+                        abs(observed_probability - expected_probability)
+                        if observed_probability is not None
+                        else None
                     )
-                    probability_differences.append(absolute_difference)
+
+                    if absolute_difference is not None:
+                        probability_differences.append(absolute_difference)
 
                     value_metrics[value_string] = {
                         "observed_count": observed_count,
@@ -766,6 +841,13 @@ class GenerationQualityService:
                         "absolute_probability_difference": absolute_difference,
                     }
 
+                declared_categories = set(configured_counts)
+                unexpected_categories = {
+                    value: count
+                    for value, count in observed_counts.items()
+                    if value not in declared_categories
+                }
+
                 declared_category_count = len(configured_counts)
                 observed_category_count = sum(
                     1
@@ -773,34 +855,40 @@ class GenerationQualityService:
                     if observed_counts.get(value_string, 0) > 0
                 )
 
-                fields[f"{entity_name}.{field_name}"] = {
+                fields[field_key] = {
                     "entity": entity_name,
                     "field": field_name,
                     "distribution": distribution,
+                    "measurement_status": (
+                        "AVAILABLE" if rows_total > 0 else "UNAVAILABLE"
+                    ),
                     "rows_observed": observed_total,
                     "rows_total": rows_total,
                     "missing_count": missing_count,
                     "missing_rate": (
                         missing_count / rows_total
                         if rows_total
-                        else 0.0
+                        else None
                     ),
                     "declared_category_count": declared_category_count,
                     "observed_category_count": observed_category_count,
                     "category_coverage": (
                         observed_category_count / declared_category_count
-                        if declared_category_count
-                        else 0.0
+                        if rows_total > 0 and declared_category_count
+                        else None
                     ),
-                    "maximum_absolute_probability_difference": max(
-                        probability_differences,
-                        default=0.0,
+                    "maximum_absolute_probability_difference": (
+                        max(probability_differences)
+                        if probability_differences
+                        else None
                     ),
                     "declared_values": [
                         str(value)
                         for value in values
                     ],
                     "values": value_metrics,
+                    "unexpected_category_count": len(unexpected_categories),
+                    "unexpected_categories": unexpected_categories,
                 }
 
         return {
