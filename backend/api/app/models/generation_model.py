@@ -138,6 +138,25 @@ class GenerationQualityProfile(BaseModel):
     validation: dict[str, Any] = Field(default_factory=dict)
 
 
+class GenerationQualityDimensions(BaseModel):
+    """Measured quality dimensions, excluding validation evidence."""
+
+    population_fidelity: dict[str, Any] = Field(default_factory=dict)
+    distribution_fidelity: dict[str, Any] = Field(default_factory=dict)
+    relationship_fidelity: dict[str, Any] = Field(default_factory=dict)
+    identity_space_utilization: dict[str, Any] = Field(default_factory=dict)
+    statistical_fidelity: dict[str, Any] = Field(default_factory=dict)
+    performance: dict[str, Any] = Field(default_factory=dict)
+
+
+class GenerationQualityResponse(BaseModel):
+    """Quality measurements for a generation job."""
+
+    data_model_id: str
+    job_id: str
+    quality: GenerationQualityDimensions | None = None
+
+
 class GenerationJobResponse(BaseModel):
     """Production API representation of a generation job."""
 
