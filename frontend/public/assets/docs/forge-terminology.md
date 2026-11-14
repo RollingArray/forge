@@ -8,6 +8,8 @@ The specification is the engineering blueprint used to plan and generate synthet
 
 This guide explains FORGE concepts for both technical and business users.
 
+**Example convention:** The worked examples in this guide use the supplied aerospace sample wherever a matching example exists. When the sample does not contain a clean example of a concept, that limitation is stated rather than introducing an unrelated example. The sample files are located at `frontend/public/assets/forge-samples/aerospace/`.
+
 ---
 
 # 1. Foundations
@@ -16,7 +18,7 @@ This guide explains FORGE concepts for both technical and business users.
 
 A data model describes the logical structure of the data to be generated. It identifies entities, their fields, identities, relationships and other rules.
 
-**Example:** An order management data model might contain CUSTOMER, ORDER, ORDER_LINE and PRODUCT.
+**Example:** The supplied aerospace sample contains CUSTOMER, AIRCRAFT_PROGRAM, PRODUCT, PRODUCT_REVISION, PART, BOM, SUPPLIER, PURCHASE_ORDER and manufacturing entities.
 
 **In FORGE:** A Data Model is the workspace in which the specification is authored and maintained.
 
@@ -32,7 +34,7 @@ It describes more than column names. It also captures identities, generation ins
 
 An entity represents a distinct business object or logical dataset within a data model.
 
-**Examples:** CUSTOMER, PRODUCT, SALES_ORDER, EMPLOYEE.
+**Examples from the aerospace sample:** CUSTOMER, AIRCRAFT_PROGRAM, PRODUCT, PRODUCT_REVISION, MANUFACTURING_PLANT and SUPPLIER_PART.
 
 An entity contains fields and has an identity. It can also have a population requirement and participate in relationships with other entities.
 
@@ -42,7 +44,7 @@ An entity contains fields and has an identity. It can also have a population req
 
 A field is an individual attribute belonging to an entity. It describes one value in each record of that entity.
 
-**Example:** CUSTOMER may contain CUSTOMER_ID, CUSTOMER_NAME, EMAIL_ADDRESS and CREDIT_LIMIT.
+**Example from the sample:** CUSTOMER contains CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_TYPE, COUNTRY and CUSTOMER_CODE.
 
 A field has a name and a data type. Depending on its purpose, it may also have identity or generation configuration.
 
@@ -50,7 +52,7 @@ A field has a name and a data type. Depending on its purpose, it may also have i
 
 Population is the number of records requested for an entity.
 
-For example, CUSTOMER may request 10,000 records while PRODUCT requests 500 records.
+In the supplied aerospace sample, CUSTOMER requests 40 records and PRODUCT requests 60 records.
 
 Population requirements are considered during population planning. Requested counts and scaling rules influence whether a target dataset can be produced consistently.
 
@@ -64,10 +66,10 @@ A field's data type defines the kind of value it can hold. The type also influen
 |---|---|---|
 | IDENTIFIER | A field used to identify records | CUSTOMER_ID |
 | STRING | Text values | CUSTOMER_NAME |
-| INTEGER | Whole numbers | QUANTITY |
-| DECIMAL | Numeric values with fractional parts | UNIT_PRICE |
-| BOOLEAN | True or false | IS_ACTIVE |
-| CATEGORICAL | A value selected from a defined set | ORDER_STATUS |
+| INTEGER | Whole numbers | TARGET_AIRCRAFT_COUNT |
+| DECIMAL | Numeric values with fractional parts | SUPPLIER_PART.UNIT_PRICE |
+| BOOLEAN | True or false | BUSINESS_UNIT.IS_OPERATIONAL |
+| CATEGORICAL | A value selected from a defined set | CUSTOMER.CUSTOMER_TYPE |
 
 ### IDENTIFIER
 
@@ -79,29 +81,29 @@ In FORGE, identifier generation currently supports the `SEQUENTIAL_ID` identity 
 
 Used for text values. FORGE supports random strings, pattern-based strings and semantic strings.
 
-Examples include names, addresses, reference codes and descriptions.
+Examples from the sample include CUSTOMER_NAME, CUSTOMER_CODE, PLANT_NAME and PART_DESCRIPTION.
 
 ### INTEGER
 
-Used for whole-number values, such as quantities, counts and age.
+Used for whole-number values, such as AIRCRAFT_PROGRAM.TARGET_AIRCRAFT_COUNT and SUPPLIER_PART.LEAD_TIME_DAYS.
 
 The currently executable numeric distributions are `UNIFORM` and `DISCRETE_UNIFORM`.
 
 ### DECIMAL
 
-Used for numeric values that may contain fractional parts, such as prices, percentages and measurements.
+Used for numeric values that may contain fractional parts, such as SUPPLIER_PART.UNIT_PRICE, BOM_COMPONENT.QUANTITY and quality measurements.
 
 The currently executable distribution is `UNIFORM`.
 
 ### BOOLEAN
 
-Used for values representing true or false conditions.
+Used for true/false attributes such as BUSINESS_UNIT.IS_OPERATIONAL and PRODUCT_REVISION_PLANT.IS_QUALIFIED.
 
 ### CATEGORICAL
 
 Used when a field must take one value from a defined list.
 
-**Example:** An ORDER_STATUS field might allow `NEW`, `PROCESSING`, `SHIPPED` and `CANCELLED`.
+**Example from the sample:** CUSTOMER.CUSTOMER_TYPE allows `AIRLINE`, `AIRCRAFT_MANUFACTURER`, `DEFENCE` and `MRO`.
 
 The allowed values must be supplied as a non-empty list.
 
@@ -113,7 +115,7 @@ The allowed values must be supplied as a non-empty list.
 
 An identity is the field or combination of fields that uniquely identifies a record within an entity.
 
-For example, CUSTOMER_ID may uniquely identify each CUSTOMER record.
+In the sample, CUSTOMER_ID uniquely identifies each CUSTOMER record.
 
 Every entity in a valid FORGE specification must have at least one identity field.
 
@@ -125,7 +127,7 @@ The primary identity is the configured identity of an entity. It provides the re
 
 A composite identity uses more than one field together to uniquely identify a record.
 
-**Example:** An ORDER_LINE entity may use ORDER_ID and LINE_NUMBER together.
+**Example from the sample:** SUPPLIER_PART uses SUPPLIER_ID and PART_ID together as its composite identity.
 
 Neither field necessarily identifies a line by itself. The combination does.
 
@@ -135,8 +137,8 @@ For a composite identity, identity position specifies the order of the fields in
 
 | Field | Identity position |
 |---|---:|
-| ORDER_ID | 1 |
-| LINE_NUMBER | 2 |
+| SUPPLIER_ID | 1 |
+| PART_ID | 2 |
 
 The positions must be distinct and define the identity's field order.
 
@@ -203,7 +205,7 @@ The pattern can combine special symbols and literal characters.
 
 All other characters are treated as literals.
 
-**Example:** `ORD-####-AA` produces values resembling `ORD-4821-QM`.
+**Example from the sample:** CUSTOMER_CODE uses the pattern `CUS-####`.
 
 ### SEMANTIC
 
@@ -221,7 +223,7 @@ Supported modes:
 | `UNIQUE` | Produces distinct semantic values |
 | `VOCABULARY` | Produces values from a vocabulary associated with the description |
 
-**Example description:** `A realistic product category name`.
+**Example from the sample:** CUSTOMER_NAME uses the semantic description `Airline or aerospace customer legal or trading name` with mode `VOCABULARY`.
 
 Semantic generation is different from random character generation. The description provides meaning, not just a shape or length.
 
@@ -257,6 +259,8 @@ These values exist in the shared distribution vocabulary, but they are not curre
 
 Do not select them for executable specifications until FORGE explicitly supports them.
 
+**Aerospace sample alignment note:** The current sample's `02_fields_and_keys.csv` nevertheless contains three `NORMAL` configurations: `PRODUCT_REVISION_PLANT.CAPACITY_UTILIZATION`, `PART.UNIT_MASS_KG` and `PRODUCTION_OPERATION.STANDARD_HOURS`. These are listed as sample caveats in Section 18, not as endorsed executable examples. The sample should be corrected or the implementation status explicitly re-verified before it is presented as a fully executable reference.
+
 ## Minimum and Maximum
 
 Numeric generation requires a valid minimum and maximum range at execution time.
@@ -281,17 +285,17 @@ It establishes which records in the source entity refer to records in the target
 **Example:**
 
 - CUSTOMER has identity `CUSTOMER_ID`.
-- ORDER contains `CUSTOMER_ID`.
-- ORDER.CUSTOMER_ID refers to CUSTOMER.CUSTOMER_ID.
+- AIRCRAFT_PROGRAM contains `CUSTOMER_ID`.
+- AIRCRAFT_PROGRAM.CUSTOMER_ID refers to CUSTOMER.CUSTOMER_ID.
 
-The foreign key allows FORGE to generate orders that refer to valid customers.
+The foreign key allows FORGE to generate aircraft programmes that refer to valid customers.
 
 ## Source Entity and Target Entity
 
 - **Source entity:** The entity containing the referencing fields.
 - **Target entity:** The entity whose identity is being referenced.
 
-In the example above, ORDER is the source and CUSTOMER is the target.
+In the sample example, AIRCRAFT_PROGRAM is the source and CUSTOMER is the target.
 
 ## Source Fields and Target Fields
 
@@ -303,20 +307,13 @@ The number and order of source fields must match the target identity fields.
 
 A single-field foreign key maps one source field to one target identity field.
 
-**Example:** ORDER.CUSTOMER_ID references CUSTOMER.CUSTOMER_ID.
+**Example from the sample:** AIRCRAFT_PROGRAM.CUSTOMER_ID references CUSTOMER.CUSTOMER_ID.
 
 ## Composite Foreign Key
 
 A composite foreign key maps multiple source fields to the multiple fields of a composite target identity.
 
-**Example:**
-
-The target entity ORDER_LINE has identity:
-
-1. ORDER_ID
-2. LINE_NUMBER
-
-An entity such as SHIPMENT_LINE can reference that identity using both fields in the same order.
+**Example from the sample:** SUPPLIER_PART has a composite identity consisting of `SUPPLIER_ID` (position 1) and `PART_ID` (position 2). PURCHASE_ORDER_LINE references that identity through the source fields `SUPPLIER_ID` and `PART_ID`, in the same order.
 
 The source and target field types must be compatible.
 
@@ -332,10 +329,10 @@ In FORGE's current CSV import workflow, a relationship must have exactly one com
 
 | Value | Meaning | Example |
 |---|---|---|
-| `ONE_TO_ONE` | One record on each side is associated with one record on the other side | PERSON and PASSPORT |
-| `ONE_TO_MANY` | One source record can be associated with multiple target records | CUSTOMER and ORDER |
-| `MANY_TO_ONE` | Multiple source records can be associated with one target record | ORDER and CUSTOMER |
-| `MANY_TO_MANY` | Multiple records on either side can be associated with multiple records on the other side | STUDENT and COURSE |
+| `ONE_TO_ONE` | One record on each side is associated with one record on the other side | PRODUCT_REVISION and PRODUCT_REVISION_QUALITY_PROFILE |
+| `ONE_TO_MANY` | One source record can be associated with multiple target records | No clean directional example is provided in the supplied sample; see the sample caveat below |
+| `MANY_TO_ONE` | Multiple source records can be associated with one target record | AIRCRAFT_PROGRAM and CUSTOMER |
+| `MANY_TO_MANY` | Multiple records on either side can be associated with multiple records on the other side | No direct example is provided in the supplied aerospace sample |
 
 The direction matters. Always interpret cardinality from the declared source entity to the target entity.
 
@@ -350,7 +347,7 @@ Participation indicates whether an entity's involvement in a relationship is man
 
 Source and target participation are configured separately.
 
-**Example:** An ORDER may be required to reference a CUSTOMER, while a CUSTOMER may exist without any ORDER.
+**Example from the sample:** An AIRCRAFT_PROGRAM has `MANDATORY` participation in its relationship to CUSTOMER, while CUSTOMER has `OPTIONAL` participation.
 
 ---
 
@@ -362,7 +359,7 @@ A constraint is a rule that restricts the values a field may contain.
 
 Constraints help describe valid data beyond what is expressed by a field's data type or generation configuration.
 
-**Example:** An ORDER quantity must be greater than zero.
+**Example from the sample:** SUPPLIER_PART.UNIT_PRICE must be greater than zero.
 
 A constraint identifies:
 
@@ -375,12 +372,12 @@ A constraint identifies:
 
 | Operator | Meaning | Example |
 |---|---|---|
-| `>` | Greater than | QUANTITY > 0 |
-| `>=` | Greater than or equal to | AGE >= 18 |
-| `<` | Less than | DISCOUNT < 100 |
-| `<=` | Less than or equal to | AGE <= 120 |
-| `==` | Equal to | STATUS == ACTIVE |
-| `!=` | Not equal to | STATUS != CANCELLED |
+| `>` | Greater than | SUPPLIER_PART.UNIT_PRICE > 0 |
+| `>=` | Greater than or equal to | PRODUCT_REVISION.REVISION_SEQUENCE >= 1 |
+| `<` | Less than | PRODUCT_REVISION_QUALITY_PROFILE.DEFECT_RATE < 0.95 |
+| `<=` | Less than or equal to | PRODUCT_REVISION.REVISION_SEQUENCE <= 12 |
+| `==` | Equal to | PRODUCT_REVISION_QUALITY_PROFILE.CERTIFICATION_CLASS == AEROSPACE |
+| `!=` | Not equal to | PRODUCT_REVISION_PLANT.APPROVAL_CODE != INVALID |
 
 The currently supported CSV constraint operators depend on the field type:
 
@@ -403,13 +400,13 @@ BOOLEAN constraints are not currently supported by the CSV importer.
 
 Population count is the requested number of records for an entity.
 
-**Example:**
+**Example from `01_entities.csv`:**
 
-| Entity | Requested records |
-|---|---:|
-| CUSTOMER | 10,000 |
-| PRODUCT | 500 |
-| ORDER | 25,000 |
+| Entity | Requested records | Scaling |
+|---|---:|---|
+| CUSTOMER | 40 | SCALABLE |
+| BUSINESS_UNIT | 4 | FIXED |
+| PRODUCT | 60 | SCALABLE |
 
 A population count can be omitted during authoring, but a missing count may leave the population plan unresolved or require further configuration.
 
@@ -585,7 +582,7 @@ It uses the field definitions, identities, relationships, foreign keys, constrai
 
 Referential integrity means that references between entities remain valid.
 
-For example, every ORDER.CUSTOMER_ID value must refer to an existing CUSTOMER identity.
+For example, every AIRCRAFT_PROGRAM.CUSTOMER_ID reference must resolve to a CUSTOMER.CUSTOMER_ID identity.
 
 FORGE uses foreign key definitions and dependency information to preserve these references during generation.
 
@@ -593,7 +590,7 @@ FORGE uses foreign key definitions and dependency information to preserve these 
 
 Some entities depend on records from other entities.
 
-If ORDER references CUSTOMER, the generation process must account for CUSTOMER records when generating ORDER records.
+If AIRCRAFT_PROGRAM references CUSTOMER, generation must account for CUSTOMER records when generating AIRCRAFT_PROGRAM records.
 
 Dependency ordering helps determine an appropriate generation sequence.
 
@@ -734,3 +731,209 @@ If you are new to FORGE, follow this sequence:
 9. Generate data and inspect the results.
 
 **The central idea:** Define the system and its rules first. FORGE uses that specification to engineer data that respects the structure and relationships of the system.
+
+---
+
+# 16. Preparing Information for a FORGE Specification
+
+This section translates the information a data or engineering team should gather into the concepts already described in this guide. It is a preparation aid, not a separate data model or a replacement for the five CSV files.
+
+Before authoring the specification, the team should be able to provide the following information for the dataset in scope.
+
+| Information to provide | What the team should identify | FORGE representation | Aerospace sample reference |
+|---|---|---|---|
+| Objects to generate | The distinct business objects or datasets | Entities | `CUSTOMER`, `AIRCRAFT_PROGRAM`, `PRODUCT`, `PART`, `SUPPLIER` |
+| Attributes for each object | The attributes present on each record | Fields | `CUSTOMER.CUSTOMER_NAME`, `PRODUCT.PRODUCT_CODE` |
+| Value type | Whether each attribute is an identifier, text, whole number, decimal, Boolean or categorical value | Field type | `CUSTOMER_ID` is `IDENTIFIER`; `CUSTOMER_TYPE` is `CATEGORICAL` |
+| Record uniqueness | The field or combination of fields that uniquely identifies a record | Identity and identity position | `SUPPLIER_PART` uses `SUPPLIER_ID` and `PART_ID` as a composite identity |
+| Value creation rules | How each non-identity field should be populated | Generation strategy and generator/distribution | `CUSTOMER_CODE` uses `PATTERN`; `CUSTOMER_NAME` uses `SEMANTIC` |
+| References between objects | Which fields refer to another entity's identity | Foreign keys | `AIRCRAFT_PROGRAM.CUSTOMER_ID` references `CUSTOMER.CUSTOMER_ID` |
+| Relationship meaning | The cardinality and participation of the association | Relationship | `AIRCRAFT_PROGRAM` to `CUSTOMER` is declared `MANY_TO_ONE` |
+| Field restrictions | Permitted values or comparison rules | Constraints | `SUPPLIER_PART.UNIT_PRICE > 0` |
+| Requested data volume | The desired record count for each entity | Population count | `CUSTOMER` requests 40 records in the sample |
+| Scaling behavior | Whether the count is fixed or can be scaled | Population scaling | `BUSINESS_UNIT` is `FIXED`; `CUSTOMER` is `SCALABLE` |
+
+A data team does not need to invent FORGE configuration names. It should first provide the business meaning, structure, uniqueness rules, references, restrictions and population expectations. Those inputs are then translated into the supported FORGE fields and configuration values.
+
+## Preparation questions
+
+For each entity, ask:
+
+1. What does this entity represent in the source business or engineering domain?
+2. What attributes does each record contain?
+3. Which attribute, or combination of attributes, uniquely identifies a record?
+4. Which attributes refer to identities in other entities?
+5. What values or ranges are valid for each attribute?
+6. What should generated values look like or represent?
+7. How many records are required, and may that count be scaled?
+
+For each relationship, ask:
+
+1. Which two entities are associated?
+2. Which entity contains the referencing field or fields?
+3. What is the cardinality from the declared source to the target?
+4. Is participation mandatory or optional on each side?
+5. Does the supplied foreign key connect the same two entities in the direction expected by the relationship definition?
+
+---
+
+# 17. How the Five CSV Files Work Together
+
+The five CSV files are not independent spreadsheets. Together, they describe one connected specification.
+
+| File | What the team records | Aerospace sample example |
+|---|---|---|
+| `01_entities.csv` | Entity names, descriptions and population requirements | `CUSTOMER` has a population count of `40` and scaling `SCALABLE` |
+| `02_fields_and_keys.csv` | Fields, types, identity positions and generation settings | `CUSTOMER.CUSTOMER_ID` is the identity; `CUSTOMER.CUSTOMER_CODE` uses the `CUS-####` pattern |
+| `03_foreign_keys.csv` | Source fields and the target entity whose identity is referenced | `AIRCRAFT_PROGRAM` field `CUSTOMER_ID` references `CUSTOMER` |
+| `04_relationships.csv` | Relationship cardinality and participation | `AIRCRAFT_PROGRAM` to `CUSTOMER` is `MANY_TO_ONE` |
+| `05_constraints.csv` | Field-level comparison rules | `SUPPLIER_PART.UNIT_PRICE` must be greater than `0` |
+
+## Follow one reference through the files
+
+The aerospace sample provides a direct example using `AIRCRAFT_PROGRAM` and `CUSTOMER`.
+
+**Business meaning:** An aircraft programme belongs to a customer. A customer may be associated with multiple aircraft programmes.
+
+**Entity definitions:** Both `CUSTOMER` and `AIRCRAFT_PROGRAM` are declared in `01_entities.csv`.
+
+**Field and identity definitions:** `CUSTOMER.CUSTOMER_ID` is declared as an `IDENTIFIER` with identity position `1`. `AIRCRAFT_PROGRAM` also contains a `CUSTOMER_ID` field.
+
+**Foreign-key declaration:** `03_foreign_keys.csv` contains:
+
+```csv
+source_entity,source_fields,target_entity
+AIRCRAFT_PROGRAM,"[""CUSTOMER_ID""]",CUSTOMER
+```
+
+**Relationship declaration:** `04_relationships.csv` contains:
+
+```csv
+source_entity,target_entity,type,source_participation,target_participation
+AIRCRAFT_PROGRAM,CUSTOMER,MANY_TO_ONE,MANDATORY,OPTIONAL
+```
+
+Read together, these rows say that an aircraft programme references a customer identity, that the relationship is many-to-one from `AIRCRAFT_PROGRAM` to `CUSTOMER`, and that source participation is mandatory while target participation is optional.
+
+The example also illustrates why the foreign-key file and relationship file must agree. A relationship row should not be authored as if it were an independent connection unrelated to the declared foreign key.
+
+## Example of a composite identity and foreign key
+
+The sample's `SUPPLIER_PART` entity demonstrates a composite identity:
+
+| Field | Identity position |
+|---|---:|
+| `SUPPLIER_ID` | 1 |
+| `PART_ID` | 2 |
+
+`PURCHASE_ORDER_LINE` references that identity using both fields. The corresponding foreign-key row in `03_foreign_keys.csv` is:
+
+```csv
+PURCHASE_ORDER_LINE,"[""SUPPLIER_ID"", ""PART_ID""]",SUPPLIER_PART
+```
+
+The order of the source fields matches the target identity order. This is the practical reason identity positions and composite foreign-key field order matter.
+
+---
+
+# 18. Aerospace Sample: Terminology-to-CSV Examples
+
+Use the supplied files under `frontend/public/assets/forge-samples/aerospace/` while reading these examples. The names and values below are taken from that sample so that a reader can move directly between this guide and the CSV rows.
+
+| FORGE concept | Aerospace sample example | Where to look |
+|---|---|---|
+| Entity | `PRODUCT_REVISION` | `01_entities.csv` |
+| Field | `PRODUCT_REVISION.REVISION_SEQUENCE` | `02_fields_and_keys.csv` |
+| Single-field identity | `CUSTOMER.CUSTOMER_ID` | `02_fields_and_keys.csv` |
+| Composite identity | `SUPPLIER_PART` with `SUPPLIER_ID` and `PART_ID` | `02_fields_and_keys.csv` |
+| Sequential identity strategy | `CUSTOMER.CUSTOMER_ID` uses `SEQUENTIAL_ID` | `02_fields_and_keys.csv` |
+| Pattern string | `CUSTOMER.CUSTOMER_CODE` uses `CUS-####` | `02_fields_and_keys.csv` |
+| Semantic string | `CUSTOMER.CUSTOMER_NAME` describes an airline or aerospace customer name and uses `VOCABULARY` | `02_fields_and_keys.csv` |
+| Random string | `PART.TRACEABILITY_ALPHA`, `TRACEABILITY_DIGITS` and `TRACEABILITY_TOKEN` | `02_fields_and_keys.csv` |
+| Integer distribution | `AIRCRAFT_PROGRAM.TARGET_AIRCRAFT_COUNT` uses `UNIFORM`; `SUPPLIER_PART.LEAD_TIME_DAYS` uses `DISCRETE_UNIFORM` | `02_fields_and_keys.csv` |
+| Decimal distribution | `SUPPLIER_PART.UNIT_PRICE` uses `UNIFORM` | `02_fields_and_keys.csv` |
+| Boolean | `BUSINESS_UNIT.IS_OPERATIONAL` | `02_fields_and_keys.csv` |
+| Categorical values | `CUSTOMER.CUSTOMER_TYPE` | `02_fields_and_keys.csv` |
+| Foreign key | `AIRCRAFT_PROGRAM.CUSTOMER_ID` references `CUSTOMER` | `03_foreign_keys.csv` |
+| Relationship | `AIRCRAFT_PROGRAM` to `CUSTOMER` is `MANY_TO_ONE` | `04_relationships.csv` |
+| Numeric constraint | `SUPPLIER_PART.UNIT_PRICE > 0` | `05_constraints.csv` |
+| Categorical constraint | `PRODUCT_REVISION_QUALITY_PROFILE.CERTIFICATION_CLASS == AEROSPACE` | `05_constraints.csv` |
+| Fixed population | `BUSINESS_UNIT` has count `4` and scaling `FIXED` | `01_entities.csv` |
+| Scalable population | `CUSTOMER` has count `40` and scaling `SCALABLE` | `01_entities.csv` |
+
+## Read a field row as a specification
+
+For example, the `CUSTOMER_CODE` row in `02_fields_and_keys.csv` identifies:
+
+- Entity: `CUSTOMER`
+- Field: `CUSTOMER_CODE`
+- Type: `STRING`
+- Generation strategy: `RANDOM`
+- Generator: `PATTERN`
+- Pattern: `CUS-####`
+
+This means the field is text, generated using the pattern mechanism, with the literal prefix `CUS-` followed by four digit placeholders. The exact row in the sample is the reference for the column placement and spelling.
+
+## Read a constraint row as a business rule
+
+The row `SUPPLIER_PART,UNIT_PRICE,>,0` in `05_constraints.csv` means that the `UNIT_PRICE` field on `SUPPLIER_PART` is constrained to be greater than zero. The entity and field identify where the rule applies; the operator and value express the condition.
+
+## Important sample caveats
+
+The current aerospace sample package contains examples that should be reviewed before the sample is presented as a fully executable reference:
+
+- `02_fields_and_keys.csv` uses `NORMAL` for `PRODUCT_REVISION_PLANT.CAPACITY_UTILIZATION`, `PART.UNIT_MASS_KG` and `PRODUCTION_OPERATION.STANDARD_HOURS`. Section 5 of this guide states that `NORMAL` and `POISSON` are vocabulary values but are not currently executable. These rows are therefore not presented here as supported generation examples.
+- `04_relationships.csv` declares `BUSINESS_UNIT` to `MANUFACTURING_PLANT`, while `03_foreign_keys.csv` declares the referencing foreign key in the opposite direction: `MANUFACTURING_PLANT.BUSINESS_UNIT_ID` references `BUSINESS_UNIT`. Do not use this pair as the clean directional walkthrough until the sample relationship row is reconciled with the importer rules.
+- `STRUCTURAL_VALIDATION.txt` reports counts that do not match the current CSV files in the supplied package. Treat that report as stale until regenerated from the current sample.
+
+The examples used as the primary walkthrough in Sections 17 and 18 deliberately use the `AIRCRAFT_PROGRAM` to `CUSTOMER` and `PURCHASE_ORDER_LINE` to `SUPPLIER_PART` mappings, whose CSV rows align with one another in the supplied package.
+
+---
+
+# 19. Data Team Specification Handoff Checklist
+
+Before submitting a specification for import, confirm that the following information has been provided and cross-checked.
+
+## Data model structure
+
+- [ ] Every entity has a clear business or engineering meaning and a unique entity name.
+- [ ] Every field is assigned to the correct entity.
+- [ ] Field names and data types are supplied.
+- [ ] Every entity has an identity.
+- [ ] Composite identity positions are distinct, ordered and complete.
+
+## Value generation
+
+- [ ] Each field that needs generated values has an intended generation configuration.
+- [ ] String patterns, character sets, length bounds or semantic descriptions are provided where applicable.
+- [ ] Categorical fields have a non-empty list of permitted values.
+- [ ] Numeric generation has valid minimum and maximum values.
+- [ ] Selected distributions and generators are supported by the current FORGE implementation, not merely present in a vocabulary or UI list.
+- [ ] Identity fields are configured as identities rather than treated as ordinary generated attributes.
+
+## References and relationships
+
+- [ ] Every foreign-key source field exists on its source entity.
+- [ ] Every foreign key targets an entity with a defined identity.
+- [ ] Composite foreign-key fields match the target identity in count, order and compatible type.
+- [ ] Every relationship has the corresponding compatible foreign key required by the CSV importer.
+- [ ] Relationship direction, cardinality and participation have been checked together.
+
+## Constraints and population
+
+- [ ] Every constraint references an existing entity and field.
+- [ ] The operator is supported for the field type.
+- [ ] Comparison values are expressed in the expected form.
+- [ ] Population counts are supplied where required for planning.
+- [ ] Each entity is marked `FIXED` or `SCALABLE` as intended.
+
+## CSV and import readiness
+
+- [ ] The five CSV files use the expected headers and filenames.
+- [ ] Optional configuration columns that do not apply are left blank.
+- [ ] JSON arrays are valid and correctly quoted in CSV cells.
+- [ ] Entity and field names are consistent across all five files.
+- [ ] The team has reviewed the preview and resolved validation errors before applying.
+- [ ] The resulting specification and population plan have been reviewed after apply.
+
+A complete handoff describes the business structure and rules clearly enough that the five CSV files can be authored without guessing. FORGE validation and preview should then be used to confirm that the submitted specification conforms to the current implementation.
