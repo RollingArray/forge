@@ -24,6 +24,8 @@ from app.models.generation_model import (
     GenerationArtifactPageResponse,
     GenerationArtifactResponse,
     GenerationJobResponse,
+    GenerationExecutionEntityResponse,
+    GenerationExecutionResponse,
     GenerationJobStatus,
     GenerationReadinessResponse,
 )
@@ -287,6 +289,68 @@ async def get_generation_job(
         )
 
     return job
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/execution",
+    response_model=GenerationExecutionResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_execution(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationExecutionResponse:
+    """Return execution outcome and performance for a generation job."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    return GenerationExecutionResponse(
+        data_model_id=job.data_model_id,
+        job_id=job.job_id,
+        status=job.status,
+        error=job.error,
+        created_at=job.created_at,
+        started_at=job.started_at,
+        completed_at=job.completed_at,
+        total_target_rows=job.total_target_rows,
+        total_generated_rows=job.total_generated_rows,
+        progress=job.progress,
+        elapsed_seconds=job.elapsed_seconds,
+        peak_memory_mb=job.peak_memory_mb,
+        entities=[
+            GenerationExecutionEntityResponse(
+                entity_name=entity.entity_name,
+                target_rows=entity.target_rows,
+                generated_rows=entity.generated_rows,
+                completed_chunks=entity.completed_chunks,
+                total_chunks=entity.total_chunks,
+                status=entity.status,
+                elapsed_seconds=entity.elapsed_seconds,
+                throughput_rows_per_second=entity.throughput_rows_per_second,
+                peak_memory_mb=entity.peak_memory_mb,
+            )
+            for entity in job.entities
+        ],
+    )
 
 
 @router.get(
