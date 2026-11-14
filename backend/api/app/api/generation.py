@@ -49,6 +49,22 @@ def _count_csv_data_rows(path: Path) -> int:
         return sum(1 for _ in DictReader(file))
 
 
+def _ensure_job_contains_artifact_entity(
+    job: GenerationJobResponse,
+    entity_name: str,
+) -> None:
+    """Ensure an artifact entity belongs to the requested generation job."""
+
+    if not any(
+        entity.entity_name == entity_name
+        for entity in job.entities
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generated artifact not found.",
+        )
+
+
 
 router = APIRouter(
     prefix="/data-models",
@@ -719,6 +735,8 @@ async def preview_generation_artifact(
             detail=str(exc),
         ) from exc
 
+    _ensure_job_contains_artifact_entity(job, entity_name)
+
     if not path.is_file():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -813,6 +831,8 @@ async def get_generation_artifact_data(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    _ensure_job_contains_artifact_entity(job, entity_name)
 
     if not path.is_file():
         raise HTTPException(
@@ -922,6 +942,8 @@ async def download_generation_artifact(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    _ensure_job_contains_artifact_entity(job, entity_name)
 
     if not path.is_file():
         raise HTTPException(
