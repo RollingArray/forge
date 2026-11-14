@@ -127,16 +127,6 @@ export class ResultsQualityAnalysisComponent {
         icon: 'query_stats',
       },
       {
-        label: 'Rows / second',
-        value: this.metricValue(
-          'performance',
-          'rows_per_second',
-          (value) => Math.round(value).toLocaleString('en-US'),
-        ),
-        description: 'Generation throughput',
-        icon: 'speed',
-      },
-      {
         label: 'Identity spaces analyzed',
         value: this.metricValue(
           'identity_space_utilization',
@@ -160,17 +150,26 @@ export class ResultsQualityAnalysisComponent {
       relationship_fidelity: 'Evaluation of relationships between generated entities.',
       identity_space_utilization: 'Analysis of entity identity-space utilization.',
       statistical_fidelity: 'Statistical analysis of numeric fields.',
-      performance: 'Observed generation performance measurements.',
-      validation: 'Quality-related validation information recorded by the generation job.',
     };
 
-    return Object.entries(quality).map(([key, raw]) => ({
-      key,
-      title: this.titleFromKey(key),
-      description: descriptions[key] ?? 'Recorded quality evidence for this dimension.',
-      items: this.flattenEvidence(this.asRecord(raw)),
-      evidence: this.asRecord(raw),
-    }));
+    const dimensions: (keyof GenerationQualityProfile)[] = [
+      'population_fidelity',
+      'distribution_fidelity',
+      'relationship_fidelity',
+      'identity_space_utilization',
+      'statistical_fidelity',
+    ];
+
+    return dimensions.map((key) => {
+      const raw = quality[key];
+      return {
+        key,
+        title: this.titleFromKey(key),
+        description: descriptions[key],
+        items: this.flattenEvidence(this.asRecord(raw)),
+        evidence: this.asRecord(raw),
+      };
+    });
   });
 
   constructor() {
