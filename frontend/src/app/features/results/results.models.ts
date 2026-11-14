@@ -55,6 +55,20 @@ export interface GenerationValidationSummary {
 }
 
 
+export interface GenerationValidationSummaryResponse {
+  data_model_id: string;
+  job_id: string;
+  valid: boolean | null;
+  rows_validated: number;
+  expected_rows: number;
+  entities_checked: number;
+  relationships_checked: number;
+  constraints_checked: number;
+  error_count: number;
+  warning_count: number;
+}
+
+
 export interface GenerationArtifactDataPage {
   entity_name: string;
   filename: string;

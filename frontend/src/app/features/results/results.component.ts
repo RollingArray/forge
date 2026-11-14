@@ -19,12 +19,12 @@ import { WorkspaceService } from '../../core/services/workspace.service';
 import {
   GenerationJobResponse,
   GenerationExecutionResponse,
-  GenerationValidationResponse,
 } from '../generate/models/generation.models';
 import {
   GenerationArtifact,
   GenerationArtifactPreview,
   GenerationQualitySummary,
+  GenerationValidationSummaryResponse,
 } from './results.models';
 
 import { ResultsExecutionSummaryComponent } from './components/results-execution-summary/results-execution-summary.component';
@@ -78,7 +78,7 @@ export class ResultsComponent {
   readonly generationExecution =
     signal<GenerationExecutionResponse | null>(null);
   readonly generationValidation =
-    signal<GenerationValidationResponse | null>(null);
+    signal<GenerationValidationSummaryResponse | null>(null);
   readonly generationQualitySummary =
     signal<GenerationQualitySummary | null>(null);
   readonly dataModelName = signal('');
@@ -306,7 +306,7 @@ export class ResultsComponent {
     }
 
     this.generationService
-      .getGenerationValidation(this.dataModelId, this.jobId)
+      .getGenerationValidationSummary(this.dataModelId, this.jobId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (validation) => {

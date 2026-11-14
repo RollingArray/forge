@@ -26,6 +26,7 @@ from app.models.generation_model import (
     GenerationJobResponse,
     GenerationExecutionSummaryResponse,
     GenerationValidationResponse,
+    GenerationValidationSummaryResponse,
     GenerationQualityDimensions,
     GenerationQualityResponse,
     GenerationQualityMetricSummary,
@@ -401,6 +402,82 @@ async def get_generation_validation(
         data_model_id=job.data_model_id,
         job_id=job.job_id,
         validation=job.validation,
+    )
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/validation/summary",
+    response_model=GenerationValidationSummaryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_validation_summary(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationValidationSummaryResponse:
+    """Return only the metrics displayed in the Results validation summary."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    validation = job.validation
+
+    if validation is None:
+        validation_data = {}
+    elif isinstance(validation, dict):
+        validation_data = validation
+    elif hasattr(validation, "model_dump"):
+        validation_data = validation.model_dump()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unsupported validation result format.",
+        )
+
+    evidence = validation_data.get("evidence")
+    if not isinstance(evidence, dict):
+        evidence = {}
+
+    foreign_keys = evidence.get("foreign_keys")
+    if not isinstance(foreign_keys, dict):
+        foreign_keys = {}
+
+    constraints = evidence.get("constraints")
+    if not isinstance(constraints, dict):
+        constraints = {}
+
+    warnings = validation_data.get("warnings")
+    if not isinstance(warnings, list):
+        warnings = []
+
+    return GenerationValidationSummaryResponse(
+        data_model_id=job.data_model_id,
+        job_id=job.job_id,
+        valid=validation_data.get("valid"),
+        rows_validated=validation_data.get("generated_rows", 0),
+        expected_rows=validation_data.get("expected_rows", 0),
+        entities_checked=validation_data.get("entity_count", 0),
+        relationships_checked=foreign_keys.get("relationships_checked", 0),
+        constraints_checked=constraints.get("constraints_checked", 0),
+        error_count=validation_data.get("error_count", 0),
+        warning_count=len(warnings),
     )
 
 

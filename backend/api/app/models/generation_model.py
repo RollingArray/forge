@@ -126,6 +126,22 @@ class GenerationValidationResponse(BaseModel):
     validation: GenerationValidationSummary | None = None
 
 
+
+class GenerationValidationSummaryResponse(BaseModel):
+    """Compact validation metrics for the Results summary screen."""
+
+    data_model_id: str
+    job_id: str
+    valid: bool | None = None
+    rows_validated: int = Field(default=0, ge=0)
+    expected_rows: int = Field(default=0, ge=0)
+    entities_checked: int = Field(default=0, ge=0)
+    relationships_checked: int = Field(default=0, ge=0)
+    constraints_checked: int = Field(default=0, ge=0)
+    error_count: int = Field(default=0, ge=0)
+    warning_count: int = Field(default=0, ge=0)
+
+
 class GenerationQualityProfile(BaseModel):
     """Measured quality profile for a completed generation."""
 

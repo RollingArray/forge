@@ -8,6 +8,7 @@ import {
   GenerationArtifactPreview,
   GenerationArtifactDataPage,
   GenerationQualitySummary,
+  GenerationValidationSummaryResponse,
 } from '../../results/results.models';
 import { environment } from '../../../../environments/environment';
 import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
@@ -138,6 +139,21 @@ export class GenerationService {
   ): Observable<GenerationValidationResponse> {
     return this.http.get<GenerationValidationResponse>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/validation`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationValidation,
+        ),
+      },
+    );
+  }
+
+  getGenerationValidationSummary(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationValidationSummaryResponse> {
+    return this.http.get<GenerationValidationSummaryResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/validation/summary`,
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,

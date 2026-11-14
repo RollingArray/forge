@@ -4,7 +4,7 @@ import { ForgeButtonComponent } from '../../../../shared/components/forge-button
 
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
-import { GenerationValidationSummary } from '../../results.models';
+import { GenerationValidationSummaryResponse } from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
 
@@ -17,32 +17,32 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultsValidationComponent {
-  readonly validation = input<GenerationValidationSummary | null>(null);
+  readonly validation = input<GenerationValidationSummaryResponse | null>(null);
 
   readonly viewDetails = output<void>();
 
   readonly metrics = (): MetricCardData[] => [
     {
       label: 'Rows validated',
-      value: this.validation()?.generated_rows ?? 0,
+      value: this.validation()?.rows_validated ?? 0,
       description: 'Generated rows checked',
       icon: 'database',
     },
     {
       label: 'Entities checked',
-      value: this.validation()?.entity_count ?? 0,
+      value: this.validation()?.entities_checked ?? 0,
       description: 'Entities included in validation',
       icon: 'account_tree',
     },
     {
       label: 'Relationships checked',
-      value: this.foreignKeyCount(),
+      value: this.validation()?.relationships_checked ?? 0,
       description: 'Foreign-key relationships checked',
       icon: 'link',
     },
     {
       label: 'Constraints checked',
-      value: this.constraintCount(),
+      value: this.validation()?.constraints_checked ?? 0,
       description: 'Business constraints checked',
       icon: 'rule',
     },
@@ -54,19 +54,10 @@ export class ResultsValidationComponent {
     },
     {
       label: 'Warnings',
-      value: this.validation()?.warnings?.length ?? 0,
+      value: this.validation()?.warning_count ?? 0,
       description: 'Validation warnings found',
       icon: 'warning',
     },
   ];
 
-  foreignKeyCount(): number {
-    const evidence = this.validation()?.evidence as Record<string, any> | undefined;
-    return evidence?.['foreign_keys']?.['relationships_checked'] ?? 0;
-  }
-
-  constraintCount(): number {
-    const evidence = this.validation()?.evidence as Record<string, any> | undefined;
-    return evidence?.['constraints']?.['constraints_checked'] ?? 0;
-  }
 }

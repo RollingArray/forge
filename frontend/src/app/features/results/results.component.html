@@ -23,7 +23,7 @@
   />
 
   <app-results-validation
-    [validation]="generationValidation()?.validation ?? null"
+    [validation]="generationValidation()"
     (viewDetails)="viewValidationDetails()"
   />
   <app-results-quality-summary
