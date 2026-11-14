@@ -1,6 +1,6 @@
 entity,field,type,identity_position,identity_strategy,generation_strategy,distribution,generator,minimum,maximum,minimum_length,maximum_length,character_set,pattern,semantic_description,semantic_mode,values
 CUSTOMER,CUSTOMER_ID,IDENTIFIER,1,SEQUENTIAL_ID,,,,,,,,,,,,
-CUSTOMER,CUSTOMER_NAME,STRING,,,RANDOM,,SEMANTIC,,,,,,,Airline or aerospace customer legal or trading name,VOCABULARY,
+CUSTOMER,CUSTOMER_NAME,STRING,,,RANDOM,,SEMANTIC,,,,,,,"Generate a reusable vocabulary of 50 distinct, realistic airline or aerospace customer legal or trading names. Target composition: 5 American-origin names (10%), 10 Indian-origin names (20%), 15 European-origin names (30%), and 20 names from other world regions (40%). Use plausible business and corporate naming conventions appropriate to each region. Generate company names, not individual personal names. Avoid duplicate names. Follow the requested regional composition when generating the 50-value vocabulary.",VOCABULARY,
 CUSTOMER,CUSTOMER_TYPE,CATEGORICAL,,,RANDOM,CATEGORICAL,,,,,,,,,,"[""AIRLINE"",""AIRCRAFT_MANUFACTURER"",""DEFENCE"",""MRO""]"
 CUSTOMER,COUNTRY,STRING,,,RANDOM,,SEMANTIC,,,,,,,Country name,VOCABULARY,
 CUSTOMER,CUSTOMER_CODE,STRING,,,RANDOM,,PATTERN,,,,,,CUS-####,,,
