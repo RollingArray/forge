@@ -169,6 +169,12 @@ export class GenerationService {
   ): Observable<GenerationQualitySummary> {
     return this.http.get<GenerationQualitySummary>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/quality/summary`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationQuality,
+        ),
+      },
     );
   }
 

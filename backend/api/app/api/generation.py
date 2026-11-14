@@ -591,7 +591,11 @@ async def get_generation_quality_summary(
         if quality is None:
             return None
 
-        value = getattr(quality, name, None)
+        if isinstance(quality, dict):
+            value = quality.get(name)
+        else:
+            value = getattr(quality, name, None)
+
         return value if isinstance(value, dict) else None
 
     return GenerationQualitySummaryResponse(

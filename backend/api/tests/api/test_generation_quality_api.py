@@ -256,6 +256,49 @@ def test_quality_summary_returns_only_six_summary_metrics(monkeypatch):
     }
 
 
+def test_quality_summary_reads_persisted_dictionary_profile(monkeypatch):
+    # The quality store returns dictionaries, not Pydantic objects.
+    quality = make_quality().model_dump()
+
+    configure_access(monkeypatch)
+    configure_job(monkeypatch, make_job(quality=quality))
+
+    response = asyncio.run(
+        generation_api.get_generation_quality_summary(
+            data_model_id=DATA_MODEL_ID,
+            job_id=JOB_ID,
+            user=USER,
+        )
+    )
+
+    result = response.model_dump()
+
+    assert result["population_fidelity"] == {
+        "value": 0.95,
+        "measurement_status": "AVAILABLE",
+    }
+    assert result["relationship_count"] == {
+        "value": 5,
+        "measurement_status": "AVAILABLE",
+    }
+    assert result["distribution_count"] == {
+        "value": 12,
+        "measurement_status": "AVAILABLE",
+    }
+    assert result["statistical_count"] == {
+        "value": 8,
+        "measurement_status": "AVAILABLE",
+    }
+    assert result["throughput"] == {
+        "value": 125.5,
+        "measurement_status": "AVAILABLE",
+    }
+    assert result["identity_count"] == {
+        "value": 3,
+        "measurement_status": "AVAILABLE",
+    }
+
+
 def test_quality_summary_returns_unavailable_metrics_without_profile(
     monkeypatch,
 ):
