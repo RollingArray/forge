@@ -157,6 +157,27 @@ class GenerationQualityResponse(BaseModel):
     quality: GenerationQualityDimensions | None = None
 
 
+
+class GenerationQualityMetricSummary(BaseModel):
+    """One compact metric displayed in the Results quality summary."""
+
+    value: float | int | None = None
+    measurement_status: str
+
+
+class GenerationQualitySummaryResponse(BaseModel):
+    """Compact quality metrics for the Results summary screen."""
+
+    data_model_id: str
+    job_id: str
+    population_fidelity: GenerationQualityMetricSummary
+    relationship_count: GenerationQualityMetricSummary
+    distribution_count: GenerationQualityMetricSummary
+    statistical_count: GenerationQualityMetricSummary
+    throughput: GenerationQualityMetricSummary
+    identity_count: GenerationQualityMetricSummary
+
+
 class GenerationJobResponse(BaseModel):
     """Production API representation of a generation job."""
 
@@ -198,50 +219,25 @@ class GenerationJobResponse(BaseModel):
         return self.total_generated_rows / self.elapsed_seconds
 
 
-class GenerationExecutionEntityResponse(BaseModel):
-    """Execution outcome and performance for one generated entity."""
-
-    entity_name: str
-    target_rows: int = Field(ge=0)
-    generated_rows: int = Field(default=0, ge=0)
-    completed_chunks: int = Field(default=0, ge=0)
-    total_chunks: int = Field(default=0, ge=0)
-    status: GenerationEntityStatus = GenerationEntityStatus.NOT_STARTED
-    elapsed_seconds: float | None = Field(default=None, ge=0)
-    throughput_rows_per_second: float | None = Field(default=None, ge=0)
-    peak_memory_mb: float | None = Field(default=None, ge=0)
-
-
-class GenerationExecutionResponse(BaseModel):
-    """Execution-specific representation of a generation job."""
+class GenerationExecutionSummaryResponse(BaseModel):
+    """Compact execution metrics for the Results summary screen."""
 
     data_model_id: str
     job_id: str
     status: GenerationJobStatus
-    error: str | None = None
-
-    created_at: datetime
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
-
     total_target_rows: int = Field(ge=0)
     total_generated_rows: int = Field(default=0, ge=0)
-    progress: float = Field(default=0.0, ge=0.0, le=1.0)
-
     elapsed_seconds: float | None = Field(default=None, ge=0)
     peak_memory_mb: float | None = Field(default=None, ge=0)
-
-    entities: list[GenerationExecutionEntityResponse] = Field(
-        default_factory=list,
-    )
+    entity_count: int = Field(default=0, ge=0)
+    completed_entity_count: int = Field(default=0, ge=0)
+    failed_entity_count: int = Field(default=0, ge=0)
 
     @computed_field
     @property
     def throughput_rows_per_second(self) -> float | None:
         if (
-            self.started_at is None
-            or self.completed_at is None
-            or self.total_generated_rows <= 0
+            self.total_generated_rows <= 0
             or self.elapsed_seconds is None
             or self.elapsed_seconds <= 0
         ):

@@ -5,7 +5,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { GenerationJobResponse } from '../../../generate/models/generation.models';
+import { GenerationExecutionResponse } from '../../../generate/models/generation.models';
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
@@ -25,7 +25,7 @@ import { WorkspaceSectionComponent } from '../../../../shared/components/workspa
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultsExecutionSummaryComponent {
-  readonly generationJob = input<GenerationJobResponse | null>(null);
+  readonly execution = input<GenerationExecutionResponse | null>(null);
   readonly jobId = input('');
   readonly dataModelName = input('');
 
@@ -62,25 +62,52 @@ export class ResultsExecutionSummaryComponent {
     },
   ];
 
+  statusLabel(): string {
+    const status = this.execution()?.status;
+
+    switch (status) {
+      case 'COMPLETED':
+        return 'Generation completed';
+      case 'PARTIALLY_COMPLETED':
+        return 'Generation partially completed';
+      case 'FAILED':
+        return 'Generation failed';
+      case 'CANCELLED':
+        return 'Generation cancelled';
+      case 'RUNNING':
+        return 'Generation running';
+      case 'QUEUED':
+        return 'Generation queued';
+      case 'PLANNING':
+        return 'Generation planning';
+      case 'INTERRUPTED':
+        return 'Generation interrupted';
+      case 'CREATED':
+        return 'Generation created';
+      default:
+        return 'Generation status unavailable';
+    }
+  }
+
   totalTime(): number | null {
-    return this.generationJob()?.elapsed_seconds ?? null;
+    return this.execution()?.elapsed_seconds ?? null;
   }
 
   throughput(): number | null {
-    return this.generationJob()?.throughput_rows_per_second ?? null;
+    return this.execution()?.throughput_rows_per_second ?? null;
   }
 
   peakMemory(): number | null {
-    return this.generationJob()?.peak_memory_mb ?? null;
+    return this.execution()?.peak_memory_mb ?? null;
   }
 
   entityCount(): number {
-    return this.generationJob()?.entities?.length ?? 0;
+    return this.execution()?.entities?.length ?? 0;
   }
 
   completedEntityCount(): number {
     return (
-      this.generationJob()?.entities?.filter(
+      this.execution()?.entities?.filter(
         (entity) => entity.status === 'COMPLETED',
       ).length ?? 0
     );
@@ -88,14 +115,14 @@ export class ResultsExecutionSummaryComponent {
 
   failedEntityCount(): number {
     return (
-      this.generationJob()?.entities?.filter(
+      this.execution()?.entities?.filter(
         (entity) => entity.status === 'FAILED',
       ).length ?? 0
     );
   }
 
   progress(): number {
-    const job = this.generationJob();
+    const job = this.execution();
 
     if (!job?.total_target_rows) {
       return 0;

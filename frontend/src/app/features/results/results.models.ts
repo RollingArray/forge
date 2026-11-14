@@ -25,6 +25,24 @@ export interface GenerationQualityProfile {
   validation: Record<string, unknown>;
 }
 
+
+
+export interface GenerationQualityMetricSummary {
+  value: number | null;
+  measurement_status: string;
+}
+
+export interface GenerationQualitySummary {
+  data_model_id: string;
+  job_id: string;
+  population_fidelity: GenerationQualityMetricSummary;
+  relationship_count: GenerationQualityMetricSummary;
+  distribution_count: GenerationQualityMetricSummary;
+  statistical_count: GenerationQualityMetricSummary;
+  throughput: GenerationQualityMetricSummary;
+  identity_count: GenerationQualityMetricSummary;
+}
+
 export interface GenerationValidationSummary {
   valid: boolean;
   entity_count: number;

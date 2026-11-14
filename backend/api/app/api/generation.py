@@ -24,11 +24,13 @@ from app.models.generation_model import (
     GenerationArtifactPageResponse,
     GenerationArtifactResponse,
     GenerationJobResponse,
-    GenerationExecutionEntityResponse,
-    GenerationExecutionResponse,
+    GenerationExecutionSummaryResponse,
     GenerationValidationResponse,
     GenerationQualityDimensions,
     GenerationQualityResponse,
+    GenerationQualityMetricSummary,
+    GenerationQualitySummaryResponse,
+    GenerationEntityStatus,
     GenerationJobStatus,
     GenerationReadinessResponse,
 )
@@ -311,16 +313,16 @@ async def get_generation_job(
 
 
 @router.get(
-    "/{data_model_id}/generation/{job_id}/execution",
-    response_model=GenerationExecutionResponse,
+    "/{data_model_id}/generation/{job_id}/execution/summary",
+    response_model=GenerationExecutionSummaryResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_generation_execution(
+async def get_generation_execution_summary(
     data_model_id: str,
     job_id: str,
     user: AuthUser = Depends(get_authenticated_user),
-) -> GenerationExecutionResponse:
-    """Return execution outcome and performance for a generation job."""
+) -> GenerationExecutionSummaryResponse:
+    """Return compact execution metrics for the Results summary screen."""
 
     if not data_model_access_service.can_generate(
         data_model_id=data_model_id,
@@ -342,33 +344,24 @@ async def get_generation_execution(
             detail="Generation job not found.",
         )
 
-    return GenerationExecutionResponse(
+    entities = job.entities
+    return GenerationExecutionSummaryResponse(
         data_model_id=job.data_model_id,
         job_id=job.job_id,
         status=job.status,
-        error=job.error,
-        created_at=job.created_at,
-        started_at=job.started_at,
-        completed_at=job.completed_at,
         total_target_rows=job.total_target_rows,
         total_generated_rows=job.total_generated_rows,
-        progress=job.progress,
         elapsed_seconds=job.elapsed_seconds,
         peak_memory_mb=job.peak_memory_mb,
-        entities=[
-            GenerationExecutionEntityResponse(
-                entity_name=entity.entity_name,
-                target_rows=entity.target_rows,
-                generated_rows=entity.generated_rows,
-                completed_chunks=entity.completed_chunks,
-                total_chunks=entity.total_chunks,
-                status=entity.status,
-                elapsed_seconds=entity.elapsed_seconds,
-                throughput_rows_per_second=entity.throughput_rows_per_second,
-                peak_memory_mb=entity.peak_memory_mb,
-            )
-            for entity in job.entities
-        ],
+        entity_count=len(entities),
+        completed_entity_count=sum(
+            entity.status == GenerationEntityStatus.COMPLETED
+            for entity in entities
+        ),
+        failed_entity_count=sum(
+            entity.status == GenerationEntityStatus.FAILED
+            for entity in entities
+        ),
     )
 
 
@@ -453,6 +446,104 @@ async def get_generation_quality(
         data_model_id=job.data_model_id,
         job_id=job.job_id,
         quality=quality,
+    )
+
+
+@router.get(
+    "/{data_model_id}/generation/{job_id}/quality/summary",
+    response_model=GenerationQualitySummaryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_generation_quality_summary(
+    data_model_id: str,
+    job_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationQualitySummaryResponse:
+    """Return only the six metrics displayed in the Results quality summary."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    job = generation_service.get_job(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+
+    if job is None or job.data_model_id != data_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Generation job not found.",
+        )
+
+    def metric(
+        dimension: dict | None,
+        value_key: str,
+    ) -> GenerationQualityMetricSummary:
+        """Extract a summary value without exposing detailed dimension data."""
+
+        if not isinstance(dimension, dict):
+            return GenerationQualityMetricSummary(
+                value=None,
+                measurement_status="UNAVAILABLE",
+            )
+
+        value = dimension.get(value_key)
+        explicit_status = dimension.get("measurement_status")
+
+        if explicit_status:
+            measurement_status = str(explicit_status)
+        elif dimension.get("available") is False or value is None:
+            measurement_status = "UNAVAILABLE"
+        else:
+            measurement_status = "AVAILABLE"
+
+        return GenerationQualityMetricSummary(
+            value=value,
+            measurement_status=measurement_status,
+        )
+
+    quality = job.quality
+
+    def dimension(name: str) -> dict | None:
+        if quality is None:
+            return None
+
+        value = getattr(quality, name, None)
+        return value if isinstance(value, dict) else None
+
+    return GenerationQualitySummaryResponse(
+        data_model_id=job.data_model_id,
+        job_id=job.job_id,
+        population_fidelity=metric(
+            dimension("population_fidelity"),
+            "fidelity_rate",
+        ),
+        relationship_count=metric(
+            dimension("relationship_fidelity"),
+            "relationships_analyzed",
+        ),
+        distribution_count=metric(
+            dimension("distribution_fidelity"),
+            "fields_analyzed",
+        ),
+        statistical_count=metric(
+            dimension("statistical_fidelity"),
+            "numeric_fields_analyzed",
+        ),
+        throughput=metric(
+            dimension("performance"),
+            "rows_per_second",
+        ),
+        identity_count=metric(
+            dimension("identity_space_utilization"),
+            "entities_analyzed",
+        ),
     )
 
 

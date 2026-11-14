@@ -17,17 +17,17 @@
   (secondaryAction)="backToGenerate()"
 >
   <app-results-execution-summary
-    [generationJob]="generationJob()"
+    [execution]="generationExecution()"
     [jobId]="jobId"
     [dataModelName]="dataModelName()"
   />
 
   <app-results-validation
-    [validation]="generationJob()?.validation ?? null"
+    [validation]="generationValidation()?.validation ?? null"
     (viewDetails)="viewValidationDetails()"
   />
   <app-results-quality-summary
-    [quality]="generationJob()?.quality ?? null"
+    [quality]="generationQualitySummary()"
     (viewDetails)="viewQualityDetails()"
   />
 

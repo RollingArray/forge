@@ -3,7 +3,7 @@
     eyebrow="Quality"
     title="Generation Quality"
     summary="How closely the generated dataset matches the intended model and data characteristics."
-    [state]="quality() ? 'High Fidelity' : 'Unavailable'"
+    [state]="quality()?.population_fidelity?.measurement_status === 'AVAILABLE' ? 'High Fidelity' : 'Unavailable'"
   />
 
   <app-metric-grid

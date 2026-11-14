@@ -11,13 +11,13 @@
     </div>
 
     <div class="results-execution-success-content">
-      <strong>Generation completed</strong>
+      <strong>{{ statusLabel() }}</strong>
 
       <div class="results-execution-identity">
         <span>
           Job ID:
-          <strong [title]="generationJob()?.job_id ?? jobId()">
-            {{ generationJob()?.job_id ?? jobId() }}
+          <strong [title]="execution()?.job_id ?? jobId()">
+            {{ execution()?.job_id ?? jobId() }}
           </strong>
         </span>
 
@@ -40,9 +40,9 @@
 
     <div class="results-execution-progress-meta">
       <span>
-        {{ generationJob()?.total_generated_rows ?? 0 | number }}
+        {{ execution()?.total_generated_rows ?? 0 | number }}
         /
-        {{ generationJob()?.total_target_rows ?? 0 | number }}
+        {{ execution()?.total_target_rows ?? 0 | number }}
         rows generated
       </span>
 

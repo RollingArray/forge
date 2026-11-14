@@ -49,6 +49,8 @@ export enum ApiLoadingMessage {
   CreatingGenerationJob = 'Creating generation job...',
   StartingGeneration = 'Starting generation...',
   LoadingGenerationJob = 'Loading generation job...',
+  LoadingGenerationExecution = 'Loading generation execution...',
+  LoadingGenerationValidation = 'Loading generation validation...',
   LoadingGenerationCheckpoint = 'Loading generation checkpoint...',
   LoadingGeneratedFiles = 'Loading generated files...',
   LoadingArtifactPreview = 'Loading artifact preview...',

@@ -8,8 +8,10 @@ import { CommonModule } from '@angular/common';
 import { ForgeButtonComponent } from '../../../../shared/components/forge-button/forge-button.component';
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
-
-import { GenerationQualityProfile } from '../../results.models';
+import {
+  GenerationQualityMetricSummary,
+  GenerationQualitySummary,
+} from '../../results.models';
 import { WorkspaceSectionComponent } from '../../../../shared/components/workspace-section/workspace-section.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
 
@@ -28,7 +30,7 @@ import { WorkspaceHeaderComponent } from '../../../../shared/components/workspac
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultsQualitySummaryComponent {
-  readonly quality = input<GenerationQualityProfile | null>(null);
+  readonly quality = input<GenerationQualitySummary | null>(null);
   readonly viewDetails = output<void>();
 
   readonly metrics = (): MetricCardData[] => [
@@ -40,115 +42,82 @@ export class ResultsQualitySummaryComponent {
     },
     {
       label: 'Relationships analyzed',
-      value: this.relationshipCount(),
+      value: this.measurementValue(this.quality()?.relationship_count),
       description: 'Relationships evaluated',
       icon: 'account_tree',
     },
     {
       label: 'Distributions analyzed',
-      value: this.distributionCount(),
+      value: this.measurementValue(this.quality()?.distribution_count),
       description: 'Fields with distribution analysis',
       icon: 'pie_chart',
     },
     {
       label: 'Numeric fields analyzed',
-      value: this.statisticalCount(),
+      value: this.measurementValue(this.quality()?.statistical_count),
       description: 'Numeric fields evaluated',
       icon: 'query_stats',
     },
     {
       label: 'Rows / second',
-      value: typeof this.performance() === 'number'
-        ? Math.round(this.performance() as number).toLocaleString('en-US')
-        : this.performance(),
+      value: this.performance(),
       description: 'Generation throughput',
       icon: 'speed',
     },
     {
       label: 'Identity spaces analyzed',
-      value: this.identityCount(),
+      value: this.measurementValue(this.quality()?.identity_count),
       description: 'Entity identity spaces evaluated',
       icon: 'key',
     },
   ];
 
-  private measurementValue(
-    dimension: keyof GenerationQualityProfile,
-    metric: string,
-  ): number | string {
-    const profile = this.quality()?.[dimension] as
-      | Record<string, unknown>
-      | undefined;
-
-    const status = profile?.['measurement_status'];
-
-    if (status === 'FAILED') return 'Failed';
-    if (status === 'UNAVAILABLE') return 'Not available';
-    if (status === 'INVALID_CONFIGURATION') return 'Invalid configuration';
-
-    const value = profile?.[metric];
-
-    if (value === null || value === undefined || value === '') {
-      return 'Not available';
+  private statusLabel(status: string | undefined): string | null {
+    switch (status?.toUpperCase()) {
+      case 'FAILED':
+        return 'Failed';
+      case 'UNAVAILABLE':
+        return 'Not available';
+      case 'INVALID_CONFIGURATION':
+        return 'Invalid configuration';
+      default:
+        return null;
     }
-
-    const number = Number(value);
-    return Number.isFinite(number) ? number : 'Not available';
   }
 
-  populationFidelity(): string {
-    const profile = this.quality()?.population_fidelity;
-    const status = profile?.['measurement_status'];
-
-    if (status === 'FAILED') return 'Failed';
-    if (status === 'UNAVAILABLE') return 'Not available';
-    if (status === 'INVALID_CONFIGURATION') return 'Invalid configuration';
-
-    const value = profile?.['fidelity_rate'];
-
-    if (value === null || value === undefined || value === '') {
-      return 'Not available';
+  private measurementValue(
+    metric: GenerationQualityMetricSummary | undefined,
+  ): number | string {
+    const status = this.statusLabel(metric?.measurement_status);
+    if (status) {
+      return status;
     }
 
-    const fidelity = Number(value);
-
-    return Number.isFinite(fidelity)
-      ? `${(fidelity * 100).toFixed(1)}%`
+    const value = metric?.value;
+    return typeof value === 'number' && Number.isFinite(value)
+      ? value
       : 'Not available';
   }
 
-  distributionCount(): number | string {
-    return this.measurementValue(
-      'distribution_fidelity',
-      'fields_analyzed',
-    );
-  }
+  populationFidelity(): string {
+    const metric = this.quality()?.population_fidelity;
+    const status = this.statusLabel(metric?.measurement_status);
 
-  relationshipCount(): number | string {
-    return this.measurementValue(
-      'relationship_fidelity',
-      'relationships_analyzed',
-    );
-  }
+    if (status) {
+      return status;
+    }
 
-  statisticalCount(): number | string {
-    return this.measurementValue(
-      'statistical_fidelity',
-      'numeric_fields_analyzed',
-    );
+    const value = metric?.value;
+    return typeof value === 'number' && Number.isFinite(value)
+      ? `${(value * 100).toFixed(1)}%`
+      : 'Not available';
   }
 
   performance(): number | string {
-    return this.measurementValue(
-      'performance',
-      'rows_per_second',
-    );
-  }
+    const value = this.measurementValue(this.quality()?.throughput);
 
-  identityCount(): number | string {
-    return this.measurementValue(
-      'identity_space_utilization',
-      'entities_analyzed',
-    );
+    return typeof value === 'number'
+      ? Math.round(value).toLocaleString('en-US')
+      : value;
   }
 }

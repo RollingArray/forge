@@ -16,10 +16,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { GenerationService } from '../generate/services/generation.service';
 import { WorkspaceService } from '../../core/services/workspace.service';
-import { GenerationJobResponse } from '../generate/models/generation.models';
+import {
+  GenerationJobResponse,
+  GenerationExecutionResponse,
+  GenerationValidationResponse,
+} from '../generate/models/generation.models';
 import {
   GenerationArtifact,
   GenerationArtifactPreview,
+  GenerationQualitySummary,
 } from './results.models';
 
 import { ResultsExecutionSummaryComponent } from './components/results-execution-summary/results-execution-summary.component';
@@ -70,6 +75,12 @@ export class ResultsComponent {
   readonly activeStep: WorkflowStep = 'results';
 
   readonly generationJob = signal<GenerationJobResponse | null>(null);
+  readonly generationExecution =
+    signal<GenerationExecutionResponse | null>(null);
+  readonly generationValidation =
+    signal<GenerationValidationResponse | null>(null);
+  readonly generationQualitySummary =
+    signal<GenerationQualitySummary | null>(null);
   readonly dataModelName = signal('');
 
   readonly artifacts = signal<GenerationArtifact[]>([]);
@@ -86,6 +97,9 @@ export class ResultsComponent {
 
   constructor() {
     this.loadGenerationJob();
+    this.loadGenerationExecution();
+    this.loadGenerationValidation();
+    this.loadGenerationQualitySummary();
     this.loadDataModel();
     this.loadArtifacts();
   }
@@ -267,6 +281,51 @@ export class ResultsComponent {
       .subscribe({
         next: (job) => {
           this.generationJob.set(job);
+        },
+      });
+  }
+
+  private loadGenerationExecution(): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    this.generationService
+      .getGenerationExecution(this.dataModelId, this.jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (execution) => {
+          this.generationExecution.set(execution);
+        },
+      });
+  }
+
+  private loadGenerationValidation(): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    this.generationService
+      .getGenerationValidation(this.dataModelId, this.jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (validation) => {
+          this.generationValidation.set(validation);
+        },
+      });
+  }
+
+  private loadGenerationQualitySummary(): void {
+    if (!this.dataModelId || !this.jobId) {
+      return;
+    }
+
+    this.generationService
+      .getGenerationQualitySummary(this.dataModelId, this.jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (summary) => {
+          this.generationQualitySummary.set(summary);
         },
       });
   }

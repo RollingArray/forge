@@ -91,6 +91,43 @@ export interface GenerationJobResponse {
   quality?: import('../../results/results.models').GenerationQualityProfile | null;
 }
 
+export interface GenerationExecutionEntityResponse {
+  entity_name: string;
+  target_rows: number;
+  generated_rows: number;
+  completed_chunks: number;
+  total_chunks: number;
+  status: GenerationEntityStatus;
+  elapsed_seconds: number | null;
+  throughput_rows_per_second: number | null;
+  peak_memory_mb: number | null;
+}
+
+export interface GenerationExecutionResponse {
+  data_model_id: string;
+  job_id: string;
+  status: GenerationJobStatus;
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  total_target_rows: number;
+  total_generated_rows: number;
+  progress: number;
+  elapsed_seconds: number | null;
+  peak_memory_mb: number | null;
+  entities: GenerationExecutionEntityResponse[];
+  throughput_rows_per_second: number | null;
+}
+
+export interface GenerationValidationResponse {
+  data_model_id: string;
+  job_id: string;
+  validation:
+    | import('../../results/results.models').GenerationValidationSummary
+    | null;
+}
+
 export interface GenerationChunkCommittedEvent {
   entity_name: string;
   chunk_number: number;

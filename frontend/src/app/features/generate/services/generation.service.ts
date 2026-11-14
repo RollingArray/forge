@@ -7,6 +7,7 @@ import {
   GenerationArtifact,
   GenerationArtifactPreview,
   GenerationArtifactDataPage,
+  GenerationQualitySummary,
 } from '../../results/results.models';
 import { environment } from '../../../../environments/environment';
 import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum';
@@ -18,6 +19,8 @@ import {
   GenerationEntityCompletedEvent,
   GenerationSemanticCallStartedEvent,
   GenerationJobResponse,
+  GenerationExecutionResponse,
+  GenerationValidationResponse,
   ExecutionContextResponse,
   GenerationReadiness,
   GenerationSseEvent,
@@ -111,6 +114,45 @@ export class GenerationService {
           ApiLoadingMessage.LoadingGenerationJob,
         ),
       },
+    );
+  }
+
+  getGenerationExecution(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationExecutionResponse> {
+    return this.http.get<GenerationExecutionResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/execution/summary`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationExecution,
+        ),
+      },
+    );
+  }
+
+  getGenerationValidation(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationValidationResponse> {
+    return this.http.get<GenerationValidationResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/validation`,
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.LoadingGenerationValidation,
+        ),
+      },
+    );
+  }
+
+  getGenerationQualitySummary(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationQualitySummary> {
+    return this.http.get<GenerationQualitySummary>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/quality/summary`,
     );
   }
 
