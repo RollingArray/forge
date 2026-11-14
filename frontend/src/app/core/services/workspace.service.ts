@@ -14,7 +14,15 @@
 
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  forkJoin,
+  map,
+  shareReplay,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiLoadingMessage } from '../enums/api-loading-message.enum';
@@ -41,24 +49,39 @@ export class WorkspaceService {
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
 
+  private dataModelsCache$: Observable<DataModel[]> | null = null;
+
   getDataModels(): Observable<DataModel[]> {
-    return this.http
-      .get<DataModelListItemResponse[]>(
-        `${this.apiBaseUrl}/data-models`,
-        {
-          context: new HttpContext().set(
-            API_LOADING_MESSAGE,
-            ApiLoadingMessage.LoadingDataModels,
+    if (!this.dataModelsCache$) {
+      this.dataModelsCache$ = this.http
+        .get<DataModelListItemResponse[]>(
+          `${this.apiBaseUrl}/data-models`,
+          {
+            context: new HttpContext().set(
+              API_LOADING_MESSAGE,
+              ApiLoadingMessage.LoadingDataModels,
+            ),
+          },
+        )
+        .pipe(
+          map((dataModels) =>
+            dataModels.map((dataModel) =>
+              this.mapDataModel(dataModel),
+            ),
           ),
-        },
-      )
-      .pipe(
-        map((dataModels) =>
-          dataModels.map((dataModel) =>
-            this.mapDataModel(dataModel),
-          ),
-        ),
-      );
+          shareReplay({ bufferSize: 1, refCount: false }),
+          catchError((error: unknown) => {
+            this.invalidateDataModelsCache();
+            return throwError(() => error);
+          }),
+        );
+    }
+
+    return this.dataModelsCache$;
+  }
+
+  private invalidateDataModelsCache(): void {
+    this.dataModelsCache$ = null;
   }
 
   loadWorkspace(): Observable<WorkspaceData> {
@@ -178,6 +201,8 @@ export class WorkspaceService {
           ApiLoadingMessage.CreatingDataModel,
         ),
       },
+    ).pipe(
+      tap(() => this.invalidateDataModelsCache()),
     );
   }
 
@@ -194,6 +219,8 @@ export class WorkspaceService {
           ApiLoadingMessage.UpdatingDataModel,
         ),
       },
+    ).pipe(
+      tap(() => this.invalidateDataModelsCache()),
     );
   }
 
@@ -208,6 +235,8 @@ export class WorkspaceService {
           ApiLoadingMessage.DeletingDataModel,
         ),
       },
+    ).pipe(
+      tap(() => this.invalidateDataModelsCache()),
     );
   }
 

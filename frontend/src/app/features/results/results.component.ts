@@ -17,8 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { GenerationService } from '../generate/services/generation.service';
 import { WorkspaceService } from '../../core/services/workspace.service';
 import {
-  GenerationJobResponse,
-  GenerationExecutionResponse,
+  GenerationExecutionSummaryResponse,
 } from '../generate/models/generation.models';
 import {
   GenerationArtifact,
@@ -74,9 +73,8 @@ export class ResultsComponent {
 
   readonly activeStep: WorkflowStep = 'results';
 
-  readonly generationJob = signal<GenerationJobResponse | null>(null);
   readonly generationExecution =
-    signal<GenerationExecutionResponse | null>(null);
+    signal<GenerationExecutionSummaryResponse | null>(null);
   readonly generationValidation =
     signal<GenerationValidationSummaryResponse | null>(null);
   readonly generationQualitySummary =
@@ -96,7 +94,6 @@ export class ResultsComponent {
   readonly searchTerm = signal('');
 
   constructor() {
-    this.loadGenerationJob();
     this.loadGenerationExecution();
     this.loadGenerationValidation();
     this.loadGenerationQualitySummary();
@@ -268,21 +265,6 @@ export class ResultsComponent {
       'data-model',
       'generate',
     ]);
-  }
-
-  private loadGenerationJob(): void {
-    if (!this.dataModelId || !this.jobId) {
-      return;
-    }
-
-    this.generationService
-      .getGenerationJob(this.dataModelId, this.jobId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (job) => {
-          this.generationJob.set(job);
-        },
-      });
   }
 
   private loadGenerationExecution(): void {

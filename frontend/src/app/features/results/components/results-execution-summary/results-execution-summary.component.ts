@@ -5,7 +5,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { GenerationExecutionResponse } from '../../../generate/models/generation.models';
+import { GenerationExecutionSummaryResponse } from '../../../generate/models/generation.models';
 import { MetricCardData } from '../../../../shared/components/metric-grid/metric-card-data';
 import { MetricGridComponent } from '../../../../shared/components/metric-grid/metric-grid.component';
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
@@ -25,7 +25,7 @@ import { WorkspaceSectionComponent } from '../../../../shared/components/workspa
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResultsExecutionSummaryComponent {
-  readonly execution = input<GenerationExecutionResponse | null>(null);
+  readonly execution = input<GenerationExecutionSummaryResponse | null>(null);
   readonly jobId = input('');
   readonly dataModelName = input('');
 
@@ -102,23 +102,15 @@ export class ResultsExecutionSummaryComponent {
   }
 
   entityCount(): number {
-    return this.execution()?.entities?.length ?? 0;
+    return this.execution()?.entity_count ?? 0;
   }
 
   completedEntityCount(): number {
-    return (
-      this.execution()?.entities?.filter(
-        (entity) => entity.status === 'COMPLETED',
-      ).length ?? 0
-    );
+    return this.execution()?.completed_entity_count ?? 0;
   }
 
   failedEntityCount(): number {
-    return (
-      this.execution()?.entities?.filter(
-        (entity) => entity.status === 'FAILED',
-      ).length ?? 0
-    );
+    return this.execution()?.failed_entity_count ?? 0;
   }
 
   progress(): number {

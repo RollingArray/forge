@@ -120,6 +120,20 @@ export interface GenerationExecutionResponse {
   throughput_rows_per_second: number | null;
 }
 
+export interface GenerationExecutionSummaryResponse {
+  data_model_id: string;
+  job_id: string;
+  status: GenerationJobStatus;
+  total_target_rows: number;
+  total_generated_rows: number;
+  elapsed_seconds: number | null;
+  peak_memory_mb: number | null;
+  entity_count: number;
+  completed_entity_count: number;
+  failed_entity_count: number;
+  throughput_rows_per_second: number | null;
+}
+
 export interface GenerationValidationResponse {
   data_model_id: string;
   job_id: string;

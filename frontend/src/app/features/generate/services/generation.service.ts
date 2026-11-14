@@ -20,7 +20,7 @@ import {
   GenerationEntityCompletedEvent,
   GenerationSemanticCallStartedEvent,
   GenerationJobResponse,
-  GenerationExecutionResponse,
+  GenerationExecutionSummaryResponse,
   GenerationValidationResponse,
   ExecutionContextResponse,
   GenerationReadiness,
@@ -121,8 +121,8 @@ export class GenerationService {
   getGenerationExecution(
     dataModelId: string,
     jobId: string,
-  ): Observable<GenerationExecutionResponse> {
-    return this.http.get<GenerationExecutionResponse>(
+  ): Observable<GenerationExecutionSummaryResponse> {
+    return this.http.get<GenerationExecutionSummaryResponse>(
       `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/execution/summary`,
       {
         context: new HttpContext().set(
