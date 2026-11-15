@@ -296,14 +296,15 @@ Objective: Verify field modification while preserving existing configuration.
 Evidence: Playwright `--grep "MS06"`: 6 passed, including local authentication. Full Playwright regression: 89 passed.
 
 ##### MS07: Field deletion
-Status: [pending]
+Status: [done]
 Objective: Verify safe field deletion.
-- [pending] **MS07-01**: Request field deletion. Expected result: Confirmation is displayed.
-- [pending] **MS07-02**: Cancel deletion. Expected result: Field remains.
-- [pending] **MS07-03**: Delete field without dependencies. Expected result: Field is removed.
-- [pending] **MS07-04**: Delete field used by identity. Expected result: Deletion is blocked.
-- [pending] **MS07-05**: Delete field used by FK, relationship or constraint. Expected result: Dependency rules are enforced.
-- [pending] **MS07-06**: Simulate deletion failure and retry. Expected result: Error is displayed and retry works.
+- [done] **MS07-01**: Request field deletion. Expected result: Confirmation is displayed.
+- [done] **MS07-02**: Cancel deletion. Expected result: Field remains.
+- [done] **MS07-03**: Delete field without dependencies. Expected result: Field is removed.
+- [done] **MS07-04**: Delete field used by identity. Expected result: Deletion is blocked.
+- [done] **MS07-05**: Delete field used by FK, relationship or constraint. Expected result: Dependency rules are enforced.
+- [done] **MS07-06**: Simulate deletion failure and retry. Expected result: Error is displayed and retry works.
+Evidence: Playwright `--grep "MS07"`: 7 passed, including local authentication. Full Playwright regression: 95 passed. Angular production build: passed with compiler and bundle-budget warnings. E2E dependency coverage: identity and foreign key.
 
 ##### MS08: Field type and generation configuration
 Status: [pending]
