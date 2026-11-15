@@ -244,14 +244,19 @@ Evidence:
 - Commit: fe19966 (test(e2e): complete Model Studio entity creation coverage).
 
 ##### MS03: Entity editing
-Status: [pending]
+Status: [done]
 Objective: Verify modification of an existing entity.
-- [pending] **MS03-01**: Open an existing entity for editing. Expected result: Existing values populate the dialog.
-- [pending] **MS03-02**: Update entity description. Expected result: Updated description is persisted.
-- [pending] **MS03-03**: Update population. Expected result: Updated population is persisted.
-- [pending] **MS03-04**: Attempt invalid entity update. Expected result: Validation prevents invalid save.
-- [pending] **MS03-05**: Cancel editing. Expected result: Original values remain unchanged.
-- [pending] **MS03-06**: Reload after editing. Expected result: Updated entity values are displayed.
+- [done] **MS03-01**: Open an existing entity for editing. Expected result: Existing values populate the dialog.
+- [done] **MS03-02**: Update entity description. Expected result: Updated description is persisted.
+- [done] **MS03-03**: Update population. Expected result: Updated population is persisted.
+- [done] **MS03-04**: Attempt invalid entity update. Expected result: Validation prevents invalid save.
+- [done] **MS03-05**: Cancel editing. Expected result: Original values remain unchanged.
+- [done] **MS03-06**: Reload after editing. Expected result: Updated entity values are displayed.
+
+Evidence:
+- All six MS03 Playwright E2E cases passed.
+- Complete MS03 run: 7 passed, 0 failed, including local authentication setup.
+- Verified existing entity values, description and population updates, invalid population validation, cancellation without an update request, and persistence after browser reload.
 
 ##### MS04: Entity deletion
 Status: [pending]
