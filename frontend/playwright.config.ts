@@ -1,15 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'node:path';
-import { existsSync } from 'node:fs';
 
 const authFile = path.join(
   __dirname,
   'playwright',
   '.auth',
-  'user.json',
+  'local-owner.json',
 );
 
-const hasAuthState = existsSync(authFile);
+// Visual slowdown is enabled only for explicitly headed test runs.
+const isHeadedRun = process.argv.includes('--headed');
+const slowMoMs = isHeadedRun
+  ? Math.max(0, Number(process.env.FORGE_E2E_SLOW_MO_MS ?? 0) || 0)
+  : 0;
 
 export default defineConfig({
   testDir: './e2e',
@@ -30,23 +33,18 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: process.env.FORGE_E2E_BASE_URL ?? 'http://localhost:4200',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
 
   projects: [
-    ...(!hasAuthState
-      ? [
-          {
-            name: 'setup',
-            testMatch: '**/*.setup.ts',
-            testIgnore: '**/isolated/**',
-          },
-        ]
-      : []),
-
+    {
+      name: 'local-auth',
+      testMatch: '**/local-auth.setup.ts',
+      testIgnore: '**/isolated/**',
+    },
     {
       name: 'chromium',
       testIgnore: [
@@ -54,11 +52,15 @@ export default defineConfig({
         '**/isolated/**',
         '**/multi-user/**',
         '**/real-email/**',
+        '**/*demo*.spec.ts',
       ],
-      ...(hasAuthState ? {} : { dependencies: ['setup'] }),
+      dependencies: ['local-auth'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile,
+        ...(slowMoMs > 0
+          ? { launchOptions: { slowMo: slowMoMs } }
+          : {}),
       },
     },
   ],
