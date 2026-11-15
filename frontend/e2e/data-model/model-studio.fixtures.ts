@@ -52,12 +52,12 @@ async function importPopulatedSpecification(
     page,
     'Fields & Keys',
     [
-      'entity,field,type,identity_position',
-      'Customer,CUSTOMER_ID,IDENTIFIER,1',
-      'Customer,CUSTOMER_NAME,STRING,',
-      'Order,ORDER_ID,IDENTIFIER,1',
-      'Order,CUSTOMER_ID,IDENTIFIER,',
-      'Order,ORDER_NUMBER,STRING,',
+      'entity,field,type,identity_position,identity_strategy,generation_strategy,distribution,generator,minimum,maximum,minimum_length,maximum_length,character_set,pattern,semantic_description,semantic_mode,values',
+      'Customer,CUSTOMER_ID,IDENTIFIER,1,SEQUENTIAL_ID,,,,,,,,,,,,',
+      'Customer,CUSTOMER_NAME,STRING,,,RANDOM,,RANDOM_STRING,,,8,40,ALPHANUMERIC,,,,',
+      'Order,ORDER_ID,IDENTIFIER,1,SEQUENTIAL_ID,,,,,,,,,,,,',
+      'Order,CUSTOMER_ID,IDENTIFIER,,SEQUENTIAL_ID,,,,,,,,,,,,',
+      'Order,ORDER_NUMBER,STRING,,,RANDOM,,RANDOM_STRING,,,8,24,ALPHANUMERIC,,,,',
     ].join('\n'),
   );
 
