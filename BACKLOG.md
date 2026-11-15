@@ -259,14 +259,20 @@ Evidence:
 - Verified existing entity values, description and population updates, invalid population validation, cancellation without an update request, and persistence after browser reload.
 
 ##### MS04: Entity deletion
-Status: [pending]
+Status: [done]
 Objective: Verify safe entity deletion and dependency handling.
-- [pending] **MS04-01**: Request entity deletion. Expected result: Confirmation is displayed.
-- [pending] **MS04-02**: Cancel deletion. Expected result: Entity remains.
-- [pending] **MS04-03**: Confirm deletion of an eligible entity. Expected result: Entity is deleted.
-- [pending] **MS04-04**: Attempt deletion with dependent fields or model structures. Expected result: Dependency rules are enforced.
-- [pending] **MS04-05**: Simulate deletion API failure. Expected result: Error is displayed and state is retained.
-- [pending] **MS04-06**: Retry deletion after failure. Expected result: Deletion can complete successfully.
+- [done] **MS04-01**: Request entity deletion. Expected result: Confirmation is displayed.
+- [done] **MS04-02**: Cancel deletion. Expected result: Entity remains.
+- [done] **MS04-03**: Confirm deletion of an eligible entity. Expected result: Entity is deleted.
+- [done] **MS04-04**: Attempt deletion with dependent fields or model structures. Expected result: Dependency rules are enforced.
+- [done] **MS04-05**: Simulate deletion API failure. Expected result: Error is displayed and state is retained.
+- [done] **MS04-06**: Retry deletion after failure. Expected result: Deletion can complete successfully.
+
+Evidence:
+- All six MS04 Playwright E2E cases passed.
+- Complete MS04 run: 7 passed, 0 failed, including local authentication setup.
+- Verified deletion confirmation, cancellation without deletion, successful HTTP 204 deletion, HTTP 409 dependency protection, HTTP 500 failure handling with retained state, and successful retry after failure.
+- No application code changes were required.
 
 ##### MS05: Field creation
 Status: [pending]
