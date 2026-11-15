@@ -286,13 +286,14 @@ Objective: Verify adding fields to an entity.
 Evidence: Playwright `--grep "MS05"`: 7 passed, including local authentication. Angular production build: passed.
 
 ##### MS06: Field editing
-Status: [pending]
+Status: [done]
 Objective: Verify field modification while preserving existing configuration.
-- [pending] **MS06-01**: Open existing field. Expected result: Existing configuration is populated.
-- [pending] **MS06-02**: Edit permitted field properties. Expected result: Changes are saved.
-- [pending] **MS06-03**: Verify locked configuration options. Expected result: Restricted options cannot be changed.
-- [pending] **MS06-04**: Cancel field editing. Expected result: Original configuration remains.
-- [pending] **MS06-05**: Reload after editing. Expected result: Saved field configuration is retained.
+- [done] **MS06-01**: Open existing field. Expected result: Existing configuration is populated.
+- [done] **MS06-02**: Edit permitted field properties. Expected result: Changes are saved.
+- [done] **MS06-03**: Verify locked configuration options. Expected result: Restricted options cannot be changed.
+- [done] **MS06-04**: Cancel field editing. Expected result: Original configuration remains.
+- [done] **MS06-05**: Reload after editing. Expected result: Saved field configuration is retained.
+Evidence: Playwright `--grep "MS06"`: 6 passed, including local authentication. Full Playwright regression: 89 passed.
 
 ##### MS07: Field deletion
 Status: [pending]
