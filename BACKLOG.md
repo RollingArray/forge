@@ -275,14 +275,15 @@ Evidence:
 - No application code changes were required.
 
 ##### MS05: Field creation
-Status: [pending]
+Status: [done]
 Objective: Verify adding fields to an entity.
-- [pending] **MS05-01**: Open field creation dialog. Expected result: Dialog opens in create mode.
-- [pending] **MS05-02**: Create a valid field. Expected result: Field is created.
-- [pending] **MS05-03**: Create field with empty name. Expected result: Save is blocked.
-- [pending] **MS05-04**: Create duplicate field name. Expected result: Duplicate is rejected.
-- [pending] **MS05-05**: Cancel field creation. Expected result: No field is persisted.
-- [pending] **MS05-06**: Reload after creation. Expected result: Field appears in the entity.
+- [done] **MS05-01**: Open field creation dialog. Expected result: Dialog opens in create mode.
+- [done] **MS05-02**: Create a valid field. Expected result: Field is created.
+- [done] **MS05-03**: Create field with empty name. Expected result: Save is blocked.
+- [done] **MS05-04**: Create duplicate field name. Expected result: Duplicate is rejected.
+- [done] **MS05-05**: Cancel field creation. Expected result: No field is persisted.
+- [done] **MS05-06**: Reload after creation. Expected result: Field appears in the entity.
+Evidence: Playwright `--grep "MS05"`: 7 passed, including local authentication. Angular production build: passed.
 
 ##### MS06: Field editing
 Status: [pending]
