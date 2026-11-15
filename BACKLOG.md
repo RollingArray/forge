@@ -190,7 +190,530 @@ Exit criteria:
 - Unknown presentation values do not break the activity feed.
 - Relevant tests pass and behavior is verified through the FORGE UI.
 
-#### WP-06: Full Release Candidate acceptance
+#### WP-06: Model Studio E2E test implementation
+Priority: P0
+Status: [active]
+
+Objective:
+- Implement and execute the finalized FORGE Model Studio E2E Test Catalogue.
+- Complete all 28 suites, MS01–MS28, one suite at a time.
+- Use Aerospace Enterprise Model v2 as the primary integrated test model.
+
+Execution standards:
+- Playwright for frontend end-to-end tests.
+- Pytest for backend regression tests.
+- Angular production build for frontend build validation.
+- Do not add Angular unit or component tests.
+- Agree the test architecture, fixtures, setup and cleanup strategy before implementation.
+- Preserve the approved suite IDs, case IDs, scenarios and expected outcomes.
+- Update each case from [pending] to [active] when work begins and [done] only after execution and required evidence pass.
+- Record relevant test evidence and commit references as work is completed.
+
+Suite and test-case tracking:
+
+##### MS01: Model Studio entry and navigation
+Status: [done]
+Objective: Verify that a user can enter Model Studio and navigate the model authoring experience.
+- [done] **MS01-01**: Open Model Studio for a valid data model. Expected result: Model Studio loads successfully.
+- [done] **MS01-02**: Load an existing specification. Expected result: Entities and relationships appear.
+- [done] **MS01-03**: Open a model with no entities. Expected result: Empty state is displayed correctly.
+- [done] **MS01-04**: Navigate between Model Studio and validation. Expected result: Navigation retains the correct data model context.
+- [done] **MS01-05**: Open an invalid or unavailable model. Expected result: Appropriate error state is displayed.
+- [done] **MS01-06**: Reload Model Studio. Expected result: Specification is loaded again from persisted state.
+
+Evidence:
+- All six MS01 Playwright E2E cases passed.
+- Full local Playwright regression: 59 passed, 0 failed.
+- Angular production build passed.
+
+##### MS02: Entity creation
+Status: [active]
+Objective: Verify creation of an entity through the UI.
+- [done] **MS02-01**: Open the create-entity dialog. Expected result: Dialog opens.
+- [done] **MS02-02**: Create entity with valid name and description. Expected result: Entity is created.
+- [pending] **MS02-03**: Create entity with population configuration. Expected result: Population is persisted.
+- [pending] **MS02-04**: Attempt to save without required name. Expected result: Save is blocked.
+- [pending] **MS02-05**: Attempt duplicate entity name. Expected result: Duplicate is rejected.
+- [pending] **MS02-06**: Cancel entity creation. Expected result: No entity is persisted.
+- [pending] **MS02-07**: Reload after successful creation. Expected result: Entity remains available.
+
+Evidence:
+- MS02-01 and MS02-02 passed in local Playwright E2E.
+- Entity creation returned HTTP 201.
+- Verified entity details, default population configuration and persistence after reload.
+
+##### MS03: Entity editing
+Status: [pending]
+Objective: Verify modification of an existing entity.
+- [pending] **MS03-01**: Open an existing entity for editing. Expected result: Existing values populate the dialog.
+- [pending] **MS03-02**: Update entity description. Expected result: Updated description is persisted.
+- [pending] **MS03-03**: Update population. Expected result: Updated population is persisted.
+- [pending] **MS03-04**: Attempt invalid entity update. Expected result: Validation prevents invalid save.
+- [pending] **MS03-05**: Cancel editing. Expected result: Original values remain unchanged.
+- [pending] **MS03-06**: Reload after editing. Expected result: Updated entity values are displayed.
+
+##### MS04: Entity deletion
+Status: [pending]
+Objective: Verify safe entity deletion and dependency handling.
+- [pending] **MS04-01**: Request entity deletion. Expected result: Confirmation is displayed.
+- [pending] **MS04-02**: Cancel deletion. Expected result: Entity remains.
+- [pending] **MS04-03**: Confirm deletion of an eligible entity. Expected result: Entity is deleted.
+- [pending] **MS04-04**: Attempt deletion with dependent fields or model structures. Expected result: Dependency rules are enforced.
+- [pending] **MS04-05**: Simulate deletion API failure. Expected result: Error is displayed and state is retained.
+- [pending] **MS04-06**: Retry deletion after failure. Expected result: Deletion can complete successfully.
+
+##### MS05: Field creation
+Status: [pending]
+Objective: Verify adding fields to an entity.
+- [pending] **MS05-01**: Open field creation dialog. Expected result: Dialog opens in create mode.
+- [pending] **MS05-02**: Create a valid field. Expected result: Field is created.
+- [pending] **MS05-03**: Create field with empty name. Expected result: Save is blocked.
+- [pending] **MS05-04**: Create duplicate field name. Expected result: Duplicate is rejected.
+- [pending] **MS05-05**: Cancel field creation. Expected result: No field is persisted.
+- [pending] **MS05-06**: Reload after creation. Expected result: Field appears in the entity.
+
+##### MS06: Field editing
+Status: [pending]
+Objective: Verify field modification while preserving existing configuration.
+- [pending] **MS06-01**: Open existing field. Expected result: Existing configuration is populated.
+- [pending] **MS06-02**: Edit permitted field properties. Expected result: Changes are saved.
+- [pending] **MS06-03**: Verify locked configuration options. Expected result: Restricted options cannot be changed.
+- [pending] **MS06-04**: Cancel field editing. Expected result: Original configuration remains.
+- [pending] **MS06-05**: Reload after editing. Expected result: Saved field configuration is retained.
+
+##### MS07: Field deletion
+Status: [pending]
+Objective: Verify safe field deletion.
+- [pending] **MS07-01**: Request field deletion. Expected result: Confirmation is displayed.
+- [pending] **MS07-02**: Cancel deletion. Expected result: Field remains.
+- [pending] **MS07-03**: Delete field without dependencies. Expected result: Field is removed.
+- [pending] **MS07-04**: Delete field used by identity. Expected result: Deletion is blocked.
+- [pending] **MS07-05**: Delete field used by FK, relationship or constraint. Expected result: Dependency rules are enforced.
+- [pending] **MS07-06**: Simulate deletion failure and retry. Expected result: Error is displayed and retry works.
+
+##### MS08: Field type and generation configuration
+Status: [pending]
+Objective: Verify all supported field types and their configuration options.
+- [pending] **MS08-01**: Create IDENTIFIER field. Expected result: Sequential identity values.
+- [pending] **MS08-02**: Create STRING with RANDOM_STRING. Expected result: Values respect configured length.
+- [pending] **MS08-03**: RANDOM_STRING with ALPHA. Expected result: Alphabetic characters only.
+- [pending] **MS08-04**: RANDOM_STRING with DIGITS. Expected result: Numeric characters only.
+- [pending] **MS08-05**: RANDOM_STRING with ALPHANUMERIC. Expected result: Only permitted characters.
+- [pending] **MS08-06**: Configure minimum and maximum string length. Expected result: Generated lengths stay within range.
+- [pending] **MS08-07**: Configure STRING with PATTERN. Expected result: Generated values follow pattern tokens.
+- [pending] **MS08-08**: Pattern containing literal characters. Expected result: Literal characters are preserved.
+- [pending] **MS08-09**: Configure STRING with SEMANTIC / UNIQUE. Expected result: Each requested row receives its corresponding unique semantic value.
+- [pending] **MS08-10**: Configure STRING with SEMANTIC / VOCABULARY. Expected result: Generated values come from semantic vocabulary.
+- [pending] **MS08-11**: Configure INTEGER with UNIFORM. Expected result: Whole-number values remain within bounds.
+- [pending] **MS08-12**: Configure INTEGER with DISCRETE_UNIFORM. Expected result: Whole-number values remain within bounds.
+- [pending] **MS08-13**: Configure DECIMAL with UNIFORM. Expected result: Decimal values remain within bounds.
+- [pending] **MS08-14**: Configure DECIMAL with NORMAL. Expected result: Bounded normal values are produced.
+- [pending] **MS08-15**: Configure DECIMAL with precision and scale. Expected result: Values respect configured decimal grid.
+- [pending] **MS08-16**: Configure DECIMAL without precision and scale. Expected result: Valid bounded decimal values are produced.
+- [pending] **MS08-17**: Configure BOOLEAN. Expected result: Valid boolean values are produced.
+- [pending] **MS08-18**: Configure CATEGORICAL. Expected result: Values belong to the configured set.
+- [pending] **MS08-19**: Save and reload each field type. Expected result: Configuration remains intact.
+- [pending] **MS08-20**: Enter invalid configuration parameters. Expected result: UI prevents invalid save.
+- [pending] **MS08-21**: Submit unsupported generation configuration through API. Expected result: Backend rejects unsupported configuration.
+
+##### MS09: Identity and primary keys
+Status: [pending]
+Objective: Verify single-field identity creation and integrity.
+- [pending] **MS09-01**: Open identity dialog. Expected result: Existing identity state is displayed.
+- [pending] **MS09-02**: Select one field as identity. Expected result: Field is selected.
+- [pending] **MS09-03**: Save identity. Expected result: Identity is persisted.
+- [pending] **MS09-04**: Attempt empty identity. Expected result: Save is blocked.
+- [pending] **MS09-05**: Attempt identity with undefined field. Expected result: Backend rejects it.
+- [pending] **MS09-06**: Attempt duplicate identity field. Expected result: Duplicate is rejected.
+- [pending] **MS09-07**: Use IDENTIFIER field without SEQUENTIAL_ID. Expected result: Validation rejects configuration.
+- [pending] **MS09-08**: Use valid sequential identifier. Expected result: Identity configuration is accepted.
+- [pending] **MS09-09**: Verify generated identity values. Expected result: Values are unique and non-null.
+- [pending] **MS09-10**: Edit existing identity. Expected result: Updated identity is persisted.
+- [pending] **MS09-11**: Cancel identity changes. Expected result: Original identity remains.
+- [pending] **MS09-12**: Reload specification. Expected result: Identity is preserved.
+- [pending] **MS09-13**: Generate multiple records. Expected result: Identity uniqueness holds across generated rows.
+- [pending] **MS09-14**: Validate identity with missing or null values. Expected result: Integrity validation reports failure.
+
+##### MS10: Composite identity keys
+Status: [pending]
+Objective: Verify multi-field identity definitions and ordering.
+- [pending] **MS10-01**: Open identity dialog with existing composite key. Expected result: All identity fields are selected.
+- [pending] **MS10-02**: Select multiple fields. Expected result: Multiple fields can be selected.
+- [pending] **MS10-03**: Save composite identity. Expected result: Ordered field list is persisted.
+- [pending] **MS10-04**: Attempt duplicate component. Expected result: Duplicate is rejected.
+- [pending] **MS10-05**: Attempt undefined component. Expected result: Validation rejects it.
+- [pending] **MS10-06**: Edit composite identity. Expected result: Updated components are persisted.
+- [pending] **MS10-07**: Cancel composite identity edit. Expected result: Original composite key remains.
+- [pending] **MS10-08**: Generate data using composite identity. Expected result: Combined values uniquely identify rows.
+- [pending] **MS10-09**: Verify duplicate composite key detection. Expected result: Validator reports duplicate identity.
+- [pending] **MS10-10**: Reload specification. Expected result: Component ordering is preserved.
+
+##### MS11: Foreign keys
+Status: [pending]
+Objective: Verify single-field FK creation and integrity.
+- [pending] **MS11-01**: Open FK dialog. Expected result: Dialog opens.
+- [pending] **MS11-02**: Select source entity. Expected result: Source is correctly identified.
+- [pending] **MS11-03**: Select target entity. Expected result: Target is correctly identified.
+- [pending] **MS11-04**: Attempt same source and target. Expected result: Invalid self-reference is prevented.
+- [pending] **MS11-05**: Select target without identity. Expected result: FK cannot be saved.
+- [pending] **MS11-06**: Resolve matching source and target fields. Expected result: Mapping is derived correctly.
+- [pending] **MS11-07**: Source field missing. Expected result: Save is blocked.
+- [pending] **MS11-08**: Create valid FK. Expected result: FK is persisted.
+- [pending] **MS11-09**: Attempt duplicate FK. Expected result: Duplicate is rejected.
+- [pending] **MS11-10**: Edit FK. Expected result: Mapping remains valid.
+- [pending] **MS11-11**: Cancel FK edit. Expected result: Original FK remains.
+- [pending] **MS11-12**: Delete FK with no relationship dependency. Expected result: FK is deleted.
+- [pending] **MS11-13**: Delete FK with dependent relationship. Expected result: Deletion is blocked.
+- [pending] **MS11-14**: Reload specification. Expected result: FK remains persisted.
+
+##### MS12: Composite foreign keys
+Status: [pending]
+Objective: Verify FK mappings derived from composite target identity.
+- [pending] **MS12-01**: Open FK dialog. Expected result: Source and target entities are available.
+- [pending] **MS12-02**: Attempt same source and target. Expected result: Invalid endpoint combination is prevented.
+- [pending] **MS12-03**: Open from entity context. Expected result: Source is preselected.
+- [pending] **MS12-04**: Verify source and target identity requirements. Expected result: FK requires valid target identity.
+- [pending] **MS12-05**: Select target without identity. Expected result: Save is blocked.
+- [pending] **MS12-06**: Create single-field mapping. Expected result: Mapping is derived automatically.
+- [pending] **MS12-07**: Create composite mapping. Expected result: All target identity components are mapped.
+- [pending] **MS12-08**: Source fields missing. Expected result: FK cannot be saved.
+- [pending] **MS12-09**: Change target entity. Expected result: Mapping is recalculated.
+- [pending] **MS12-10**: Attempt duplicate FK. Expected result: Duplicate is rejected.
+- [pending] **MS12-11**: Save valid FK. Expected result: FK is persisted.
+- [pending] **MS12-12**: Edit existing FK. Expected result: Endpoints remain locked.
+- [pending] **MS12-13**: Cancel edit. Expected result: Original mapping is preserved.
+- [pending] **MS12-14**: Request deletion and cancel. Expected result: FK remains.
+- [pending] **MS12-15**: Delete FK used by relationship. Expected result: Deletion is blocked.
+- [pending] **MS12-16**: Delete FK after removing dependency. Expected result: FK is deleted.
+- [pending] **MS12-17**: Simulate deletion failure and retry. Expected result: Error and retry behavior work.
+
+##### MS13: Relationships
+Status: [pending]
+Objective: Verify that relationships resolve through existing compatible foreign keys.
+- [pending] **MS13-01**: Open relationship dialog. Expected result: Entity endpoints are available.
+- [pending] **MS13-02**: Attempt same source and target. Expected result: Invalid endpoints are prevented.
+- [pending] **MS13-03**: Open from entity context. Expected result: Source is preselected.
+- [pending] **MS13-04**: Select valid endpoints. Expected result: Endpoints are accepted.
+- [pending] **MS13-05**: Select endpoints without compatible FK. Expected result: User is prompted to define FK first.
+- [pending] **MS13-06**: Resolve existing FK mapping. Expected result: Correct field mapping is displayed.
+- [pending] **MS13-07**: Multiple FKs between endpoints. Expected result: Ambiguity warning is displayed.
+- [pending] **MS13-08**: Verify relationship options after FK resolution. Expected result: Options become available only after resolution.
+- [pending] **MS13-09**: Select ONE_TO_ONE. Expected result: Type is saved correctly.
+- [pending] **MS13-10**: Select ONE_TO_MANY. Expected result: Type is saved correctly.
+- [pending] **MS13-11**: Select MANY_TO_ONE. Expected result: Type is saved correctly.
+- [pending] **MS13-12**: Select MANY_TO_MANY. Expected result: Type is saved correctly.
+- [pending] **MS13-13**: Set source participation. Expected result: Source participation is saved.
+- [pending] **MS13-14**: Set target participation. Expected result: Target participation is saved.
+- [pending] **MS13-15**: Test MANDATORY / MANDATORY. Expected result: Both endpoints require participation.
+- [pending] **MS13-16**: Test MANDATORY / OPTIONAL. Expected result: Source is mandatory, target optional.
+- [pending] **MS13-17**: Test OPTIONAL / MANDATORY. Expected result: Source is optional, target mandatory.
+- [pending] **MS13-18**: Test OPTIONAL / OPTIONAL. Expected result: Both endpoints are optional.
+- [pending] **MS13-19**: Edit relationship. Expected result: Endpoints remain locked; type and participation can be updated.
+- [pending] **MS13-20**: Cancel or confirm deletion. Expected result: Cancellation preserves relationship; confirmation deletes it.
+
+##### MS14: Relationship constraints
+Status: [pending]
+Objective: Verify relationship-level restrictions and consistency.
+- [pending] **MS14-01**: Create relationship with valid FK. Expected result: Relationship is accepted.
+- [pending] **MS14-02**: Create relationship with incompatible FK. Expected result: Validation rejects it.
+- [pending] **MS14-03**: Verify relationship cardinality against generated data. Expected result: Cardinality violations are detected.
+- [pending] **MS14-04**: Verify mandatory source participation. Expected result: Missing required participation is detected.
+- [pending] **MS14-05**: Verify mandatory target participation. Expected result: Missing required participation is detected.
+- [pending] **MS14-06**: Verify optional participation. Expected result: Missing optional participation is not treated as mandatory failure.
+- [pending] **MS14-07**: Edit relationship participation. Expected result: Updated rule is applied.
+- [pending] **MS14-08**: Delete relationship. Expected result: Dependent FK can subsequently be removed.
+
+##### MS15: Field constraints
+Status: [pending]
+Objective: Verify constraint authoring and generated-data validation.
+- [pending] **MS15-01**: Open constraint dialog. Expected result: Dialog opens.
+- [pending] **MS15-02**: Select target field. Expected result: Correct field is available.
+- [pending] **MS15-03**: Select comparison operator. Expected result: Supported operator is accepted.
+- [pending] **MS15-04**: Enter comparison value. Expected result: Value is accepted.
+- [pending] **MS15-05**: Save valid constraint. Expected result: Constraint is persisted.
+- [pending] **MS15-06**: Attempt missing field. Expected result: Save is blocked.
+- [pending] **MS15-07**: Attempt unsupported operator. Expected result: Backend rejects it.
+- [pending] **MS15-08**: Edit existing constraint. Expected result: Existing values populate.
+- [pending] **MS15-09**: Update operator. Expected result: Updated operator is persisted.
+- [pending] **MS15-10**: Update comparison value. Expected result: Updated value is persisted.
+- [pending] **MS15-11**: Cancel editing. Expected result: Original constraint remains.
+- [pending] **MS15-12**: Delete constraint. Expected result: Constraint is removed.
+- [pending] **MS15-13**: Validate > constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-14**: Validate >= constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-15**: Validate < constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-16**: Validate <= constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-17**: Validate == constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-18**: Validate != constraint. Expected result: Correct values pass; violations fail.
+- [pending] **MS15-19**: Verify constraint result in validation report. Expected result: Correct status and diagnostic are shown.
+- [pending] **MS15-20**: Reload specification. Expected result: Constraint persists.
+
+##### MS16: Entity AI assistance
+Status: [pending]
+Objective: Verify entity AI proposal lifecycle.
+- [pending] **MS16-01**: Load AI examples. Expected result: Examples are displayed.
+- [pending] **MS16-02**: Select an example. Expected result: Prompt is populated.
+- [pending] **MS16-03**: Submit valid prompt. Expected result: AI request is submitted.
+- [pending] **MS16-04**: Submit empty prompt. Expected result: Request is blocked.
+- [pending] **MS16-05**: Submit while generating. Expected result: Duplicate request is blocked.
+- [pending] **MS16-06**: Receive proposal. Expected result: Proposal is displayed.
+- [pending] **MS16-07**: Regenerate proposal. Expected result: New proposal is requested.
+- [pending] **MS16-08**: Apply proposal. Expected result: Entity name, description and population populate form.
+- [pending] **MS16-09**: Record acceptance. Expected result: Acceptance activity is recorded.
+- [pending] **MS16-10**: Edit proposed values. Expected result: User can modify values before saving.
+- [pending] **MS16-11**: Cancel without save. Expected result: Specification remains unchanged.
+- [pending] **MS16-12**: Simulate AI error. Expected result: Error is displayed and retry is possible.
+
+##### MS17: Field AI assistance
+Status: [pending]
+Objective: Verify field AI proposal lifecycle.
+- [pending] **MS17-01**: Load field AI examples. Expected result: Examples are displayed.
+- [pending] **MS17-02**: Select example. Expected result: Prompt is populated.
+- [pending] **MS17-03**: Submit valid prompt. Expected result: AI request is submitted.
+- [pending] **MS17-04**: Submit empty prompt. Expected result: Request is blocked.
+- [pending] **MS17-05**: Submit duplicate request. Expected result: Duplicate request is blocked.
+- [pending] **MS17-06**: Receive field name and type proposal. Expected result: Proposal is displayed.
+- [pending] **MS17-07**: Receive identity strategy. Expected result: Valid identity configuration is displayed.
+- [pending] **MS17-08**: Receive generator and distribution. Expected result: Supported configuration is displayed.
+- [pending] **MS17-09**: Receive CLARIFY response. Expected result: Clarification message is displayed.
+- [pending] **MS17-10**: Receive UNSUPPORTED response. Expected result: Unsupported request is explained.
+- [pending] **MS17-11**: Simulate AI API error. Expected result: Error is displayed.
+- [pending] **MS17-12**: Regenerate proposal. Expected result: New proposal is requested.
+- [pending] **MS17-13**: Apply proposal. Expected result: Manual field form is populated.
+- [pending] **MS17-14**: Review and modify proposal. Expected result: User can change proposed values.
+- [pending] **MS17-15**: Save reviewed field. Expected result: Field is persisted.
+
+##### MS18: Identity AI assistance
+Status: [pending]
+Objective: Verify AI-assisted single and composite identity creation.
+- [pending] **MS18-01**: Check AI capability. Expected result: Availability is displayed.
+- [pending] **MS18-02**: AI unavailable. Expected result: Prompt and examples are disabled appropriately.
+- [pending] **MS18-03**: Submit single-identity example. Expected result: Request is accepted.
+- [pending] **MS18-04**: Submit composite-identity example. Expected result: Request is accepted.
+- [pending] **MS18-05**: Submit empty prompt. Expected result: Request is blocked.
+- [pending] **MS18-06**: Generate proposal. Expected result: Proposal is displayed.
+- [pending] **MS18-07**: Receive single-field proposal. Expected result: Correct field is proposed.
+- [pending] **MS18-08**: Receive composite proposal. Expected result: Multiple fields are proposed.
+- [pending] **MS18-09**: Receive CLARIFY response. Expected result: Clarification is displayed.
+- [pending] **MS18-10**: Receive UNSUPPORTED response. Expected result: Unsupported request is explained.
+- [pending] **MS18-11**: Simulate AI error. Expected result: Error is displayed.
+- [pending] **MS18-12**: Regenerate. Expected result: New proposal is requested.
+- [pending] **MS18-13**: Apply proposal. Expected result: Selected fields are updated.
+- [pending] **MS18-14**: Record acceptance. Expected result: Acceptance activity is recorded.
+- [pending] **MS18-15**: Save identity. Expected result: Reviewed identity is persisted.
+- [pending] **MS18-16**: Cancel after applying proposal. Expected result: Persisted identity remains unchanged.
+
+##### MS19: Relationship AI assistance
+Status: [pending]
+Objective: Verify AI-assisted relationship proposals.
+- [pending] **MS19-01**: Check AI capability and examples. Expected result: Availability is displayed.
+- [pending] **MS19-02**: Submit relationship prompt. Expected result: Request is accepted.
+- [pending] **MS19-03**: Submit empty prompt. Expected result: Request is blocked.
+- [pending] **MS19-04**: Receive source and target proposal. Expected result: Endpoints are displayed.
+- [pending] **MS19-05**: Receive type and participation proposal. Expected result: Proposed settings are displayed.
+- [pending] **MS19-06**: Receive CLARIFY response. Expected result: Clarification is displayed.
+- [pending] **MS19-07**: Receive UNSUPPORTED response. Expected result: Unsupported request is explained.
+- [pending] **MS19-08**: Simulate API error. Expected result: Error is displayed.
+- [pending] **MS19-09**: Regenerate proposal. Expected result: New proposal is requested.
+- [pending] **MS19-10**: Apply proposal. Expected result: All five settings populate the form.
+- [pending] **MS19-11**: Record acceptance. Expected result: Acceptance activity is recorded.
+- [pending] **MS19-12**: Apply proposal without compatible FK. Expected result: Relationship cannot be saved.
+- [pending] **MS19-13**: Save reviewed relationship. Expected result: Relationship is persisted.
+
+##### MS20: Constraint AI assistance
+Status: [pending]
+Objective: Verify AI-assisted constraint proposals.
+- [pending] **MS20-01**: Load examples. Expected result: Examples are displayed.
+- [pending] **MS20-02**: Submit prompt. Expected result: Request is accepted.
+- [pending] **MS20-03**: Submit empty prompt. Expected result: Request is blocked.
+- [pending] **MS20-04**: Receive proposal. Expected result: Entity, field, operator and value are displayed.
+- [pending] **MS20-05**: Receive CLARIFY response. Expected result: Clarification is displayed.
+- [pending] **MS20-06**: Receive UNSUPPORTED response. Expected result: Unsupported request is explained.
+- [pending] **MS20-07**: Simulate API error. Expected result: Error is displayed.
+- [pending] **MS20-08**: Regenerate. Expected result: New proposal is requested.
+- [pending] **MS20-09**: Apply proposal. Expected result: Constraint form is populated.
+- [pending] **MS20-10**: Verify field/operator/value. Expected result: Correct values appear.
+- [pending] **MS20-11**: Edit proposal value. Expected result: Only the intended value changes.
+- [pending] **MS20-12**: Record acceptance. Expected result: Acceptance activity is recorded.
+- [pending] **MS20-13**: Save reviewed constraint. Expected result: Constraint is persisted.
+
+##### MS21: CSV wizard
+Status: [pending]
+Objective: Verify CSV import workflow navigation and state.
+- [pending] **MS21-01**: Open CSV wizard. Expected result: Wizard opens.
+- [pending] **MS21-02**: Navigate between wizard steps. Expected result: Correct step is displayed.
+- [pending] **MS21-03**: Upload valid CSV set. Expected result: Files are accepted.
+- [pending] **MS21-04**: Upload unsupported or missing file. Expected result: Validation message appears.
+- [pending] **MS21-05**: Navigate backwards. Expected result: Previous state is retained.
+- [pending] **MS21-06**: Cancel wizard. Expected result: No unintended import is applied.
+- [pending] **MS21-07**: Reopen wizard. Expected result: Initial or persisted state is correct.
+- [pending] **MS21-08**: Complete wizard navigation. Expected result: User reaches the intended final step.
+
+##### MS22: CSV validation
+Status: [pending]
+Objective: Verify CSV schema and data validation.
+- [pending] Required CSV files and headers
+- [pending] Unexpected columns
+- [pending] Missing required values
+- [pending] Invalid field types and configuration values
+- [pending] Invalid identity definitions
+- [pending] Invalid FK source/target fields
+- [pending] Invalid relationship endpoints
+- [pending] Invalid constraint definitions
+- [pending] Row-level errors and actionable diagnostics
+- [pending] Validation summary and error location
+
+##### MS23: CSV preview
+Status: [pending]
+Objective: Verify imported specification preview before applying it.
+- [pending] Parsed entities and fields match CSV input
+- [pending] Identity fields and ordering are displayed correctly
+- [pending] FK and relationship mappings are resolved correctly
+- [pending] Constraints appear with the expected field and operator
+- [pending] Preview accurately represents validation errors
+- [pending] Returning to previous steps does not silently alter input
+- [pending] Preview does not persist the specification prematurely
+
+##### MS24: CSV apply and stale protection
+Status: [pending]
+Objective: Verify applying the imported specification safely.
+- [pending] Valid CSV import is applied
+- [pending] Imported entities, fields, identities, FKs, relationships and constraints persist
+- [pending] Invalid CSV cannot be applied
+- [pending] Repeated submission does not create duplicate structures
+- [pending] Stale specification state is detected
+- [pending] Failed import leaves specification consistent
+- [pending] Reload confirms the applied specification
+- [pending] User can recover from a failed or stale operation
+
+##### MS25: Model integrity and validation
+Status: [pending]
+Objective: Verify the integrity of the complete specification and generated dataset.
+- [pending] **MS25-01**: Validate field schema. Expected result: Field definitions conform to specification.
+- [pending] **MS25-02**: Validate field types. Expected result: Generated values conform to declared types.
+- [pending] **MS25-03**: Validate field domains. Expected result: Values conform to configured parameters.
+- [pending] **MS25-04**: Validate identity uniqueness. Expected result: No duplicate identity values.
+- [pending] **MS25-05**: Validate missing identity components. Expected result: Missing values are detected.
+- [pending] **MS25-06**: Validate FK integrity. Expected result: All FK values resolve to parent records.
+- [pending] **MS25-07**: Validate composite FK integrity. Expected result: All components map to the correct parent identity.
+- [pending] **MS25-08**: Validate dangling references. Expected result: Missing parent references are detected.
+- [pending] **MS25-09**: Validate relationship cardinality. Expected result: Cardinality violations are detected.
+- [pending] **MS25-10**: Validate mandatory participation. Expected result: Required endpoint participation is enforced.
+- [pending] **MS25-11**: Validate optional participation. Expected result: Optional participation is handled correctly.
+- [pending] **MS25-12**: Validate field constraints. Expected result: Rule violations are detected.
+- [pending] **MS25-13**: Validate semantic uniqueness. Expected result: UNIQUE semantic generation behaves as required.
+- [pending] **MS25-14**: Validate semantic vocabulary. Expected result: VOCABULARY values belong to the generated vocabulary.
+- [pending] **MS25-15**: Validate population completeness. Expected result: Expected record counts are met.
+- [pending] **MS25-16**: Validate conversion errors. Expected result: Invalid conversions are reported.
+- [pending] **MS25-17**: Validate no-row or non-evaluated cases. Expected result: NOT_EVALUATED is reported where appropriate.
+- [pending] **MS25-18**: Verify final conformance summary. Expected result: Rule-level statuses and diagnostics are consistent.
+
+##### MS26: Persistence and recovery
+Status: [pending]
+Objective: Verify that Model Studio state survives reload and navigation.
+- [pending] Entity creation and update
+- [pending] Field creation and configuration
+- [pending] Identity and composite identity
+- [pending] FK and composite FK
+- [pending] Relationship and participation
+- [pending] Field and relationship constraints
+- [pending] AI-reviewed and manually modified values
+- [pending] CSV import
+- [pending] Reload after every successful save
+- [pending] Navigation away and back
+- [pending] Failed save does not corrupt persisted state
+
+##### MS27: Error handling
+Status: [pending]
+Objective: Verify errors are visible, actionable, and recoverable.
+- [pending] API request failures
+- [pending] Validation failures
+- [pending] Duplicate creation attempts
+- [pending] Dependency-blocked deletion
+- [pending] AI capability unavailable
+- [pending] AI request failure and retry
+- [pending] Proposal acceptance tracking failure
+- [pending] CSV parsing and validation errors
+- [pending] Generation errors
+- [pending] Recovery after transient errors
+- [pending] Correct loading and busy states
+- [pending] No duplicate submission while an operation is in progress
+
+##### MS28: Integrated Model Studio journeys
+Status: [pending]
+Objective: Verify realistic end-to-end user journeys using Aerospace Enterprise Model v2.
+- [pending] **MS28-01**: Create an entity, add fields, save and reload. Expected result: Entity and fields persist.
+- [pending] **MS28-02**: Configure identity and generate data. Expected result: Identity values are correct and unique.
+- [pending] **MS28-03**: Create parent and child entities with FK. Expected result: Parent-child references are valid.
+- [pending] **MS28-04**: Create composite identity and composite FK. Expected result: All components map correctly.
+- [pending] **MS28-05**: Create FK-backed relationship. Expected result: Relationship resolves to correct FK.
+- [pending] **MS28-06**: Apply relationship participation and generate data. Expected result: Cardinality and participation validate.
+- [pending] **MS28-07**: Add constraints and generate data. Expected result: Constraints are evaluated correctly.
+- [pending] **MS28-08**: Use AI proposals, review, save and reload. Expected result: Reviewed values are persisted.
+- [pending] **MS28-09**: Import Aerospace CSV specification. Expected result: Imported model is equivalent to expected specification.
+- [pending] **MS28-10**: Generate complete Aerospace dataset. Expected result: Expected entities and record counts are produced.
+- [pending] **MS28-11**: Run generated-data verification. Expected result: Schema, types, keys, FKs, relationships and constraints pass.
+- [pending] **MS28-12**: Reload and inspect generated results. Expected result: Results and specification remain consistent.
+
+Additional suite-specific acceptance checks and implementation notes:
+
+- [pending] MS08: Verify that POISSON is rejected for INTEGER and DECIMAL generation because it is not supported by the current validator and generator, despite appearing in the shared distribution vocabulary.
+- [pending] MS16: After applying and reviewing an entity AI proposal, save the entity and reload the specification to verify persistence. Acceptance activity and specification persistence are separate operations.
+- [pending] MS25: Verify that rule-level statuses remain independently observable as PASSED, FAILED and NOT_EVALUATED.
+
+Cross-cutting evidence required for each applicable test case:
+- [pending] Record preconditions, including the data model, entities, fields and dependencies.
+- [pending] Record the Playwright UI action and visible result, including dialogs, status, validation messages or notifications.
+- [pending] Verify applicable API request payloads, response statuses and validation behavior.
+- [pending] Verify persisted specification JSON against the reviewed values.
+- [pending] Verify generated output schema, values, keys, references and record counts where applicable.
+- [pending] Verify recovery behavior, including cancellation, retry, reload or error handling.
+
+AI-specific execution requirements:
+- [pending] Verify proposal generation as a distinct step.
+- [pending] Verify applying a proposal to the manual form or selection as a distinct step.
+- [pending] Verify the user can review and modify proposed values before saving.
+- [pending] Verify saving the reviewed specification as a distinct operation.
+- [pending] Reload and independently verify the persisted values.
+- [pending] Verify acceptance activity separately; it must not be treated as equivalent to specification persistence.
+
+Execution layers:
+- [pending] Authoring flows: Playwright coverage for entities, fields, keys, FKs, relationships, constraints and AI assistance.
+- [pending] Import flows: Playwright coverage for CSV wizard, validation, preview and apply.
+- [pending] Backend regression: Pytest coverage for specification validation, generation, identity, FK, relationship and constraint logic.
+- [pending] Frontend build validation: Angular production build.
+- [pending] Integrated E2E: Playwright journeys using Aerospace Enterprise Model v2.
+- [pending] Output verification: automated assertions against generated files and actual data correctness.
+
+Aerospace Enterprise Model v2 output verification:
+- [pending] Verify entity and field presence.
+- [pending] Verify field types and formats.
+- [pending] Verify expected record counts.
+- [pending] Verify single-field and composite identity uniqueness.
+- [pending] Verify FK references and parent-child mapping.
+- [pending] Verify relationship cardinality and participation.
+- [pending] Verify constraint conformance.
+- [pending] Verify semantic value behavior.
+- [pending] Verify generated CSV files and headers.
+- [pending] Verify there are no missing, unexpected or malformed values.
+- [pending] Use fixed seeds wherever the generation interface supports them.
+- [pending] For statistical distributions, use sufficiently large populations and tolerances rather than expecting a particular random sequence.
+
+Exit criteria:
+- [pending] All 28 suites and their listed test cases are implemented and passing.
+- [pending] UI behavior and applicable API/specification persistence outcomes are verified.
+- [pending] AI proposal, apply, review, save and reload stages are independently verified.
+- [pending] CSV validation, preview, apply and stale-state protection are verified.
+- [pending] Aerospace Enterprise Model v2 integrated workflows are executed successfully.
+- [pending] Generated datasets and output files are checked for schema, types, formats, record counts, identities, foreign keys, relationships, constraints and semantic behavior.
+- [pending] Backend Pytest regression suite passes.
+- [pending] Frontend production build passes.
+- [pending] Execution evidence and relevant commit references are recorded.
+
+Completion evidence:
+- To be populated incrementally as individual test cases and suites are completed.
+
+---
+#### WP-07: Full Release Candidate acceptance
 Priority: P1
 
 Scope:
@@ -238,657 +761,7 @@ These remain visible in the engineering backlog. They may be promoted into RC sc
 
 The above indicate that source investigations have been completed.
 They do not indicate that corrective work or end-to-end acceptance has passed.
-
-### Agreed specification and execution policies
-
-- [agreed] Generation preflight:
-  Run canonical specification validation before creating a generation job
-  or its artifacts. Validation errors block generation. Warnings alone do not.
-
-- [agreed] Independent execution and conformance statuses:
-  Generation execution status and validation conformance status are separate.
-  A fully generated job may be COMPLETED while conformance is INCOMPLETE or
-  NON_CONFORMANT. Validation findings remain visible.
-
-- [agreed] Whole-specification candidate validation:
-  Field create/update validates the complete candidate specification before
-  persistence.
-
-### Outstanding product and specification decisions
-
-- [decision] Confirm the supported field-type vocabulary, including whether
-  DATE is intentionally unsupported.
-- [decision] Define which generation parameters must be validated during
-  specification authoring and which may be checked at runtime.
-- [decision] Define the reporting semantics for NOT_EVALUATED validation rules.
-- [decision] Confirm whether data-model duplication is a supported user workflow.
-- [decision] Decide whether generation cancellation should be exposed as a
-  workspace activity event.
-- [decision] Define the intended product contract for logical MANY_TO_MANY
-  relationships and junction entities.
-
----
-
-## 2. Confirmed defects and implementation gaps
-
-### 2.1 Generation execution and validation
-
-- [confirmed] GEN-VAL-01: Post-generation validation exceptions can affect
-  the reported generation outcome. A validation failure must not incorrectly
-  downgrade an otherwise fully generated job to PARTIALLY_COMPLETED.
-
-  Required behavior:
-  - Preserve the actual generation execution outcome.
-  - Report validation outcome independently.
-  - Keep validation errors and warnings visible.
-  - Do not misrepresent generated artifact completeness.
-
-- [done] SPEC-01: Enforce canonical specification validation as a
-  generation preflight gate.
-
-  Verified behavior: invalid specifications block generation before job
-  creation; warnings alone do not block generation; actionable findings
-  are returned.
-
-  Acceptance:
-  - Invalid specifications cannot create generation jobs or artifacts.
-  - Warnings alone do not block generation.
-  - The user receives actionable validation findings.
-
-- [done] SPEC-02: Validate the complete candidate specification before
-  field create/update persistence.
-
-  Verified behavior: invalid candidate specifications are rejected and
-  existing valid specification state is preserved.
-
-  Acceptance:
-  - Invalid candidate specifications are rejected.
-  - Existing valid specification state remains unchanged after rejection.
-
-### 2.2 Semantic uniqueness
-
-Existing generation code already performs cross-chunk duplicate checks,
-excludes persisted values during semantic refill, and persists generated
-semantic values. Do not reintroduce these as wholly missing capabilities.
-
-- [confirmed] SEM-01: Final dataset validation does not independently verify
-  fields configured with semantic UNIQUE mode.
-
-  Acceptance:
-  - Validate semantic UNIQUE values across the complete generated dataset.
-  - Normalize consistently with generation-time duplicate checks.
-  - Report violations against the relevant entity and field.
-
-- [confirmed] SEM-02: Corrupt or unreadable semantic JSON is treated as an
-  empty semantic store. During recovery, this can cause previously committed
-  values to be omitted from duplicate exclusion.
-
-  Acceptance:
-  - Do not silently treat corrupted persisted semantic state as valid empty
-    state.
-  - Fail safely or reconcile against committed artifacts.
-  - Preserve the ability to diagnose and recover the affected job.
-
-- [pending] SEM-03: Include semantic uniqueness in quality reporting if the
-  quality contract requires it. Keep this separate from correctness validation.
-
-### 2.3 Population planning and identity capacity
-
-- [confirmed] POP-01: Multiple independent identity foreign keys referencing
-  the same parent can be deduplicated in population capacity analysis, while
-  generation constructs separate identity components. This can understate
-  theoretical identity capacity.
-
-  Acceptance:
-  - Model independent identity dimensions independently.
-  - Ensure planner capacity agrees with the generation identity construction.
-  - Cover multiple references to the same parent.
-
-- [pending] POP-02: Align and document the modelling scope of the older
-  population capacity analysis and the newer constraint analysis.
-
-  Acceptance:
-  - Establish which path is authoritative for each planning operation.
-  - Avoid contradictory feasibility results.
-
-### 2.4 Quality analysis and reporting
-
-- [confirmed] QLT-07: Quality-profile construction is not fault-isolated.
-  An analysis exception can prevent the generation result from being returned.
-
-  Acceptance:
-  - A failure in one quality dimension does not erase valid generation results.
-  - The generation execution outcome remains accurate.
-  - The failed quality measurement is reported as unavailable or failed,
-    not as a successful measurement.
-  - Regression tests cover quality-analysis exceptions.
-
-- [confirmed] QLT-01: Unexpected categorical values are not explicitly
-  reported with their values and counts.
-
-- [confirmed] QLT-02: A non-numeric value can suppress the entire field's
-  numeric statistical profile.
-
-- [confirmed] QLT-03: Statistical profiling retains all non-empty field
-  values in memory, creating scalability concerns for large datasets.
-
-- [confirmed] QLT-04: Results summary can display "High Fidelity" whenever
-  a quality profile exists, without evidence-based quality criteria.
-
-- [confirmed] QLT-05: Missing quality measurements can be represented as
-  zero, confusing unavailable measurements with measured zero values.
-
-- [confirmed] QLT-06: Categorical identity capacity can be inflated when
-  duplicate configured categorical values are counted more than once.
-
-- [confirmed] QLT-08: Zero requested rows can produce a population fidelity
-  rate of 1.0 without a meaningful population measurement.
-
-- [confirmed] QLT-09: Empty categorical measurements can report a zero
-  missing rate, making unavailable evidence indistinguishable from measured zero.
-
-- [confirmed] QLT-10: Frontend entity-level population fidelity uses a
-  different calculation from the backend population fidelity calculation.
-
-- [confirmed] QLT-11: Distribution visualization converts null, missing,
-  empty and invalid numeric measurements to zero.
-
-  Acceptance across QLT-01 to QLT-06 and QLT-08 to QLT-11:
-  - Distinguish valid, invalid, missing and unexpected values.
-  - Do not silently omit statistical evidence.
-  - Use bounded-memory profiling where practical.
-  - Derive quality status from explicit criteria.
-  - Represent unavailable metrics as unavailable, not zero.
-  - Count distinct categorical values for identity capacity.
-
----
-
-## 3. Reliability, recovery and robustness risks
-
-### 3.1 Artifact integrity and recovery
-
-- [confirmed] ART-01: Chunk CSV writes are written directly to final paths
-  rather than using an atomic replacement strategy.
-
-- [confirmed] ART-02: Consolidated entity CSV writes are not atomic.
-
-- [confirmed] ART-03: Artifact writing does not independently reconcile
-  actual output row counts against committed checkpoint counts and targets.
-
-- [risk] ART-04: Artifact reader validation does not independently establish
-  every aspect of chunk sequence continuity, row-count consistency and
-  schema consistency.
-
-- [test-gap] ART-05: Dedicated generation-service recovery orchestration
-  tests are missing.
-
-- [test-gap] ART-06: Recovery tests should cover missing, incomplete,
-  duplicated, uncommitted and corrupted artifact/checkpoint combinations,
-  checkpoint/job-progress divergence, checkpoint persistence failure,
-  consolidation failure and interrupted recovery.
-
-Positive control:
-The checkpoint store already uses temporary-file writing, flush, fsync and
-atomic replacement. Preserve this behavior.
-
-Acceptance:
-- Interrupted writes cannot leave apparently valid partial final artifacts.
-- Committed chunk counts reconcile with actual artifact rows.
-- Consolidated CSV output is consistent with committed chunks.
-- Recovery is deterministic, diagnosable and tested.
-
-### 3.2 Random generation recovery and determinism
-
-- [confirmed] REC-01: Random generator state is not restored or advanced past
-  committed rows when resuming an interrupted entity. Resumed output can differ
-  from uninterrupted output and can repeat random values from earlier chunks.
-
-  Acceptance:
-  - Compare interrupted/resumed output with uninterrupted output using the
-    same specification and seed.
-  - Verify random fields, uniqueness constraints and final output consistency.
-  - Perform acceptance through the FORGE UI.
-
-### 3.3 Semantic store robustness
-
-- [risk] SEM-04: Semantic store read-modify-write operations have no
-  demonstrated cross-process locking. Concurrent execution against the same
-  job could result in lost updates.
-
-- [test-gap] SEM-05: No dedicated test establishes safe recovery when semantic
-  state is corrupted while committed artifacts already exist.
-
-  Acceptance:
-  - Establish whether multiple runners can execute the same job concurrently.
-  - If concurrency is possible, protect semantic store updates.
-  - Test interrupted and resumed semantic generation with real artifacts.
-
-### 3.4 Activity persistence
-
-- [risk] ACT-01: A complete but malformed JSONL activity event can interrupt
-  index rebuilding.
-
-- [test-gap] ACT-02: Dedicated activity repository tests are missing for
-  persistence, concurrent writers, malformed event recovery and index rebuild.
-
-Positive controls:
-- In-process and cross-process locking exist.
-- Event appends are flushed and synchronized.
-- The event log is authoritative.
-- The index can be rebuilt.
-- Index replacement uses a temporary file and atomic replacement.
-
-### 3.5 Activity presentation
-
-- [risk] ACT-03: Frontend activity mapping copies backend icon and accent
-  values without a demonstrated fallback for unknown values.
-
-- [decision] ACT-04: Review which selected metadata should be rendered in
-  user-facing activity descriptions.
-
-### 3.6 Activity event taxonomy
-
-- [decision] ACT-05: Generation cancellation does not currently create a
-  workspace activity event. Product decision on whether cancellation should
-  be exposed is recorded in the decision section.
-
-- [risk] ACT-06: DATA_MODEL_DUPLICATED has an event type and presentation
-  mapping, but no recording call site was identified. Whether duplication is
-  a supported workflow remains unverified.
-
-Positive controls:
-- Raw metadata is not returned directly by the activity API.
-- Data-model activity access is checked.
-- Selected metadata is transformed into presentation descriptions.
-
----
-
-## 4. Specification and capability gaps
-
-### 4.1 Numeric generation and validation
-
-- [pending] NUM-01: Support optional DECIMAL precision and scale in field
-  specifications and enforce them during generation.
-
-- [pending] NUM-02: Preserve exact decimal representation through
-  specification import, generation, validation, persistence, CSV export
-  and reading.
-  - Progress (2026-11-12): Backend conversion, validation, persistence and
-    checkpoint handling updated and regression-tested. Frontend DECIMAL
-    bounds and constraint values retain exact string representations.
-    Playwright verification of the complete UI-to-CSV workflow remains open.
-
-- [pending] NUM-03: Use exact decimal handling for DECIMAL validation rather
-  than binary floating-point comparisons.
-  - Progress (2026-11-12): Decimal constraint comparison and generation
-    planning now use exact Decimal handling. High-precision comparison
-    regression tests passed. UI acceptance remains open.
-
-- [pending] NUM-04: Support numeric cross-field constraints, for example
-  BRGEW >= NTGEW, rather than limiting comparisons to constant values.
-
-- [pending] NUM-05: Preserve fractional numeric bounds during specification
-  import without converting exact Decimal values to float.
-  - Progress (2026-11-12): Import now preserves validated decimal text.
-    Import regression tests passed, including high-precision and trailing-zero
-    representations. End-to-end UI acceptance remains open.
-
-### 4.2 MANY_TO_MANY relationship support
-
-- [pending] REL-01: Implement end-to-end logical MANY_TO_MANY relationship
-  support using an explicitly defined junction/association entity and its
-  physical foreign-key mappings.
-
-  Scope:
-  - Resolve logical relationships to the appropriate junction entity and
-    its two endpoint foreign keys.
-  - Validate junction mappings against identities of both participating
-    entities.
-  - Generate valid associations with configurable or deterministic
-    distribution.
-  - Enforce mandatory and optional participation on both sides.
-  - Prevent duplicate association pairs.
-  - Support composite junction identities.
-  - Preserve referential integrity across chunks and generation recovery.
-  - Validate association cardinality and participation.
-  - Include MANY_TO_MANY relationship fidelity in generation quality metrics.
-
-  Current capability:
-  - Direct logical MANY_TO_MANY declarations are unsupported.
-  - A junction entity with two ordinary foreign keys can be represented.
-  - FORGE does not yet interpret those foreign keys as a combined logical
-    association with endpoint cardinality and participation semantics.
-  - Unsupported relationship rules may remain NOT_EVALUATED.
-
-  Acceptance:
-  - Every mandatory participating entity instance has at least one
-    association.
-  - Every association references existing records on both sides.
-  - Duplicate association pairs are rejected.
-  - Association distribution satisfies configured requirements.
-  - Validation and quality reports measure both endpoints correctly.
-  - Tests cover chunk boundaries, composite identities, optional
-    participation and recovery.
-
-### 4.3 Validation semantics
-
-- [confirmed] REL-02: Unsupported or unmapped relationship rules can remain
-  NOT_EVALUATED. They must not be presented as successfully validated.
-
-  Acceptance:
-  - Unsupported relationship rules remain explicitly identifiable.
-  - NOT_EVALUATED findings are visible in validation results.
-  - Overall conformance remains INCOMPLETE when required rules are
-    not evaluated.
-
-- [pending] SPEC-03: Define and implement explicit reporting semantics for
-  NOT_EVALUATED rules, including the difference between incomplete evidence
-  and successful conformance.
-
-- [decision] SPEC-04: Confirm whether DATE should be added to the supported
-  field vocabulary. Do not add DATE support without an explicit decision.
-
-- [decision] SPEC-05: Define the authoring-time versus runtime validation
-  contract for generation parameters.
-
----
-
-## 5. Test gaps
-
-- [done] TEST-01: Semantic store corruption and recovery tests are in place.
-
-  Completion evidence (2026-11-13):
-  - Tests cover corrupt JSON, malformed records, wrong job IDs,
-    unsupported schema versions and duplicate persisted UNIQUE values.
-  - Recovery reconstructs semantic values from committed artifacts
-    and resumes from the first uncommitted chunk.
-  - Failure cases cover duplicate and blank values, missing fields,
-    missing chunks and corrupt semantic state.
-  - Failed recovery does not invoke AI generation or modify the
-    checkpoint; corrupt semantic state is preserved unchanged.
-  - 36 focused semantic-store and executor tests passed.
-  - 164 tests passed across the generation and population suites.
-- [done] TEST-02: Final dataset semantic UNIQUE validation coverage is in place.
-
-  Completion evidence (2026-11-13):
-  - Detects duplicate semantic UNIQUE values across committed chunks.
-  - Normalizes case and surrounding whitespace when checking duplicates.
-  - Reports duplicate and missing values together as validation failures.
-  - Passes when all semantic UNIQUE values are distinct.
-  - Reports NOT_EVALUATED, rather than passing, when values are missing
-    or committed artifacts cannot be read.
-  - Six dedicated semantic UNIQUE scenarios are covered.
-  - 20 generation validator tests passed.
-- [done] TEST-03: Population analyzer tests cover categorical and
-  bounded integer identity capacity.
-
-  Completion evidence (2026-11-13):
-  - Direct analyzer coverage verifies categorical capacity (3 distinct
-    values) and bounded INTEGER capacity for UNIFORM and DISCRETE_UNIFORM.
-  - Seven invalid INTEGER-bound cases are rejected with field-specific
-    diagnostics.
-  - Planner and allocator integration tests verify combined parent/local
-    capacity and rejection above finite capacity.
-  - 11 new parameterized INTEGER test cases added; existing categorical
-    planner coverage strengthened without adding a duplicate test.
-  - 51 population integration and solver tests passed.
-- [done] TEST-04: Population analyzer coverage verifies multiple independent
-  foreign-key identity dimensions referencing the same parent and distinct
-  parents.
-  - Directly asserts component child/parent field mappings, repeated parent
-    references, support status, and IDENTITY_CAPACITY constraint metadata.
-  - Existing feasibility and planner checks retain Cartesian identity
-    capacity behavior; a parent population of 10 supports a child capacity
-    of 100 for two independent same-parent FK dimensions.
-  - 55 population tests and 164 combined generation/population tests passed.
-- [done] TEST-05: Generation-service recovery orchestration tests cover
-  startup recovery, interrupted-job resume, retry/idempotence, missing
-  specifications, checkpoint reconciliation failures, and persistence-failure
-  rollback.
-  - Startup recovery and resume restore the previous in-memory lifecycle state
-    when job persistence fails.
-  - Failed resume releases its worker reservation; failed startup recovery can
-    be retried safely in the same service instance.
-  - Seven dedicated recovery tests passed; 228 generation service tests and
-    413 full API tests passed, with 8 existing Starlette deprecation warnings.
-- [done] TEST-06: Artifact row-count and schema reconciliation coverage.
-  - Recovery validates committed chunk row counts and consistent CSV schemas,
-    including column order. Invalid chunks and subsequent chunks are removed
-    from the committed prefix and artifact directory.
-  - Added direct writer coverage for 75-row consolidation and schema mismatch.
-  - Six dedicated tests passed; full API suite passed: 419 tests, with 8
-    existing Starlette deprecation warnings.
-- [done] TEST-07: Activity repository persistence and concurrency coverage.
-  - Added eight tests covering serialization, repository restart, append
-    integrity, workspace and data-model isolation, retrieval ordering and
-    limits, concurrent thread writes, and concurrent process writes.
-  - Dedicated tests: 8 passed; full API suite: 427 passed, with 8 existing
-    Starlette deprecation warnings.
-- [done] TEST-08: Activity index recovery and malformed complete JSONL
-  record coverage.
-  - Added seven test cases covering missing and corrupt indexes, invalid
-    offsets and lengths, malformed complete event records, and incomplete
-    trailing event data.
-  - Malformed complete records block index reconstruction without modifying
-    the authoritative event log; incomplete trailing records are repaired.
-  - Dedicated repository tests: 15 passed; full API suite: 434 passed,
-    with 8 existing Starlette deprecation warnings.
-- [done] TEST-09: Specification preflight and whole-candidate validation
-  regression coverage is in place and passed as part of the 73-test
-  WP-01-related regression run.
-- [done] TEST-10: Validator coverage for null handling, malformed typed
-  values, domain bounds, artifact-reader failures and NOT_EVALUATED
-  semantics.
-
-  Progress (2026-11-13):
-  - Added tests for null and blank identity components.
-  - Added single-column FK nullability tests for OPTIONAL and MANDATORY
-    child participation.
-  - Added composite FK tests for fully null and partially null references.
-  - 20 validator tests passed.
-  - 170 tests passed across the generation service and
-    specification-validation generation test suites.
-  - Implementation and regression tests committed as `64106e9` (`fix(validation): handle nullable identities and foreign keys`).
-  - Added inclusive domain-boundary and invalid-domain-definition tests.
-  - Added malformed INTEGER, DECIMAL and BOOLEAN artifact-value tests,
-    including conversion-error evidence and continued row processing.
-  - Added NOT_EVALUATED coverage for malformed constraint, semantic UNIQUE,
-    foreign-key and relationship-cardinality evaluations.
-  - Confirmed unreadable artifacts during semantic UNIQUE evaluation
-    produce NOT_EVALUATED rather than a passing result.
-  - Validator regression suite: 35 passed.
-  - Full API suite: 449 passed, with 8 existing Starlette deprecation
-    warnings.
-- [done] TEST-11: Regression coverage for GEN-VAL-01 ensures
-  post-generation validation exceptions do not misclassify completed generation.
-
-  Progress (2026-11-13):
-  - Added regression coverage for exceptions after generation when all
-    target rows are recoverable from committed artifacts.
-  - Corrected recovery status classification: fully recovered output is
-    COMPLETED, partial output is PARTIALLY_COMPLETED, and zero usable rows
-    remains FAILED.
-  - Preserved the validation exception in the job error and corrected
-    terminal log classification for fully recovered output.
-  - Generation service test suite: 250 passed.
-  - Full API suite: 450 passed, with 8 existing Starlette deprecation
-    warnings.
-- [test-gap] TEST-12: Add end-to-end MANY_TO_MANY tests when that capability
-  is implemented.
-- [test-gap] TEST-13: Add quality reporting regression tests for zero-target
-  populations, empty categorical measurements, backend/frontend fidelity
-  agreement, invalid distribution measurements, invalid numeric values,
-  unexpected categorical values, unavailable versus measured-zero values,
-  bounded-memory profiling and isolated quality-analysis failures.
-- [test-gap] TEST-14: Add activity taxonomy tests for cancellation and
-  duplication recording once the corresponding product decisions are made.
-
-Existing coverage must be reused. Do not add duplicate tests merely to repeat
-behavior already adequately tested.
-
----
-
-## 6. Completed work
-
-### Specification validation (WP-01)
-
-- [done] WP01-VAL-001: Detect unsupported field types.
-  Unsupported field types now produce an explicit Entity validation error
-  identifying the field, unsupported type and supported vocabulary.
-  Verified through the FORGE UI.
-
-- [done] WP01-DIAG-001: Improve constraint diagnostic precision.
-  Constraint findings now distinguish missing or unknown entities and
-  fields, unsupported operators, missing comparison values and invalid
-  numeric values. Verified through the FORGE UI.
-
-### Activity logging
-
-- [done] Record specification save activity.
-  Added SPECIFICATION_SAVED, source attribution, operation, outcome, revision
-  and structural counts. AI-originated save was verified through the FORGE UI.
-
-- [done] Record Specification Wizard CSV import activity.
-  SPECIFICATION_IMPORT_APPLIED was verified after successful application of
-  CSV additions.
-
-- [done] Record whole-specification AI proposal generation.
-  Added workspace-level AI_PROPOSAL_GENERATED activity for successful
-  whole-specification proposals, including proposal outcome, deterministic
-  validation summary and structural counts. Verified through the FORGE UI.
-
-- [done] Enrich specification validation activity.
-  Added outcome, specification revision, continuation status,
-  error/warning/passed counts, total checks and validated entity count to
-  MODEL_VALIDATED and MODEL_VALIDATION_FAILED activity metadata.
-  Successful validation was verified through the FORGE UI.
-
-### Entity population editing
-
-- [done] Support population scaling updates in Entity Edit.
-  Enabled editing of FIXED and SCALABLE population modes alongside entity
-  description and population count. Updates record only actual changes with
-  before/after metadata. Verified scaling-only and combined updates through
-  the FORGE UI.
-
-### Generation semantic uniqueness
-
-- [done] Enforce semantic UNIQUE values across generation chunks and
-  persisted semantic batches.
-  Existing implementation checks within-batch and persisted-value collisions,
-  refills missing values and persists semantic values. Existing tests cover
-  cross-chunk uniqueness and resume behavior.
-  SEM-01 and SEM-02 are now closed by the additional safeguards and
-  regression evidence recorded below.
-
-### Population allocation (WP-02)
-
-- [done] WP02-POP-001: Implement bounded, constraint-aware integer
-  population target allocation.
-
-  Replaced the previous allocation approach with a bounded integer solver
-  that supports coordinated allocation across entities while respecting
-  the supported population, relationship and identity constraints.
-
-  Verified solver behavior:
-  - Preserve FIXED entity populations.
-  - Respect minimum and maximum population bounds.
-  - Enforce mandatory parent participation.
-  - Respect identity capacity constraints.
-  - Preserve independent identity dimensions, including repeated references
-    to the same parent.
-  - Produce an exact requested total for FEASIBLE allocations.
-  - Distinguish FEASIBLE, INFEASIBLE and UNRESOLVED outcomes.
-  - Produce deterministic allocations for identical inputs.
-  - Independently verify the resulting allocation against its constraints.
-
-  Automated verification:
-  - 37 focused solver and integration tests passed.
-  - 4 bounded solver contract tests passed.
-  - 51 population regression tests passed.
-  - Enterprise model with 40 entities, 52 relationships, 52 foreign keys,
-    62 population constraints and 40 identity capacity definitions passed
-    independent constraint verification.
-  - Exact target totals and deterministic results verified for
-    100,000, 1,000,000 and 5,000,000 records.
-
-  FORGE UI verification:
-  - 40-entity enterprise model: 5,000,000 requested and candidate records,
-    zero gap, 40/40 entities feasible.
-  - 15-entity model: 1,000,000 requested and candidate records,
-    zero gap, 15/15 entities feasible.
-  - FIXED BUSINESS_UNIT population remained 4 in both scenarios.
-
-  Remaining verification:
-  - [done] Candidate allocation rejects a target above finite local
-    identity capacity (10 parent rows × 3 categorical values = 30
-    child rows; target 41 returns INFEASIBLE).
-  - [done] Unsupported MANY_TO_MANY semantics return UNRESOLVED with
-    relationship-specific diagnostics.
-  - UI driver selection currently defaults silently to the first entity.
-  - Review the Minimum Allowed label because displayed minimums can be
-    candidate-dependent.
-
-  This implementation does not by itself close all WP-02 acceptance
-  criteria or the separate semantic and decimal work items.
-
-- [pending] WP02-POP-002: Surface allocation support diagnostics and
-  distinguish unsupported semantics from target infeasibility.
-
-  Confirmed behavior:
-  - The allocator blocks unsupported relationship and identity semantics
-    by returning UNRESOLVED before allocation.
-  - The backend response already includes allocation_status and
-    allocation_diagnostics.
-  - Unsupported identity configurations with structural ERROR diagnostics
-    are returned through the structural validation gate.
-  - Unsupported relationship semantics are returned through the allocation
-    support gate with relationship-specific reasons.
-  - The frontend candidate model and decision UI previously did not expose
-    these response fields or distinguish the failure categories.
-  - The candidate decision UI now distinguishes FEASIBLE, INFEASIBLE,
-    UNRESOLVED, and a solver-feasible candidate that fails overall
-    population feasibility.
-
-  Implementation progress:
-  - [done] Frontend population models expose allocation status and diagnostics.
-  - [done] Candidate decision UI distinguishes the allocation outcomes and
-    overall population feasibility.
-  - [done] Corrective guidance is presented according to the failure category.
-  - [done] Backend regression tests cover unsupported identity and
-    relationship diagnostic paths (2 focused tests passed).
-  - [pending] Verify unsupported identity and relationship scenarios through
-    the FORGE UI.
-
-  Acceptance criteria:
-  - [done] Expose allocation status and diagnostics in the frontend model.
-  - [done] Add or confirm backend regression tests for unsupported identity
-    and relationship diagnostic paths.
-  - [done] Distinguish INFEASIBLE from UNRESOLVED in the UI.
-  - [done] Preserve the overall feasible check when presenting success.
-  - [done] Display corrective guidance appropriate to the actual failure.
-  - [pending] Verify unsupported relationship and identity scenarios through
-    the FORGE UI.
-
-  This is a diagnostic and user experience gap. The existing support gate
-  prevents these unsupported scenarios from being reported as FEASIBLE.
-  No solver correctness defect has been established by this finding.
-
-### Model Validation and Population workflow
-
-- [done] UI-01: Handle the population-plan validation gate during initial load.
-  A structured HTTP 422 response no longer leaves Population in a permanent
-  loading state. The blocked state presents the validation summary and a
-  return-to-validation action.
-- [done] Use the shared state-card presentation for Model Validation loading
-  and error states and the Population blocked state.
-- [done] Represent unsupported capabilities separately in Model Validation
-  findings, counts, charts and filters.
-- [done] Correct the Population return navigation to the registered
-  `/workspace/:dataModelId/model-validation` route.
-- [done] Verify the blocked Population state and return navigation through
-  the FORGE UI using `RC_WP01_MASTER_NEGATIVE_V3`
-  (`2b73c96a-2261-4f27-b43e-e5d438c9887c`).
+(forge) e10936535@INM138734 forge %
 
 ---
 
