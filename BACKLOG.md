@@ -227,20 +227,21 @@ Evidence:
 - Angular production build passed.
 
 ##### MS02: Entity creation
-Status: [active]
-Objective: Verify creation of an entity through the UI.
-- [done] **MS02-01**: Open the create-entity dialog. Expected result: Dialog opens.
-- [done] **MS02-02**: Create entity with valid name and description. Expected result: Entity is created.
-- [pending] **MS02-03**: Create entity with population configuration. Expected result: Population is persisted.
-- [pending] **MS02-04**: Attempt to save without required name. Expected result: Save is blocked.
-- [pending] **MS02-05**: Attempt duplicate entity name. Expected result: Duplicate is rejected.
-- [pending] **MS02-06**: Cancel entity creation. Expected result: No entity is persisted.
-- [pending] **MS02-07**: Reload after successful creation. Expected result: Entity remains available.
+Status: [done]
+Objective: Verify entity creation, configuration, validation and persistence.
+- [done] **MS02-01**: Open the create-entity dialog. Expected result: Dialog opens with the required controls.
+- [done] **MS02-02**: Create entity with valid name and description. Expected result: Entity is created with default population settings.
+- [done] **MS02-03**: Create entity with custom population settings. Expected result: Configured population and scaling are persisted.
+- [done] **MS02-04**: Prevent entity creation when required name is missing. Expected result: Save is blocked.
+- [done] **MS02-05**: Reject duplicate entity name. Expected result: Duplicate is rejected.
+- [done] **MS02-06**: Cancel entity creation. Expected result: No entity is persisted.
+- [done] **MS02-07**: Verify entity persistence after reload. Expected result: Entity details remain available after reload.
 
 Evidence:
-- MS02-01 and MS02-02 passed in local Playwright E2E.
-- Entity creation returned HTTP 201.
-- Verified entity details, default population configuration and persistence after reload.
+- All seven MS02 Playwright E2E cases passed.
+- Complete MS02 run: 8 passed, 0 failed, including local authentication setup.
+- Verified HTTP 201 creation responses, default and custom population configuration, validation, duplicate rejection, cancellation and persistence after reload.
+- Commit: fe19966 (test(e2e): complete Model Studio entity creation coverage).
 
 ##### MS03: Entity editing
 Status: [pending]
