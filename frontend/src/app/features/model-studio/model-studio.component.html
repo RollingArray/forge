@@ -13,14 +13,14 @@
   (stepSelected)="selectStep($event)"
   (primaryAction)="continueToValidation()"
 >
-  @if (errorMessage() && !specification(); as error) {
+  @if (errorMessage() && !specification()) {
     <section class="model-state">
       <span class="material-symbols-outlined"> error </span>
 
       <h2>Unable to load Model Studio</h2>
 
       <p>
-        {{ error }}
+        {{ errorMessage() }}
       </p>
     </section>
   } @else if (specification(); as specification) {
