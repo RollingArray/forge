@@ -9,7 +9,7 @@
     "test": "ng test",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "test:e2e:dev": "playwright test --config=playwright.config.ts",
-    "test:e2e:full": "playwright test --config=playwright.e2e-isolated.config.ts --grep-invert \"REAL EMAIL E2E\"",
+    "test:e2e:full": "playwright test --config=playwright.e2e-isolated.config.ts --grep-invert \"Real Email Authentication\"",
     "test:e2e:real-email": "playwright test --config=playwright.e2e-isolated.config.ts --project=real-email"
   },
   "private": true,

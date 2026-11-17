@@ -1,4 +1,23 @@
 #!/usr/bin/env bash
+#
+# FORGE Deployment Builder
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Builds, packages, and validates the FORGE deployment and release candidate.
+#
+# Responsibilities:
+# -----------------
+# - Build the production frontend and deployment package.
+# - Validate deployment configuration and corporate AI connectivity.
+# - Run deployment smoke checks and collect test evidence.
+# - Prepare candidate artifacts and release validation metadata.
+# - Support preparation-only execution.
+
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -75,83 +94,142 @@ PY_OLLAMA_MODEL
 }
 
 cleanup_previous_candidate_services() {
-  [[ -f "$ACTIVE_RUN" ]] || return 0
+  local active_data run_dir runtime candidate_id api_pid nginx_pid
+  local api_command nginx_command listener_pids pid worker_parent worker_command
+  local port remaining
 
-  local previous_run_dir
-  previous_run_dir="$(
-    python3 - "$ACTIVE_RUN" <<'PY_ACTIVE_CLEANUP'
-import json, sys
-from pathlib import Path
+  printf '\nChecking for previous FORGE candidate services...\n'
 
-data = json.loads(Path(sys.argv[1]).read_text())
-print(data.get("run_dir", ""))
-PY_ACTIVE_CLEANUP
-  )"
-
-  [[ -n "$previous_run_dir" ]] || return 0
-
-  case "$previous_run_dir" in
-    "$TEST_RUNS"/*) ;;
-    *) fail "Previous run directory is outside the FORGE test-runs directory: $previous_run_dir" ;;
-  esac
-
-  local cleanup_pids="" port pid ppid command parent_command
-  local remaining=0
-
-  printf '\nChecking for services from the previous FORGE candidate...\n'
-
-  for port in 18875 18876; do
-    for pid in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
-      command="$(ps -ww -p "$pid" -o command= 2>/dev/null || true)"
-
-      if [[ "$port" == "18875" ]]; then
-        if [[ "$command" == *"$previous_run_dir"* &&
-              "$command" == *"uvicorn app.main:app"* &&
-              "$command" == *"--port 18875"* ]]; then
-          cleanup_pids="$cleanup_pids $pid"
-          printf 'Verified previous FORGE API: PID %s\n' "$pid"
-        else
-          fail "Port $port is occupied by an unverified process (PID $pid). Nothing was terminated."
-        fi
-      else
-        if [[ "$command" == *"$previous_run_dir/nginx/"* &&
-              "$command" == *"nginx: master process"* ]]; then
-          cleanup_pids="$cleanup_pids $pid"
-          printf 'Verified previous FORGE Nginx master: PID %s\n' "$pid"
-        elif [[ "$command" == *"nginx: worker process"* ]]; then
-          ppid="$(ps -p "$pid" -o ppid= 2>/dev/null | tr -d ' ')"
-          parent_command="$(ps -ww -p "$ppid" -o command= 2>/dev/null || true)"
-
-          if [[ "$parent_command" == *"$previous_run_dir/nginx/"* &&
-                "$parent_command" == *"nginx: master process"* ]]; then
-            case " $cleanup_pids " in
-              *" $ppid "*) ;;
-              *) cleanup_pids="$cleanup_pids $ppid" ;;
-            esac
-            printf 'Verified previous FORGE Nginx master via worker PID %s: master PID %s\n' "$pid" "$ppid"
-          else
-            fail "Port $port has an unverified Nginx worker (PID $pid). Nothing was terminated."
-          fi
-        else
-          fail "Port $port is occupied by an unverified process (PID $pid). Nothing was terminated."
-        fi
+  if [[ ! -f "$ACTIVE_RUN" ]]; then
+    for port in 18875 18876; do
+      if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+        fail "Port $port is occupied but no active-run ownership metadata exists. Nothing was terminated."
       fi
     done
-  done
-
-  if [[ -z "${cleanup_pids// /}" ]]; then
     printf 'No previous FORGE candidate services are running.\n'
     return 0
   fi
 
-  for pid in $cleanup_pids; do
-    command="$(ps -ww -p "$pid" -o command= 2>/dev/null || true)"
-    [[ "$command" == *"$previous_run_dir"* ]] \
-      || fail "Process PID $pid changed identity before cleanup. Stopping safely."
-    kill -TERM "$pid" 2>/dev/null || true
-  done
+  active_data="$(python3 - "$ACTIVE_RUN" "$TEST_RUNS" <<'PY_ACTIVE_CLEANUP'
+import json, sys
+from pathlib import Path
 
-  printf 'Waiting for previous candidate services to stop...\n'
+active_path, test_runs = map(Path, sys.argv[1:])
+active = json.loads(active_path.read_text())
+
+candidate_id = str(active.get("candidate_id", ""))
+run_dir_value = str(active.get("run_dir", ""))
+
+if not candidate_id or not run_dir_value:
+    raise SystemExit("Active run does not identify a candidate and run directory.")
+
+test_runs = test_runs.resolve()
+run_dir = Path(run_dir_value).resolve()
+
+if not run_dir.is_relative_to(test_runs) or run_dir == test_runs:
+    raise SystemExit("Active run directory is outside the FORGE test-runs directory.")
+
+metadata_path = run_dir / "runtime-processes.json"
+if not metadata_path.is_file():
+    raise SystemExit("Runtime process ownership metadata is missing.")
+
+metadata = json.loads(metadata_path.read_text())
+
+if metadata.get("candidate_id") != candidate_id:
+    raise SystemExit("Runtime process candidate ID does not match active run.")
+if Path(str(metadata.get("run_dir", ""))).resolve() != run_dir:
+    raise SystemExit("Runtime process run directory does not match active run.")
+
+runtime = (run_dir / "runtime" / "forge-deployment").resolve()
+if Path(str(metadata.get("runtime", ""))).resolve() != runtime:
+    raise SystemExit("Runtime process path does not match the expected candidate runtime.")
+
+api_pid = metadata.get("api_pid")
+nginx_pid = metadata.get("nginx_pid")
+
+if (
+    not isinstance(api_pid, int)
+    or not isinstance(nginx_pid, int)
+    or api_pid <= 1
+    or nginx_pid <= 1
+    or api_pid == nginx_pid
+):
+    raise SystemExit("Runtime process PIDs are invalid.")
+
+if metadata.get("api_port") != 18875 or metadata.get("nginx_port") != 18876:
+    raise SystemExit("Runtime process ports do not match the FORGE candidate ports.")
+
+print("\t".join((candidate_id, str(run_dir), str(runtime), str(api_pid), str(nginx_pid))))
+PY_ACTIVE_CLEANUP
+)" || fail "Could not verify previous candidate ownership. No processes were terminated."
+
+  IFS=$'\t' read -r candidate_id run_dir runtime api_pid nginx_pid <<< "$active_data"
+
+  api_command="$(ps -ww -p "$api_pid" -o command= 2>/dev/null || true)"
+  nginx_command="$(ps -ww -p "$nginx_pid" -o command= 2>/dev/null || true)"
+
+  if [[ -n "$api_command" ]]; then
+    [[ "$api_command" == "$runtime/.venv/bin/python -m uvicorn app.main:app"* ]] \
+      && [[ "$api_command" == *"--port 18875"* ]] \
+      || fail "API PID $api_pid does not match the recorded candidate runtime. Nothing was terminated."
+  fi
+
+  if [[ -n "$nginx_command" ]]; then
+    [[ "$nginx_command" == *"nginx: master process"* ]] \
+      && [[ "$nginx_command" == *"-p $run_dir/nginx/"* ]] \
+      && [[ "$nginx_command" == *"-c $run_dir/nginx/nginx.conf"* ]] \
+      || fail "Nginx PID $nginx_pid does not match the recorded candidate runtime. Nothing was terminated."
+  fi
+
+  listener_pids="$(lsof -nP -t -iTCP:18875 -sTCP:LISTEN 2>/dev/null | sort -u || true)"
+  if [[ -n "$api_command" ]]; then
+    [[ "$listener_pids" == "$api_pid" ]] \
+      || fail "API port listener does not match recorded candidate PID $api_pid. Nothing was terminated."
+  else
+    [[ -z "$listener_pids" ]] \
+      || fail "API port is occupied but its recorded process is absent. Nothing was terminated."
+  fi
+
+  listener_pids="$(lsof -nP -t -iTCP:18876 -sTCP:LISTEN 2>/dev/null | sort -u || true)"
+  if [[ -n "$nginx_command" ]]; then
+    [[ -n "$listener_pids" ]] \
+      || fail "Nginx master exists but no process owns port 18876. Nothing was terminated."
+
+    printf '%s\n' "$listener_pids" | grep -Fxq "$nginx_pid" \
+      || fail "Recorded Nginx master PID $nginx_pid is not a port listener. Nothing was terminated."
+
+    while IFS= read -r pid; do
+      [[ -n "$pid" ]] || continue
+      [[ "$pid" == "$nginx_pid" ]] && continue
+
+      worker_parent="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d '[:space:]')"
+      worker_command="$(ps -ww -p "$pid" -o command= 2>/dev/null || true)"
+
+      [[ "$worker_parent" == "$nginx_pid" ]] \
+        && [[ "$worker_command" == "nginx: worker process"* ]] \
+        || fail "Port 18876 is held by PID $pid, which is not a verified worker of Nginx master $nginx_pid. Nothing was terminated."
+    done <<< "$listener_pids"
+  else
+    [[ -z "$listener_pids" ]] \
+      || fail "Nginx port is occupied but its recorded master process is absent. Nothing was terminated."
+  fi
+
+  if [[ -z "$api_command" && -z "$nginx_command" ]]; then
+    printf 'Recorded candidate processes are already stopped.\n'
+    return 0
+  fi
+
+  printf 'Verified candidate %s process ownership.\n' "$candidate_id"
+
+  if [[ -n "$nginx_command" ]]; then
+    printf 'Stopping recorded Nginx master PID %s...\n' "$nginx_pid"
+    kill -TERM "$nginx_pid" 2>/dev/null || true
+  fi
+
+  if [[ -n "$api_command" ]]; then
+    printf 'Stopping recorded API PID %s...\n' "$api_pid"
+    kill -TERM "$api_pid" 2>/dev/null || true
+  fi
 
   for attempt in $(seq 1 20); do
     remaining=0
@@ -160,18 +238,157 @@ PY_ACTIVE_CLEANUP
         remaining=1
       fi
     done
-
     [[ "$remaining" -eq 0 ]] && break
     sleep 1
   done
 
   for port in 18875 18876; do
     if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
-      fail "Port $port did not close after graceful FORGE service shutdown."
+      lsof -nP -iTCP:"$port" -sTCP:LISTEN >&2 || true
+      fail "Port $port did not close after recorded candidate shutdown."
     fi
   done
 
-  printf 'PASS: Previous FORGE services stopped. Ports 18875 and 18876 are free.\n'
+  printf 'PASS: Recorded candidate services stopped. Ports 18875 and 18876 are free.\n'
+}
+
+run_backend_pytest() {
+  local log="$OUTPUT/backend-pytest.log"
+  local junit="$OUTPUT/backend-pytest.xml"
+  local summary="$OUTPUT/backend-pytest-summary.json"
+
+  [[ -x "$ROOT/.venv/bin/python" ]] || fail "Root .venv Python is missing."
+  [[ -f "$ROOT/.env" ]] || fail "Repository .env is required for backend Pytest."
+
+  printf '\n== Backend: Complete Pytest regression suite ==\n'
+
+  if ! (
+    set -a
+    source "$ROOT/.env"
+    set +a
+
+    if [[ -z "${FORGE_JWT_SECRET:-}" || ${#FORGE_JWT_SECRET} -lt 32 ]]; then
+      printf 'ERROR: FORGE_JWT_SECRET is missing or invalid.\n' >&2
+      exit 1
+    fi
+
+    cd "$ROOT/backend/api"
+    "$ROOT/.venv/bin/python" -m pytest -q --junitxml="$junit"
+  ) 2>&1 | tee "$log"; then
+    fail "Backend Pytest failed. Review $log. Candidate creation stopped."
+  fi
+
+  python3 - "$junit" "$log" "$summary" <<'PY_PYTEST_SUMMARY'
+import json
+import re
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+report_path, log_path, summary_path = map(Path, sys.argv[1:])
+if not report_path.is_file():
+    raise SystemExit("Pytest JUnit report is missing.")
+if not log_path.is_file():
+    raise SystemExit("Pytest console log is missing.")
+
+root = ET.parse(report_path).getroot()
+
+test_cases = []
+for case in root.iter():
+    if case.tag.rsplit("}", 1)[-1] != "testcase":
+        continue
+
+    outcome = next(
+        (
+            child.tag.rsplit("}", 1)[-1]
+            for child in case
+            if child.tag.rsplit("}", 1)[-1] in {"failure", "error", "skipped"}
+        ),
+        None,
+    )
+    status = (
+        "SKIPPED" if outcome == "skipped"
+        else "FAILED" if outcome in {"failure", "error"}
+        else "PASSED"
+    )
+    test_cases.append({
+        "classname": case.get("classname", ""),
+        "name": case.get("name", ""),
+        "time_seconds": float(case.get("time", 0)),
+        "status": status,
+    })
+
+tests = len(test_cases)
+failures = 0
+errors = 0
+skipped = 0
+passed = 0
+
+for element in root.iter():
+    if element.tag.rsplit("}", 1)[-1] != "testcase":
+        continue
+    outcome_tags = {
+        child.tag.rsplit("}", 1)[-1]
+        for child in element
+    }
+    if "error" in outcome_tags:
+        errors += 1
+    elif "failure" in outcome_tags:
+        failures += 1
+    elif "skipped" in outcome_tags:
+        skipped += 1
+    else:
+        passed += 1
+
+duration = sum(case["time_seconds"] for case in test_cases)
+
+log_text = log_path.read_text(errors="replace")
+warning_match = re.search(
+    r"\b(\d+)\s+warnings?\s+in\s+[\d.]+s\b",
+    log_text,
+)
+warning_count = int(warning_match.group(1)) if warning_match else 0
+
+warning_details = []
+start = re.search(r"=+ warnings summary =+\s*", log_text, re.IGNORECASE)
+if start:
+    remainder = log_text[start.end():]
+    end = re.search(r"\n-- Docs:", remainder)
+    section = remainder[:end.start()] if end else remainder
+    warning_details = [
+        line.rstrip() for line in section.splitlines() if line.strip()
+    ]
+
+summary = {
+    "status": "PASSED" if tests > 0 and passed == tests else "FAILED",
+    "framework": "pytest",
+    "discovered": tests,
+    "passed": passed,
+    "failed": failures + errors,
+    "errors": errors,
+    "skipped": skipped,
+    "flaky": 0,
+    "unexecuted": 0,
+    "duration_seconds": round(duration, 3),
+    "warning_count": warning_count,
+    "warning_details": warning_details,
+    "tests": test_cases,
+    "report": "backend-pytest.xml",
+    "log": "backend-pytest.log",
+}
+
+summary_path.write_text(json.dumps(summary, indent=2) + "\n")
+print(f"Backend Pytest: {passed}/{tests} PASSED")
+print(f"Duration: {duration:.3f}s | Warnings: {warning_count}")
+
+if len(test_cases) != tests:
+    raise SystemExit("Pytest test-case inventory does not match JUnit discovery.")
+if tests < 1 or passed != tests or failures or errors or skipped:
+    raise SystemExit("Backend Pytest did not meet the 100% release requirement.")
+PY_PYTEST_SUMMARY
+
+  printf 'PASS: Backend Pytest release gate.\n'
+
 }
 
 run_e2e() {
@@ -221,6 +438,18 @@ if data.get("sha256") != sys.argv[3]:
     raise SystemExit("Candidate manifest checksum mismatch.")
 if data.get("archive") != Path(sys.argv[4]).name:
     raise SystemExit("Candidate manifest archive filename mismatch.")
+
+pytest = data.get("backend_pytest")
+if not isinstance(pytest, dict) or pytest.get("status") != "PASSED":
+    raise SystemExit("Candidate has no successful backend Pytest evidence.")
+discovered = pytest.get("discovered")
+if not isinstance(discovered, int) or discovered < 1:
+    raise SystemExit("Backend Pytest discovery count is invalid.")
+if pytest.get("passed") != discovered:
+    raise SystemExit("Backend Pytest passed count does not match discovery.")
+for key in ("failed", "errors", "skipped", "flaky", "unexecuted"):
+    if pytest.get(key) != 0:
+        raise SystemExit(f"Backend Pytest has nonzero {key} count.")
 PY_MANIFEST
 
   (
@@ -240,7 +469,7 @@ PY_MANIFEST
   curl --silent --show-error --fail http://127.0.0.1:18876/ | grep -q '<html' \
     || fail "Candidate frontend health check failed."
 
-  mkdir -p "$run_dir/logs" "$run_dir/evidence"
+  mkdir -p "$run_dir/logs" "$run_dir/evidence" "$run_dir/reports"
   check_corporate_ollama "$runtime/backend/api/config/ai.json" "$run_dir/logs"
 
   export FORGE_E2E_BASE_URL="http://127.0.0.1:18876"
@@ -252,29 +481,13 @@ PY_MANIFEST
   printf 'SHA-256: %s\n' "$candidate_sha"
   printf 'Runtime: %s\n' "$runtime"
   printf 'UI: %s\n' "$FORGE_E2E_BASE_URL"
-  printf '\nVerifying Playwright test discovery...\n'
-
-  local full_count email_count
-  full_count="$(
-    cd "$FRONTEND"
-    npx playwright test --config=playwright.e2e-isolated.config.ts \
-      --grep-invert 'REAL EMAIL E2E' --list |
-      grep -c ' › ' || true
-  )"
-  email_count="$(
-    cd "$FRONTEND"
-    npx playwright test --config=playwright.e2e-isolated.config.ts \
-      --project=real-email --list |
-      grep -c ' › ' || true
-  )"
-
-  [[ "$full_count" -eq 56 ]] || fail "Expected 56 automated tests; discovered $full_count."
-  [[ "$email_count" -eq 1 ]] || fail "Expected one real-email test; discovered $email_count."
+  printf '\nPlaywright test inventory will be calculated from its JSON reports.\n'
 
   local started_at
   started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-  printf '\n== 1/2: Run 56 automated E2E tests ==\n'
+  printf '\n== 1/2: Run automated E2E suite ==\n'
+  export FORGE_E2E_JSON_REPORT="$run_dir/reports/automated.json"
   if ! (
     cd "$FRONTEND"
     npm run test:e2e:full
@@ -297,9 +510,31 @@ PY_FAIL
     fail "Automated E2E suite failed. Candidate is not eligible for promotion."
   fi
 
+  if ! python3 "$ROOT/scripts/validate-e2e-report.py" \
+    --report "$run_dir/reports/automated.json" \
+    --output "$run_dir/reports/automated-summary.json"; then
+    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+active, run_dir, cid, sha, started = sys.argv[1:]
+result = {
+    "candidate_id": cid, "sha256": sha, "status": "FAILED",
+    "failed_stage": "automated-e2e-report-validation",
+    "started_at": started,
+    "completed_at": datetime.now(timezone.utc).isoformat(),
+    "run_dir": run_dir,
+}
+Path(active).write_text(json.dumps(result, indent=2) + "\n")
+Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
+PY_FAIL
+    fail "Automated E2E report did not satisfy release criteria."
+  fi
+
   printf '\n== 2/2: Run visible real-email E2E test ==\n'
   printf 'Complete the email verification in the visible browser when prompted.\n'
 
+  export FORGE_E2E_JSON_REPORT="$run_dir/reports/real-email.json"
   if ! (
     cd "$FRONTEND"
     npm run test:e2e:real-email
@@ -322,34 +557,74 @@ PY_FAIL
     fail "Real-email E2E test failed. Candidate is not eligible for promotion."
   fi
 
+  if ! python3 "$ROOT/scripts/validate-e2e-report.py" \
+    --report "$run_dir/reports/real-email.json" \
+    --output "$run_dir/reports/real-email-summary.json"; then
+    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+active, run_dir, cid, sha, started = sys.argv[1:]
+result = {
+    "candidate_id": cid, "sha256": sha, "status": "FAILED",
+    "failed_stage": "real-email-e2e-report-validation",
+    "started_at": started,
+    "completed_at": datetime.now(timezone.utc).isoformat(),
+    "run_dir": run_dir,
+}
+Path(active).write_text(json.dumps(result, indent=2) + "\n")
+Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
+PY_FAIL
+    fail "Real-email E2E report did not satisfy release criteria."
+  fi
+
   python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_PASS'
 import json, sys
 from datetime import datetime, timezone
 from pathlib import Path
 active, run_dir, cid, sha, started = sys.argv[1:]
+run = Path(run_dir)
+automated = json.loads((run / "reports/automated-summary.json").read_text())
+real_email = json.loads((run / "reports/real-email-summary.json").read_text())
+manifest_path = Path(run_dir).parents[1] / "candidates" / cid / "manifest.json"
+manifest = json.loads(manifest_path.read_text())
+backend_pytest = manifest.get("backend_pytest")
+
+if not isinstance(backend_pytest, dict) or backend_pytest.get("status") != "PASSED":
+    raise SystemExit("Backend Pytest evidence is missing or has not passed.")
+
 result = {
     "candidate_id": cid,
     "sha256": sha,
     "status": "PASSED",
     "started_at": started,
     "completed_at": datetime.now(timezone.utc).isoformat(),
-    "automated_tests_expected": 56,
+    "automated_tests_expected": automated["discovered"],
     "automated_tests_status": "PASSED",
-    "real_email_tests_expected": 1,
+    "real_email_tests_expected": real_email["discovered"],
     "real_email_test_status": "PASSED",
+    "backend_pytest": backend_pytest,
+    "backend_pytest_status": "PASSED",
+    "backend_pytest_expected": backend_pytest["discovered"],
+    "automated_e2e": automated,
+    "real_email_e2e": real_email,
     "real_email_completion": "User completed visible browser verification",
     "run_dir": run_dir,
-    "evidence_dir": str(Path(run_dir) / "evidence"),
+    "evidence_dir": str(run / "evidence"),
 }
 Path(active).write_text(json.dumps(result, indent=2) + "\n")
-Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
+(run / "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
 PY_PASS
 
-  printf '\nPreparing Outlook release draft...\n'
-  if python3 "$ROOT/scripts/create-release-draft.py" --candidate-id "$candidate_id"; then
-    printf 'Outlook draft preparation completed. Review it before sending.\n'
+  if [[ "${FORGE_SKIP_OUTLOOK_DRAFT:-0}" == "1" ]]; then
+    printf '\nOutlook draft creation skipped by FORGE_SKIP_OUTLOOK_DRAFT=1.\n'
   else
-    printf 'WARNING: Release gate passed, but Outlook draft preparation needs attention.\n' >&2
+    printf '\nPreparing Outlook release draft...\n'
+    if python3 "$ROOT/scripts/create-release-draft.py" --candidate-id "$candidate_id"; then
+      printf 'Outlook draft preparation completed. Review it before sending.\n'
+    else
+      printf 'WARNING: Release gate passed, but Outlook draft preparation needs attention.\n' >&2
+    fi
   fi
 
   printf '\nPASS: Both E2E stages completed.\n'
@@ -383,18 +658,36 @@ create_candidate_and_start() {
   mkdir -p "$candidate_dir" "$run_dir/runtime" "$run_dir/logs" \
     "$run_dir/evidence" "$run_dir/secrets"
 
+  cp "$OUTPUT/backend-pytest.xml" "$run_dir/evidence/backend-pytest.xml"
+  cp "$OUTPUT/backend-pytest.log" "$run_dir/evidence/backend-pytest.log"
+  cp "$OUTPUT/backend-pytest-summary.json" "$run_dir/evidence/backend-pytest-summary.json"
+
   cp "$ZIP" "$candidate_zip"
   local candidate_sha
   candidate_sha="$(shasum -a 256 "$candidate_zip" | awk '{print $1}')"
 
   printf '%s  %s\n' "$candidate_sha" "$(basename "$candidate_zip")" > "$candidate_dir/SHA256SUMS"
 
-  python3 - "$candidate_dir/manifest.json" "$candidate_id" "$candidate_sha" "$candidate_zip" "$git_commit" <<'PY_MANIFEST'
+  python3 - "$candidate_dir/manifest.json" "$candidate_id" "$candidate_sha" "$candidate_zip" "$git_commit" "$OUTPUT/backend-pytest-summary.json" <<'PY_MANIFEST'
 import json, sys
 from datetime import datetime, timezone
 from pathlib import Path
-manifest, cid, sha, archive, commit = sys.argv[1:]
+
+manifest, cid, sha, archive, commit, pytest_path = sys.argv[1:]
 p = Path(archive)
+pytest = json.loads(Path(pytest_path).read_text())
+
+if pytest.get("status") != "PASSED":
+    raise SystemExit("Cannot create candidate: backend Pytest did not pass.")
+discovered = pytest.get("discovered")
+if not isinstance(discovered, int) or discovered < 1:
+    raise SystemExit("Invalid backend Pytest discovery count.")
+if pytest.get("passed") != discovered:
+    raise SystemExit("Backend Pytest passed count does not match discovery.")
+for key in ("failed", "errors", "skipped", "flaky", "unexecuted"):
+    if pytest.get(key) != 0:
+        raise SystemExit(f"Backend Pytest {key} count is nonzero.")
+
 data = {
     "candidate_id": cid,
     "created_at": datetime.now(timezone.utc).isoformat(),
@@ -402,6 +695,7 @@ data = {
     "archive": p.name,
     "sha256": sha,
     "size_bytes": p.stat().st_size,
+    "backend_pytest": pytest,
 }
 Path(manifest).write_text(json.dumps(data, indent=2) + "\n")
 PY_MANIFEST
@@ -587,6 +881,28 @@ NGINX
   curl --silent --fail http://127.0.0.1:18876/health >/dev/null \
     || fail "Candidate Nginx health proxy failed."
 
+  python3 - "$run_dir/runtime-processes.json" "$candidate_id" "$run_dir" \
+    "$runtime" "$api_pid" "$nginx_pid" <<'PY_PROCESS_METADATA'
+import json, os, sys
+from pathlib import Path
+
+metadata_path, cid, run_dir, runtime, api_pid, nginx_pid = sys.argv[1:]
+data = {
+    "candidate_id": cid,
+    "run_dir": str(Path(run_dir).resolve()),
+    "runtime": str(Path(runtime).resolve()),
+    "api_pid": int(api_pid),
+    "nginx_pid": int(nginx_pid),
+    "api_port": 18875,
+    "nginx_port": 18876,
+}
+path = Path(metadata_path)
+tmp = path.with_suffix(".tmp")
+tmp.write_text(json.dumps(data, indent=2) + "\n")
+os.chmod(tmp, 0o600)
+tmp.replace(path)
+PY_PROCESS_METADATA
+
   python3 - "$ACTIVE_RUN" "$candidate_id" "$candidate_sha" "$run_dir" \
     "$runtime" "$api_pid" "$nginx_pid" <<'PY_ACTIVE'
 import json, sys
@@ -733,7 +1049,9 @@ done
 printf '\n== Clean previous build outputs ==\n'
 rm -rf -- "$STAGE" "$ZIP" "$TEST_LOG" "$FRONTEND/dist"
 mkdir -p "$OUTPUT"
+rm -f "$OUTPUT/backend-pytest.log" "$OUTPUT/backend-pytest.xml" "$OUTPUT/backend-pytest-summary.json"
 
+run_backend_pytest
 
 printf '\n== 1/5: Build Angular production frontend ==\n'
 (

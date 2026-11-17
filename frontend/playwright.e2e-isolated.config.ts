@@ -19,6 +19,11 @@ export default defineConfig({
   workers: 1,
   reporter: [
     ['list'],
+    ['json', {
+      outputFile: process.env.FORGE_E2E_JSON_REPORT
+        ? path.resolve(process.env.FORGE_E2E_JSON_REPORT)
+        : 'test-results/isolated-e2e/results.json',
+    }],
     ['html', {
       outputFolder: process.env.FORGE_E2E_EVIDENCE_DIR
         ? path.resolve(process.env.FORGE_E2E_EVIDENCE_DIR, 'playwright-report')
