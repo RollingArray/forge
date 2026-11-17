@@ -128,7 +128,35 @@ Review `backend/api/config/ai.json`, `email.json`, and `authentication.json`:
 - Verify `email.json` contains the approved SMTP settings for this deployment.
 - Configure `FORGE_FRONTEND_BASE_URL` in the API process environment to the browser-accessible FORGE base URL. This overrides `email.json` without changing SMTP settings.
 - For example, use `http://127.0.0.1:18766` for the local extracted test launcher, or the approved HTTPS URL for a hosted deployment.
-- Set `FORGE_JWT_SECRET` in the API process environment to a securely generated secret of at least 32 bytes. Never store it in JSON or the deployment ZIP. Confirm `allowed_domains` with the application owner.
+### Configure the JWT signing secret on Windows
+
+Run once in Windows PowerShell as Administrator on the target server:
+
+```powershell
+$bytes = New-Object byte[] 48
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$secret = [Convert]::ToBase64String($bytes)
+$rng.Dispose()
+
+[Environment]::SetEnvironmentVariable("FORGE_JWT_SECRET", $secret, "Machine")
+$env:FORGE_JWT_SECRET = $secret
+
+$stored = [Environment]::GetEnvironmentVariable("FORGE_JWT_SECRET", "Machine")
+if ($null -eq $stored -or [System.Text.Encoding]::UTF8.GetByteCount($stored) -lt 32) {
+    throw "JWT secret configuration failed."
+}
+
+Write-Host "FORGE JWT secret configured successfully."
+Remove-Variable secret, stored, bytes
+```
+
+Important:
+- Run once per deployment environment.
+- Preserve the same secret across upgrades. Do not regenerate during routine restarts.
+- Restart the API after configuration so the API process inherits the variable.
+- Never store the secret in JSON, the deployment ZIP, or logs.
+- Confirm `allowed_domains` with the application owner.
 - If SMTP authentication is required, provide `FORGE_SMTP_PASSWORD` through the approved secret/environment mechanism. Do not put SMTP passwords in JSON or ZIP files.
 - Ensure the host can reach the corporate profile API over HTTPS and trusts the corporate certificate chain.
 

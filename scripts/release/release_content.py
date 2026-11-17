@@ -465,6 +465,30 @@ passed successfully.</p>
 execution evidence. The deployment ZIP checksum is:</p>
 <p><code>{sha_h}</code></p>
 
+<h3 style="color: #183B63;">DEPLOYMENT ACTION REQUIRED</h3>
+<p><b>Please follow the deployment instructions in the
+<code>README-DEPLOYMENT.md</code> file included inside the attached
+deployment ZIP.</b></p>
+<p>Before starting FORGE, please complete these steps:</p>
+<ol>
+<li>Extract the attached deployment ZIP to the target Windows environment.</li>
+<li>Open the <code>README-DEPLOYMENT.md</code> file from the extracted folder.</li>
+<li>Follow the documented configuration and installation instructions.</li>
+<li><b>Configure the FORGE JWT signing secret:</b> Locate the section titled
+<em>Configure the JWT signing secret on Windows</em> and execute the provided
+PowerShell commands as Administrator. This configuration is mandatory
+before starting the backend.</li>
+<li>Restart the API process after configuring the secret, then continue
+with the remaining startup instructions in the README.</li>
+</ol>
+<p><b>Important:</b> Preserve the generated JWT secret for future restarts
+and upgrades. Do not regenerate it unnecessarily or store it in JSON
+configuration files or the deployment ZIP.</p>
+<p>Please use the README included in this latest deployment package as the
+authoritative deployment guide rather than any previously shared instructions.</p>
+<p>Once deployment is complete, please confirm successful application
+startup or share any issues encountered.</p>
+
 <p>Please review the package and reports before release.</p>
 </body>
 </html>"""
@@ -491,6 +515,32 @@ The attached HTML reports contain the detailed test inventories, execution
 durations and warning details.
 
 SHA-256: {actual_sha}
+
+DEPLOYMENT ACTION REQUIRED
+Please follow the deployment instructions in the README-DEPLOYMENT.md file
+included inside the attached deployment ZIP.
+
+Before starting FORGE, please complete these steps:
+
+1. Extract the attached deployment ZIP to the target Windows environment.
+2. Open the README-DEPLOYMENT.md file from the extracted folder.
+3. Follow the documented configuration and installation instructions.
+4. Configure the FORGE JWT signing secret: locate the section titled
+   "Configure the JWT signing secret on Windows" and execute the provided
+   PowerShell commands as Administrator. This configuration is mandatory
+   before starting the backend.
+5. Restart the API process after configuring the secret, then continue
+   with the remaining startup instructions in the README.
+
+IMPORTANT: Preserve the generated JWT secret for future restarts and
+upgrades. Do not regenerate it unnecessarily or store it in JSON
+configuration files or the deployment ZIP.
+
+Please use the README included in this latest deployment package as the
+authoritative deployment guide rather than any previously shared instructions.
+
+Once deployment is complete, please confirm successful application startup
+or share any issues encountered.
 
 Please review the package and reports before release.
 """
