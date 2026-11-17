@@ -1,7 +1,23 @@
-"""E2E-only session bootstrap endpoint.
+"""
+FORGE E2E Authentication Bootstrap
 
-This module is copied into the isolated extracted E2E deployment.
-It must never be registered in the normal FORGE backend.
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Provides a protected session bootstrap endpoint exclusively for isolated
+FORGE E2E deployments. This module must never be registered in the normal
+FORGE backend or production application.
+
+Responsibilities:
+-----------------
+- Define the permitted E2E owner, contributor, and viewer identities.
+- Validate the E2E bootstrap key before processing requests.
+- Create authenticated sessions for permitted test identities.
+- Reject unsupported identities and invalid bootstrap requests.
+- Keep E2E authentication isolated from normal application authentication.
 """
 
 import hmac

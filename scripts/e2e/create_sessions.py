@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
-"""Create isolated FORGE E2E sessions without an HTTP bootstrap endpoint."""
+"""
+FORGE E2E Session Generator
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Creates predefined user sessions for an isolated FORGE E2E deployment without
+exposing an HTTP session bootstrap endpoint.
+
+Responsibilities:
+-----------------
+- Load the candidate backend application and its authentication services.
+- Create owner, contributor, and viewer test identities.
+- Generate authenticated sessions for the predefined identities.
+- Write the resulting session data to the requested output file.
+- Restrict access to the generated session file.
+"""
 
 from __future__ import annotations
 
