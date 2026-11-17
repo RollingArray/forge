@@ -183,3 +183,31 @@ print("PASS: Release content paths resolve from repository root.")
 
     assert result.returncode == 0, result.stderr
     assert "PASS:" in result.stdout
+
+
+def test_release_nginx_configs_allow_ai_generation_timeout():
+    repo_root = Path(__file__).resolve().parents[3]
+
+    candidate = (
+        repo_root / "scripts/release/deployment_candidate.sh"
+    ).read_text(encoding="utf-8")
+
+    bundle = (
+        repo_root / "scripts/release/deployment_bundle.sh"
+    ).read_text(encoding="utf-8")
+
+    assert (
+        "proxy_pass http://127.0.0.1:18875;\n"
+        "      proxy_read_timeout 210s;"
+    ) in candidate
+
+    assert (
+        "proxy_pass http://127.0.0.1:8000;\n"
+        "        proxy_http_version 1.1;\n"
+        "        proxy_read_timeout 210s;"
+    ) in bundle
+
+    assert (
+        "proxy_pass http://127.0.0.1:18765;\n"
+        "      proxy_read_timeout 210s;"
+    ) in bundle
