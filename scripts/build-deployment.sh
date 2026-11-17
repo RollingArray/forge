@@ -110,58 +110,8 @@ cleanup_previous_candidate_services() {
     return 0
   fi
 
-  active_data="$(python3 - "$ACTIVE_RUN" "$TEST_RUNS" <<'PY_ACTIVE_CLEANUP'
-import json, sys
-from pathlib import Path
-
-active_path, test_runs = map(Path, sys.argv[1:])
-active = json.loads(active_path.read_text())
-
-candidate_id = str(active.get("candidate_id", ""))
-run_dir_value = str(active.get("run_dir", ""))
-
-if not candidate_id or not run_dir_value:
-    raise SystemExit("Active run does not identify a candidate and run directory.")
-
-test_runs = test_runs.resolve()
-run_dir = Path(run_dir_value).resolve()
-
-if not run_dir.is_relative_to(test_runs) or run_dir == test_runs:
-    raise SystemExit("Active run directory is outside the FORGE test-runs directory.")
-
-metadata_path = run_dir / "runtime-processes.json"
-if not metadata_path.is_file():
-    raise SystemExit("Runtime process ownership metadata is missing.")
-
-metadata = json.loads(metadata_path.read_text())
-
-if metadata.get("candidate_id") != candidate_id:
-    raise SystemExit("Runtime process candidate ID does not match active run.")
-if Path(str(metadata.get("run_dir", ""))).resolve() != run_dir:
-    raise SystemExit("Runtime process run directory does not match active run.")
-
-runtime = (run_dir / "runtime" / "forge-deployment").resolve()
-if Path(str(metadata.get("runtime", ""))).resolve() != runtime:
-    raise SystemExit("Runtime process path does not match the expected candidate runtime.")
-
-api_pid = metadata.get("api_pid")
-nginx_pid = metadata.get("nginx_pid")
-
-if (
-    not isinstance(api_pid, int)
-    or not isinstance(nginx_pid, int)
-    or api_pid <= 1
-    or nginx_pid <= 1
-    or api_pid == nginx_pid
-):
-    raise SystemExit("Runtime process PIDs are invalid.")
-
-if metadata.get("api_port") != 18875 or metadata.get("nginx_port") != 18876:
-    raise SystemExit("Runtime process ports do not match the FORGE candidate ports.")
-
-print("\t".join((candidate_id, str(run_dir), str(runtime), str(api_pid), str(nginx_pid))))
-PY_ACTIVE_CLEANUP
-)" || fail "Could not verify previous candidate ownership. No processes were terminated."
+  active_data="$(python3 "$ROOT/scripts/forge_release/process_ownership.py" "$ACTIVE_RUN" "$TEST_RUNS")" \
+    || fail "Could not verify previous candidate ownership. No processes were terminated."
 
   IFS=$'\t' read -r candidate_id run_dir runtime api_pid nginx_pid <<< "$active_data"
 
@@ -278,117 +228,25 @@ run_backend_pytest() {
     fail "Backend Pytest failed. Review $log. Candidate creation stopped."
   fi
 
-  python3 - "$junit" "$log" "$summary" <<'PY_PYTEST_SUMMARY'
-import json
-import re
-import sys
-import xml.etree.ElementTree as ET
-from pathlib import Path
-
-report_path, log_path, summary_path = map(Path, sys.argv[1:])
-if not report_path.is_file():
-    raise SystemExit("Pytest JUnit report is missing.")
-if not log_path.is_file():
-    raise SystemExit("Pytest console log is missing.")
-
-root = ET.parse(report_path).getroot()
-
-test_cases = []
-for case in root.iter():
-    if case.tag.rsplit("}", 1)[-1] != "testcase":
-        continue
-
-    outcome = next(
-        (
-            child.tag.rsplit("}", 1)[-1]
-            for child in case
-            if child.tag.rsplit("}", 1)[-1] in {"failure", "error", "skipped"}
-        ),
-        None,
-    )
-    status = (
-        "SKIPPED" if outcome == "skipped"
-        else "FAILED" if outcome in {"failure", "error"}
-        else "PASSED"
-    )
-    test_cases.append({
-        "classname": case.get("classname", ""),
-        "name": case.get("name", ""),
-        "time_seconds": float(case.get("time", 0)),
-        "status": status,
-    })
-
-tests = len(test_cases)
-failures = 0
-errors = 0
-skipped = 0
-passed = 0
-
-for element in root.iter():
-    if element.tag.rsplit("}", 1)[-1] != "testcase":
-        continue
-    outcome_tags = {
-        child.tag.rsplit("}", 1)[-1]
-        for child in element
-    }
-    if "error" in outcome_tags:
-        errors += 1
-    elif "failure" in outcome_tags:
-        failures += 1
-    elif "skipped" in outcome_tags:
-        skipped += 1
-    else:
-        passed += 1
-
-duration = sum(case["time_seconds"] for case in test_cases)
-
-log_text = log_path.read_text(errors="replace")
-warning_match = re.search(
-    r"\b(\d+)\s+warnings?\s+in\s+[\d.]+s\b",
-    log_text,
-)
-warning_count = int(warning_match.group(1)) if warning_match else 0
-
-warning_details = []
-start = re.search(r"=+ warnings summary =+\s*", log_text, re.IGNORECASE)
-if start:
-    remainder = log_text[start.end():]
-    end = re.search(r"\n-- Docs:", remainder)
-    section = remainder[:end.start()] if end else remainder
-    warning_details = [
-        line.rstrip() for line in section.splitlines() if line.strip()
-    ]
-
-summary = {
-    "status": "PASSED" if tests > 0 and passed == tests else "FAILED",
-    "framework": "pytest",
-    "discovered": tests,
-    "passed": passed,
-    "failed": failures + errors,
-    "errors": errors,
-    "skipped": skipped,
-    "flaky": 0,
-    "unexecuted": 0,
-    "duration_seconds": round(duration, 3),
-    "warning_count": warning_count,
-    "warning_details": warning_details,
-    "tests": test_cases,
-    "report": "backend-pytest.xml",
-    "log": "backend-pytest.log",
-}
-
-summary_path.write_text(json.dumps(summary, indent=2) + "\n")
-print(f"Backend Pytest: {passed}/{tests} PASSED")
-print(f"Duration: {duration:.3f}s | Warnings: {warning_count}")
-
-if len(test_cases) != tests:
-    raise SystemExit("Pytest test-case inventory does not match JUnit discovery.")
-if tests < 1 or passed != tests or failures or errors or skipped:
-    raise SystemExit("Backend Pytest did not meet the 100% release requirement.")
-PY_PYTEST_SUMMARY
+  python3 "$ROOT/scripts/forge_release/evidence.py" pytest-summary \
+    --report "$junit" \
+    --log "$log" \
+    --output "$summary"
 
   printf 'PASS: Backend Pytest release gate.\n'
 
+}
+
+record_e2e_failure() {
+  local failed_stage="$1"
+
+  python3 "$ROOT/scripts/forge_release/evidence.py" e2e-failure \
+    --active "$ACTIVE_RUN" \
+    --run-dir "$run_dir" \
+    --candidate-id "$candidate_id" \
+    --sha "$candidate_sha" \
+    --started-at "$started_at" \
+    --failed-stage "$failed_stage"
 }
 
 run_e2e() {
@@ -416,46 +274,39 @@ PY_ACTIVE
 
   local candidate_dir="$CANDIDATES/$candidate_id"
   local candidate_zip="$candidate_dir/FORGE-Deployment-${candidate_id}.zip"
-  local manifest="$candidate_dir/manifest.json"
 
-  [[ -f "$candidate_zip" && -f "$manifest" && -f "$candidate_dir/SHA256SUMS" ]] || fail "Candidate package, manifest or checksum file is missing."
   [[ -d "$runtime" ]] || fail "Candidate runtime is missing."
   [[ -f "$run_dir/sessions.json" ]] || fail "Candidate E2E sessions are missing."
   [[ -f "$run_dir/secrets/jwt.secret" ]] || fail "Candidate runtime secret is missing."
 
-  local actual_sha
-  actual_sha="$(shasum -a 256 "$candidate_zip" | awk '{print $1}')"
-  [[ "$actual_sha" == "$candidate_sha" ]] || fail "Candidate ZIP checksum differs from active test-run metadata."
-
-  python3 - "$manifest" "$candidate_id" "$candidate_sha" "$candidate_zip" <<'PY_MANIFEST'
-import json, sys
+  python3 - "$ROOT" "$candidate_dir" "$candidate_id" "$candidate_sha" <<'PY_CANDIDATE_VALIDATION'
+import sys
 from pathlib import Path
 
-data = json.loads(Path(sys.argv[1]).read_text())
-if data.get("candidate_id") != sys.argv[2]:
-    raise SystemExit("Candidate manifest ID mismatch.")
-if data.get("sha256") != sys.argv[3]:
-    raise SystemExit("Candidate manifest checksum mismatch.")
-if data.get("archive") != Path(sys.argv[4]).name:
-    raise SystemExit("Candidate manifest archive filename mismatch.")
+repo_root, candidate_dir, candidate_id, expected_sha = sys.argv[1:]
 
-pytest = data.get("backend_pytest")
-if not isinstance(pytest, dict) or pytest.get("status") != "PASSED":
-    raise SystemExit("Candidate has no successful backend Pytest evidence.")
-discovered = pytest.get("discovered")
-if not isinstance(discovered, int) or discovered < 1:
-    raise SystemExit("Backend Pytest discovery count is invalid.")
-if pytest.get("passed") != discovered:
-    raise SystemExit("Backend Pytest passed count does not match discovery.")
-for key in ("failed", "errors", "skipped", "flaky", "unexecuted"):
-    if pytest.get(key) != 0:
-        raise SystemExit(f"Backend Pytest has nonzero {key} count.")
-PY_MANIFEST
+sys.path.insert(0, repo_root)
 
-  (
-    cd "$candidate_dir"
-    shasum -a 256 -c SHA256SUMS
-  ) || fail "Candidate SHA256SUMS verification failed."
+from scripts.forge_release.validation import (
+    ValidationError,
+    validate_candidate_artifacts,
+    validate_pytest_summary,
+)
+
+try:
+    result = validate_candidate_artifacts(
+        candidate_dir,
+        candidate_id,
+        expected_sha=expected_sha,
+    )
+    validate_pytest_summary(result["manifest"].get("backend_pytest"))
+except (ValidationError, TypeError, ValueError) as exc:
+    raise SystemExit(f"Candidate validation failed: {exc}")
+
+print(f"Candidate archive validation: PASS ({result['sha256']})")
+print("Candidate backend Pytest evidence: PASS")
+PY_CANDIDATE_VALIDATION
+  [[ -f "$candidate_zip" ]] || fail "Candidate deployment archive is missing."
 
   local status
   status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",""))' "$ACTIVE_RUN")"
@@ -492,42 +343,14 @@ PY_MANIFEST
     cd "$FRONTEND"
     npm run test:e2e:full
   ) 2>&1 | tee "$run_dir/logs/playwright-full.log"; then
-    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, run_dir, cid, sha, started = sys.argv[1:]
-result = {
-    "candidate_id": cid, "sha256": sha, "status": "FAILED",
-    "failed_stage": "automated-e2e",
-    "started_at": started,
-    "completed_at": datetime.now(timezone.utc).isoformat(),
-    "run_dir": run_dir,
-}
-Path(active).write_text(json.dumps(result, indent=2) + "\n")
-Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
-PY_FAIL
+    record_e2e_failure "automated-e2e"
     fail "Automated E2E suite failed. Candidate is not eligible for promotion."
   fi
 
   if ! python3 "$ROOT/scripts/validate-e2e-report.py" \
     --report "$run_dir/reports/automated.json" \
     --output "$run_dir/reports/automated-summary.json"; then
-    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, run_dir, cid, sha, started = sys.argv[1:]
-result = {
-    "candidate_id": cid, "sha256": sha, "status": "FAILED",
-    "failed_stage": "automated-e2e-report-validation",
-    "started_at": started,
-    "completed_at": datetime.now(timezone.utc).isoformat(),
-    "run_dir": run_dir,
-}
-Path(active).write_text(json.dumps(result, indent=2) + "\n")
-Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
-PY_FAIL
+    record_e2e_failure "automated-e2e-report-validation"
     fail "Automated E2E report did not satisfy release criteria."
   fi
 
@@ -539,82 +362,23 @@ PY_FAIL
     cd "$FRONTEND"
     npm run test:e2e:real-email
   ) 2>&1 | tee "$run_dir/logs/playwright-real-email.log"; then
-    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, run_dir, cid, sha, started = sys.argv[1:]
-result = {
-    "candidate_id": cid, "sha256": sha, "status": "FAILED",
-    "failed_stage": "real-email-e2e",
-    "started_at": started,
-    "completed_at": datetime.now(timezone.utc).isoformat(),
-    "run_dir": run_dir,
-}
-Path(active).write_text(json.dumps(result, indent=2) + "\n")
-Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
-PY_FAIL
+    record_e2e_failure "real-email-e2e"
     fail "Real-email E2E test failed. Candidate is not eligible for promotion."
   fi
 
   if ! python3 "$ROOT/scripts/validate-e2e-report.py" \
     --report "$run_dir/reports/real-email.json" \
     --output "$run_dir/reports/real-email-summary.json"; then
-    python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_FAIL'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, run_dir, cid, sha, started = sys.argv[1:]
-result = {
-    "candidate_id": cid, "sha256": sha, "status": "FAILED",
-    "failed_stage": "real-email-e2e-report-validation",
-    "started_at": started,
-    "completed_at": datetime.now(timezone.utc).isoformat(),
-    "run_dir": run_dir,
-}
-Path(active).write_text(json.dumps(result, indent=2) + "\n")
-Path(run_dir, "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
-PY_FAIL
+    record_e2e_failure "real-email-e2e-report-validation"
     fail "Real-email E2E report did not satisfy release criteria."
   fi
 
-  python3 - "$ACTIVE_RUN" "$run_dir" "$candidate_id" "$candidate_sha" "$started_at" <<'PY_PASS'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, run_dir, cid, sha, started = sys.argv[1:]
-run = Path(run_dir)
-automated = json.loads((run / "reports/automated-summary.json").read_text())
-real_email = json.loads((run / "reports/real-email-summary.json").read_text())
-manifest_path = Path(run_dir).parents[1] / "candidates" / cid / "manifest.json"
-manifest = json.loads(manifest_path.read_text())
-backend_pytest = manifest.get("backend_pytest")
-
-if not isinstance(backend_pytest, dict) or backend_pytest.get("status") != "PASSED":
-    raise SystemExit("Backend Pytest evidence is missing or has not passed.")
-
-result = {
-    "candidate_id": cid,
-    "sha256": sha,
-    "status": "PASSED",
-    "started_at": started,
-    "completed_at": datetime.now(timezone.utc).isoformat(),
-    "automated_tests_expected": automated["discovered"],
-    "automated_tests_status": "PASSED",
-    "real_email_tests_expected": real_email["discovered"],
-    "real_email_test_status": "PASSED",
-    "backend_pytest": backend_pytest,
-    "backend_pytest_status": "PASSED",
-    "backend_pytest_expected": backend_pytest["discovered"],
-    "automated_e2e": automated,
-    "real_email_e2e": real_email,
-    "real_email_completion": "User completed visible browser verification",
-    "run_dir": run_dir,
-    "evidence_dir": str(run / "evidence"),
-}
-Path(active).write_text(json.dumps(result, indent=2) + "\n")
-(run / "release-gate.json").write_text(json.dumps(result, indent=2) + "\n")
-PY_PASS
+  python3 "$ROOT/scripts/forge_release/evidence.py" e2e-pass \
+    --active "$ACTIVE_RUN" \
+    --run-dir "$run_dir" \
+    --candidate-id "$candidate_id" \
+    --sha "$candidate_sha" \
+    --started-at "$started_at"
 
   if [[ "${FORGE_SKIP_OUTLOOK_DRAFT:-0}" == "1" ]]; then
     printf '\nOutlook draft creation skipped by FORGE_SKIP_OUTLOOK_DRAFT=1.\n'
@@ -668,37 +432,13 @@ create_candidate_and_start() {
 
   printf '%s  %s\n' "$candidate_sha" "$(basename "$candidate_zip")" > "$candidate_dir/SHA256SUMS"
 
-  python3 - "$candidate_dir/manifest.json" "$candidate_id" "$candidate_sha" "$candidate_zip" "$git_commit" "$OUTPUT/backend-pytest-summary.json" <<'PY_MANIFEST'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-
-manifest, cid, sha, archive, commit, pytest_path = sys.argv[1:]
-p = Path(archive)
-pytest = json.loads(Path(pytest_path).read_text())
-
-if pytest.get("status") != "PASSED":
-    raise SystemExit("Cannot create candidate: backend Pytest did not pass.")
-discovered = pytest.get("discovered")
-if not isinstance(discovered, int) or discovered < 1:
-    raise SystemExit("Invalid backend Pytest discovery count.")
-if pytest.get("passed") != discovered:
-    raise SystemExit("Backend Pytest passed count does not match discovery.")
-for key in ("failed", "errors", "skipped", "flaky", "unexecuted"):
-    if pytest.get(key) != 0:
-        raise SystemExit(f"Backend Pytest {key} count is nonzero.")
-
-data = {
-    "candidate_id": cid,
-    "created_at": datetime.now(timezone.utc).isoformat(),
-    "git_commit": commit,
-    "archive": p.name,
-    "sha256": sha,
-    "size_bytes": p.stat().st_size,
-    "backend_pytest": pytest,
-}
-Path(manifest).write_text(json.dumps(data, indent=2) + "\n")
-PY_MANIFEST
+  python3 "$ROOT/scripts/forge_release/candidate.py" create-manifest \
+    --output "$candidate_dir/manifest.json" \
+    --candidate-id "$candidate_id" \
+    --sha "$candidate_sha" \
+    --archive "$candidate_zip" \
+    --git-commit "$git_commit" \
+    --pytest-summary "$OUTPUT/backend-pytest-summary.json"
 
   chmod 0444 "$candidate_zip" "$candidate_dir/manifest.json" "$candidate_dir/SHA256SUMS"
 
@@ -881,52 +621,22 @@ NGINX
   curl --silent --fail http://127.0.0.1:18876/health >/dev/null \
     || fail "Candidate Nginx health proxy failed."
 
-  python3 - "$run_dir/runtime-processes.json" "$candidate_id" "$run_dir" \
-    "$runtime" "$api_pid" "$nginx_pid" <<'PY_PROCESS_METADATA'
-import json, os, sys
-from pathlib import Path
+  python3 "$ROOT/scripts/forge_release/candidate.py" write-runtime-metadata \
+    --output "$run_dir/runtime-processes.json" \
+    --candidate-id "$candidate_id" \
+    --run-dir "$run_dir" \
+    --runtime "$runtime" \
+    --api-pid "$api_pid" \
+    --nginx-pid "$nginx_pid"
 
-metadata_path, cid, run_dir, runtime, api_pid, nginx_pid = sys.argv[1:]
-data = {
-    "candidate_id": cid,
-    "run_dir": str(Path(run_dir).resolve()),
-    "runtime": str(Path(runtime).resolve()),
-    "api_pid": int(api_pid),
-    "nginx_pid": int(nginx_pid),
-    "api_port": 18875,
-    "nginx_port": 18876,
-}
-path = Path(metadata_path)
-tmp = path.with_suffix(".tmp")
-tmp.write_text(json.dumps(data, indent=2) + "\n")
-os.chmod(tmp, 0o600)
-tmp.replace(path)
-PY_PROCESS_METADATA
-
-  python3 - "$ACTIVE_RUN" "$candidate_id" "$candidate_sha" "$run_dir" \
-    "$runtime" "$api_pid" "$nginx_pid" <<'PY_ACTIVE'
-import json, sys
-from datetime import datetime, timezone
-from pathlib import Path
-active, cid, sha, run_dir, runtime, api_pid, nginx_pid = sys.argv[1:]
-data = {
-    "candidate_id": cid,
-    "sha256": sha,
-    "status": "PREPARED",
-    "created_at": datetime.now(timezone.utc).isoformat(),
-    "run_dir": run_dir,
-    "runtime": runtime,
-    "api_pid": int(api_pid),
-    "nginx_pid": int(nginx_pid),
-    "api_url": "http://127.0.0.1:18875",
-    "ui_url": "http://127.0.0.1:18876",
-}
-p = Path(active)
-p.parent.mkdir(parents=True, exist_ok=True)
-tmp = p.with_suffix(".tmp")
-tmp.write_text(json.dumps(data, indent=2) + "\n")
-tmp.replace(p)
-PY_ACTIVE
+  python3 "$ROOT/scripts/forge_release/candidate.py" write-active-metadata \
+    --output "$ACTIVE_RUN" \
+    --candidate-id "$candidate_id" \
+    --sha "$candidate_sha" \
+    --run-dir "$run_dir" \
+    --runtime "$runtime" \
+    --api-pid "$api_pid" \
+    --nginx-pid "$nginx_pid"
 
   chmod 0600 "$ACTIVE_RUN"
 
@@ -956,13 +666,14 @@ PY_ACTIVE
 
   rm -f "$run_dir/e2e-process.exit"
 
-  if ! osascript - "$ROOT" "$run_dir" <<'APPLESCRIPT'
+  if ! osascript - "$ROOT" "$run_dir" "${FORGE_SKIP_OUTLOOK_DRAFT:-0}" <<'APPLESCRIPT'
 on run argv
     set repoRoot to item 1 of argv
     set runDir to item 2 of argv
+    set skipOutlookDraft to item 3 of argv
     set exitFile to runDir & "/e2e-process.exit"
 
-    set shellCommand to "cd " & quoted form of repoRoot & " && if ./scripts/build-deployment.sh --e2e; then /usr/bin/printf '0' > " & quoted form of exitFile & "; echo 'FORGE E2E completed successfully.'; else /usr/bin/printf '1' > " & quoted form of exitFile & "; echo 'FORGE E2E failed. Review the candidate test-run logs.'; fi"
+    set shellCommand to "cd " & quoted form of repoRoot & " && export FORGE_SKIP_OUTLOOK_DRAFT=" & quoted form of skipOutlookDraft & " && if ./scripts/build-deployment.sh --e2e; then /usr/bin/printf '0' > " & quoted form of exitFile & "; echo 'FORGE E2E completed successfully.'; else /usr/bin/printf '1' > " & quoted form of exitFile & "; echo 'FORGE E2E failed. Review the candidate test-run logs.'; fi"
 
     tell application "Terminal"
         activate

@@ -21,8 +21,6 @@ Responsibilities:
 """
 
 import argparse
-import hashlib
-import base64
 from html import escape as html_escape
 import json
 import re
@@ -30,7 +28,16 @@ import shutil
 import subprocess
 import sys
 import zipfile
-import xml.etree.ElementTree as ET
+
+from forge_release.validation import (
+    ValidationError,
+    read_json as shared_read_json,
+    sha256_file as shared_sha256_file,
+    validate_candidate_artifacts,
+    validate_e2e_summary,
+    validate_pytest_evidence,
+    validate_pytest_summary,
+)
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,18 +52,17 @@ def fail(message):
 
 
 def sha256_file(path):
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    try:
+        return shared_sha256_file(path)
+    except ValidationError as exc:
+        fail(str(exc))
 
 
 def read_json(path):
     try:
-        return json.loads(path.read_text())
-    except Exception as exc:
-        fail(f"Cannot read {path}: {exc}")
+        return shared_read_json(path)
+    except ValidationError as exc:
+        fail(str(exc))
 
 
 def validate_candidate(candidate_id):
@@ -83,100 +89,29 @@ def validate_candidate(candidate_id):
     backend_pytest = gate.get("backend_pytest")
     manifest_pytest = manifest.get("backend_pytest")
 
-    for label, summary in (
-        ("Backend Pytest release gate", backend_pytest),
-        ("Backend Pytest candidate manifest", manifest_pytest),
-    ):
-        if not isinstance(summary, dict):
-            fail(f"{label} summary is missing.")
-        if summary.get("status") != "PASSED":
-            fail(f"{label} did not pass.")
-
-        discovered = summary.get("discovered")
-        if not isinstance(discovered, int) or discovered < 1:
-            fail(f"{label} discovery count is invalid.")
-        if summary.get("passed") != discovered:
-            fail(f"{label} passed count does not match discovery.")
-
-        for key in ("failed", "errors", "skipped", "flaky", "unexecuted"):
-            if summary.get(key) != 0:
-                fail(f"{label} has nonzero {key} count.")
+    try:
+        validate_pytest_summary(backend_pytest, "Backend Pytest release gate")
+        validate_pytest_summary(
+            manifest_pytest, "Backend Pytest candidate manifest"
+        )
+    except ValidationError as exc:
+        fail(str(exc))
 
     if backend_pytest != manifest_pytest:
         fail("Backend Pytest evidence differs between manifest and release gate.")
 
     pytest_evidence_dir = run_dir / "evidence"
-    pytest_xml_path = pytest_evidence_dir / "backend-pytest.xml"
-    pytest_log_path = pytest_evidence_dir / "backend-pytest.log"
-    pytest_summary_path = pytest_evidence_dir / "backend-pytest-summary.json"
-
-    for evidence_path in (pytest_xml_path, pytest_log_path, pytest_summary_path):
-        if not evidence_path.is_file():
-            fail(f"Backend Pytest evidence file is missing: {evidence_path}")
-
-    retained_pytest = read_json(pytest_summary_path)
-    if retained_pytest != backend_pytest:
-        fail("Retained Pytest summary differs from the release gate.")
-
-    pytest_cases = backend_pytest.get("tests")
-    if not isinstance(pytest_cases, list) or len(pytest_cases) != backend_pytest["discovered"]:
-        fail("Backend Pytest individual test inventory is missing or incomplete.")
-
-    for case in pytest_cases:
-        if not isinstance(case, dict):
-            fail("Backend Pytest inventory contains an invalid test record.")
-        if not case.get("classname") or not case.get("name"):
-            fail("Backend Pytest inventory contains a test without a module or name.")
-        if case.get("status") != "PASSED":
-            fail("Backend Pytest inventory contains a test that did not pass.")
-
     try:
-        junit_root = ET.parse(pytest_xml_path).getroot()
-    except Exception as exc:
-        fail(f"Cannot parse retained Pytest JUnit report: {exc}")
+        pytest_evidence = validate_pytest_evidence(run_dir, backend_pytest)
+    except ValidationError as exc:
+        fail(str(exc))
 
-    junit_suites = (
-        [junit_root] if junit_root.tag == "testsuite"
-        else junit_root.findall("testsuite")
-    )
-    junit_cases = [
-        case
-        for suite in junit_suites
-        for case in suite.iter("testcase")
-    ]
-    if len(junit_cases) != backend_pytest["discovered"]:
-        fail("Retained JUnit test count differs from the release gate.")
+    pytest_xml_path = pytest_evidence["xml_path"]
+    pytest_log_path = pytest_evidence["log_path"]
+    pytest_summary_path = pytest_evidence["summary_path"]
+    retained_pytest = pytest_evidence["summary"]
+    pytest_cases = backend_pytest["tests"]
 
-    junit_tests = sum(int(suite.get("tests", 0)) for suite in junit_suites)
-    junit_failures = sum(int(suite.get("failures", 0)) for suite in junit_suites)
-    junit_errors = sum(int(suite.get("errors", 0)) for suite in junit_suites)
-    junit_skipped = sum(int(suite.get("skipped", 0)) for suite in junit_suites)
-
-    if junit_tests != backend_pytest["discovered"]:
-        fail("JUnit discovered-test count differs from the release gate.")
-    if junit_failures or junit_errors or junit_skipped:
-        fail(
-            "JUnit report contains failures, errors or skipped tests "
-            f"({junit_failures}/{junit_errors}/{junit_skipped})."
-        )
-
-    junit_inventory = sorted(
-        (case.get("classname", ""), case.get("name", ""))
-        for case in junit_cases
-    )
-    summary_inventory = sorted(
-        (case["classname"], case["name"])
-        for case in pytest_cases
-    )
-    if junit_inventory != summary_inventory:
-        fail("Retained JUnit test inventory differs from the Pytest summary.")
-
-    if not isinstance(backend_pytest.get("duration_seconds"), (int, float)):
-        fail("Backend Pytest duration is missing.")
-    if not isinstance(backend_pytest.get("warning_count"), int):
-        fail("Backend Pytest warning count is missing.")
-    if not isinstance(backend_pytest.get("warning_details"), list):
-        fail("Backend Pytest warning details are missing.")
     if gate.get("backend_pytest_status") != "PASSED":
         fail("Backend Pytest release gate did not pass.")
     if gate.get("backend_pytest_expected") != backend_pytest["discovered"]:
@@ -185,26 +120,11 @@ def validate_candidate(candidate_id):
     automated = gate.get("automated_e2e")
     real_email = gate.get("real_email_e2e")
 
-    for label, summary in (
-        ("Automated E2E", automated),
-        ("Real-email E2E", real_email),
-    ):
-        if not isinstance(summary, dict):
-            fail(f"{label} validation summary is missing.")
-
-        if summary.get("eligible") is not True:
-            fail(f"{label} report is not eligible.")
-
-        discovered = summary.get("discovered")
-        if not isinstance(discovered, int) or discovered < 1:
-            fail(f"{label} discovered-test count is invalid.")
-
-        if summary.get("passed") != discovered:
-            fail(f"{label} passed-test count does not match discovery.")
-
-        for key in ("failed", "skipped", "flaky", "unexecuted", "nonstandard_expected"):
-            if summary.get(key) != 0:
-                fail(f"{label} has nonzero {key} count.")
+    try:
+        validate_e2e_summary(automated, "Automated E2E")
+        validate_e2e_summary(real_email, "Real-email E2E")
+    except ValidationError as exc:
+        fail(str(exc))
 
     if gate.get("automated_tests_expected") != automated["discovered"]:
         fail("Automated E2E count does not match its validated report.")
@@ -218,39 +138,20 @@ def validate_candidate(candidate_id):
     if gate.get("real_email_test_status") != "PASSED":
         fail("Real-email E2E test did not pass.")
 
-    if manifest.get("candidate_id") != candidate_id:
-        fail("Manifest candidate ID mismatch.")
+    if not gate.get("sha256"):
+        fail("Release gate SHA-256 is missing.")
 
-    if gate.get("sha256") != manifest.get("sha256"):
-        fail("Release gate SHA-256 does not match candidate manifest.")
+    try:
+        candidate_artifacts = validate_candidate_artifacts(
+            candidate_dir,
+            candidate_id,
+            expected_sha=gate["sha256"],
+        )
+    except ValidationError as exc:
+        fail(str(exc))
 
-    archive_name = manifest.get("archive")
-    if not archive_name or Path(archive_name).name != archive_name:
-        fail("Invalid archive filename in manifest.")
-
-    archive = candidate_dir / archive_name
-    if not archive.is_file():
-        fail(f"Candidate ZIP not found: {archive}")
-
-    actual_sha = sha256_file(archive)
-    expected_sha = manifest.get("sha256")
-
-    if actual_sha != expected_sha:
-        fail("Candidate ZIP SHA-256 does not match manifest.")
-
-    checksum_lines = checksum_path.read_text().splitlines()
-    matching_checksum = False
-
-    for line in checksum_lines:
-        parts = line.strip().split(maxsplit=1)
-        if len(parts) == 2:
-            recorded_sha = parts[0]
-            recorded_name = parts[1].lstrip("*")
-            if recorded_name == archive_name and recorded_sha == actual_sha:
-                matching_checksum = True
-
-    if not matching_checksum:
-        fail("SHA256SUMS does not verify the candidate ZIP.")
+    archive = candidate_artifacts["archive"]
+    actual_sha = candidate_artifacts["sha256"]
 
     ai_config = None
 
