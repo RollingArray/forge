@@ -1,7 +1,33 @@
 #!/bin/bash
+#
+# FORGE Full-Suite E2E Deployment Stopper
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Stops the full-suite FORGE E2E runtime while protecting unrelated processes.
+#
+# Responsibilities:
+# -----------------
+# - Resolve and validate the configured E2E runtime directory.
+# - Verify backend process identity before stopping it.
+# - Stop the Nginx process associated with the runtime.
+# - Leave unrecognized processes untouched.
+# - Preserve runtime files and test logs.
+#
+# Usage:
+# ------
+# bash scripts/testing/stop-full-e2e-deployment.sh
+#
+# Runtime directory and API port can be configured through FORGE_E2E
+# environment variables.
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 E2E_ROOT="$ROOT/dist/forge-e2e"
 RUNTIME_ARG="${FORGE_E2E_RUNTIME_DIR:-$E2E_ROOT/forge-e2e-full-suite}"
 API_PORT="${FORGE_E2E_API_PORT:-18875}"

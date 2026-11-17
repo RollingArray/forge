@@ -1,7 +1,30 @@
 #!/bin/bash
+#
+# FORGE Extracted E2E Deployment Runner
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Runs the isolated FORGE E2E package in a dedicated local test runtime.
+#
+# Responsibilities:
+# -----------------
+# - Validate the E2E package, bootstrap key, and required tools.
+# - Extract the package without overwriting an existing runtime.
+# - Start the isolated backend and Nginx services.
+# - Verify service readiness on the configured ports.
+# - Stop owned processes and preserve runtime evidence.
+#
+# Usage:
+# ------
+# bash scripts/testing/run-extracted-e2e-deployment.sh
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 E2E_ROOT="$ROOT/dist/forge-e2e"
 ZIP="$E2E_ROOT/forge-e2e-deployment.zip"
 KEY_FILE="$E2E_ROOT/e2e-bootstrap.key"

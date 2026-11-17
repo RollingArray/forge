@@ -1,4 +1,27 @@
 #!/bin/bash
+#
+# FORGE Extracted Deployment Runner
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Runs an existing extracted FORGE deployment for local verification.
+#
+# Responsibilities:
+# -----------------
+# - Verify the deployment archive and required tools.
+# - Extract the package into the isolated live-test directory.
+# - Start the backend and Nginx on dedicated local ports.
+# - Check service availability.
+# - Stop processes started by this script and preserve runtime files.
+#
+# Usage:
+# ------
+# bash scripts/deployment-utils/run-extracted-deployment.sh
+
 set -Eeuo pipefail
 
 ROOT="/Users/e10936535/forge"

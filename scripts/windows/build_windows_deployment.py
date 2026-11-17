@@ -1,11 +1,33 @@
+"""
+FORGE Windows Deployment Packager
 
-# Build FORGE Windows deployment and migration ZIPs from repository root.
-# Run: python scripts/build_windows_deployment.py
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Packages the FORGE application and its data migration materials into
+archives intended for Windows deployment and installation.
+
+Responsibilities:
+-----------------
+- Assemble the Windows deployment directory and supporting configuration.
+- Generate the installation, startup, shutdown, and diagnostic scripts.
+- Package the application into the Windows deployment archive.
+- Package the required data migration materials separately.
+- Generate deployment guidance for Windows users.
+
+Usage:
+------
+Run from the repository root:
+python scripts/windows/build_windows_deployment.py
+"""
 import json, os, shutil, tempfile, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "dist" / "windows-deployment"
 APP_ZIP = OUT / "FORGE-Windows-Deployment.zip"
 DATA_ZIP = OUT / "FORGE-Data-Migration.zip"
@@ -151,7 +173,7 @@ GUIDE = r'''# FORGE Windows Deployment Guide
 The API binds to loopback only and must not be exposed directly. The reference UI URL is `http://localhost:8080`; magic links must use the actual externally reachable HTTPS URL. Ollama/model, SMTP and corporate profile API connectivity need separate verification; `/health` alone does not verify them. The migration ZIP contains internal user/profile data and must be transferred only through an approved corporate channel. It preserves model directories and backups, but excludes the known `validation-store-test` directory, live sessions, and generation execution state. The included start/stop scripts are helpers, not a Windows service wrapper; apply approved ACLs, service supervision and log rotation.
 
 ## Rebuild archives
-From the FORGE repository root run `python scripts/build_windows_deployment.py`. Output: `dist\windows-deployment\FORGE-Windows-Deployment.zip` and `dist\windows-deployment\FORGE-Data-Migration.zip`. Rebuild the Angular production bundle first when frontend source changes, then review the migration manifest and both ZIPs before transfer.
+From the FORGE repository root run `python scripts/windows/build_windows_deployment.py`. Output: `dist\windows-deployment\FORGE-Windows-Deployment.zip` and `dist\windows-deployment\FORGE-Data-Migration.zip`. Rebuild the Angular production bundle first when frontend source changes, then review the migration manifest and both ZIPs before transfer.
 '''
 
 def die(message):

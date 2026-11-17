@@ -1,7 +1,30 @@
 #!/bin/bash
+#
+# FORGE Full E2E Environment Preparation
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Prepares a clean isolated deployment environment for the full FORGE E2E suite.
+#
+# Responsibilities:
+# -----------------
+# - Stop the previous full-suite E2E runtime.
+# - Verify configured API and UI ports.
+# - Archive previous E2E build artifacts.
+# - Build the production frontend.
+# - Prepare the isolated E2E deployment for execution.
+#
+# Usage:
+# ------
+# bash scripts/testing/prepare-full-e2e.sh
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 E2E_ROOT="$ROOT/dist/forge-e2e"
 API_PORT="${FORGE_E2E_API_PORT:-18875}"
 UI_PORT="${FORGE_E2E_UI_PORT:-18876}"
@@ -19,7 +42,7 @@ echo "===================================================="
 
 echo ""
 echo "========== 1. STOP EXISTING SERVICES =========="
-"$ROOT/scripts/stop-full-e2e-deployment.sh"
+"$ROOT/scripts/testing/stop-full-e2e-deployment.sh"
 
 echo ""
 echo "========== 2. VERIFY PORTS =========="
@@ -64,7 +87,7 @@ npm --prefix frontend run build
 
 echo ""
 echo "========== 5. BUILD E2E DEPLOYMENT =========="
-python3 scripts/build-e2e-deployment.py
+python3 scripts/testing/build-e2e-deployment.py
 
 echo ""
 echo "========== 6. VERIFY REAL AI CONFIGURATION =========="
@@ -91,4 +114,4 @@ PYAI
 
 echo ""
 echo "========== 7. START FRESH DEPLOYMENT =========="
-exec "$ROOT/scripts/run-full-e2e-deployment.sh"
+exec "$ROOT/scripts/testing/run-full-e2e-deployment.sh"

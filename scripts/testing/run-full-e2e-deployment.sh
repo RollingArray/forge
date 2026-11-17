@@ -1,7 +1,33 @@
 #!/bin/bash
+#
+# FORGE Full-Suite E2E Deployment Runner
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Starts the isolated FORGE deployment used by the full E2E test suite.
+#
+# Responsibilities:
+# -----------------
+# - Validate the E2E package and bootstrap key.
+# - Enforce runtime directory and port constraints.
+# - Start the isolated backend and Nginx services.
+# - Track service processes and verify runtime readiness.
+# - Preserve runtime data and logs for test analysis.
+#
+# Usage:
+# ------
+# bash scripts/testing/run-full-e2e-deployment.sh
+#
+# Runtime directory and port settings can be supplied through FORGE_E2E
+# environment variables.
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 E2E_ROOT="$ROOT/dist/forge-e2e"
 
 RUNTIME_ARG="${FORGE_E2E_RUNTIME_DIR:-$E2E_ROOT/forge-e2e-full-suite}"

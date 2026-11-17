@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-"""Build an isolated FORGE E2E deployment from current source."""
+"""
+FORGE Isolated E2E Deployment Builder
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Builds a separate FORGE deployment package for end-to-end testing using the
+current backend source and compiled frontend.
+
+Responsibilities:
+-----------------
+- Validate required source files and compiled frontend artifacts.
+- Assemble an isolated deployment staging directory.
+- Inject the E2E-only authentication bootstrap into the staged application.
+- Generate and store the dedicated E2E bootstrap key.
+- Package the isolated deployment and its supporting configuration.
+- Keep the source application and normal deployment artifacts separate.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +31,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "dist" / "forge-e2e"
 STAGE = OUTPUT / "forge-deployment"
 ZIP_PATH = OUTPUT / "forge-e2e-deployment.zip"

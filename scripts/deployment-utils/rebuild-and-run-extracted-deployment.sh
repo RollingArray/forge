@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
+#
+# FORGE Extracted Deployment Rebuilder and Runner
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Rebuilds, extracts, and runs FORGE in an isolated local test environment.
+#
+# Responsibilities:
+# -----------------
+# - Identify and stop only processes belonging to this test runtime.
+# - Rebuild and extract the deployment package.
+# - Start the backend and Nginx on dedicated local ports.
+# - Verify service availability.
+# - Preserve test output and refuse to stop unrelated processes.
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIVE_ROOT="$ROOT/dist/forge-live-test"
 APP_ROOT="$LIVE_ROOT/forge-deployment"
 NGINX_CONF="$LIVE_ROOT/nginx.conf"
@@ -158,4 +177,4 @@ echo "========== 6. EXTRACT AND START DEPLOYMENT =========="
 echo "Open: http://127.0.0.1:${NGINX_PORT}/"
 echo ""
 
-exec bash "$ROOT/scripts/run-extracted-deployment.sh"
+exec bash "$ROOT/scripts/deployment-utils/run-extracted-deployment.sh"

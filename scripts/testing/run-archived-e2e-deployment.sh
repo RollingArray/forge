@@ -1,7 +1,30 @@
 #!/bin/bash
+#
+# FORGE Archived E2E Deployment Runner
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Runs an archived isolated FORGE E2E deployment for repeatable verification.
+#
+# Responsibilities:
+# -----------------
+# - Validate the supplied archive and bootstrap key.
+# - Extract the archived package into a separate rerun directory.
+# - Start the archived backend and Nginx services.
+# - Verify service readiness.
+# - Stop processes started by this script while preserving archive and logs.
+#
+# Usage:
+# ------
+# bash scripts/testing/run-archived-e2e-deployment.sh <archive-directory>
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ARCHIVE_ARG="${1:-}"
 API_PORT=18865
 NGINX_PORT=18866

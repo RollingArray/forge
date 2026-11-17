@@ -1,7 +1,30 @@
 #!/bin/bash
+#
+# FORGE Extracted E2E Deployment Stopper
+#
+# Author:
+# -------
+# Ranjoy Sen
+#
+# Purpose:
+# --------
+# Stops the extracted FORGE E2E runtime without signalling unrelated processes.
+#
+# Responsibilities:
+# -----------------
+# - Locate the extracted E2E runtime and process records.
+# - Verify process identity before stopping the backend.
+# - Stop the Nginx process associated with the runtime.
+# - Leave unrecognized processes untouched.
+# - Preserve runtime files and test logs.
+#
+# Usage:
+# ------
+# bash scripts/testing/stop-extracted-e2e-deployment.sh
+
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LIVE_ROOT="$ROOT/dist/forge-e2e/forge-e2e-live-test"
 API_PID_FILE="$LIVE_ROOT/api.pid"
 NGINX_CONF="$LIVE_ROOT/nginx.conf"
