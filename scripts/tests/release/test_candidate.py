@@ -1,10 +1,29 @@
+"""
+FORGE Candidate Management Tests
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Verifies deployment candidate manifests and runtime metadata management.
+
+Responsibilities:
+-----------------
+- Test candidate manifest creation and archive identity.
+- Verify active candidate metadata.
+- Verify runtime metadata generation and persistence.
+"""
+
+
 import json
 import stat
 from pathlib import Path
 
 import pytest
 
-from scripts.forge_release.candidate import (
+from scripts.release.candidate import (
     create_manifest,
     write_active_metadata,
     write_runtime_metadata,

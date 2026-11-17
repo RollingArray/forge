@@ -1,9 +1,28 @@
+"""
+FORGE Release Evidence Tests
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Verifies generation and recording of release validation evidence.
+
+Responsibilities:
+-----------------
+- Test backend Pytest summary generation.
+- Verify E2E failure evidence recording.
+- Verify E2E pass evidence recording.
+"""
+
+
 import json
 from pathlib import Path
 
 import pytest
 
-from scripts.forge_release.evidence import (
+from scripts.release.evidence import (
     generate_pytest_summary,
     record_e2e_failure,
     record_e2e_pass,

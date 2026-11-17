@@ -1,4 +1,21 @@
-"""Evidence generation and release-gate recording for FORGE."""
+"""
+FORGE Release Evidence Manager
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Generates and records backend and E2E release validation evidence.
+
+Responsibilities:
+-----------------
+- Generate backend Pytest summaries from JUnit and console reports.
+- Record E2E failure and success evidence.
+- Maintain release-gate evidence and candidate status.
+"""
+
 
 import argparse
 import json

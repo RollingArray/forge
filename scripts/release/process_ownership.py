@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
-"""Verify ownership of isolated FORGE candidate services."""
+"""
+FORGE Candidate Process Ownership Validator
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Verifies that isolated candidate services belong to the recorded runtime.
+
+Responsibilities:
+-----------------
+- Inspect candidate metadata and process command lines.
+- Verify API and Nginx process ownership.
+- Validate candidate archive and release evidence before cleanup.
+"""
+
 
 import json
 import subprocess
@@ -10,7 +27,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.forge_release.validation import (
+from scripts.release.validation import (
     ValidationError,
     validate_candidate_artifacts,
 )

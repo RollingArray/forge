@@ -1,4 +1,21 @@
-"""Candidate manifest and runtime metadata operations for FORGE."""
+"""
+FORGE Candidate Management
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Creates and manages deployment candidate manifests and runtime metadata.
+
+Responsibilities:
+-----------------
+- Create candidate manifests and record archive identity.
+- Write runtime and active-run metadata.
+- Maintain candidate lifecycle information.
+"""
+
 
 import argparse
 import json

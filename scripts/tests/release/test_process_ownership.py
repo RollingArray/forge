@@ -1,10 +1,30 @@
+"""
+FORGE Candidate Process Ownership Tests
+
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Verifies candidate process ownership checks and safe cleanup validation.
+
+Responsibilities:
+-----------------
+- Test candidate runtime metadata validation.
+- Verify API and Nginx process ownership.
+- Test handling of missing or invalid process metadata.
+- Ensure unverified processes are not treated as candidate-owned.
+"""
+
+
 import json
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from scripts.forge_release import process_ownership as ownership
+from scripts.release import process_ownership as ownership
 
 
 def build_candidate(tmp_path: Path, *, with_metadata: bool = True):

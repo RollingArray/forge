@@ -8,8 +8,7 @@ Ranjoy Sen
 
 Purpose:
 --------
-Validates Playwright E2E reports and determines whether their results satisfy
-the evidence requirements used by the FORGE release process.
+Validates Playwright E2E reports against FORGE release evidence requirements.
 
 Responsibilities:
 -----------------
@@ -19,6 +18,7 @@ Responsibilities:
 - Reconcile report counts and identify invalid or incomplete evidence.
 - Provide self-tests and command-line validation results.
 """
+
 
 import argparse
 import json

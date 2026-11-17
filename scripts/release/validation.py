@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 """
-FORGE shared release validation.
+FORGE Shared Release Validator
 
-Provides reusable validation for candidate artifacts, backend Pytest evidence,
-and Playwright E2E summaries. This module does not start or stop services,
-modify release gates, or interact with Outlook.
+Author:
+-------
+Ranjoy Sen
+
+Purpose:
+--------
+Provides reusable validation for candidate artifacts and release evidence.
+
+Responsibilities:
+-----------------
+- Validate candidate archive contents and identity.
+- Validate backend Pytest evidence.
+- Validate Playwright E2E summaries.
+- Provide shared validation utilities and error handling.
 """
+
 
 import hashlib
 import json
