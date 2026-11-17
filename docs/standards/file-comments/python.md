@@ -1,6 +1,6 @@
 # Python File Header Standard
 
-Every Python source file in AIXP should begin with a consistent module header.
+Every Python source file in FORGE must begin with a consistent module header.
 
 The header should provide enough context for an engineer to quickly understand what the file is and why it exists.
 
@@ -12,7 +12,7 @@ The header should provide enough context for an engineer to quickly understand w
 
 Author:
 -------
-<Author Name>
+<Original Author Name or FORGE Project>
 
 Purpose:
 --------
@@ -26,156 +26,54 @@ Responsibilities:
 """
 ```
 
-## Example
+## **Guidelines**
 
-```python
-"""
-Application Configuration
-
-Author:
--------
-Ranjoy Sen
-
-Purpose:
---------
-Provides centralized configuration for
-the AIXP application and its runtime
-environments.
-
-Responsibilities:
------------------
-- Define application settings
-- Load environment configuration
-- Validate configuration values
-- Provide settings to application components
-"""
-```
-
-## Guidelines
-
-### Module / File Name
+### **Module / File Name**
 
 Use a clear human-readable name describing the module.
 
-```text
-Application Configuration
-Experience Definition
-Experience Repository
-Health API
-Structured Logging
-```
-
 Do not simply repeat the filename unless the filename itself is meaningful.
 
----
+### **Author**
 
-### Author
+Preserve the original author where established by Git history.
 
-Identify the primary author of the file.
-
-```text
-Author:
--------
-Ranjoy Sen
-```
+Use `FORGE Project` when an individual author cannot be established.
 
 Git history remains the source of truth for subsequent contributors.
 
----
+### **Purpose**
 
-### Purpose
+Explain why the module exists.
 
-Explain **why the module exists**.
+Keep it concise, normally two to four lines. Avoid implementation details.
 
-Keep it concise, normally two to four lines.
-
-Good:
-
-```text
-Purpose:
---------
-Validates experience definitions before
-they enter the trusted AIXP runtime.
-```
-
-Avoid explaining implementation details here.
-
----
-
-### Responsibilities
+### **Responsibilities**
 
 List the major responsibilities owned by the module.
 
 Keep the list short, normally three to six items.
 
-Example:
+### **What Should NOT Be Included**
 
-```text
-Responsibilities:
------------------
-- Validate experience structure
-- Validate interaction definitions
-- Validate required dependencies
-- Return validation results
-```
-
----
-
-## What Should NOT Be Included
-
-Do not add information that Git, the project documentation, or the code already provides.
+Do not add information that Git, project documentation, or the code already provides.
 
 Avoid:
 
-```text
-Created:
-Modified:
-Version:
-Last Updated:
-Reviewed By:
-```
-
-Git provides change history, while project documentation and ADRs provide architectural history.
+- Created
+- Modified
+- Version
+- Last Updated
+- Reviewed By
 
 Do not include implementation details, temporary notes, or personal comments.
 
----
+## **Architectural Files**
 
-## Architectural Files
+For files representing an important architectural boundary, the Purpose or Responsibilities section should make that boundary clear.
 
-For files that represent an important architectural boundary, the Purpose or Responsibilities section should make that boundary clear.
+## **Rule**
 
-Example:
+Every Python file gets a header. Keep it short, meaningful, and focused on purpose and responsibility.
 
-```python
-"""
-Experience Definition Validator
-
-Author:
--------
-Ranjoy Sen
-
-Purpose:
---------
-Validates externally supplied experience
-definitions before they enter the trusted
-AIXP runtime.
-
-Responsibilities:
------------------
-- Validate experience schema
-- Validate interaction capabilities
-- Reject unsupported definitions
-- Prevent unsafe runtime configuration
-"""
-```
-
-This helps communicate architectural intent directly from the source file.
-
----
-
-## Rule
-
-**Every Python file gets a header. Keep it short, meaningful, and focused on purpose and responsibility.**
-
-> **The header explains what the file is responsible for. The code explains how it does it.**
+> The header explains what the file is responsible for. The code explains how it does it.
