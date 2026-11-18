@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { test, expect } from './model-studio.fixtures';
 
 const ENTITY = 'TestRecord';
@@ -12,6 +14,18 @@ interface GeneratedPage {
   offset: number;
   limit: number;
   search: string;
+}
+
+interface SpecificationField {
+  name: string;
+  type: string;
+  identity?: Record<string, unknown>;
+  generation?: {
+    strategy?: string;
+    distribution?: string;
+    generator?: string;
+    parameters?: Record<string, unknown>;
+  };
 }
 
 function fieldCsv(
@@ -46,7 +60,105 @@ function fieldCsv(
     ...options,
   };
 
-  return columns.map((column) => values[column] ?? '').join(',');
+  return columns.map((column) => {
+    const value = values[column] ?? '';
+    return /[",\r\n]/.test(value)
+      ? `"${value.replace(/"/g, '""')}"`
+      : value;
+  }).join(',');
+}
+
+async function openCategoricalFieldDialog(
+  page: import('@playwright/test').Page,
+): Promise<import('@playwright/test').Locator> {
+  const entityNode = page
+    .locator('app-model-studio-entity-node')
+    .filter({ hasText: ENTITY });
+
+  await expect(entityNode).toHaveCount(1);
+  await entityNode.click();
+
+  const inspector = page.locator('app-model-studio-entity-inspector');
+
+  await inspector.getByRole('button', {
+    name: 'Fields',
+    exact: true,
+  }).click();
+
+  const addButton = inspector.locator(
+    'app-inspector-fields .inspector-action, app-inspector-fields .empty-action',
+  );
+
+  await expect(addButton).toBeVisible();
+  await addButton.click();
+
+  const dialog = page.getByRole('dialog', {
+    name: 'Add Field',
+    exact: true,
+  });
+
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function getApiAuthorizationHeaders(
+  page: import('@playwright/test').Page,
+): Promise<Record<string, string>> {
+  const session = await page.evaluate(() => {
+    const stored = localStorage.getItem('forge.auth.session');
+
+    if (!stored) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      return {
+        accessToken: parsed.accessToken,
+        tokenType: parsed.tokenType,
+      };
+    } catch {
+      return null;
+    }
+  });
+
+  expect(session?.accessToken, 'Authenticated E2E session should contain an access token')
+    .toBeTruthy();
+  expect(session?.tokenType).toBe('Bearer');
+
+  return {
+    Authorization: `${session!.tokenType} ${session!.accessToken}`,
+  };
+}
+
+async function getCanonicalFields(
+  page: import('@playwright/test').Page,
+  modelId: string,
+): Promise<SpecificationField[]> {
+  const origin = new URL(page.url()).origin;
+
+  const response = await page.context().request.get(
+    `${origin}/api/v1/data-models/${modelId}/specification`,
+    {
+      headers: await getApiAuthorizationHeaders(page),
+    },
+  );
+
+  expect(response.status()).toBe(200);
+
+  const specification = await response.json() as {
+    entities?: Array<{
+      name: string;
+      fields: SpecificationField[];
+    }>;
+  };
+
+  const entity = specification.entities?.find(
+    (item) => item.name === ENTITY,
+  );
+
+  expect(entity, `${ENTITY} should exist in the specification`).toBeTruthy();
+  return entity!.fields;
 }
 
 async function importGenerationSpecification(
@@ -188,6 +300,16 @@ async function importGenerationSpecification(
         'A category of aerospace manufacturing components or systems',
       semantic_mode: 'VOCABULARY',
     }),
+
+    fieldCsv('IS_ACTIVE', 'BOOLEAN', {
+      generation_strategy: 'RANDOM',
+    }),
+
+    fieldCsv('PRODUCT_TIER', 'CATEGORICAL', {
+      generation_strategy: 'RANDOM',
+      distribution: 'CATEGORICAL',
+      values: '["Bronze","Silver","Gold"]',
+    }),
   ];
 
   await page.locator('#csv-section-input').fill(fields.join('\n'));
@@ -312,6 +434,109 @@ test.describe('MS08 - Field type and generation configuration', () => {
         .filter({ hasText: ENTITY });
 
       await expect(entityNode).toHaveCount(1);
+
+      await test.step('MS08-17 and MS08-18: Verify BOOLEAN and CATEGORICAL configuration.', async () => {
+        const fields = await getCanonicalFields(page, modelId);
+
+        expect(
+          fields.find((field) => field.name === 'IS_ACTIVE'),
+        ).toMatchObject({
+          type: 'BOOLEAN',
+          generation: { strategy: 'RANDOM' },
+        });
+
+        expect(
+          fields.find((field) => field.name === 'PRODUCT_TIER'),
+        ).toMatchObject({
+          type: 'CATEGORICAL',
+          generation: {
+            strategy: 'RANDOM',
+            distribution: 'CATEGORICAL',
+            parameters: {
+              values: ['Bronze', 'Silver', 'Gold'],
+            },
+          },
+        });
+      });
+
+      await test.step('MS08-20: UI prevents invalid categorical configuration.', async () => {
+        const dialog = await openCategoricalFieldDialog(page);
+
+        await dialog.locator('#field-name').fill('INVALID_CATEGORIES');
+        await dialog.getByText('Choice / Category', {
+          exact: true,
+        }).click();
+
+        const saveButton = dialog.locator('.save-button');
+        const categoryInput = dialog.locator('#categorical-values');
+
+        await expect(saveButton).toBeDisabled();
+
+        await categoryInput.fill('Bronze, Silver, Bronze');
+        await expect(saveButton).toBeDisabled();
+
+        await categoryInput.fill('Bronze, Silver, Gold');
+        await expect(saveButton).toBeEnabled();
+
+        await categoryInput.fill('Bronze, Silver, Bronze');
+        await expect(saveButton).toBeDisabled();
+
+        await dialog.getByRole('button', {
+          name: /cancel/i,
+        }).click();
+
+        await expect(dialog).not.toBeVisible();
+      });
+
+      await test.step('MS08-21: API rejects unsupported POISSON distributions.', async () => {
+        const origin = new URL(page.url()).origin;
+        const endpoint =
+          `${origin}/api/v1/data-models/${modelId}` +
+          `/specification/entities/${encodeURIComponent(ENTITY)}/fields`;
+
+        for (const field of [
+          { name: 'INVALID_INTEGER_POISSON', type: 'INTEGER' },
+          { name: 'INVALID_DECIMAL_POISSON', type: 'DECIMAL' },
+        ]) {
+          const response = await page.context().request.post(endpoint, {
+            headers: await getApiAuthorizationHeaders(page),
+            data: {
+              name: field.name,
+              type: field.type,
+              generation: {
+                strategy: 'RANDOM',
+                distribution: 'POISSON',
+                parameters: {
+                  minimum: 1,
+                  maximum: 10,
+                },
+              },
+            },
+          });
+
+          expect(
+            response.status(),
+            `${field.type} POISSON should be rejected`,
+          ).toBe(422);
+
+          const body = await response.json();
+          expect(body.detail).toBeTruthy();
+        }
+
+        const persistedFields = await getCanonicalFields(page, modelId);
+
+        expect(
+          persistedFields.some(
+            (field) => field.name === 'INVALID_INTEGER_POISSON',
+          ),
+        ).toBe(false);
+
+        expect(
+          persistedFields.some(
+            (field) => field.name === 'INVALID_DECIMAL_POISSON',
+          ),
+        ).toBe(false);
+      });
     });
 
     await test.step('MS08-02 to MS08-06: Create RANDOM_STRING fields and verify configured lengths and character sets.', async () => {
@@ -346,6 +571,53 @@ test.describe('MS08 - Field type and generation configuration', () => {
 
     await test.step('MS08-16: Configure DECIMAL without precision and scale.', async () => {
       // DECIMAL_UNIFORM and DECIMAL_NORMAL intentionally omit precision/scale.
+    });
+
+    await test.step('MS08-19: Verify field configuration persists after reload.', async () => {
+      const fieldsBeforeReload = await getCanonicalFields(page, modelId);
+
+      const expectedTypes = [
+        'IDENTIFIER',
+        'STRING',
+        'INTEGER',
+        'DECIMAL',
+        'BOOLEAN',
+        'CATEGORICAL',
+      ];
+
+      expect(
+        [...new Set(fieldsBeforeReload.map((field) => field.type))].sort(),
+      ).toEqual([...expectedTypes].sort());
+
+      const beforeReload = fieldsBeforeReload
+        .map((field) => ({
+          name: field.name,
+          type: field.type,
+          identity: field.identity,
+          generation: field.generation,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      await page.reload();
+
+      await expect(
+        page.locator('app-model-studio-entity-node').filter({
+          hasText: ENTITY,
+        }),
+      ).toBeVisible();
+
+      const fieldsAfterReload = await getCanonicalFields(page, modelId);
+
+      const afterReload = fieldsAfterReload
+        .map((field) => ({
+          name: field.name,
+          type: field.type,
+          identity: field.identity,
+          generation: field.generation,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      expect(afterReload).toEqual(beforeReload);
     });
 
     await test.step('Validate model and continue to population.', async () => {
@@ -554,6 +826,22 @@ test.describe('MS08 - Field type and generation configuration', () => {
       }
     });
 
+    await test.step('MS08-17: Verify generated BOOLEAN values.', async () => {
+      for (const row of generatedData!.rows) {
+        expect(row.IS_ACTIVE).not.toBeNull();
+        expect(['true', 'false']).toContain(row.IS_ACTIVE!.toLowerCase());
+      }
+    });
+
+    await test.step('MS08-18: Verify generated CATEGORICAL values.', async () => {
+      const allowedValues = new Set(['Bronze', 'Silver', 'Gold']);
+
+      for (const row of generatedData!.rows) {
+        expect(row.PRODUCT_TIER).not.toBeNull();
+        expect(allowedValues.has(row.PRODUCT_TIER!)).toBe(true);
+      }
+    });
+
     await test.step('MS08-09: Configure STRING with SEMANTIC / UNIQUE. Expected result: Each requested row receives its corresponding unique semantic value.', async () => {
       const values = generatedData!.rows.map(
         (row) => row['UNIQUE_DESCRIPTION'] ?? '',
@@ -564,7 +852,7 @@ test.describe('MS08 - Field type and generation configuration', () => {
       expect(new Set(values).size).toBe(TARGET_ROWS);
     });
 
-    await test.step('MS08-10: Configure STRING with SEMANTIC / VOCABULARY. Expected result: Generated values come from semantic vocabulary.', async () => {
+    await test.step('MS08-10: Verify SEMANTIC / VOCABULARY generation.', async () => {
       const values = generatedData!.rows.map(
         (row) => row['PRODUCT_CATEGORY'] ?? '',
       );
@@ -572,10 +860,133 @@ test.describe('MS08 - Field type and generation configuration', () => {
       expect(values).toHaveLength(TARGET_ROWS);
       expect(values.every((value) => value.trim().length > 0)).toBe(true);
 
-      const vocabulary = new Set(values);
-      expect(vocabulary.size).toBeGreaterThan(0);
-      // FORGE prepares a 50-value semantic vocabulary for VOCABULARY mode.
-      expect(vocabulary.size).toBeLessThanOrEqual(50);
+      const resultsPath = new URL(page.url()).pathname;
+      const resultsRouteMatch = resultsPath.match(
+        /\/data-model\/results\/([^/]+)/,
+      );
+      const jobId = resultsRouteMatch?.[1];
+
+      expect(
+        jobId,
+        `Expected to extract generation job ID from Results route: ${resultsPath}`,
+      ).toBeTruthy();
+
+      const candidateId = process.env.FORGE_E2E_CANDIDATE_ID;
+      if (!candidateId) {
+        throw new Error(
+          'FORGE_E2E_CANDIDATE_ID is required to verify persisted semantic vocabulary.',
+        );
+      }
+
+      const semanticPath = resolve(
+        __dirname,
+        '../../../dist/test-runs',
+        candidateId,
+        'runtime/forge-deployment/backend/api/data/data_model',
+        modelId,
+        'generation',
+        jobId!,
+        'semantic.json',
+      );
+
+      const semanticDocument = JSON.parse(
+        readFileSync(semanticPath, 'utf8'),
+      ) as {
+        job_id?: string;
+        fields?: Record<string, {
+          mode?: string;
+          values?: string[];
+        }>;
+      };
+
+      expect(semanticDocument.job_id).toBe(jobId);
+
+      const vocabularyRecord =
+        semanticDocument.fields?.[`${ENTITY}.PRODUCT_CATEGORY`];
+
+      expect(vocabularyRecord).toBeTruthy();
+      if (!vocabularyRecord) {
+        throw new Error(
+          `Persisted semantic vocabulary is missing for ${ENTITY}.PRODUCT_CATEGORY.`,
+        );
+      }
+
+      expect(vocabularyRecord.mode).toBe('VOCABULARY');
+      expect(vocabularyRecord.values).toHaveLength(50);
+
+      const vocabularyValues = vocabularyRecord.values!;
+      expect(
+        vocabularyValues.every(
+          (value) => typeof value === 'string' && value.trim().length > 0,
+        ),
+      ).toBe(true);
+
+      const vocabulary = new Set(vocabularyValues);
+      const outOfVocabulary = [...new Set(values)].filter(
+        (value) => !vocabulary.has(value),
+      );
+
+      expect(
+        outOfVocabulary,
+        'Every generated PRODUCT_CATEGORY value must belong to the persisted 50-value semantic vocabulary.',
+      ).toEqual([]);
+
+      const origin = new URL(page.url()).origin;
+      const response = await page.context().request.get(
+        `${origin}/api/v1/data-models/${modelId}/generation/${jobId}`,
+        {
+          headers: await getApiAuthorizationHeaders(page),
+        },
+      );
+
+      expect(response.status()).toBe(200);
+
+      const job = await response.json() as {
+        entities?: Array<{
+          entity_name: string;
+          vocabulary_semantic_calls?: Array<{
+            field: string;
+            requested_count: number;
+            returned_count: number;
+          }>;
+        }>;
+      };
+
+      const entityProgress = job.entities?.find(
+        (entity) => entity.entity_name === ENTITY,
+      );
+
+      expect(entityProgress).toBeTruthy();
+
+      const vocabularyCalls = (
+        entityProgress?.vocabulary_semantic_calls ?? []
+      ).filter((call) => call.field === 'PRODUCT_CATEGORY');
+
+      expect(vocabularyCalls.length).toBeGreaterThan(0);
+
+      const returnedCount = vocabularyCalls.reduce(
+        (total, call) => total + call.returned_count,
+        0,
+      );
+
+      expect(returnedCount).toBeGreaterThanOrEqual(50);
+
+      await testInfo.attach('ms08-vocabulary-verification.json', {
+        body: JSON.stringify({
+          model_id: modelId,
+          job_id: jobId,
+          field: `${ENTITY}.PRODUCT_CATEGORY`,
+          mode: vocabularyRecord.mode,
+          vocabulary_size: vocabularyValues.length,
+          generated_rows: values.length,
+          generated_distinct_values: new Set(values).size,
+          out_of_vocabulary_values: outOfVocabulary,
+          semantic_calls: vocabularyCalls,
+          semantic_artifact: semanticPath,
+        }, null, 2),
+        contentType: 'application/json',
+      });
     });
+
   });
 });

@@ -307,29 +307,36 @@ Objective: Verify safe field deletion.
 Evidence: Playwright `--grep "MS07"`: 7 passed, including local authentication. Full Playwright regression: 95 passed. Angular production build: passed with compiler and bundle-budget warnings. E2E dependency coverage: identity and foreign key.
 
 ##### MS08: Field type and generation configuration
-Status: [pending]
+Status: [done]
 Objective: Verify all supported field types and their configuration options.
-- [pending] **MS08-01**: Create IDENTIFIER field. Expected result: Sequential identity values.
-- [pending] **MS08-02**: Create STRING with RANDOM_STRING. Expected result: Values respect configured length.
-- [pending] **MS08-03**: RANDOM_STRING with ALPHA. Expected result: Alphabetic characters only.
-- [pending] **MS08-04**: RANDOM_STRING with DIGITS. Expected result: Numeric characters only.
-- [pending] **MS08-05**: RANDOM_STRING with ALPHANUMERIC. Expected result: Only permitted characters.
-- [pending] **MS08-06**: Configure minimum and maximum string length. Expected result: Generated lengths stay within range.
-- [pending] **MS08-07**: Configure STRING with PATTERN. Expected result: Generated values follow pattern tokens.
-- [pending] **MS08-08**: Pattern containing literal characters. Expected result: Literal characters are preserved.
-- [pending] **MS08-09**: Configure STRING with SEMANTIC / UNIQUE. Expected result: Each requested row receives its corresponding unique semantic value.
-- [pending] **MS08-10**: Configure STRING with SEMANTIC / VOCABULARY. Expected result: Generated values come from semantic vocabulary.
-- [pending] **MS08-11**: Configure INTEGER with UNIFORM. Expected result: Whole-number values remain within bounds.
-- [pending] **MS08-12**: Configure INTEGER with DISCRETE_UNIFORM. Expected result: Whole-number values remain within bounds.
-- [pending] **MS08-13**: Configure DECIMAL with UNIFORM. Expected result: Decimal values remain within bounds.
-- [pending] **MS08-14**: Configure DECIMAL with NORMAL. Expected result: Bounded normal values are produced.
-- [pending] **MS08-15**: Configure DECIMAL with precision and scale. Expected result: Values respect configured decimal grid.
-- [pending] **MS08-16**: Configure DECIMAL without precision and scale. Expected result: Valid bounded decimal values are produced.
-- [pending] **MS08-17**: Configure BOOLEAN. Expected result: Valid boolean values are produced.
-- [pending] **MS08-18**: Configure CATEGORICAL. Expected result: Values belong to the configured set.
-- [pending] **MS08-19**: Save and reload each field type. Expected result: Configuration remains intact.
-- [pending] **MS08-20**: Enter invalid configuration parameters. Expected result: UI prevents invalid save.
-- [pending] **MS08-21**: Submit unsupported generation configuration through API. Expected result: Backend rejects unsupported configuration.
+- [done] **MS08-01**: Create IDENTIFIER field. Expected result: Sequential identity values.
+- [done] **MS08-02**: Create STRING with RANDOM_STRING. Expected result: Values respect configured length.
+- [done] **MS08-03**: RANDOM_STRING with ALPHA. Expected result: Alphabetic characters only.
+- [done] **MS08-04**: RANDOM_STRING with DIGITS. Expected result: Numeric characters only.
+- [done] **MS08-05**: RANDOM_STRING with ALPHANUMERIC. Expected result: Only permitted characters.
+- [done] **MS08-06**: Configure minimum and maximum string length. Expected result: Generated lengths stay within range.
+- [done] **MS08-07**: Configure STRING with PATTERN. Expected result: Generated values follow pattern tokens.
+- [done] **MS08-08**: Pattern containing literal characters. Expected result: Literal characters are preserved.
+- [done] **MS08-09**: Configure STRING with SEMANTIC / UNIQUE. Expected result: Each requested row receives its corresponding unique semantic value.
+- [done] **MS08-10**: Configure STRING with SEMANTIC / VOCABULARY. Expected result: Generated values come from the persisted semantic vocabulary.
+- [done] **MS08-11**: Configure INTEGER with UNIFORM. Expected result: Whole-number values remain within bounds.
+- [done] **MS08-12**: Configure INTEGER with DISCRETE_UNIFORM. Expected result: Whole-number values remain within bounds.
+- [done] **MS08-13**: Configure DECIMAL with UNIFORM. Expected result: Decimal values remain within bounds.
+- [done] **MS08-14**: Configure DECIMAL with NORMAL. Expected result: Bounded normal values are produced.
+- [done] **MS08-15**: Configure DECIMAL with precision and scale. Expected result: Values respect configured decimal grid.
+- [done] **MS08-16**: Configure DECIMAL without precision and scale. Expected result: Valid bounded decimal values are produced.
+- [done] **MS08-17**: Configure BOOLEAN. Expected result: Valid boolean values are produced.
+- [done] **MS08-18**: Configure CATEGORICAL. Expected result: Values belong to the configured set.
+- [done] **MS08-19**: Save and reload each field type. Expected result: Configuration remains intact.
+- [done] **MS08-20**: Enter invalid configuration parameters. Expected result: UI prevents invalid save.
+- [done] **MS08-21**: Submit unsupported generation configuration through API. Expected result: Backend rejects unsupported configuration.
+
+Evidence:
+- Targeted MS08 Playwright execution after vocabulary membership verification: 2 passed (including isolated authentication setup).
+- Full isolated Playwright regression: 99 passed, 1 failed on the real-email request (HTTP 503).
+- Independent real-email test rerun: 1 passed, including actual magic-link verification and Workspace navigation.
+- Angular production build: passed with existing unused-import and bundle/style budget warnings.
+- MS08-10 vocabulary verification: passed. The test reads the candidate runtime's persisted semantic.json for the exact model and job, verifies 50 non-empty VOCABULARY entries, and confirms every generated PRODUCT_CATEGORY value belongs to that vocabulary. Generation telemetry independently confirms vocabulary generation activity.
 
 ##### MS09: Identity and primary keys
 Status: [pending]
@@ -671,7 +678,7 @@ Objective: Verify realistic end-to-end user journeys using Aerospace Enterprise 
 
 Additional suite-specific acceptance checks and implementation notes:
 
-- [pending] MS08: Verify that POISSON is rejected for INTEGER and DECIMAL generation because it is not supported by the current validator and generator, despite appearing in the shared distribution vocabulary.
+- [done] MS08: Verify that POISSON is rejected for INTEGER and DECIMAL generation because it is not supported by the current validator and generator, despite appearing in the shared distribution vocabulary.
 - [pending] MS16: After applying and reviewing an entity AI proposal, save the entity and reload the specification to verify persistence. Acceptance activity and specification persistence are separate operations.
 - [pending] MS25: Verify that rule-level statuses remain independently observable as PASSED, FAILED and NOT_EVALUATED.
 
