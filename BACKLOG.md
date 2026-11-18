@@ -332,11 +332,12 @@ Objective: Verify all supported field types and their configuration options.
 - [done] **MS08-21**: Submit unsupported generation configuration through API. Expected result: Backend rejects unsupported configuration.
 
 Evidence:
-- Targeted MS08 Playwright execution after vocabulary membership verification: 2 passed (including isolated authentication setup).
-- Full isolated Playwright regression: 99 passed, 1 failed on the real-email request (HTTP 503).
-- Independent real-email test rerun: 1 passed, including actual magic-link verification and Workspace navigation.
-- Angular production build: passed with existing unused-import and bundle/style budget warnings.
+- Playwright test discovery: 21 independent MS08 test declarations confirmed.
+- TypeScript check: passed with no errors.
+- Targeted MS08 Playwright execution: 22 passed, including isolated authentication setup. All 21 acceptance cases passed individually.
+- Full isolated Playwright regression: 120 passed, 0 failed, including real-email magic-link verification and Workspace navigation. Execution time: 5.1 minutes.
 - MS08-10 vocabulary verification: passed. The test reads the candidate runtime's persisted semantic.json for the exact model and job, verifies 50 non-empty VOCABULARY entries, and confirms every generated PRODUCT_CATEGORY value belongs to that vocabulary. Generation telemetry independently confirms vocabulary generation activity.
+- Angular production build: previously passed with existing unused-import and bundle/style budget warnings. No application code was changed in this test refactor.
 
 ##### MS09: Identity and primary keys
 Status: [pending]
