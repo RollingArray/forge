@@ -3,7 +3,6 @@ File: json_activity_repository.py
 Purpose: Append-only JSONL persistence for FORGE activity events.
 """
 
-import fcntl
 import json
 import os
 from contextlib import contextmanager
@@ -13,6 +12,7 @@ from threading import Lock, RLock
 from typing import Any, Iterator
 from uuid import uuid4
 
+from app.repositories.file_lock import create_file_lock
 from app.interfaces.activity import Activity
 from app.interfaces.activity_repository import ActivityRepository
 
@@ -257,12 +257,8 @@ class JsonActivityRepository(ActivityRepository):
             )
 
         with thread_lock:
-            with lock_path.open("a+") as lock_file:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-                try:
-                    yield
-                finally:
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            with create_file_lock(lock_path):
+                yield
 
     @staticmethod
     def _to_record(activity: Activity) -> dict[str, Any]:

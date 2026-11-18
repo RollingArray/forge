@@ -81,3 +81,52 @@ def test_specification_revision_distinguishes_decimal_representation():
         JsonSpecificationRepository.revision(base)
         != JsonSpecificationRepository.revision(with_trailing_zeros)
     )
+
+
+def test_nested_transactions_acquire_and_release_file_lock_once(
+    tmp_path,
+    monkeypatch,
+):
+    import app.repositories.json_specification_repository as repository_module
+
+    repository = JsonSpecificationRepository()
+    monkeypatch.setattr(repository, "_data_directory", tmp_path)
+
+    class TrackingLock:
+        def __init__(self):
+            self.acquire_count = 0
+            self.release_count = 0
+
+        def acquire(self):
+            self.acquire_count += 1
+
+        def release(self):
+            self.release_count += 1
+
+    tracking_lock = TrackingLock()
+    factory_calls = []
+
+    def create_tracking_lock(path):
+        factory_calls.append(path)
+        return tracking_lock
+
+    monkeypatch.setattr(
+        repository_module,
+        "create_file_lock",
+        create_tracking_lock,
+    )
+
+    with repository.transaction("MODEL-NESTED"):
+        assert tracking_lock.acquire_count == 1
+        assert tracking_lock.release_count == 0
+
+        with repository.transaction("MODEL-NESTED"):
+            assert tracking_lock.acquire_count == 1
+            assert tracking_lock.release_count == 0
+
+        assert tracking_lock.acquire_count == 1
+        assert tracking_lock.release_count == 0
+
+    assert tracking_lock.acquire_count == 1
+    assert tracking_lock.release_count == 1
+    assert len(factory_calls) == 1

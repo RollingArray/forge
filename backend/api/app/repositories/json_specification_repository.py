@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import json
 import hashlib
-import fcntl
 from contextlib import contextmanager
 from pathlib import Path
 from threading import Lock, RLock, local
 from typing import Any, Iterator
+
+from app.repositories.file_lock import create_file_lock
 
 
 FORGE_VERSION = "1.0.0"
@@ -99,26 +100,25 @@ class JsonSpecificationRepository:
             )
 
         with thread_lock:
+            # Track nesting per thread and specification lock path.
             depths = getattr(self._transaction_state, "depths", {})
-            descriptors = getattr(
+            locks = getattr(
                 self._transaction_state,
-                "descriptors",
+                "locks",
                 {},
             )
             depth = depths.get(lock_key, 0)
 
+            # Only the outermost transaction acquires the process lock.
+            # Nested transactions reuse it until the outermost scope exits.
             if depth == 0:
-                descriptor = lock_path.open("a+")
-                try:
-                    fcntl.flock(descriptor.fileno(), fcntl.LOCK_EX)
-                except Exception:
-                    descriptor.close()
-                    raise
-                descriptors[lock_key] = descriptor
+                lock = create_file_lock(lock_path)
+                lock.acquire()
+                locks[lock_key] = lock
 
             depths[lock_key] = depth + 1
             self._transaction_state.depths = depths
-            self._transaction_state.descriptors = descriptors
+            self._transaction_state.locks = locks
 
             try:
                 yield
@@ -128,14 +128,8 @@ class JsonSpecificationRepository:
                     depths[lock_key] = remaining
                 else:
                     depths.pop(lock_key, None)
-                    descriptor = descriptors.pop(lock_key)
-                    try:
-                        fcntl.flock(
-                            descriptor.fileno(),
-                            fcntl.LOCK_UN,
-                        )
-                    finally:
-                        descriptor.close()
+                    lock = locks.pop(lock_key)
+                    lock.release()
 
     @staticmethod
     def revision(specification: dict[str, Any]) -> str:
