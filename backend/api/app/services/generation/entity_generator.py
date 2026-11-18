@@ -5,6 +5,7 @@ Purpose: Generate rows for one production FORGE entity.
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from decimal import Decimal
 
 import random
@@ -92,12 +93,13 @@ class EntityGenerator:
                     f"mapping {child_fields} -> {parent_entity}.{parent_fields}."
                 )
 
-            if set(child_fields).intersection(identity_fields):
+            identity_overlap = set(child_fields).intersection(identity_fields)
+
+            if identity_overlap and not set(child_fields).issubset(identity_fields):
                 raise EntityGenerationError(
-                    f"{entity_name}: mandatory parent coverage for "
-                    f"{child_fields} cannot currently be combined with "
-                    "child identity fields. Identity-aware relationship "
-                    "allocation is required."
+                    f"{entity_name}: mandatory relationship fields "
+                    f"{child_fields} must either all participate in the "
+                    "child identity or remain outside it."
                 )
 
             matching_foreign_keys = [
@@ -188,6 +190,7 @@ class EntityGenerator:
                 foreign_keys=foreign_keys,
                 context=context,
                 fields=fields,
+                mandatory_assignments=mandatory_assignments,
             )
 
             # Mandatory parent participation is allocated against global
@@ -197,6 +200,11 @@ class EntityGenerator:
                 range(chunk_start, chunk_end)
             ):
                 for child_fields, parent_keys in mandatory_assignments:
+                    # Identity fields have already been assigned by the
+                    # constrained Cartesian identity allocator.
+                    if set(child_fields).issubset(identity_fields):
+                        continue
+
                     if row_index >= len(parent_keys):
                         continue
 
@@ -344,8 +352,11 @@ class EntityGenerator:
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
         fields: list[dict[str, Any]] | None = None,
+        mandatory_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ] | None = None,
     ) -> list[dict[str, Any]]:
-        """Allocate only the identity values required for one generation chunk."""
+        """Allocate identity values for one generation chunk."""
 
         if row_count == 0 or not identity_fields:
             return [{} for _ in range(row_count)]
@@ -484,12 +495,30 @@ class EntityGenerator:
         if not components:
             return [{} for _ in range(target_rows)]
 
-        selected_indexes = self._select_cartesian_indexes(
-            candidate_count=candidate_count,
-            row_start=row_start,
-            row_count=row_count,
-            target_rows=target_rows,
+        mandatory_identity_assignments = mandatory_assignments or []
+
+        has_mandatory_identity = any(
+            set(child_fields).issubset(identity_set)
+            for child_fields, _ in mandatory_identity_assignments
         )
+
+        if has_mandatory_identity:
+            selected_indexes = self._select_mandatory_cartesian_indexes(
+                components=components,
+                mandatory_assignments=mandatory_identity_assignments,
+                candidate_count=candidate_count,
+                row_start=row_start,
+                row_count=row_count,
+                target_rows=target_rows,
+                identity_fields=identity_fields,
+            )
+        else:
+            selected_indexes = self._select_cartesian_indexes(
+                candidate_count=candidate_count,
+                row_start=row_start,
+                row_count=row_count,
+                target_rows=target_rows,
+            )
 
         candidates: list[dict[str, Any]] = []
 
@@ -528,6 +557,235 @@ class EntityGenerator:
             candidates.append(row)
 
         return candidates
+
+    def _select_mandatory_cartesian_indexes(
+        self,
+        *,
+        components: list[tuple[tuple[str, ...], list[Any]]],
+        mandatory_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ],
+        candidate_count: int,
+        row_start: int,
+        row_count: int,
+        target_rows: int,
+        identity_fields: tuple[str, ...],
+    ) -> list[int]:
+        """Select a bounded chunk while preserving mandatory parent coverage.
+
+        Mandatory parent keys receive reserved Cartesian combinations at
+        the beginning of the global row sequence. Remaining rows follow
+        the existing deterministic permutation, excluding those reserved
+        combinations.
+
+        Only the requested chunk is materialized. Resume selection locates
+        its position in the permutation without constructing prior rows.
+        """
+
+        component_sizes = [
+            len(values)
+            for _, values in components
+        ]
+
+        mandatory_components: dict[int, list[int]] = {}
+
+        for child_fields, parent_keys in mandatory_assignments:
+            if not set(child_fields).issubset(identity_fields):
+                continue
+
+            matching_components = [
+                index
+                for index, (component_fields, _) in enumerate(components)
+                if component_fields == child_fields
+            ]
+
+            if len(matching_components) != 1:
+                raise EntityGenerationError(
+                    "Mandatory identity relationship "
+                    f"{child_fields} does not resolve to exactly one "
+                    "identity allocation component."
+                )
+
+            component_index = matching_components[0]
+            component_values = components[component_index][1]
+
+            if component_index in mandatory_components:
+                raise EntityGenerationError(
+                    "Multiple mandatory relationships cannot allocate "
+                    f"the same identity component: {child_fields}."
+                )
+
+            value_indexes = {
+                tuple(value): index
+                for index, value in enumerate(component_values)
+            }
+
+            parent_indexes: list[int] = []
+
+            for parent_key in parent_keys:
+                normalized_key = tuple(parent_key)
+
+                if normalized_key not in value_indexes:
+                    raise EntityGenerationError(
+                        "Mandatory parent key "
+                        f"{normalized_key} is missing from identity "
+                        f"component {child_fields}."
+                    )
+
+                parent_indexes.append(value_indexes[normalized_key])
+
+            mandatory_components[component_index] = parent_indexes
+
+        if not mandatory_components:
+            raise EntityGenerationError(
+                "Mandatory identity allocation was requested without "
+                "a matching identity component."
+            )
+
+        mandatory_prefix = max(
+            len(indexes)
+            for indexes in mandatory_components.values()
+        )
+
+        if mandatory_prefix > target_rows:
+            raise EntityGenerationError(
+                "Mandatory parent coverage exceeds the child population."
+            )
+
+        if mandatory_prefix > candidate_count:
+            raise EntityGenerationError(
+                "Mandatory parent coverage exceeds the available "
+                "identity combinations."
+            )
+
+        # Recreate the existing deterministic Cartesian permutation.
+        permutation_random = random.Random(
+            self._seed ^ candidate_count
+        )
+        offset = permutation_random.randrange(candidate_count)
+        multiplier = self._permutation_multiplier(candidate_count)
+
+        # Convert reserved Cartesian indexes into positions in that
+        # permutation. This lets us skip them without building the full
+        # selected identity sequence.
+        reserved_indexes: set[int] = set()
+
+        for row_index in range(mandatory_prefix):
+            coordinates = [
+                row_index % size
+                for size in component_sizes
+            ]
+
+            for component_index, parent_indexes in mandatory_components.items():
+                if row_index < len(parent_indexes):
+                    coordinates[component_index] = parent_indexes[row_index]
+
+            flat_index = 0
+            for coordinate, size in zip(
+                coordinates,
+                component_sizes,
+                strict=True,
+            ):
+                flat_index = flat_index * size + coordinate
+
+            if flat_index in reserved_indexes:
+                raise EntityGenerationError(
+                    "Mandatory parent coverage produced a duplicate "
+                    "identity combination."
+                )
+
+            reserved_indexes.add(flat_index)
+
+        if candidate_count == 1:
+            inverse_multiplier = 0
+        else:
+            inverse_multiplier = pow(
+                multiplier,
+                -1,
+                candidate_count,
+            )
+
+        reserved_positions = sorted(
+            (
+                (reserved_index - offset)
+                * inverse_multiplier
+            ) % candidate_count
+            for reserved_index in reserved_indexes
+        )
+        reserved_position_set = set(reserved_positions)
+
+        selected: list[int] = []
+        chunk_end = row_start + row_count
+
+        # Materialize only mandatory selections that belong to this chunk.
+        mandatory_end = min(chunk_end, mandatory_prefix)
+
+        for row_index in range(row_start, mandatory_end):
+            coordinates = [
+                row_index % size
+                for size in component_sizes
+            ]
+
+            for component_index, parent_indexes in mandatory_components.items():
+                if row_index < len(parent_indexes):
+                    coordinates[component_index] = parent_indexes[row_index]
+
+            flat_index = 0
+            for coordinate, size in zip(
+                coordinates,
+                component_sizes,
+                strict=True,
+            ):
+                flat_index = flat_index * size + coordinate
+
+            selected.append(flat_index)
+
+        # Locate the first non-mandatory row in this chunk. The number of
+        # available permutation positions through p is:
+        # p + 1 - count(reserved positions <= p).
+        first_remaining_row = max(row_start, mandatory_prefix)
+
+        if first_remaining_row < chunk_end:
+            available_index = first_remaining_row - mandatory_prefix
+            required_available_count = available_index + 1
+
+            low = 0
+            high = candidate_count - 1
+
+            while low < high:
+                middle = (low + high) // 2
+                available_count = (
+                    middle + 1
+                    - bisect_right(reserved_positions, middle)
+                )
+
+                if available_count >= required_available_count:
+                    high = middle
+                else:
+                    low = middle + 1
+
+            permutation_position = low
+
+            for _row_index in range(first_remaining_row, chunk_end):
+                if permutation_position >= candidate_count:
+                    raise EntityGenerationError(
+                        "Unable to allocate enough unique identity "
+                        "combinations after mandatory parent coverage."
+                    )
+
+                selected.append(
+                    (
+                        offset
+                        + multiplier * permutation_position
+                    ) % candidate_count
+                )
+
+                permutation_position += 1
+
+                while permutation_position in reserved_position_set:
+                    permutation_position += 1
+
+        return selected
 
     def _select_cartesian_indexes(
         self,

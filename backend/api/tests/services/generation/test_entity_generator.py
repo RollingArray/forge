@@ -920,3 +920,179 @@ def test_mandatory_parent_participation_rejects_insufficient_child_population() 
             context=context,
             mandatory_relationships=mandatory_relationships,
         )
+
+
+def test_mandatory_composite_fk_identity_preserves_unique_child_keys_across_chunks() -> None:
+    parent_keys = [
+        ("WC-001", "PLANT-01"),
+        ("WC-002", "PLANT-01"),
+        ("WC-003", "PLANT-02"),
+    ]
+
+    mandatory_relationships = [{
+        "child_fields": ("WORK_CENTER", "PLANT"),
+        "parent_entity": "WORK_CENTER_HEADER",
+        "parent_fields": ("WORK_CENTER", "PLANT"),
+    }]
+
+    foreign_keys = [{
+        "child_fields": ["WORK_CENTER", "PLANT"],
+        "parent_entity": "WORK_CENTER_HEADER",
+        "parent_fields": ["WORK_CENTER", "PLANT"],
+    }]
+
+    entity = {
+        "name": "WORK_CENTER_CAPACITY",
+        "population": {"count": 6},
+        "identity": {
+            "fields": [
+                "WORK_CENTER",
+                "PLANT",
+                "CAPACITY_ALLOCATION_NUMBER",
+            ],
+        },
+        "fields": [
+            {"name": "WORK_CENTER", "type": "STRING"},
+            {"name": "PLANT", "type": "STRING"},
+            {
+                "name": "CAPACITY_ALLOCATION_NUMBER",
+                "type": "IDENTIFIER",
+                "identity": {"strategy": "SEQUENTIAL_ID"},
+            },
+        ],
+    }
+
+    def generate(
+        *,
+        start_chunk: int = 1,
+        chunk_size: int = 2,
+    ) -> list[dict]:
+        context = GenerationContext()
+        context.restore_key_space(
+            entity_name="WORK_CENTER_HEADER",
+            identity_fields=("WORK_CENTER", "PLANT"),
+            key_space=parent_keys,
+        )
+
+        generated: list[dict] = []
+
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            mandatory_relationships=mandatory_relationships,
+            chunk_size=chunk_size,
+            start_chunk=start_chunk,
+            on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+                generated.extend(rows),
+        )
+
+        return generated
+
+    complete_rows = generate()
+
+    assert len(complete_rows) == 6
+
+    assert [
+        (row["WORK_CENTER"], row["PLANT"])
+        for row in complete_rows[:3]
+    ] == parent_keys
+
+    identity_keys = {
+        (
+            row["WORK_CENTER"],
+            row["PLANT"],
+            row["CAPACITY_ALLOCATION_NUMBER"],
+        )
+        for row in complete_rows
+    }
+    assert len(identity_keys) == len(complete_rows)
+
+    resumed_rows = generate(start_chunk=2)
+    assert resumed_rows == complete_rows[2:]
+
+    # Chunk boundaries must not affect deterministic identity allocation.
+    assert generate(chunk_size=1) == complete_rows
+    assert generate(chunk_size=4) == complete_rows
+
+
+def test_mandatory_single_field_fk_identity_preserves_unique_child_keys_across_chunks() -> None:
+    parent_keys = [
+        ("PARENT-001",),
+        ("PARENT-002",),
+        ("PARENT-003",),
+    ]
+
+    mandatory_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+    }]
+
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 8},
+        "identity": {
+            "fields": [
+                "PARENT_ID",
+                "CHILD_SEQUENCE",
+            ],
+        },
+        "fields": [
+            {"name": "PARENT_ID", "type": "STRING"},
+            {
+                "name": "CHILD_SEQUENCE",
+                "type": "IDENTIFIER",
+                "identity": {"strategy": "SEQUENTIAL_ID"},
+            },
+        ],
+    }
+
+    def generate(*, chunk_size: int) -> list[dict]:
+        context = GenerationContext()
+        context.restore_key_space(
+            entity_name="PARENT",
+            identity_fields=("PARENT_ID",),
+            key_space=parent_keys,
+        )
+
+        generated: list[dict] = []
+
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            mandatory_relationships=mandatory_relationships,
+            chunk_size=chunk_size,
+            on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+                generated.extend(rows),
+        )
+
+        return generated
+
+    rows = generate(chunk_size=2)
+
+    assert len(rows) == 8
+
+    # Every parent must be represented in the mandatory prefix.
+    assert [
+        (row["PARENT_ID"],)
+        for row in rows[:len(parent_keys)]
+    ] == parent_keys
+
+    identity_keys = {
+        (row["PARENT_ID"], row["CHILD_SEQUENCE"])
+        for row in rows
+    }
+    assert len(identity_keys) == len(rows)
+
+    # Different chunk boundaries must produce the same global allocation.
+    assert generate(chunk_size=1) == rows
+    assert generate(chunk_size=3) == rows
+    assert generate(chunk_size=8) == rows
