@@ -41,6 +41,7 @@ class EntityGenerator:
         foreign_keys: list[dict[str, Any]],
         context: GenerationContext,
         mandatory_relationships: list[dict[str, Any]] | None = None,
+        one_to_one_relationships: list[dict[str, Any]] | None = None,
         chunk_size: int = 50,
         start_chunk: int = 1,
         on_chunk_start: Callable[[str, int, int, int], None] | None = None,
@@ -151,6 +152,107 @@ class EntityGenerator:
                 (child_fields, indexed_parent_keys)
             )
 
+        # ONE_TO_ONE uniqueness is independent of mandatory parent coverage.
+        # A child must receive a distinct parent key, but optional parent
+        # participation allows unused parent keys.
+        one_to_one_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ] = []
+
+        seen_one_to_one_mappings: set[
+            tuple[tuple[str, ...], str, tuple[str, ...]]
+        ] = set()
+
+        for relationship in one_to_one_relationships or []:
+            child_fields = tuple(relationship["child_fields"])
+            parent_entity = relationship["parent_entity"]
+            parent_fields = tuple(relationship["parent_fields"])
+            parent_participation = str(
+                relationship.get("parent_participation", "OPTIONAL")
+            ).strip().upper()
+
+            if not child_fields or len(child_fields) != len(parent_fields):
+                raise EntityGenerationError(
+                    f"{entity_name}: invalid ONE_TO_ONE relationship "
+                    f"mapping {child_fields} -> "
+                    f"{parent_entity}.{parent_fields}."
+                )
+
+            if parent_participation not in {"MANDATORY", "OPTIONAL"}:
+                raise EntityGenerationError(
+                    f"{entity_name}: invalid parent participation "
+                    f"{parent_participation!r} for ONE_TO_ONE relationship."
+                )
+
+            identity_overlap = set(child_fields).intersection(identity_fields)
+
+            if identity_overlap and not set(child_fields).issubset(identity_fields):
+                raise EntityGenerationError(
+                    f"{entity_name}: ONE_TO_ONE relationship fields "
+                    f"{child_fields} must either all participate in the "
+                    "child identity or remain outside it."
+                )
+
+            matching_foreign_keys = [
+                foreign_key
+                for foreign_key in foreign_keys
+                if tuple(foreign_key["child_fields"]) == child_fields
+                and foreign_key["parent_entity"] == parent_entity
+                and tuple(foreign_key["parent_fields"]) == parent_fields
+            ]
+
+            if len(matching_foreign_keys) != 1:
+                raise EntityGenerationError(
+                    f"{entity_name}: ONE_TO_ONE relationship "
+                    f"{child_fields} -> {parent_entity}.{parent_fields} "
+                    "does not resolve to exactly one generation FK."
+                )
+
+            mapping_key = (
+                child_fields,
+                parent_entity,
+                parent_fields,
+            )
+
+            if mapping_key in seen_one_to_one_mappings:
+                continue
+
+            seen_one_to_one_mappings.add(mapping_key)
+
+            indexed_parent_keys = context.get_indexed_key_space(
+                entity_name=parent_entity,
+                fields=parent_fields,
+            )
+
+            if not indexed_parent_keys and target_rows > 0:
+                raise EntityGenerationError(
+                    f"{entity_name}: ONE_TO_ONE relationship cannot be "
+                    f"satisfied because {parent_entity} has no generated "
+                    "parent keys."
+                )
+
+            if parent_participation == "MANDATORY":
+                if len(indexed_parent_keys) != target_rows:
+                    raise EntityGenerationError(
+                        f"{entity_name}: ONE_TO_ONE relationship with "
+                        "mandatory parent participation requires exactly "
+                        f"{len(indexed_parent_keys)} parent keys and "
+                        f"{len(indexed_parent_keys)} child rows; "
+                        f"the configured child population is {target_rows}."
+                    )
+            elif len(indexed_parent_keys) < target_rows:
+                raise EntityGenerationError(
+                    f"{entity_name}: ONE_TO_ONE relationship requires "
+                    f"at least {target_rows} distinct parent keys, but "
+                    f"{parent_entity} has only {len(indexed_parent_keys)}."
+                )
+
+            # Use a stable, distinct subset. Unused parent keys are valid
+            # when parent participation is OPTIONAL.
+            one_to_one_assignments.append(
+                (child_fields, list(indexed_parent_keys[:target_rows]))
+            )
+
         total_chunks = (
             (target_rows + chunk_size - 1) // chunk_size
             if target_rows > 0
@@ -191,6 +293,7 @@ class EntityGenerator:
                 context=context,
                 fields=fields,
                 mandatory_assignments=mandatory_assignments,
+                unique_parent_assignments=one_to_one_assignments,
             )
 
             # Mandatory parent participation is allocated against global
@@ -206,6 +309,21 @@ class EntityGenerator:
                         continue
 
                     if row_index >= len(parent_keys):
+                        continue
+
+                    parent_key = parent_keys[row_index]
+
+                    for child_field, value in zip(
+                        child_fields,
+                        parent_key,
+                        strict=True,
+                    ):
+                        identity_rows[local_index][child_field] = value
+
+                for child_fields, parent_keys in one_to_one_assignments:
+                    # Identity fields are assigned by the constrained
+                    # Cartesian identity allocator.
+                    if set(child_fields).issubset(identity_fields):
                         continue
 
                     parent_key = parent_keys[row_index]
@@ -355,6 +473,9 @@ class EntityGenerator:
         mandatory_assignments: list[
             tuple[tuple[str, ...], list[tuple[Any, ...]]]
         ] | None = None,
+        unique_parent_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ] | None = None,
     ) -> list[dict[str, Any]]:
         """Allocate identity values for one generation chunk."""
 
@@ -496,16 +617,24 @@ class EntityGenerator:
             return [{} for _ in range(target_rows)]
 
         mandatory_identity_assignments = mandatory_assignments or []
+        unique_identity_assignments = unique_parent_assignments or []
 
-        has_mandatory_identity = any(
-            set(child_fields).issubset(identity_set)
-            for child_fields, _ in mandatory_identity_assignments
+        has_constrained_identity = (
+            any(
+                set(child_fields).issubset(identity_set)
+                for child_fields, _ in mandatory_identity_assignments
+            )
+            or any(
+                set(child_fields).issubset(identity_set)
+                for child_fields, _ in unique_identity_assignments
+            )
         )
 
-        if has_mandatory_identity:
+        if has_constrained_identity:
             selected_indexes = self._select_mandatory_cartesian_indexes(
                 components=components,
                 mandatory_assignments=mandatory_identity_assignments,
+                unique_parent_assignments=unique_identity_assignments,
                 candidate_count=candidate_count,
                 row_start=row_start,
                 row_count=row_count,
@@ -565,6 +694,9 @@ class EntityGenerator:
         mandatory_assignments: list[
             tuple[tuple[str, ...], list[tuple[Any, ...]]]
         ],
+        unique_parent_assignments: list[
+            tuple[tuple[str, ...], list[tuple[Any, ...]]]
+        ],
         candidate_count: int,
         row_start: int,
         row_count: int,
@@ -609,12 +741,6 @@ class EntityGenerator:
             component_index = matching_components[0]
             component_values = components[component_index][1]
 
-            if component_index in mandatory_components:
-                raise EntityGenerationError(
-                    "Multiple mandatory relationships cannot allocate "
-                    f"the same identity component: {child_fields}."
-                )
-
             value_indexes = {
                 tuple(value): index
                 for index, value in enumerate(component_values)
@@ -634,7 +760,71 @@ class EntityGenerator:
 
                 parent_indexes.append(value_indexes[normalized_key])
 
-            mandatory_components[component_index] = parent_indexes
+            if component_index in mandatory_components:
+                if mandatory_components[component_index] != parent_indexes:
+                    raise EntityGenerationError(
+                        "Conflicting relationship constraints cannot "
+                        "allocate the same identity component: "
+                        f"{child_fields}."
+                    )
+            else:
+                mandatory_components[component_index] = parent_indexes
+
+        # A one-to-one assignment reserves one distinct parent key for
+        # every child row. It does not imply that every parent must be used.
+        for child_fields, parent_keys in unique_parent_assignments:
+            if not set(child_fields).issubset(identity_fields):
+                continue
+
+            matching_components = [
+                index
+                for index, (component_fields, _) in enumerate(components)
+                if component_fields == child_fields
+            ]
+
+            if len(matching_components) != 1:
+                raise EntityGenerationError(
+                    "ONE_TO_ONE identity relationship "
+                    f"{child_fields} does not resolve to exactly one "
+                    "identity allocation component."
+                )
+
+            component_index = matching_components[0]
+            component_values = components[component_index][1]
+
+            value_indexes = {
+                tuple(value): index
+                for index, value in enumerate(component_values)
+            }
+
+            parent_indexes: list[int] = []
+
+            for parent_key in parent_keys:
+                normalized_key = tuple(parent_key)
+
+                if normalized_key not in value_indexes:
+                    raise EntityGenerationError(
+                        "ONE_TO_ONE parent key "
+                        f"{normalized_key} is missing from identity "
+                        f"component {child_fields}."
+                    )
+
+                parent_indexes.append(value_indexes[normalized_key])
+
+            if len(set(parent_indexes)) != len(parent_indexes):
+                raise EntityGenerationError(
+                    "ONE_TO_ONE relationship contains duplicate parent "
+                    f"keys for identity component {child_fields}."
+                )
+
+            if component_index in mandatory_components:
+                if mandatory_components[component_index] != parent_indexes:
+                    raise EntityGenerationError(
+                        "Conflicting mandatory and ONE_TO_ONE assignments "
+                        f"for identity component {child_fields}."
+                    )
+            else:
+                mandatory_components[component_index] = parent_indexes
 
         if not mandatory_components:
             raise EntityGenerationError(

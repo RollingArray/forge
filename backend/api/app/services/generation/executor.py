@@ -996,6 +996,21 @@ class GenerationExecutor:
                             and group.parent_participation.upper() == "MANDATORY"
                         )
                     ],
+                    one_to_one_relationships=[
+                        {
+                            "child_fields": group.child_fields,
+                            "parent_entity": group.parent_entity,
+                            "parent_fields": group.parent_fields,
+                            "parent_participation": group.parent_participation,
+                        }
+                        for group in plan.relationship_groups
+                        if (
+                            group.child_entity == entity_name
+                            and group.resolution_status == "MAPPED"
+                            and group.relationship_type.upper() == "ONE_TO_ONE"
+                            and group.child_participation.upper() == "MANDATORY"
+                        )
+                    ],
                     start_chunk=start_chunk,
                     on_chunk_start=handle_chunk_start,
                     on_chunk_completed=handle_chunk_completed,

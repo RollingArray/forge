@@ -1096,3 +1096,212 @@ def test_mandatory_single_field_fk_identity_preserves_unique_child_keys_across_c
     assert generate(chunk_size=1) == rows
     assert generate(chunk_size=3) == rows
     assert generate(chunk_size=8) == rows
+
+def test_one_to_one_optional_parent_assigns_distinct_keys_across_chunks() -> None:
+    parent_keys = [(f"P{i}",) for i in range(1, 6)]
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 3},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+
+    one_to_one_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+        "parent_participation": "OPTIONAL",
+    }]
+
+    def generate(chunk_size: int, start_chunk: int = 1) -> list[dict]:
+        context = _mandatory_parent_context(parent_keys)
+        generated: list[dict] = []
+
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            one_to_one_relationships=one_to_one_relationships,
+            chunk_size=chunk_size,
+            start_chunk=start_chunk,
+            on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+                generated.extend(rows),
+        )
+        return generated
+
+    rows = generate(chunk_size=2)
+
+    assert [row["PARENT_ID"] for row in rows] == ["P1", "P2", "P3"]
+    assert len({row["PARENT_ID"] for row in rows}) == 3
+    assert generate(chunk_size=1) == rows
+    assert generate(chunk_size=3) == rows
+    assert generate(chunk_size=2, start_chunk=2) == rows[2:]
+
+
+def test_one_to_one_composite_fk_identity_uses_distinct_parent_tuples() -> None:
+    parent_keys = [
+        ("T1", "P1"),
+        ("T1", "P2"),
+        ("T2", "P3"),
+        ("T2", "P4"),
+        ("T3", "P5"),
+    ]
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 3},
+        "identity": {
+            "fields": ["TENANT_ID", "PARENT_ID", "CHILD_SEQUENCE"],
+        },
+        "fields": [
+            {"name": "TENANT_ID", "type": "STRING"},
+            {"name": "PARENT_ID", "type": "STRING"},
+            {
+                "name": "CHILD_SEQUENCE",
+                "type": "IDENTIFIER",
+                "identity": {"strategy": "SEQUENTIAL_ID"},
+            },
+        ],
+    }
+
+    foreign_keys = [{
+        "child_fields": ["TENANT_ID", "PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["TENANT_ID", "PARENT_ID"],
+    }]
+
+    one_to_one_relationships = [{
+        "child_fields": ("TENANT_ID", "PARENT_ID"),
+        "parent_entity": "PARENT",
+        "parent_fields": ("TENANT_ID", "PARENT_ID"),
+        "parent_participation": "OPTIONAL",
+    }]
+
+    def generate(chunk_size: int, start_chunk: int = 1) -> list[dict]:
+        context = GenerationContext()
+        context.restore_key_space(
+            entity_name="PARENT",
+            identity_fields=("TENANT_ID", "PARENT_ID"),
+            key_space=parent_keys,
+        )
+
+        generated: list[dict] = []
+
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            one_to_one_relationships=one_to_one_relationships,
+            chunk_size=chunk_size,
+            start_chunk=start_chunk,
+            on_chunk_completed=lambda _entity, _chunk, _total, _count, rows:
+                generated.extend(rows),
+        )
+        return generated
+
+    rows = generate(chunk_size=2)
+
+    actual_parent_keys = [
+        (row["TENANT_ID"], row["PARENT_ID"])
+        for row in rows
+    ]
+
+    assert actual_parent_keys == parent_keys[:3]
+    assert len(set(actual_parent_keys)) == 3
+
+    identity_keys = {
+        (
+            row["TENANT_ID"],
+            row["PARENT_ID"],
+            row["CHILD_SEQUENCE"],
+        )
+        for row in rows
+    }
+    assert len(identity_keys) == 3
+
+    assert generate(chunk_size=1) == rows
+    assert generate(chunk_size=3) == rows
+    assert generate(chunk_size=2, start_chunk=2) == rows[2:]
+
+
+def test_one_to_one_rejects_more_children_than_distinct_parent_keys() -> None:
+    context = _mandatory_parent_context([
+        ("P1",),
+        ("P2",),
+        ("P3",),
+    ])
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 4},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+
+    one_to_one_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+        "parent_participation": "OPTIONAL",
+    }]
+
+    with pytest.raises(
+        EntityGenerationError,
+        match="requires at least 4 distinct parent keys",
+    ):
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            one_to_one_relationships=one_to_one_relationships,
+        )
+
+
+def test_one_to_one_mandatory_parent_participation_requires_equal_populations() -> None:
+    context = _mandatory_parent_context([
+        ("P1",),
+        ("P2",),
+        ("P3",),
+        ("P4",),
+    ])
+
+    entity = {
+        "name": "CHILD",
+        "population": {"count": 3},
+        "fields": [{"name": "PARENT_ID", "type": "STRING"}],
+    }
+
+    foreign_keys = [{
+        "child_fields": ["PARENT_ID"],
+        "parent_entity": "PARENT",
+        "parent_fields": ["PARENT_ID"],
+    }]
+
+    one_to_one_relationships = [{
+        "child_fields": ("PARENT_ID",),
+        "parent_entity": "PARENT",
+        "parent_fields": ("PARENT_ID",),
+        "parent_participation": "MANDATORY",
+    }]
+
+    with pytest.raises(
+        EntityGenerationError,
+        match="requires exactly 4 parent keys and 4 child rows",
+    ):
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=foreign_keys,
+            context=context,
+            one_to_one_relationships=one_to_one_relationships,
+        )
