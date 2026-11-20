@@ -2222,7 +2222,9 @@ class OllamaAIProvider(AIProvider):
                 result = json.loads(raw_response)
             except json.JSONDecodeError as exc:
                 raise RuntimeError(
-                    "FORGE AI returned invalid semantic generation JSON.",
+                    "FORGE AI returned invalid semantic generation JSON. "
+                    f"JSON error: {exc}. "
+                    f"Raw response: {raw_response!r}"
                 ) from exc
 
             if not isinstance(result, dict):
