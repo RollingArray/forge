@@ -7,6 +7,10 @@ Purpose: Persist FORGE generation job metadata.
 from pathlib import Path
 
 from app.models.generation_model import GenerationJobResponse
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
 
 
 class GenerationJobStore:
@@ -32,14 +36,12 @@ class GenerationJobStore:
         """Persist one generation job atomically."""
 
         path = self._job_path(job.data_model_id, job.job_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
 
-        temporary_path = path.with_suffix(".tmp")
-        temporary_path.write_text(
-            job.model_dump_json(indent=2),
-            encoding="utf-8",
-        )
-        temporary_path.replace(path)
+        with generation_file_lock(path):
+            atomic_write_text(
+                path,
+                job.model_dump_json(indent=2),
+            )
 
     def list_for_data_model(
         self,
@@ -54,11 +56,10 @@ class GenerationJobStore:
             return jobs
 
         for job_path in jobs_root.glob("*/job.json"):
-            try:
-                job = GenerationJobResponse.model_validate_json(
-                    job_path.read_text(encoding="utf-8")
-                )
-            except Exception:
+            with generation_file_lock(job_path):
+                job = self._read(job_path)
+
+            if job is None:
                 continue
 
             if (
@@ -85,11 +86,10 @@ class GenerationJobStore:
             return jobs
 
         for job_path in self._root.glob("*/generation/*/job.json"):
-            try:
-                job = GenerationJobResponse.model_validate_json(
-                    job_path.read_text(encoding="utf-8")
-                )
-            except Exception:
+            with generation_file_lock(job_path):
+                job = self._read(job_path)
+
+            if job is None:
                 continue
 
             if (
@@ -112,6 +112,11 @@ class GenerationJobStore:
 
         path = self._job_path(data_model_id, job_id)
 
+        with generation_file_lock(path):
+            return self._read(path)
+
+    @staticmethod
+    def _read(path: Path) -> GenerationJobResponse | None:
         if not path.is_file():
             return None
 

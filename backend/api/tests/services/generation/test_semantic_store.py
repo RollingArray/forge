@@ -463,3 +463,70 @@ def test_semantic_store_rejects_duplicate_values_in_persisted_unique_field(
         raise AssertionError(
             "A UNIQUE field with historical duplicates must not be extended."
         )
+
+
+def test_concurrent_saves_preserve_different_semantic_fields(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    store = _store(tmp_path, monkeypatch)
+
+    def save_field(index: int) -> None:
+        store.save(
+            data_model_id="FORGE-DATA-MODEL-TEST",
+            job_id="FORGE-TEST",
+            entity_name="PRODUCT",
+            field_name=f"FIELD_{index}",
+            mode="VOCABULARY",
+            values=[f"VALUE_{index}"],
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(save_field, range(20)))
+
+    document = store.get_all(
+        "FORGE-DATA-MODEL-TEST",
+        "FORGE-TEST",
+    )
+
+    fields = document["fields"]
+
+    assert len(fields) == 20
+
+    for index in range(20):
+        record = fields[f"PRODUCT.FIELD_{index}"]
+        assert record["values"] == [f"VALUE_{index}"]
+
+
+def test_concurrent_unique_appends_preserve_all_batches(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    store = _store(tmp_path, monkeypatch)
+
+    def append_batch(index: int) -> None:
+        store.append_unique(
+            data_model_id="FORGE-DATA-MODEL-TEST",
+            job_id="FORGE-TEST",
+            entity_name="PRODUCT",
+            field_name="PRODUCT_NAME",
+            values=[f"PRODUCT-{index}-A", f"PRODUCT-{index}-B"],
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(append_batch, range(20)))
+
+    result = store.get(
+        data_model_id="FORGE-DATA-MODEL-TEST",
+        job_id="FORGE-TEST",
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+
+    assert result is not None
+    assert len(result["values"]) == 40
+    assert len({value.casefold() for value in result["values"]}) == 40

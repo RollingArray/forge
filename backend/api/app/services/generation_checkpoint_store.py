@@ -7,11 +7,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
 
 
 CHECKPOINT_SCHEMA_VERSION = 1
@@ -121,10 +124,29 @@ class GenerationCheckpointStore:
         path = self._checkpoint_path(data_model_id, job_id)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        existing = self.get(
-            data_model_id=data_model_id,
-            job_id=job_id,
-        ) or {}
+        with generation_file_lock(path):
+            return self._save_locked(
+                path=path,
+                data_model_id=data_model_id,
+                job_id=job_id,
+                seed=seed,
+                entities=entities,
+                specification_hash=specification_hash,
+                chunk_size=chunk_size,
+            )
+
+    def _save_locked(
+        self,
+        *,
+        path: Path,
+        data_model_id: str,
+        job_id: str,
+        seed: int,
+        entities: dict[str, Any],
+        specification_hash: str | None,
+        chunk_size: int | None,
+    ) -> dict[str, Any]:
+        existing = self._read(path) or {}
 
         checkpoint = {
             "schema_version": CHECKPOINT_SCHEMA_VERSION,
@@ -151,32 +173,7 @@ class GenerationCheckpointStore:
             ensure_ascii=False,
         )
 
-        file_descriptor, temporary_name = tempfile.mkstemp(
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            dir=path.parent,
-            text=True,
-        )
-
-        temporary_path = Path(temporary_name)
-
-        try:
-            with os.fdopen(
-                file_descriptor,
-                "w",
-                encoding="utf-8",
-            ) as handle:
-                handle.write(payload)
-                handle.write("\n")
-                handle.flush()
-                os.fsync(handle.fileno())
-
-            os.replace(temporary_path, path)
-
-        except Exception:
-            temporary_path.unlink(missing_ok=True)
-            raise
-
+        atomic_write_text(path, payload + "\n")
         return checkpoint
 
     def get(
@@ -186,20 +183,20 @@ class GenerationCheckpointStore:
     ) -> dict[str, Any] | None:
         path = self._checkpoint_path(data_model_id, job_id)
 
+        with generation_file_lock(path):
+            return self._read(path)
+
+    @staticmethod
+    def _read(path: Path) -> dict[str, Any] | None:
         if not path.exists():
             return None
 
         try:
-            data = json.loads(
-                path.read_text(encoding="utf-8")
-            )
+            data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None
 
-        if not isinstance(data, dict):
-            return None
-
-        return data
+        return data if isinstance(data, dict) else None
 
     def get_committed_rows(
         self,

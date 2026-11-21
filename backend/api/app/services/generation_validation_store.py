@@ -9,6 +9,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
+
 
 class GenerationValidationStore:
     """Persist validation evidence for a generation job."""
@@ -42,15 +47,7 @@ class GenerationValidationStore:
     ) -> None:
         """Persist the completed validation report."""
 
-        path = self._validation_path(
-            data_model_id,
-            job_id,
-        )
-
-        path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        path = self._validation_path(data_model_id, job_id)
 
         document = {
             "schema_version": "1.0",
@@ -58,17 +55,10 @@ class GenerationValidationStore:
             "validation": validation,
         }
 
-        temporary_path = path.with_suffix(".tmp")
+        payload = json.dumps(document, indent=2)
 
-        temporary_path.write_text(
-            json.dumps(
-                document,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-
-        temporary_path.replace(path)
+        with generation_file_lock(path):
+            atomic_write_text(path, payload)
 
     def get(
         self,
@@ -78,30 +68,26 @@ class GenerationValidationStore:
     ) -> dict[str, Any] | None:
         """Return persisted validation evidence."""
 
-        path = self._validation_path(
-            data_model_id,
-            job_id,
-        )
+        path = self._validation_path(data_model_id, job_id)
 
-        if not path.is_file():
-            return None
+        with generation_file_lock(path):
+            if not path.is_file():
+                return None
 
-        try:
-            document = json.loads(
-                path.read_text(
-                    encoding="utf-8",
+            try:
+                document = json.loads(
+                    path.read_text(encoding="utf-8")
                 )
+            except (OSError, json.JSONDecodeError):
+                return None
+
+            if not isinstance(document, dict):
+                return None
+
+            validation = document.get("validation")
+
+            return (
+                validation
+                if isinstance(validation, dict)
+                else None
             )
-        except (OSError, json.JSONDecodeError):
-            return None
-
-        if not isinstance(document, dict):
-            return None
-
-        validation = document.get("validation")
-
-        return (
-            validation
-            if isinstance(validation, dict)
-            else None
-        )

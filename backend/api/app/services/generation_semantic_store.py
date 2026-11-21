@@ -9,6 +9,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
+
 
 class SemanticStoreIntegrityError(ValueError):
     """Raised when persisted semantic generation state is invalid."""
@@ -141,18 +146,18 @@ class GenerationSemanticStore:
         document: dict[str, Any],
         job_id: str,
     ) -> None:
-        """Write a validated document through a temporary file."""
+        """Write a validated document through a unique temporary file.
+
+        The caller must hold the destination generation-file lock.
+        """
 
         self._validate_document(document, job_id=job_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary_path = path.with_suffix(".tmp")
 
         try:
-            temporary_path.write_text(
+            atomic_write_text(
+                path,
                 json.dumps(document, indent=2),
-                encoding="utf-8",
             )
-            temporary_path.replace(path)
         except OSError as exc:
             raise SemanticStoreIntegrityError(
                 f"Could not persist semantic state for job {job_id!r}: {exc}"
@@ -170,29 +175,31 @@ class GenerationSemanticStore:
     ) -> None:
         """Persist semantic values for one generated field."""
 
-        existing = self.get_all(data_model_id, job_id)
-        fields = dict(existing.get("fields", {}))
-
-        key = f"{entity_name}.{field_name}"
-        fields[key] = {
-            "entity_name": entity_name,
-            "field_name": field_name,
-            "mode": mode,
-            "values": list(values) if isinstance(values, list) else values,
-        }
-
-        document = {
-            "schema_version": self.SCHEMA_VERSION,
-            "job_id": job_id,
-            "fields": fields,
-        }
-
         path = self._semantic_path(data_model_id, job_id)
-        self._write_document(
-            path=path,
-            document=document,
-            job_id=job_id,
-        )
+
+        with generation_file_lock(path):
+            existing = self._read_document(path, job_id)
+            fields = dict(existing.get("fields", {}))
+
+            key = f"{entity_name}.{field_name}"
+            fields[key] = {
+                "entity_name": entity_name,
+                "field_name": field_name,
+                "mode": mode,
+                "values": list(values) if isinstance(values, list) else values,
+            }
+
+            document = {
+                "schema_version": self.SCHEMA_VERSION,
+                "job_id": job_id,
+                "fields": fields,
+            }
+
+            self._write_document(
+                path=path,
+                document=document,
+                job_id=job_id,
+            )
 
     def append_unique(
         self,
@@ -205,74 +212,76 @@ class GenerationSemanticStore:
     ) -> None:
         """Append a UNIQUE semantic batch to existing semantic state."""
 
-        existing = self.get_all(data_model_id, job_id)
-        fields = dict(existing.get("fields", {}))
-        key = f"{entity_name}.{field_name}"
-        current = fields.get(key)
-
-        if current is not None and current["mode"] != "UNIQUE":
-            raise ValueError(
-                f"Cannot append UNIQUE values to semantic field {key!r} "
-                f"with mode {current['mode']!r}."
-            )
-
-        current_values = current["values"] if current is not None else []
-
-        if current is not None:
-            self._ensure_unique_values(
-                key=key,
-                values=current_values,
-            )
-
-        if not isinstance(values, list):
-            raise ValueError(
-                f"Semantic values must be a list for {key!r}."
-            )
-
-        if not all(
-            isinstance(value, str) and value.strip()
-            for value in values
-        ):
-            raise ValueError(
-                f"Semantic values must be non-empty strings for {key!r}."
-            )
-
-        normalized_existing = {
-            self._normalized(value)
-            for value in current_values
-        }
-        normalized_batch = [
-            self._normalized(value)
-            for value in values
-        ]
-
-        if (
-            len(set(normalized_batch)) != len(normalized_batch)
-            or normalized_existing.intersection(normalized_batch)
-        ):
-            raise ValueError(
-                f"Duplicate UNIQUE semantic values detected for {key!r}."
-            )
-
-        fields[key] = {
-            "entity_name": entity_name,
-            "field_name": field_name,
-            "mode": "UNIQUE",
-            "values": [*current_values, *values],
-        }
-
-        document = {
-            "schema_version": self.SCHEMA_VERSION,
-            "job_id": job_id,
-            "fields": fields,
-        }
-
         path = self._semantic_path(data_model_id, job_id)
-        self._write_document(
-            path=path,
-            document=document,
-            job_id=job_id,
-        )
+
+        with generation_file_lock(path):
+            existing = self._read_document(path, job_id)
+            fields = dict(existing.get("fields", {}))
+            key = f"{entity_name}.{field_name}"
+            current = fields.get(key)
+
+            if current is not None and current["mode"] != "UNIQUE":
+                raise ValueError(
+                    f"Cannot append UNIQUE values to semantic field {key!r} "
+                    f"with mode {current['mode']!r}."
+                )
+
+            current_values = current["values"] if current is not None else []
+
+            if current is not None:
+                self._ensure_unique_values(
+                    key=key,
+                    values=current_values,
+                )
+
+            if not isinstance(values, list):
+                raise ValueError(
+                    f"Semantic values must be a list for {key!r}."
+                )
+
+            if not all(
+                isinstance(value, str) and value.strip()
+                for value in values
+            ):
+                raise ValueError(
+                    f"Semantic values must be non-empty strings for {key!r}."
+                )
+
+            normalized_existing = {
+                self._normalized(value)
+                for value in current_values
+            }
+            normalized_batch = [
+                self._normalized(value)
+                for value in values
+            ]
+
+            if (
+                len(set(normalized_batch)) != len(normalized_batch)
+                or normalized_existing.intersection(normalized_batch)
+            ):
+                raise ValueError(
+                    f"Duplicate UNIQUE semantic values detected for {key!r}."
+                )
+
+            fields[key] = {
+                "entity_name": entity_name,
+                "field_name": field_name,
+                "mode": "UNIQUE",
+                "values": [*current_values, *values],
+            }
+
+            document = {
+                "schema_version": self.SCHEMA_VERSION,
+                "job_id": job_id,
+                "fields": fields,
+            }
+
+            self._write_document(
+                path=path,
+                document=document,
+                job_id=job_id,
+            )
 
     def get(
         self,
@@ -304,6 +313,16 @@ class GenerationSemanticStore:
         """Load and validate all persisted semantic state for a job."""
 
         path = self._semantic_path(data_model_id, job_id)
+
+        with generation_file_lock(path):
+            return self._read_document(path, job_id)
+
+    def _read_document(
+        self,
+        path: Path,
+        job_id: str,
+    ) -> dict[str, Any]:
+        """Read and validate semantic state while the caller holds its lock."""
 
         if not path.exists():
             return {}
