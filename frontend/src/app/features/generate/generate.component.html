@@ -86,6 +86,8 @@
           [description]="
             generationLoading()
               ? 'Loading the canonical specification and generation plan.'
+              : sseConnectionError()
+              ? 'Live updates are temporarily unavailable: ' + sseConnectionError() + ' The generation job may still be running.'
               : generationJob()?.status === 'RUNNING'
                 ? 'Generation is in progress. Entity progress and committed checkpoints are being updated.'
                 : generationJob()?.status === 'PARTIALLY_COMPLETED'
@@ -131,6 +133,7 @@
     <app-workflow-row [columns]="1" class="generation-execution-row">
       <app-generation-checkpoint
         [checkpoint]="generationCheckpoint()"
+        [liveProgress]="generationCheckpointLiveProgress()"
         [loading]="generationCheckpointLoading()"
         [canResume]="generationJob()?.status === 'INTERRUPTED'"
         [resuming]="generationActionLoading()"

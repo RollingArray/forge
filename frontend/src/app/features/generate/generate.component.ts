@@ -88,7 +88,11 @@ export class GenerateComponent {
         next: (job) => {
           this.executionStore.setJob(job);
 
-          if (job.status === 'QUEUED' || job.status === 'RUNNING') {
+          if (
+            job.status === 'PREPARING' ||
+            job.status === 'QUEUED' ||
+            job.status === 'RUNNING'
+          ) {
             this.executionStore.connect(
               this.dataModelId,
               job.job_id,
@@ -133,7 +137,9 @@ export class GenerateComponent {
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
   readonly generationActivities = this.executionStore.generationActivities;
   readonly isGenerating = this.executionStore.isGenerating;
+  readonly sseConnectionError = this.executionStore.sseConnectionError;
   readonly generationCheckpoint = this.executionStore.generationCheckpoint;
+  readonly generationCheckpointLiveProgress = this.executionStore.generationCheckpointLiveProgress;
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);
   readonly generationActionLoading = signal(false);
@@ -376,7 +382,7 @@ export class GenerateComponent {
       .getGenerationCheckpoint(this.dataModelId, jobId)
       .subscribe({
         next: (checkpoint) => {
-          this.generationCheckpoint.set(checkpoint);
+          this.executionStore.setCheckpoint(checkpoint);
           this.generationCheckpointLoading.set(false);
         },
         error: (error) => {

@@ -20,6 +20,7 @@ export interface GenerationReadiness {
 
 
 export type GenerationJobStatus =
+  | 'PREPARING'
   | 'CREATED'
   | 'PLANNING'
   | 'QUEUED'

@@ -7,7 +7,7 @@
 
   <div
     class="checkpoint-state"
-    *ngIf="checkpoint() as currentCheckpoint; else checkpointUnavailable"
+    *ngIf="checkpoint() || liveProgress(); else checkpointUnavailable"
   >
     <div class="checkpoint-message-row">
       <div class="checkpoint-message" [class.has-progress]="hasSavedProgress()">
@@ -67,7 +67,7 @@
         <span class="material-symbols-outlined">schedule</span>
         <div>
           <span>Last saved</span>
-          <strong>{{ currentCheckpoint.updated_at | date: 'medium' }}</strong>
+          <strong>{{ lastSavedAt() | date: 'medium' }}</strong>
         </div>
       </div>
 
@@ -98,24 +98,24 @@
         <div>
           <span>Specification hash</span>
           <strong class="checkpoint-hash">
-            {{ currentCheckpoint.specification_hash }}
+            {{ checkpoint()?.specification_hash ?? 'Not available' }}
           </strong>
         </div>
 
         <div>
           <span>Generation seed</span>
-          <strong>{{ currentCheckpoint.seed }}</strong>
+          <strong>{{ checkpoint()?.seed ?? 'Not available' }}</strong>
         </div>
 
         <div>
           <span>Batch size</span>
-          <strong>{{ currentCheckpoint.chunk_size }}</strong>
+          <strong>{{ checkpoint()?.chunk_size ?? 'Not available' }}</strong>
         </div>
 
         <div>
           <span>Generation job</span>
           <strong class="checkpoint-hash">
-            {{ currentCheckpoint.job_id }}
+            {{ checkpoint()?.job_id ?? 'Not available' }}
           </strong>
         </div>
       </div>

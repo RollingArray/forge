@@ -6,7 +6,10 @@ import {
   GenerationSseEvent,
 } from '../models/generation.models';
 import { GenerationService } from './generation.service';
-import { GenerationCheckpoint } from '../../../core/interfaces/generation-checkpoint.interface';
+import {
+  GenerationCheckpoint,
+  GenerationCheckpointLiveProgress,
+} from '../../../core/interfaces/generation-checkpoint.interface';
 import { Subscription } from 'rxjs';
 
 
@@ -20,13 +23,18 @@ export class GenerationExecutionStore {
 
   private executionSubscription: Subscription | null = null;
 
+
+
   readonly generationJob = signal<GenerationJobResponse | null>(null);
   readonly generationCheckpoint = signal<GenerationCheckpoint | null>(null);
+  readonly generationCheckpointLiveProgress =
+    signal<GenerationCheckpointLiveProgress | null>(null);
 
   readonly lastEvent = signal<GenerationSseEvent | null>(null);
 
   readonly generationActivities = signal<GenerationActivityEvent[]>([]);
   readonly isGenerating = signal(false);
+  readonly sseConnectionError = signal<string | null>(null);
 
   readonly activeSemanticCall = signal<
     Extract<
@@ -35,6 +43,126 @@ export class GenerationExecutionStore {
     >['data'] | null
   >(null);
 
+
+  setCheckpoint(checkpoint: GenerationCheckpoint): void {
+    const current = this.generationCheckpoint();
+
+    if (current?.job_id === checkpoint.job_id) {
+      const currentTimestamp = Date.parse(current.updated_at);
+      const incomingTimestamp = Date.parse(checkpoint.updated_at);
+
+      if (
+        Number.isFinite(currentTimestamp) &&
+        Number.isFinite(incomingTimestamp) &&
+        incomingTimestamp < currentTimestamp
+      ) {
+        return;
+      }
+    }
+
+    this.generationCheckpoint.set(checkpoint);
+
+    const live = this.generationCheckpointLiveProgress();
+
+    if (live?.job_id === checkpoint.job_id) {
+      const liveTimestamp = Date.parse(live.updated_at);
+      const incomingTimestamp = Date.parse(checkpoint.updated_at);
+
+      if (
+        Number.isFinite(liveTimestamp) &&
+        Number.isFinite(incomingTimestamp) &&
+        liveTimestamp > incomingTimestamp
+      ) {
+        return;
+      }
+    }
+
+    this.generationCheckpointLiveProgress.set({
+      job_id: checkpoint.job_id,
+      updated_at: checkpoint.updated_at,
+      entities: Object.fromEntries(
+        Object.entries(checkpoint.entities).map(([entityName, entity]) => [
+          entityName,
+          {
+            saved_chunks: entity.chunks.length,
+            target_rows: entity.target_rows,
+            generated_rows: entity.chunks.reduce(
+              (total, chunk) => total + chunk.row_count,
+              0,
+            ),
+          },
+        ]),
+      ),
+    });
+  }
+
+  private applyLiveCheckpointChunk(
+    event: Extract<
+      GenerationSseEvent,
+      { type: 'CHUNK_COMMITTED' }
+    >['data'],
+  ): void {
+    const job = this.generationJob();
+
+    if (!job) {
+      return;
+    }
+
+    const current = this.generationCheckpointLiveProgress();
+    const entities = current?.job_id === job.job_id
+      ? current.entities
+      : {};
+
+    const previous = entities[event.entity_name];
+
+    this.generationCheckpointLiveProgress.set({
+      job_id: job.job_id,
+      updated_at: event.checkpoint_updated_at,
+      entities: {
+        ...entities,
+        [event.entity_name]: {
+          saved_chunks: Math.max(
+            previous?.saved_chunks ?? 0,
+            event.chunk_number,
+          ),
+          target_rows: event.entity_target_rows,
+          generated_rows: event.entity_generated_rows,
+        },
+      },
+    });
+  }
+
+  private applyLiveEntityCompletion(
+    event: GenerationEntityCompletedEvent,
+  ): void {
+    const job = this.generationJob();
+
+    if (!job) {
+      return;
+    }
+
+    const current = this.generationCheckpointLiveProgress();
+    const entities = current?.job_id === job.job_id
+      ? current.entities
+      : {};
+
+    const previous = entities[event.entity_name];
+
+    this.generationCheckpointLiveProgress.set({
+      job_id: job.job_id,
+      updated_at: current?.job_id === job.job_id
+        ? current.updated_at
+        : new Date().toISOString(),
+      entities: {
+        ...entities,
+        [event.entity_name]: {
+          saved_chunks: previous?.saved_chunks ?? 0,
+          target_rows: event.target_rows,
+          generated_rows: event.generated_rows,
+        },
+      },
+    });
+  }
 
   setJob(
     job: GenerationJobResponse,
@@ -48,6 +176,7 @@ export class GenerationExecutionStore {
   ): void {
 
     this.executionSubscription?.unsubscribe();
+    this.sseConnectionError.set(null);
 
     this.executionSubscription = this.generationService
       .connectToGenerationEvents(
@@ -56,7 +185,16 @@ export class GenerationExecutionStore {
       )
       .subscribe({
         next: (event) => {
+          this.sseConnectionError.set(null);
           this.handleEvent(event);
+        },
+        error: (error: unknown) => {
+          this.executionSubscription = null;
+          this.sseConnectionError.set(
+            error instanceof Error
+              ? error.message
+              : 'Live generation updates could not be received. The job may still be running.',
+          );
         },
       });
   }
@@ -75,7 +213,9 @@ export class GenerationExecutionStore {
       case 'JOB_SNAPSHOT':
         this.generationJob.set(event.data);
         this.isGenerating.set(
-          event.data.status === 'QUEUED' || event.data.status === 'RUNNING',
+          event.data.status === 'PREPARING' ||
+          event.data.status === 'QUEUED' ||
+          event.data.status === 'RUNNING',
         );
         break;
 
@@ -91,12 +231,13 @@ export class GenerationExecutionStore {
       case 'CHUNK_COMMITTED':
         this.activeSemanticCall.set(null);
         this.applyChunkProgress(event.data);
-        this.applyCheckpointChunk(event.data);
+        this.applyLiveCheckpointChunk(event.data);
         break;
 
 
       case 'ENTITY_COMPLETED':
         this.applyEntityCompleted(event.data);
+        this.applyLiveEntityCompletion(event.data);
         break;
 
 
@@ -116,45 +257,6 @@ export class GenerationExecutionStore {
       ...activities,
       activity,
     ]);
-  }
-
-  private applyCheckpointChunk(
-    event: Extract<
-      GenerationSseEvent,
-      { type: 'CHUNK_COMMITTED' }
-    >['data'],
-  ): void {
-    this.generationCheckpoint.update((checkpoint) => {
-      if (!checkpoint) {
-        return checkpoint;
-      }
-
-      const existing = checkpoint.entities[event.entity_name] ?? {
-        target_rows: event.entity_target_rows,
-        completed_chunks: [],
-      };
-
-      const completedChunks = existing.completed_chunks.includes(
-        event.chunk_number,
-      )
-        ? existing.completed_chunks
-        : [...existing.completed_chunks, event.chunk_number].sort(
-            (a, b) => a - b,
-          );
-
-      return {
-        ...checkpoint,
-        updated_at: event.checkpoint_updated_at,
-        entities: {
-          ...checkpoint.entities,
-          [event.entity_name]: {
-            ...existing,
-            target_rows: event.entity_target_rows,
-            completed_chunks: completedChunks,
-          },
-        },
-      };
-    });
   }
 
   private applyChunkProgress(
