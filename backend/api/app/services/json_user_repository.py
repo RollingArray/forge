@@ -9,11 +9,14 @@ Email: ranjoy.sen@collins.com
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
 from app.interfaces.auth_user import AuthUser
 from app.interfaces.user_repository import UserRepository
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
 
 
 class JsonUserRepository(UserRepository):
@@ -25,7 +28,6 @@ class JsonUserRepository(UserRepository):
             / "data"
             / "users.json"
         )
-        self._lock = Lock()
 
         self._ensure_store()
 
@@ -33,7 +35,7 @@ class JsonUserRepository(UserRepository):
         """Return an existing FORGE user by normalized email."""
         normalized_email = self._normalize_email(email)
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         for record in data["users"]:
@@ -49,7 +51,7 @@ class JsonUserRepository(UserRepository):
         if not normalized_user_id:
             return None
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         for record in data["users"]:
@@ -70,7 +72,7 @@ class JsonUserRepository(UserRepository):
         if not normalized_query:
             return []
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         matches = [
@@ -88,7 +90,7 @@ class JsonUserRepository(UserRepository):
         """Create and persist a new FORGE user."""
         normalized_email = self._normalize_email(email)
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
             for record in data["users"]:
@@ -120,7 +122,7 @@ class JsonUserRepository(UserRepository):
         """Persist a validated corporate profile without changing FORGE ID."""
         normalized_email = self._normalize_email(email)
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
             record = next(
                 (
@@ -141,45 +143,41 @@ class JsonUserRepository(UserRepository):
 
     def _ensure_store(self) -> None:
         """Ensure the FORGE user repository storage exists."""
+
         self._file_path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-        if not self._file_path.exists():
-            self._write_data({"users": []})
+        with generation_file_lock(self._file_path):
+            if not self._file_path.exists():
+                self._write_data({"users": []})
 
     def _read_data(self) -> dict:
         """Read the complete JSON user store."""
-        self._ensure_store()
 
-        with self._file_path.open(
-            "r",
-            encoding="utf-8",
-        ) as file:
-            return json.load(file)
+        with generation_file_lock(self._file_path):
+            self._ensure_store()
+
+            with self._file_path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                return json.load(file)
 
     def _write_data(self, data: dict) -> None:
-        """Write the JSON user store atomically."""
-        self._file_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        """Atomically publish the JSON user store."""
 
-        temporary_path = self._file_path.with_suffix(".tmp")
+        content = json.dumps(
+            data,
+            indent=2,
+        ) + "\n"
 
-        with temporary_path.open(
-            "w",
-            encoding="utf-8",
-        ) as file:
-            json.dump(
-                data,
-                file,
-                indent=2,
+        with generation_file_lock(self._file_path):
+            atomic_write_text(
+                self._file_path,
+                content,
             )
-            file.write("\n")
-
-        temporary_path.replace(self._file_path)
 
     @staticmethod
     def _normalize_email(email: str) -> str:

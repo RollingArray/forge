@@ -12,10 +12,9 @@ import json
 import hashlib
 from contextlib import contextmanager
 from pathlib import Path
-from threading import Lock, RLock, local
 from typing import Any, Iterator
 
-from app.repositories.file_lock import create_file_lock
+from app.repositories.file_lock import file_lock_transaction
 
 
 FORGE_VERSION = "1.0.0"
@@ -28,10 +27,6 @@ class SpecificationRevisionConflict(Exception):
 
 class JsonSpecificationRepository:
     """Persist one canonical FORGE specification per Data Model."""
-
-    _registry_guard = Lock()
-    _path_locks: dict[str, RLock] = {}
-    _transaction_state = local()
 
     def __init__(self) -> None:
         self._data_directory = (
@@ -90,46 +85,9 @@ class JsonSpecificationRepository:
             / ".locks"
             / f"{data_model_id}.lock"
         )
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        lock_key = str(lock_path.resolve())
 
-        with self._registry_guard:
-            thread_lock = self._path_locks.setdefault(
-                lock_key,
-                RLock(),
-            )
-
-        with thread_lock:
-            # Track nesting per thread and specification lock path.
-            depths = getattr(self._transaction_state, "depths", {})
-            locks = getattr(
-                self._transaction_state,
-                "locks",
-                {},
-            )
-            depth = depths.get(lock_key, 0)
-
-            # Only the outermost transaction acquires the process lock.
-            # Nested transactions reuse it until the outermost scope exits.
-            if depth == 0:
-                lock = create_file_lock(lock_path)
-                lock.acquire()
-                locks[lock_key] = lock
-
-            depths[lock_key] = depth + 1
-            self._transaction_state.depths = depths
-            self._transaction_state.locks = locks
-
-            try:
-                yield
-            finally:
-                remaining = depths[lock_key] - 1
-                if remaining:
-                    depths[lock_key] = remaining
-                else:
-                    depths.pop(lock_key, None)
-                    lock = locks.pop(lock_key)
-                    lock.release()
+        with file_lock_transaction(lock_path):
+            yield
 
     @staticmethod
     def revision(specification: dict[str, Any]) -> str:

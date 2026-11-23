@@ -12,7 +12,19 @@ from uuid import uuid4
 
 import psutil
 
+from app.repositories.file_lock import FileLockTimeout
+from app.services.generation_execution_lease import generation_execution_lease
+
+from app.constants.generation import (
+    DEFAULT_GENERATION_CHUNK_SIZE,
+    GENERATION_ALGORITHM_VERSION,
+)
+
 from app.models.generation_log_model import GenerationLogEntry
+from app.models.generation_persistence import (
+    GenerationCheckpointManifest,
+    GenerationFinalizationStatus,
+)
 from app.models.generation_model import (
     GenerationChunkProgress,
     GenerationEntityProgress,
@@ -22,6 +34,9 @@ from app.models.generation_model import (
     GenerationJobStatus,
     GenerationReadinessResponse,
     GenerationSemanticCallProgress,
+    GenerationJobRecord,
+    GenerationPreparationPhase,
+    GenerationResumeIntent,
 )
 from app.services.ai_service import AIService
 from app.services.generation_planner import GenerationPlanner
@@ -103,196 +118,121 @@ class GenerationService:
         data_model_id: str,
         job_id: str,
     ) -> GenerationJobResponse | None:
-        """Return a cached job or load its persisted representation."""
+        """Load the authoritative persisted job and refresh the local cache."""
 
-        job = self._jobs.get(job_id)
-        if job is None:
-            job = self._job_store.get(
-                data_model_id=data_model_id,
-                job_id=job_id,
-            )
+        job = self._job_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
         if job is None or job.data_model_id != data_model_id:
+            self._jobs.pop(job_id, None)
             return None
 
         self._jobs[job_id] = job
         return job
 
+
     def _reconcile_recovery_checkpoint(
         self,
         *,
         data_model_id: str,
-        job: GenerationJobResponse,
+        job: GenerationJobRecord,
         specification: dict,
-    ) -> dict:
-        """Reconcile persisted progress against committed chunk artifacts."""
+    ) -> GenerationCheckpointManifest:
+        """Compatibility wrapper for validation and projection restoration."""
 
-        checkpoint = self._checkpoint_store.get(
+        manifest = self._validate_recovery_checkpoint(
             data_model_id=data_model_id,
-            job_id=job.job_id,
+            job=job,
+            specification=specification,
         )
-        if checkpoint is None:
-            raise ValueError(
-                f"Cannot recover job '{job.job_id}': checkpoint is missing."
-            )
 
-        seed = (specification.get("generation") or {}).get("seed", 42)
-        chunk_size = checkpoint.get("chunk_size")
+        self._restore_job_progress_from_manifest(
+            job=job,
+            manifest=manifest,
+        )
+
+        return manifest
+
+
+    def _apply_manifest_progress_to_job(
+        self,
+        *,
+        job: GenerationJobRecord,
+        manifest: GenerationCheckpointManifest,
+    ) -> None:
+        """Rebuild the in-memory job projection from verified manifest evidence.
+
+        This method does not persist the job or modify checkpoint state.
+        """
+
         if (
-            chunk_size != 50
-            or any(entity.chunk_size != chunk_size for entity in job.entities)
+            job.data_model_id != manifest.data_model_id
+            or job.job_id != manifest.job_id
         ):
-            raise ValueError("Recovery requires the supported 50-row chunk contract.")
-
-        expected_hash = compute_specification_hash(specification)
-        self._checkpoint_store.validate_identity(
-            data_model_id=data_model_id,
-            job_id=job.job_id,
-            specification_hash=expected_hash,
-            seed=seed,
-            chunk_size=chunk_size,
-        )
-
-        states = checkpoint.get("entities")
-        targets = {entity.entity_name: entity.target_rows for entity in job.entities}
-        if not isinstance(states, dict) or set(states) != set(targets):
-            raise ValueError("Checkpoint entities do not match the generation job.")
-
-        artifact_root = (
-            Path(__file__).resolve().parents[2]
-            / "data" / "data_model" / data_model_id
-            / "generation" / job.job_id / "generated"
-        )
-
-        # Only an entity explicitly marked RUNNING may lose its final chunk.
-        active = next(
-            (entity for entity in job.entities
-             if entity.status == GenerationEntityStatus.RUNNING),
-            None,
-        )
-        if active is None:
-            active = next(
-                (entity for entity in job.entities
-                 if entity.generated_rows < entity.target_rows),
-                None,
+            raise ValueError(
+                "Job identity does not match the checkpoint manifest."
             )
 
-        repaired_states = {}
-        retained_counts = {}
+        if job.attempt_id != manifest.attempt_id:
+            raise ValueError(
+                "Job attempt ID does not match the checkpoint manifest."
+            )
+
+        if any(
+            entity.chunk_size != manifest.chunk_size
+            for entity in job.entities
+        ):
+            raise ValueError(
+                "Job and checkpoint chunk sizes do not match."
+            )
+
+        if set(entity.entity_name for entity in job.entities) != set(
+            manifest.entities
+        ):
+            raise ValueError(
+                "Job entities do not match checkpoint manifest entities."
+            )
 
         for entity in job.entities:
-            name = entity.entity_name
-            state = states[name]
-            if not isinstance(state, dict) or state.get("target_rows") != entity.target_rows:
-                raise ValueError(f"Invalid checkpoint target for '{name}'.")
+            entity_checkpoint = manifest.entities[entity.entity_name]
 
-            raw_chunks = state.get("completed_chunks", [])
-            if not isinstance(raw_chunks, list):
-                raw_chunks = []
-
-            committed = {
-                number for number in raw_chunks
-                if isinstance(number, int)
-                and not isinstance(number, bool)
-                and 1 <= number <= ceil(entity.target_rows / chunk_size)
-            }
-
-            chunks_dir = artifact_root / name / "chunks"
-            prefix = 0
-            max_chunks = ceil(entity.target_rows / chunk_size)
-            expected_fieldnames = None
-
-            for number in range(1, max_chunks + 1):
-                if number not in committed:
-                    break
-                chunk_path = chunks_dir / f"chunk_{number:06d}.csv"
-                if not chunk_path.is_file():
-                    break
-
-                expected_rows = min(
-                    chunk_size,
-                    entity.target_rows - (number - 1) * chunk_size,
+            if entity_checkpoint.target_rows != entity.target_rows:
+                raise ValueError(
+                    f"Checkpoint target rows do not match for "
+                    f"'{entity.entity_name}'."
                 )
-                try:
-                    with chunk_path.open(
-                        "r", newline="", encoding="utf-8"
-                    ) as handle:
-                        reader = csv.DictReader(handle)
-                        if not reader.fieldnames:
-                            break
 
-                        current_fieldnames = reader.fieldnames
-                        if expected_fieldnames is None:
-                            expected_fieldnames = current_fieldnames
-                        elif current_fieldnames != expected_fieldnames:
-                            break
-
-                        actual_rows = sum(1 for _ in reader)
-                except (OSError, UnicodeError, csv.Error):
-                    break
-
-                if actual_rows != expected_rows:
-                    break
-                prefix = number
-
-            # Discard the last committed chunk of the interrupted entity.
-            if entity is active and prefix:
-                prefix -= 1
-
-            retained_counts[name] = prefix
-            repaired = dict(state)
-            repaired["target_rows"] = entity.target_rows
-            repaired["completed_chunks"] = list(range(1, prefix + 1))
-            repaired["committed_rows"] = min(
-                prefix * chunk_size, entity.target_rows
+            entity.generated_rows = entity_checkpoint.committed_rows
+            entity.completed_chunks = len(entity_checkpoint.chunks)
+            entity.total_chunks = (
+                ceil(entity.target_rows / manifest.chunk_size)
+                if entity.target_rows > 0
+                else 0
             )
-            repaired_states[name] = repaired
 
-
-        # Persist checkpoint first; startup reconciliation is safe to repeat.
-        self._checkpoint_store.save(
-            data_model_id=data_model_id,
-            job_id=job.job_id,
-            seed=seed,
-            entities=repaired_states,
-            specification_hash=expected_hash,
-            chunk_size=chunk_size,
-        )
-
-        # Cleanup is deliberately after the atomic checkpoint save.
-        for entity in job.entities:
-            name = entity.entity_name
-            prefix = retained_counts[name]
-            chunks_dir = artifact_root / name / "chunks"
-            if chunks_dir.is_dir():
-                for file_path in chunks_dir.glob("chunk_*.csv"):
-                    try:
-                        number = int(file_path.stem.removeprefix("chunk_"))
-                    except ValueError:
-                        continue
-                    if number > prefix:
-                        file_path.unlink()
-
-            consolidated = artifact_root / f"{name}.csv"
-            if (
-                prefix * chunk_size < entity.target_rows
-                and consolidated.exists()
-            ):
-                consolidated.unlink()
-
-        for entity in job.entities:
-            prefix = retained_counts[entity.entity_name]
-            rows = min(prefix * chunk_size, entity.target_rows)
-            entity.generated_rows = rows
-            entity.completed_chunks = prefix
-            entity.total_chunks = ceil(entity.target_rows / chunk_size)
             entity.chunks = [
-                chunk for chunk in entity.chunks
-                if chunk.chunk_number <= prefix
+                GenerationChunkProgress(
+                    chunk_number=chunk.chunk_number,
+                    target_rows=chunk.row_count,
+                    generated_rows=chunk.row_count,
+                    status=GenerationEntityStatus.COMPLETED,
+                )
+                for chunk in entity_checkpoint.chunks
             ]
 
-            if rows >= entity.target_rows:
+            # Runtime telemetry cannot be reconstructed from the manifest.
+            entity.elapsed_seconds = None
+            entity.peak_memory_mb = None
+            entity.throughput_rows_per_second = None
+            entity.vocabulary_semantic_calls = []
+
+            if (
+                entity_checkpoint.finalization.status
+                == GenerationFinalizationStatus.COMMITTED
+            ):
                 entity.status = GenerationEntityStatus.COMPLETED
-            elif entity is active:
+            elif entity_checkpoint.committed_rows > 0:
                 entity.status = GenerationEntityStatus.RUNNING
             else:
                 entity.status = GenerationEntityStatus.NOT_STARTED
@@ -300,52 +240,225 @@ class GenerationService:
         job.total_generated_rows = sum(
             entity.generated_rows for entity in job.entities
         )
+
         job.progress = (
             job.total_generated_rows / job.total_target_rows
-            if job.total_target_rows else 1.0
-        )
-        self._job_store.save(job)
-        self._jobs[job.job_id] = job
-        return self._validate_recovery_checkpoint(
-            data_model_id=data_model_id,
-            job=job,
-            specification=specification,
+            if job.total_target_rows > 0
+            else 1.0
         )
 
-    def _validate_recovery_checkpoint(
+    def _restore_job_progress_from_manifest(
+        self,
+        *,
+        job: GenerationJobRecord,
+        manifest: GenerationCheckpointManifest,
+    ) -> None:
+        """Rebuild and persist the job projection from verified evidence."""
+
+        self._apply_manifest_progress_to_job(
+            job=job,
+            manifest=manifest,
+        )
+
+        self._job_store.save(job)
+        self._jobs[job.job_id] = job
+
+    def _ensure_initial_checkpoint(
         self,
         *,
         data_model_id: str,
-        job: GenerationJobResponse,
+        job: GenerationJobRecord,
         specification: dict,
-    ) -> dict:
-        """Validate durable recovery state without changing persisted data."""
+    ) -> GenerationCheckpointManifest:
+        """Create or validate the checkpoint for an initial preparation.
+
+        CHECKPOINT_PENDING permits create-only initialization when the
+        checkpoint is absent. An existing checkpoint is always validated.
+        CHECKPOINT_READY requires an existing valid checkpoint.
+        """
 
         if job.data_model_id != data_model_id:
             raise ValueError(
                 "Persisted generation job belongs to a different data model."
             )
 
-        checkpoint = self._checkpoint_store.get(
+        if not job.attempt_id:
+            raise ValueError(
+                "Cannot prepare a checkpoint without a persisted attempt ID."
+            )
+
+        phase = job.preparation_phase
+
+        if phase not in (
+            GenerationPreparationPhase.CHECKPOINT_PENDING,
+            GenerationPreparationPhase.CHECKPOINT_READY,
+        ):
+            raise ValueError(
+                "Cannot recover initial preparation without a valid "
+                "preparation phase."
+            )
+
+        manifest = self._checkpoint_store.get(
             data_model_id=data_model_id,
             job_id=job.job_id,
         )
-        if checkpoint is None:
+
+        if manifest is None:
+            if phase == GenerationPreparationPhase.CHECKPOINT_READY:
+                raise ValueError(
+                    f"Job '{job.job_id}' is marked CHECKPOINT_READY, "
+                    "but its checkpoint is missing."
+                )
+
+            plan = self._generation_planner.build(
+                specification=specification,
+            )
+
+            plan_targets = {
+                entity.entity_name: entity.target_rows
+                for entity in plan.entities
+            }
+
+            job_targets = {
+                entity.entity_name: entity.target_rows
+                for entity in job.entities
+            }
+
+            if plan_targets != job_targets:
+                raise ValueError(
+                    "Generation plan targets do not match persisted job targets."
+                )
+
+            if job.total_target_rows != sum(job_targets.values()):
+                raise ValueError(
+                    "Persisted job aggregate target rows are inconsistent."
+                )
+
+            if not job.entities:
+                raise ValueError(
+                    "Cannot initialize a checkpoint without generation entities."
+                )
+
+            chunk_size = job.entities[0].chunk_size
+
+            if (
+                not isinstance(chunk_size, int)
+                or isinstance(chunk_size, bool)
+                or chunk_size <= 0
+                or any(
+                    entity.chunk_size != chunk_size
+                    for entity in job.entities
+                )
+            ):
+                raise ValueError(
+                    "All generation entities must use the same positive "
+                    "chunk size."
+                )
+
+            generation = specification.get("generation") or {}
+            seed = generation.get("seed", 42)
+
+            # initialize() is deliberately create-only. If another actor
+            # created the checkpoint, this call fails rather than replacing it.
+            self._checkpoint_store.initialize(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                specification=specification,
+                seed=seed,
+                chunk_size=chunk_size,
+                algorithm_version=GENERATION_ALGORITHM_VERSION,
+                attempt_id=job.attempt_id,
+                entity_targets=job_targets,
+            )
+
+        # Validate the complete persisted identity, plan, and every committed
+        # artifact before declaring preparation ready.
+        manifest = self._validate_recovery_checkpoint(
+            data_model_id=data_model_id,
+            job=job,
+            specification=specification,
+        )
+
+        if phase == GenerationPreparationPhase.CHECKPOINT_PENDING:
+            previous_phase = job.preparation_phase
+            job.preparation_phase = (
+                GenerationPreparationPhase.CHECKPOINT_READY
+            )
+
+            try:
+                self._job_store.save(job)
+            except Exception:
+                job.preparation_phase = previous_phase
+                raise
+
+            self._jobs[job.job_id] = job
+
+        return manifest
+
+
+    def _validate_recovery_checkpoint(
+        self,
+        *,
+        data_model_id: str,
+        job: GenerationJobRecord,
+        specification: dict,
+        expected_attempt_id: str | None = None,
+    ) -> GenerationCheckpointManifest:
+        """Validate the authoritative v2 manifest and committed artifacts.
+
+        This method is read-only. It never repairs, deletes, or rewrites
+        checkpoint state or published artifacts.
+        """
+
+        if job.data_model_id != data_model_id:
             raise ValueError(
-                f"Cannot resume job '{job.job_id}': checkpoint is missing."
+                "Persisted generation job belongs to a different data model."
+            )
+
+        checkpoint_attempt_id = (
+            expected_attempt_id
+            if expected_attempt_id is not None
+            else job.attempt_id
+        )
+
+        if not checkpoint_attempt_id:
+            raise ValueError(
+                "Persisted generation job has no attempt ID; "
+                "its checkpoint cannot be safely validated."
+            )
+
+        manifest = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+        )
+        if manifest is None:
+            raise ValueError(
+                f"Cannot recover job '{job.job_id}': checkpoint is missing."
             )
 
         seed = (specification.get("generation") or {}).get("seed", 42)
-        chunk_size = job.entities[0].chunk_size if job.entities else 50
-        if chunk_size != 50 or any(
-            entity.chunk_size != chunk_size for entity in job.entities
+
+        self._checkpoint_store.validate_identity(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+            specification_hash=compute_specification_hash(specification),
+            seed=seed,
+            chunk_size=manifest.chunk_size,
+            algorithm_version=GENERATION_ALGORITHM_VERSION,
+            attempt_id=checkpoint_attempt_id,
+        )
+
+        if any(
+            entity.chunk_size != manifest.chunk_size
+            for entity in job.entities
         ):
             raise ValueError(
-                "Persisted generation job does not use the supported "
-                "50-row chunk contract."
+                "Persisted generation job and checkpoint must use the same "
+                "positive chunk size."
             )
 
         plan = self._generation_planner.build(specification=specification)
+
         plan_targets = {
             entity.entity_name: entity.target_rows
             for entity in plan.entities
@@ -354,118 +467,58 @@ class GenerationService:
             entity.entity_name: entity.target_rows
             for entity in job.entities
         }
+        manifest_targets = {
+            name: entity.target_rows
+            for name, entity in manifest.entities.items()
+        }
+
+        if len(job_targets) != len(job.entities):
+            raise ValueError("Persisted job contains duplicate entity names.")
+
         if plan_targets != job_targets:
             raise ValueError(
                 "Rebuilt generation plan does not match persisted job targets."
             )
 
-        self._checkpoint_store.validate_identity(
-            data_model_id=data_model_id,
-            job_id=job.job_id,
-            specification_hash=compute_specification_hash(specification),
-            seed=seed,
-            chunk_size=chunk_size,
-        )
-
-        checkpoint_entities = checkpoint.get("entities")
-        if not isinstance(checkpoint_entities, dict):
-            raise ValueError("Checkpoint entity state is invalid.")
-
-        expected_targets = {
-            entity.entity_name: entity.target_rows
-            for entity in job.entities
-        }
-        if set(checkpoint_entities) != set(expected_targets):
+        if plan_targets != manifest_targets:
             raise ValueError(
-                "Checkpoint entities do not match the persisted generation job."
+                "Generation plan targets do not match checkpoint manifest."
             )
 
-        entity_progress_total = sum(
-            entity.generated_rows for entity in job.entities
-        )
-        if entity_progress_total != job.total_generated_rows:
+        if job.total_target_rows != sum(plan_targets.values()):
             raise ValueError(
-                "Persisted job aggregate row count does not match its "
-                "entity-level progress."
+                "Persisted job aggregate target rows are inconsistent."
             )
 
-        if job.total_generated_rows > job.total_target_rows:
-            raise ValueError(
-                "Persisted job generated rows exceed its target row count."
-            )
-
-        for entity_name, target_rows in expected_targets.items():
-            entity_checkpoint = checkpoint_entities[entity_name]
-            if not isinstance(entity_checkpoint, dict):
-                raise ValueError(
-                    f"Checkpoint state is invalid for entity '{entity_name}'."
-                )
-            if entity_checkpoint.get("target_rows") != target_rows:
-                raise ValueError(
-                    f"Checkpoint target rows do not match for entity "
-                    f"'{entity_name}'."
+        # Every manifest-listed chunk is committed evidence.
+        # Never discard a committed chunk because verification fails.
+        for entity_name, entity_checkpoint in manifest.entities.items():
+            for chunk in entity_checkpoint.chunks:
+                self._checkpoint_store.verify_artifact(
+                    data_model_id=data_model_id,
+                    job_id=job.job_id,
+                    artifact=chunk.artifact,
                 )
 
-            completed_chunks = entity_checkpoint.get("completed_chunks")
             if (
-                not isinstance(completed_chunks, list)
-                or any(
-                    not isinstance(number, int)
-                    or isinstance(number, bool)
-                    or number < 1
-                    for number in completed_chunks
-                )
-                or len(completed_chunks) != len(set(completed_chunks))
+                entity_checkpoint.finalization.status
+                == GenerationFinalizationStatus.COMMITTED
             ):
-                raise ValueError(
-                    f"Checkpoint committed chunks are invalid for entity "
-                    f"'{entity_name}'."
+                output = entity_checkpoint.finalization.output
+                if output is None:
+                    raise ValueError(
+                        f"Committed finalization for '{entity_name}' "
+                        "has no output evidence."
+                    )
+
+                self._checkpoint_store.verify_artifact(
+                    data_model_id=data_model_id,
+                    job_id=job.job_id,
+                    artifact=output,
                 )
 
-            total_chunks = (
-                ceil(target_rows / chunk_size) if target_rows > 0 else 0
-            )
-            if any(number > total_chunks for number in completed_chunks):
-                raise ValueError(
-                    f"Checkpoint contains an out-of-range chunk for entity "
-                    f"'{entity_name}'."
-                )
+        return manifest
 
-            expected_chunk_numbers = list(range(1, len(completed_chunks) + 1))
-            if sorted(completed_chunks) != expected_chunk_numbers:
-                raise ValueError(
-                    f"Checkpoint committed chunks are not contiguous for "
-                    f"entity '{entity_name}'."
-                )
-
-            committed_rows = entity_checkpoint.get("committed_rows", 0)
-            derived_committed_rows = min(
-                len(completed_chunks) * chunk_size,
-                target_rows,
-            )
-            if (
-                not isinstance(committed_rows, int)
-                or isinstance(committed_rows, bool)
-                or committed_rows < 0
-                or committed_rows > target_rows
-                or committed_rows != derived_committed_rows
-            ):
-                raise ValueError(
-                    f"Checkpoint committed row count is invalid for entity "
-                    f"'{entity_name}'."
-                )
-
-            if committed_rows != sum(
-                entity_progress.generated_rows
-                for entity_progress in job.entities
-                if entity_progress.entity_name == entity_name
-            ):
-                raise ValueError(
-                    f"Checkpoint committed rows do not match persisted job "
-                    f"progress for entity '{entity_name}'."
-                )
-
-        return checkpoint
 
     def get_readiness(
         self,
@@ -554,7 +607,7 @@ class GenerationService:
         now = datetime.now(timezone.utc)
         job_id = uuid4().hex.upper()
 
-        chunk_size = 50
+        chunk_size = DEFAULT_GENERATION_CHUNK_SIZE
 
         entities = [
             GenerationEntityProgress(
@@ -570,7 +623,7 @@ class GenerationService:
             for entity_name in plan.generation_order
         ]
 
-        job = GenerationJobResponse(
+        job = GenerationJobRecord(
             data_model_id=data_model_id,
             job_id=job_id,
             status=GenerationJobStatus.CREATED,
@@ -623,55 +676,217 @@ class GenerationService:
             },
         )
 
+    def _reconcile_resume_intent_under_lease(
+        self,
+        *,
+        data_model_id: str,
+        job: GenerationJobRecord,
+        specification: dict,
+        final_status: GenerationJobStatus,
+    ) -> GenerationCheckpointManifest:
+        """Finish a durable resume transition while holding the execution lease.
+
+        The job record retains the previous attempt ID and resume intent
+        until the checkpoint has been verified under the new attempt.
+        """
+
+        if job.status != GenerationJobStatus.INTERRUPTED:
+            raise ValueError(
+                "A resume intent can only be reconciled for an "
+                "INTERRUPTED job."
+            )
+
+        intent = job.resume_intent
+        if intent is None:
+            raise ValueError("Interrupted job has no resume intent.")
+
+        if job.attempt_id != intent.previous_attempt_id:
+            raise ValueError(
+                "Resume intent previous attempt does not match the job record."
+            )
+
+        if final_status not in {
+            GenerationJobStatus.PREPARING,
+            GenerationJobStatus.INTERRUPTED,
+        }:
+            raise ValueError("Unsupported final status for resume recovery.")
+
+        manifest = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job.job_id,
+        )
+
+        if manifest is None:
+            raise ValueError(
+                f"Cannot resume job '{job.job_id}': checkpoint is missing."
+            )
+
+        if manifest.attempt_id not in {
+            intent.previous_attempt_id,
+            intent.new_attempt_id,
+        }:
+            raise ValueError(
+                "Checkpoint attempt does not match either side of the "
+                "persisted resume intent."
+            )
+
+        # Verify the old checkpoint before supersession, or verify the
+        # already-superseded checkpoint if a previous process crashed
+        # after the checkpoint write.
+        self._validate_recovery_checkpoint(
+            data_model_id=data_model_id,
+            job=job,
+            specification=specification,
+            expected_attempt_id=manifest.attempt_id,
+        )
+
+        if manifest.attempt_id == intent.previous_attempt_id:
+            self._checkpoint_store.supersede_attempt(
+                data_model_id=data_model_id,
+                job_id=job.job_id,
+                expected_attempt_id=intent.previous_attempt_id,
+                new_attempt_id=intent.new_attempt_id,
+            )
+
+        # Always re-read and fully validate the new authoritative checkpoint.
+        new_manifest = self._validate_recovery_checkpoint(
+            data_model_id=data_model_id,
+            job=job,
+            specification=specification,
+            expected_attempt_id=intent.new_attempt_id,
+        )
+
+        # Preserve the durable intent state in memory if the final job write
+        # fails. The checkpoint may already have moved to the new attempt.
+        snapshot = job.model_copy(deep=True)
+
+        try:
+            job.attempt_id = intent.new_attempt_id
+            job.resume_intent = None
+            job.preparation_phase = (
+                GenerationPreparationPhase.CHECKPOINT_READY
+            )
+            job.status = final_status
+            job.started_at = datetime.now(timezone.utc)
+            job.completed_at = None
+            job.error = None
+
+            self._apply_manifest_progress_to_job(
+                job=job,
+                manifest=new_manifest,
+            )
+
+            self._job_store.save(job)
+            self._jobs[job.job_id] = job
+
+        except Exception:
+            job.__dict__.clear()
+            job.__dict__.update(snapshot.__dict__)
+            self._jobs[job.job_id] = job
+            raise
+
+        return new_manifest
+
     def recover_interrupted_jobs(self) -> int:
-        """Validate persisted RUNNING jobs without starting workers."""
+        """Recover stranded jobs and reconcile durable resume intents."""
 
         recovered = 0
-        for persisted_job in self._job_store.list_running():
+
+        for persisted_job in self._job_store.list_recoverable():
             try:
                 data_model_id = persisted_job.data_model_id
-                job = self._get_or_load_job(
-                    data_model_id=data_model_id,
-                    job_id=persisted_job.job_id,
-                )
-                if job is None or job.status != GenerationJobStatus.RUNNING:
-                    continue
+                job_id = persisted_job.job_id
 
-                specification = self._specification_service.get_specification(
-                    data_model_id=data_model_id,
+                job_directory = (
+                    Path(__file__).resolve().parents[2]
+                    / "data"
+                    / "data_model"
+                    / data_model_id
+                    / "generation"
+                    / job_id
                 )
-                if specification is None:
-                    raise ValueError(
-                        "Data model specification was not found."
+
+                with generation_execution_lease(
+                    job_directory,
+                    timeout=0.0,
+                ):
+                    job = self._get_or_load_job(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
                     )
 
-                self._validate_specification(specification)
+                    if job is None:
+                        continue
 
-                self._reconcile_recovery_checkpoint(
-                    data_model_id=data_model_id,
-                    job=job,
-                    specification=specification,
-                )
+                    pending_resume = (
+                        job.status == GenerationJobStatus.INTERRUPTED
+                        and job.resume_intent is not None
+                    )
 
-                previous_status = job.status
-                previous_error = job.error
+                    if not pending_resume and job.status not in {
+                        GenerationJobStatus.PREPARING,
+                        GenerationJobStatus.RUNNING,
+                    }:
+                        continue
 
-                job.status = GenerationJobStatus.INTERRUPTED
-                job.error = None
+                    specification = (
+                        self._specification_service.get_specification(
+                            data_model_id=data_model_id,
+                        )
+                    )
 
-                try:
-                    self._job_store.save(job)
-                except Exception:
-                    job.status = previous_status
-                    job.error = previous_error
-                    raise
+                    if specification is None:
+                        raise ValueError(
+                            "Data model specification was not found."
+                        )
 
-                self._jobs[job.job_id] = job
-                recovered += 1
+                    self._validate_specification(specification)
+
+                    if pending_resume:
+                        self._reconcile_resume_intent_under_lease(
+                            data_model_id=data_model_id,
+                            job=job,
+                            specification=specification,
+                            final_status=GenerationJobStatus.INTERRUPTED,
+                        )
+                        recovered += 1
+                        continue
+
+                    if job.status == GenerationJobStatus.PREPARING:
+                        self._ensure_initial_checkpoint(
+                            data_model_id=data_model_id,
+                            job=job,
+                            specification=specification,
+                        )
+
+                    self._reconcile_recovery_checkpoint(
+                        data_model_id=data_model_id,
+                        job=job,
+                        specification=specification,
+                    )
+
+                    previous_status = job.status
+                    previous_error = job.error
+
+                    job.status = GenerationJobStatus.INTERRUPTED
+                    job.error = None
+
+                    try:
+                        self._job_store.save(job)
+                    except Exception:
+                        job.status = previous_status
+                        job.error = previous_error
+                        raise
+
+                    self._jobs[job.job_id] = job
+                    recovered += 1
+
+            except FileLockTimeout:
+                continue
             except Exception as exc:
                 print(
-                    f"Generation recovery skipped job "
-                    f"{persisted_job.job_id}: {exc}"
+                    f"Generation recovery skipped job {persisted_job.job_id}: "
+                    f"{exc}"
                 )
 
         return recovered
@@ -681,7 +896,32 @@ class GenerationService:
         data_model_id: str,
         job_id: str,
     ) -> GenerationJobResponse | None:
-        """Prepare a generation job for asynchronous execution."""
+        """Prepare a generation job while holding its execution lease."""
+
+        job_directory = (
+            Path(__file__).resolve().parents[2]
+            / "data"
+            / "data_model"
+            / data_model_id
+            / "generation"
+            / job_id
+        )
+
+        with generation_execution_lease(
+            job_directory,
+            timeout=0.0,
+        ):
+            return self._start_job_under_lease(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+
+    def _start_job_under_lease(
+        self,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse | None:
+        """Prepare a generation job while its execution lease is held."""
 
         job = self._get_or_load_job(
             data_model_id=data_model_id,
@@ -692,6 +932,7 @@ class GenerationService:
             return None
 
         worker_key = (data_model_id, job_id)
+
         with self._worker_lock:
             if worker_key in self._active_workers:
                 raise ValueError(
@@ -703,6 +944,7 @@ class GenerationService:
             specification = self._specification_service.get_specification(
                 data_model_id=data_model_id,
             )
+
             if specification is None:
                 raise ValueError(
                     "Cannot resume generation: data model specification "
@@ -711,43 +953,66 @@ class GenerationService:
 
             self._validate_specification(specification)
 
-            self._reconcile_recovery_checkpoint(
-                data_model_id=data_model_id,
-                job=job,
-                specification=specification,
-            )
-
             with self._worker_lock:
                 if worker_key in self._active_workers:
                     raise ValueError(
                         f"Generation job '{job_id}' already has a scheduled "
                         "or active worker."
                     )
-
-                previous_status = job.status
-                previous_error = job.error
-
                 self._active_workers.add(worker_key)
-                job.status = GenerationJobStatus.RUNNING
-                job.error = None
 
-                try:
-                    self._job_store.save(job)
-                except Exception:
+            try:
+                if job.resume_intent is None:
+                    # Validate all existing evidence before recording an
+                    # intention to supersede the current attempt.
+                    self._validate_recovery_checkpoint(
+                        data_model_id=data_model_id,
+                        job=job,
+                        specification=specification,
+                    )
+
+                    if not job.attempt_id:
+                        raise ValueError(
+                            "Cannot resume a job without an existing "
+                            "attempt ID."
+                        )
+
+                    snapshot = job.model_copy(deep=True)
+
+                    job.resume_intent = GenerationResumeIntent(
+                        previous_attempt_id=job.attempt_id,
+                        new_attempt_id=uuid4().hex,
+                    )
+
+                    try:
+                        # This durable write must precede checkpoint
+                        # supersession.
+                        self._job_store.save(job)
+                        self._jobs[job.job_id] = job
+                    except Exception:
+                        job.__dict__.clear()
+                        job.__dict__.update(snapshot.__dict__)
+                        self._jobs[job.job_id] = job
+                        raise
+
+                self._reconcile_resume_intent_under_lease(
+                    data_model_id=data_model_id,
+                    job=job,
+                    specification=specification,
+                    final_status=GenerationJobStatus.PREPARING,
+                )
+
+                return job
+
+            except Exception:
+                with self._worker_lock:
                     self._active_workers.discard(worker_key)
-                    job.status = previous_status
-                    job.error = previous_error
-                    raise
-
-                self._jobs[job.job_id] = job
-
-            return job
+                raise
 
         if job.status != GenerationJobStatus.CREATED:
             raise ValueError(
                 f"Generation job '{job_id}' cannot be started from "
-                f"status '{job.status}'. Only CREATED jobs and validated "
-                "INTERRUPTED jobs can be resumed."
+                f"status '{job.status}'."
             )
 
         specification = self._specification_service.get_specification(
@@ -760,17 +1025,7 @@ class GenerationService:
             job.started_at = datetime.now(timezone.utc)
             job.completed_at = job.started_at
             self._job_store.save(job)
-            self._generation_log_store.append(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                entry=GenerationLogEntry(
-                    sequence=0,
-                    stage="FAILED",
-                    status="FAILED",
-                    error_type="SpecificationNotFoundError",
-                    error_message=job.error,
-                ),
-            )
+
             self._publish_terminal_event(
                 job,
                 valid=False,
@@ -779,93 +1034,6 @@ class GenerationService:
             return job
 
         self._validate_specification(specification)
-
-        self._generation_log_store.append(
-            data_model_id=data_model_id,
-            job_id=job_id,
-            entry=GenerationLogEntry(
-                sequence=0,
-                stage="PREPARING",
-                status="STARTED",
-            ),
-        )
-
-        job.status = GenerationJobStatus.PLANNING
-        job.started_at = datetime.now(timezone.utc)
-        self._job_store.save(job)
-
-        try:
-            plan = self._generation_planner.build(
-                specification=specification,
-            )
-        except Exception as exc:
-            import traceback
-
-            job.status = GenerationJobStatus.FAILED
-            job.error = str(exc)
-            job.completed_at = datetime.now(timezone.utc)
-            self._job_store.save(job)
-
-            self._generation_log_store.append(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                entry=GenerationLogEntry(
-                    sequence=0,
-                    stage="FAILED",
-                    status="FAILED",
-                    error_type=type(exc).__name__,
-                    error_message=str(exc),
-                    traceback=traceback.format_exc(),
-                ),
-            )
-            self._publish_terminal_event(
-                job,
-                valid=False,
-                error_count=1,
-            )
-            return job
-
-        seed = specification.get("generation", {}).get("seed", 42)
-        chunk_size = (
-            job.entities[0].chunk_size
-            if job.entities
-            else 50
-        )
-
-        checkpoint = self._checkpoint_store.create_checkpoint(
-            data_model_id=job.data_model_id,
-            job_id=job.job_id,
-            specification=specification,
-            seed=seed,
-            chunk_size=chunk_size,
-            entity_targets={
-                entity.entity_name: entity.target_rows
-                for entity in job.entities
-            },
-        )
-
-        existing_checkpoint = self._checkpoint_store.get(
-            data_model_id=job.data_model_id,
-            job_id=job.job_id,
-        )
-
-        if existing_checkpoint is not None:
-            self._checkpoint_store.validate_identity(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                specification_hash=checkpoint["specification_hash"],
-                seed=seed,
-                chunk_size=chunk_size,
-            )
-        else:
-            self._checkpoint_store.save(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                seed=checkpoint["seed"],
-                entities=checkpoint["entities"],
-                specification_hash=checkpoint["specification_hash"],
-                chunk_size=checkpoint["chunk_size"],
-            )
 
         with self._worker_lock:
             if worker_key in self._active_workers:
@@ -876,61 +1044,143 @@ class GenerationService:
             self._active_workers.add(worker_key)
 
         previous_status = job.status
-        job.status = GenerationJobStatus.RUNNING
+        previous_attempt_id = job.attempt_id
+        previous_started_at = job.started_at
+        previous_preparation_phase = job.preparation_phase
+
+        attempt_id = uuid4().hex
+
+        job.status = GenerationJobStatus.PREPARING
+        job.attempt_id = attempt_id
+        job.preparation_phase = (
+            GenerationPreparationPhase.CHECKPOINT_PENDING
+        )
+        job.started_at = datetime.now(timezone.utc)
+        job.completed_at = None
+        job.error = None
 
         try:
+            # PREPARING must be durable before checkpoint initialization.
             self._job_store.save(job)
-            self._generation_log_store.append(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-                entry=GenerationLogEntry(
-                    sequence=0,
-                    stage="PREPARING",
-                    status="COMPLETED",
-                ),
-            )
         except Exception:
             with self._worker_lock:
                 self._active_workers.discard(worker_key)
 
-            # Preserve RUNNING if it was already persisted and only the log
-            # append failed. This leaves the job eligible for validated recovery.
-            try:
-                persisted_job = self._job_store.get(
-                    data_model_id=data_model_id,
-                    job_id=job_id,
-                )
-            except Exception:
-                persisted_job = None
-
-            if persisted_job is None or persisted_job.status != GenerationJobStatus.RUNNING:
-                job.status = previous_status
-                try:
-                    self._job_store.save(job)
-                except Exception:
-                    # Preserve the original start-transition failure.
-                    pass
+            job.status = previous_status
+            job.attempt_id = previous_attempt_id
+            job.started_at = previous_started_at
+            job.preparation_phase = previous_preparation_phase
             raise
 
+        try:
+            self._ensure_initial_checkpoint(
+                data_model_id=data_model_id,
+                job=job,
+                specification=specification,
+            )
+
+        except Exception as exc:
+            job.status = GenerationJobStatus.FAILED
+            job.error = str(exc)
+            job.completed_at = datetime.now(timezone.utc)
+
+            try:
+                self._job_store.save(job)
+            finally:
+                with self._worker_lock:
+                    self._active_workers.discard(worker_key)
+
+            self._publish_terminal_event(
+                job,
+                valid=False,
+                error_count=1,
+            )
+            return job
+
+        self._jobs[job.job_id] = job
         return job
 
     def execute_job(
         self,
         data_model_id: str,
         job_id: str,
+        attempt_id: str | None = None,
     ) -> None:
-        """Execute a started or explicitly resumed generation job."""
+        """Execute only the exact attempt persisted by the scheduler."""
 
         worker_key = (data_model_id, job_id)
+
+        if not isinstance(attempt_id, str) or not attempt_id.strip():
+            return
+
         with self._worker_lock:
             if worker_key not in self._active_workers:
                 return
 
         try:
-            self._execute_job_reserved(
-                data_model_id=data_model_id,
-                job_id=job_id,
+            job_directory = (
+                Path(__file__).resolve().parents[2]
+                / "data"
+                / "data_model"
+                / data_model_id
+                / "generation"
+                / job_id
             )
+
+            try:
+                with generation_execution_lease(
+                    job_directory,
+                    timeout=0.0,
+                ):
+                    job = self._get_or_load_job(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                    )
+
+                    if job is None or job.data_model_id != data_model_id:
+                        return
+
+                    if job.attempt_id != attempt_id:
+                        print(
+                            f"Ignoring stale generation task for job {job_id}: "
+                            "attempt ID does not match persisted state.",
+                            flush=True,
+                        )
+                        return
+
+                    if job.status not in {
+                        GenerationJobStatus.PREPARING,
+                        GenerationJobStatus.RUNNING,
+                    }:
+                        return
+
+                    specification = self._specification_service.get_specification(
+                        data_model_id=data_model_id,
+                    )
+
+                    if specification is not None:
+                        self._validate_specification(specification)
+                        self._validate_recovery_checkpoint(
+                            data_model_id=data_model_id,
+                            job=job,
+                            specification=specification,
+                        )
+
+                    job.status = GenerationJobStatus.RUNNING
+                    job.error = None
+                    self._job_store.save(job)
+                    self._jobs[job.job_id] = job
+
+                    self._execute_job_reserved(
+                        data_model_id=data_model_id,
+                        job_id=job_id,
+                    )
+
+            except FileLockTimeout:
+                # Another process owns the execution lease.
+                # Do not alter persisted job state.
+                return
+
         finally:
             with self._worker_lock:
                 self._active_workers.discard(worker_key)
@@ -1022,164 +1272,46 @@ class GenerationService:
                 unique_semantic_calls: list[dict[str, object]] | None = None,
                 vocabulary_semantic_calls: list[dict[str, object]] | None = None,
             ) -> None:
-                existing_checkpoint = (
-                    self._checkpoint_store.get(
-                        data_model_id=job.data_model_id,
-                        job_id=job.job_id,
+                manifest = self._checkpoint_store.get(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                )
+
+                if manifest is None:
+                    raise RuntimeError(
+                        "Checkpoint manifest disappeared after chunk commit."
                     )
-                    or {}
-                )
 
-                existing_entity_checkpoint = (
-                    existing_checkpoint
-                    .get("entities", {})
-                    .get(entity_name, {})
-                )
-                completed_chunks_for_entity = list(
-                    existing_entity_checkpoint.get("completed_chunks", [])
-                )
+                entity_checkpoint = manifest.entities.get(entity_name)
+                if entity_checkpoint is None:
+                    raise RuntimeError(
+                        f"Committed checkpoint entity '{entity_name}' is missing."
+                    )
 
-                if chunk_number not in completed_chunks_for_entity:
-                    completed_chunks_for_entity.append(chunk_number)
-                    completed_chunks_for_entity.sort()
-
-                entity_target_rows = next(
+                committed_chunk = next(
                     (
-                        item.target_rows
-                        for item in job.entities
-                        if item.entity_name == entity_name
+                        item
+                        for item in entity_checkpoint.chunks
+                        if item.chunk_number == chunk_number
                     ),
                     None,
                 )
-                chunk_size = existing_checkpoint.get("chunk_size", 50)
+
+                if committed_chunk is None:
+                    raise RuntimeError(
+                        f"Chunk {chunk_number} of '{entity_name}' "
+                        "was reported complete without manifest evidence."
+                    )
 
                 if (
-                    entity_target_rows is None
-                    or not isinstance(chunk_size, int)
-                    or isinstance(chunk_size, bool)
-                    or chunk_size <= 0
-                    or any(
-                        not isinstance(number, int)
-                        or isinstance(number, bool)
-                        or number < 1
-                        for number in completed_chunks_for_entity
-                    )
-                    or len(completed_chunks_for_entity)
-                    != len(set(completed_chunks_for_entity))
+                    committed_chunk.row_count != len(_chunk_rows)
+                    or committed_chunk.row_start
+                    != (chunk_number - 1) * manifest.chunk_size
                 ):
-                    raise ValueError(
-                        f"Cannot account for committed chunks of entity "
-                        f"'{entity_name}'."
+                    raise RuntimeError(
+                        f"Chunk {chunk_number} of '{entity_name}' "
+                        "does not match its committed manifest evidence."
                     )
-
-                durable_generated_rows = min(
-                    len(completed_chunks_for_entity) * chunk_size,
-                    entity_target_rows,
-                )
-
-                for entity_progress in job.entities:
-                    if entity_progress.entity_name == entity_name:
-                        entity_progress.generated_rows = durable_generated_rows
-                        entity_progress.completed_chunks = chunk_number
-                        entity_progress.total_chunks = total_chunks
-                        entity_progress.status = GenerationEntityStatus.RUNNING
-                        entity_progress.vocabulary_semantic_calls = [
-                            GenerationSemanticCallProgress.model_validate(call)
-                            for call in (vocabulary_semantic_calls or [])
-                        ]
-
-                        entity_progress.chunks = [
-                            chunk
-                            for chunk in entity_progress.chunks
-                            if chunk.chunk_number != chunk_number
-                        ]
-
-                        entity_progress.chunks.append(
-                            GenerationChunkProgress(
-                                chunk_number=chunk_number,
-                                target_rows=len(_chunk_rows),
-                                generated_rows=len(_chunk_rows),
-                                status=GenerationEntityStatus.COMPLETED,
-                                elapsed_seconds=chunk_elapsed_seconds,
-                                peak_memory_mb=chunk_peak_memory_mb,
-                                throughput_rows_per_second=(
-                                    len(_chunk_rows) / chunk_elapsed_seconds
-                                    if chunk_elapsed_seconds
-                                    and chunk_elapsed_seconds > 0
-                                    else None
-                                ),
-                                unique_semantic_calls=[
-                                    GenerationSemanticCallProgress.model_validate(call)
-                                    for call in (unique_semantic_calls or [])
-                                ],
-                            )
-                        )
-
-                        entity_progress.chunks.sort(
-                            key=lambda chunk: chunk.chunk_number
-                        )
-                        break
-
-                job.total_generated_rows = sum(
-                    entity.generated_rows for entity in job.entities
-                )
-
-                job.progress = (
-                    job.total_generated_rows / job.total_target_rows
-                    if job.total_target_rows > 0
-                    else 1.0
-                )
-
-                existing_entities = (
-                    existing_checkpoint.get("entities") or {}
-                )
-
-                entities = {}
-
-                for entity in job.entities:
-                    existing_entity = (
-                        existing_entities.get(
-                            entity.entity_name,
-                        )
-                        or {}
-                    )
-
-                    completed_chunks = (
-                        completed_chunks_for_entity
-                        if entity.entity_name == entity_name
-                        else list(
-                            existing_entity.get("completed_chunks", [])
-                        )
-                    )
-
-                    entities[entity.entity_name] = {
-                        "target_rows": entity.target_rows,
-                        "completed_chunks": completed_chunks,
-                        "committed_rows": entity.generated_rows,
-                    }
-
-                saved_checkpoint = self._checkpoint_store.save(
-                    data_model_id=job.data_model_id,
-                    job_id=job.job_id,
-                    seed=existing_checkpoint.get(
-                        "seed",
-                        seed,
-                    ),
-                    entities=entities,
-                    specification_hash=existing_checkpoint.get(
-                        "specification_hash",
-                        "",
-                    ),
-                    chunk_size=existing_checkpoint.get(
-                        "chunk_size",
-                        job.entities[0].chunk_size
-                        if job.entities
-                        else 1,
-                    ),
-                )
-
-                # Persist UI-facing progress only after the durable checkpoint.
-                self._job_store.save(job)
 
                 entity_progress = next(
                     (
@@ -1190,16 +1322,70 @@ class GenerationService:
                     None,
                 )
 
-                entity_generated_rows = (
-                    entity_progress.generated_rows
-                    if entity_progress
+                if entity_progress is None:
+                    raise RuntimeError(
+                        f"Job projection has no entity '{entity_name}'."
+                    )
+
+                entity_progress.generated_rows = (
+                    entity_checkpoint.committed_rows
+                )
+                entity_progress.completed_chunks = len(
+                    entity_checkpoint.chunks
+                )
+                entity_progress.total_chunks = (
+                    ceil(entity_checkpoint.target_rows / manifest.chunk_size)
+                    if entity_checkpoint.target_rows > 0
                     else 0
                 )
-                entity_target_rows = (
-                    entity_progress.target_rows
-                    if entity_progress
-                    else 0
+                entity_progress.status = GenerationEntityStatus.RUNNING
+                entity_progress.vocabulary_semantic_calls = [
+                    GenerationSemanticCallProgress.model_validate(call)
+                    for call in (vocabulary_semantic_calls or [])
+                ]
+
+                entity_progress.chunks = [
+                    chunk
+                    for chunk in entity_progress.chunks
+                    if chunk.chunk_number != chunk_number
+                ]
+
+                entity_progress.chunks.append(
+                    GenerationChunkProgress(
+                        chunk_number=chunk_number,
+                        target_rows=committed_chunk.row_count,
+                        generated_rows=committed_chunk.row_count,
+                        status=GenerationEntityStatus.COMPLETED,
+                        elapsed_seconds=chunk_elapsed_seconds,
+                        peak_memory_mb=chunk_peak_memory_mb,
+                        throughput_rows_per_second=(
+                            committed_chunk.row_count / chunk_elapsed_seconds
+                            if chunk_elapsed_seconds
+                            and chunk_elapsed_seconds > 0
+                            else None
+                        ),
+                        unique_semantic_calls=[
+                            GenerationSemanticCallProgress.model_validate(call)
+                            for call in (unique_semantic_calls or [])
+                        ],
+                    )
                 )
+
+                entity_progress.chunks.sort(
+                    key=lambda chunk: chunk.chunk_number
+                )
+
+                job.total_generated_rows = sum(
+                    item.committed_rows
+                    for item in manifest.entities.values()
+                )
+                job.progress = (
+                    job.total_generated_rows / job.total_target_rows
+                    if job.total_target_rows > 0
+                    else 1.0
+                )
+
+                self._job_store.save(job)
 
                 self._event_broker.publish(
                     data_model_id=job.data_model_id,
@@ -1210,12 +1396,13 @@ class GenerationService:
                         "chunk_number": chunk_number,
                         "total_chunks": total_chunks,
                         "generated_rows": job.total_generated_rows,
-                        "entity_generated_rows": entity_generated_rows,
-                        "entity_target_rows": entity_target_rows,
-                        "checkpoint_updated_at": saved_checkpoint["updated_at"],
+                        "entity_generated_rows": entity_progress.generated_rows,
+                        "entity_target_rows": entity_progress.target_rows,
+                        "checkpoint_updated_at": manifest.updated_at.isoformat(),
                         "entity_progress": (
-                            entity_generated_rows / entity_target_rows
-                            if entity_target_rows > 0
+                            entity_progress.generated_rows
+                            / entity_progress.target_rows
+                            if entity_progress.target_rows > 0
                             else 0
                         ),
                         "progress": job.progress,
@@ -1223,25 +1410,87 @@ class GenerationService:
                 )
 
             def on_entity_completed(entity_run) -> None:
-                for entity_progress in job.entities:
-                    if entity_progress.entity_name == entity_run.entity_name:
-                        entity_progress.generated_rows = entity_run.generated_rows
-                        entity_progress.status = GenerationEntityStatus.COMPLETED
-                        entity_progress.elapsed_seconds = entity_run.elapsed_seconds
-                        entity_progress.peak_memory_mb = entity_run.peak_memory_mb
-                        entity_progress.throughput_rows_per_second = (
-                            entity_run.generated_rows / entity_run.elapsed_seconds
-                            if entity_run.elapsed_seconds
-                            and entity_run.elapsed_seconds > 0
-                            else None
-                        )
-                        entity_progress.vocabulary_semantic_calls = list(entity_run.vocabulary_semantic_calls)
-                        break
-
-                job.total_generated_rows = sum(
-                    entity.generated_rows for entity in job.entities
+                manifest = self._checkpoint_store.get(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
                 )
 
+                if manifest is None:
+                    raise RuntimeError(
+                        "Checkpoint manifest disappeared during entity completion."
+                    )
+
+                entity_checkpoint = manifest.entities.get(
+                    entity_run.entity_name
+                )
+
+                if entity_checkpoint is None:
+                    raise RuntimeError(
+                        f"Checkpoint entity '{entity_run.entity_name}' is missing."
+                    )
+
+                finalization = entity_checkpoint.finalization
+
+                if (
+                    entity_checkpoint.committed_rows
+                    != entity_checkpoint.target_rows
+                    or finalization.status.value != "COMMITTED"
+                    or finalization.output is None
+                ):
+                    raise RuntimeError(
+                        f"Entity '{entity_run.entity_name}' cannot be marked "
+                        "complete without committed finalization evidence."
+                    )
+
+                self._checkpoint_store.verify_artifact(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                    artifact=finalization.output,
+                )
+
+                entity_progress = next(
+                    (
+                        item
+                        for item in job.entities
+                        if item.entity_name == entity_run.entity_name
+                    ),
+                    None,
+                )
+
+                if entity_progress is None:
+                    raise RuntimeError(
+                        f"Job projection has no entity "
+                        f"'{entity_run.entity_name}'."
+                    )
+
+                entity_progress.generated_rows = (
+                    entity_checkpoint.committed_rows
+                )
+                entity_progress.completed_chunks = len(
+                    entity_checkpoint.chunks
+                )
+                entity_progress.total_chunks = (
+                    ceil(entity_checkpoint.target_rows / manifest.chunk_size)
+                    if entity_checkpoint.target_rows > 0
+                    else 0
+                )
+                entity_progress.status = GenerationEntityStatus.COMPLETED
+                entity_progress.elapsed_seconds = entity_run.elapsed_seconds
+                entity_progress.peak_memory_mb = entity_run.peak_memory_mb
+                entity_progress.throughput_rows_per_second = (
+                    entity_run.generated_rows / entity_run.elapsed_seconds
+                    if entity_run.elapsed_seconds
+                    and entity_run.elapsed_seconds > 0
+                    else None
+                )
+                entity_progress.vocabulary_semantic_calls = list(
+                    entity_run.vocabulary_semantic_calls
+                )
+
+                job.total_generated_rows = sum(
+                    item.committed_rows
+                    for item in manifest.entities.values()
+                )
                 job.progress = (
                     job.total_generated_rows / job.total_target_rows
                     if job.total_target_rows > 0
@@ -1256,8 +1505,8 @@ class GenerationService:
                     event_type="ENTITY_COMPLETED",
                     data={
                         "entity_name": entity_run.entity_name,
-                        "target_rows": entity_run.target_rows,
-                        "generated_rows": entity_run.generated_rows,
+                        "target_rows": entity_checkpoint.target_rows,
+                        "generated_rows": entity_checkpoint.committed_rows,
                         "status": GenerationEntityStatus.COMPLETED.value,
                         "elapsed_seconds": entity_progress.elapsed_seconds,
                         "throughput_rows_per_second": (
@@ -1316,37 +1565,90 @@ class GenerationService:
                 else 1.0
             )
 
-            job.entities = [
-                GenerationEntityProgress(
-                    entity_name=entity.entity_name,
-                    target_rows=entity.target_rows,
-                    generated_rows=entity.generated_rows,
-                    chunk_size=50,
-                    completed_chunks=(
-                        ceil(entity.generated_rows / 50)
-                        if entity.generated_rows > 0
-                        else 0
-                    ),
-                    total_chunks=(
-                        ceil(entity.target_rows / 50) if entity.target_rows > 0 else 0
-                    ),
-                    status=(
-                        GenerationEntityStatus.COMPLETED
-                        if entity.generated_rows == entity.target_rows
-                        else GenerationEntityStatus.FAILED
-                    ),
-                    elapsed_seconds=entity.elapsed_seconds,
-                    peak_memory_mb=entity.peak_memory_mb,
-                    throughput_rows_per_second=(
-                        entity.generated_rows / entity.elapsed_seconds
-                        if entity.elapsed_seconds and entity.elapsed_seconds > 0
-                        else None
-                    ),
-                    vocabulary_semantic_calls=list(entity.vocabulary_semantic_calls),
-                    chunks=entity.chunks,
+            manifest = self._checkpoint_store.get(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+            )
+
+            if manifest is None:
+                raise RuntimeError(
+                    "Checkpoint manifest is missing after generation."
                 )
-                for entity in result.entities
-            ]
+
+            projected_entities = []
+
+            for result_entity in result.entities:
+                entity_checkpoint = manifest.entities.get(
+                    result_entity.entity_name
+                )
+
+                if entity_checkpoint is None:
+                    raise RuntimeError(
+                        f"Checkpoint entity '{result_entity.entity_name}' "
+                        "is missing after generation."
+                    )
+
+                finalization = entity_checkpoint.finalization
+
+                if (
+                    entity_checkpoint.committed_rows
+                    != entity_checkpoint.target_rows
+                    or finalization.status.value != "COMMITTED"
+                    or finalization.output is None
+                ):
+                    raise RuntimeError(
+                        f"Entity '{result_entity.entity_name}' lacks "
+                        "committed finalization evidence."
+                    )
+
+                self._checkpoint_store.verify_artifact(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                    artifact=finalization.output,
+                )
+
+                projected_entities.append(
+                    GenerationEntityProgress(
+                        entity_name=result_entity.entity_name,
+                        target_rows=entity_checkpoint.target_rows,
+                        generated_rows=entity_checkpoint.committed_rows,
+                        chunk_size=manifest.chunk_size,
+                        completed_chunks=len(entity_checkpoint.chunks),
+                        total_chunks=(
+                            ceil(
+                                entity_checkpoint.target_rows
+                                / manifest.chunk_size
+                            )
+                            if entity_checkpoint.target_rows > 0
+                            else 0
+                        ),
+                        status=GenerationEntityStatus.COMPLETED,
+                        elapsed_seconds=result_entity.elapsed_seconds,
+                        peak_memory_mb=result_entity.peak_memory_mb,
+                        throughput_rows_per_second=(
+                            result_entity.generated_rows
+                            / result_entity.elapsed_seconds
+                            if result_entity.elapsed_seconds
+                            and result_entity.elapsed_seconds > 0
+                            else None
+                        ),
+                        vocabulary_semantic_calls=list(
+                            result_entity.vocabulary_semantic_calls
+                        ),
+                        chunks=result_entity.chunks,
+                    )
+                )
+
+            job.entities = projected_entities
+            job.total_generated_rows = sum(
+                item.committed_rows
+                for item in manifest.entities.values()
+            )
+            job.progress = (
+                job.total_generated_rows / job.total_target_rows
+                if job.total_target_rows > 0
+                else 1.0
+            )
 
             job.completed_at = datetime.now(timezone.utc)
 
@@ -1425,78 +1727,143 @@ class GenerationService:
                 cause = cause.__cause__
                 depth += 1
 
-            from app.services.generation.artifact_writer import (
-                GenerationArtifactWriter,
+            manifest = self._checkpoint_store.get(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
             )
 
             usable_rows = 0
             recovered_rows: dict[str, int] = {}
-            checkpoint = self._checkpoint_store.get(
-                data_model_id=job.data_model_id,
-                job_id=job.job_id,
-            )
-            checkpoint_entities = (
-                checkpoint.get("entities", {})
-                if isinstance(checkpoint, dict)
-                else {}
-            )
+            committed_rows_total = 0
+            recovery_errors: list[str] = []
 
-            artifact_writer = GenerationArtifactWriter(
-                checkpoint_store=self._checkpoint_store,
-            )
+            if manifest is not None:
+                for entity in job.entities:
+                    entity_checkpoint = manifest.entities.get(
+                        entity.entity_name
+                    )
 
-            if isinstance(checkpoint_entities, dict):
-                for entity_name in checkpoint_entities:
-                    try:
-                        row_count = artifact_writer.consolidate_entity(
-                            data_model_id=job.data_model_id,
-                            job_id=job.job_id,
-                            entity_name=entity_name,
+                    if entity_checkpoint is None:
+                        recovery_errors.append(
+                            f"Missing manifest entity '{entity.entity_name}'."
                         )
-                        if row_count > 0:
-                            recovered_rows[entity_name] = row_count
-                            usable_rows += row_count
-                    except Exception as recovery_exc:
-                        print(
-                            f"[GENERATION ARTIFACT RECOVERY FAILURE] "
-                            f"job_id={job.job_id} entity={entity_name} "
-                            f"error_type={type(recovery_exc).__name__} "
-                            f"error={recovery_exc}",
-                            flush=True,
-                        )
+                        entity.generated_rows = 0
+                        entity.completed_chunks = 0
+                        entity.status = GenerationEntityStatus.FAILED
+                        continue
 
-            job.total_generated_rows = usable_rows
-            job.progress = (
-                min(usable_rows / job.total_target_rows, 1.0)
-                if job.total_target_rows > 0
-                else 0.0
-            )
-            if usable_rows <= 0:
-                job.status = GenerationJobStatus.FAILED
-            elif (
-                job.total_target_rows > 0
-                and usable_rows >= job.total_target_rows
-            ):
-                job.status = GenerationJobStatus.COMPLETED
+                    committed_rows_total += (
+                        entity_checkpoint.committed_rows
+                    )
+
+                    entity.generated_rows = (
+                        entity_checkpoint.committed_rows
+                    )
+                    entity.completed_chunks = len(
+                        entity_checkpoint.chunks
+                    )
+                    entity.total_chunks = (
+                        ceil(
+                            entity_checkpoint.target_rows
+                            / manifest.chunk_size
+                        )
+                        if entity_checkpoint.target_rows > 0
+                        else 0
+                    )
+
+                    artifacts_valid = True
+
+                    for chunk in entity_checkpoint.chunks:
+                        try:
+                            self._checkpoint_store.verify_artifact(
+                                data_model_id=job.data_model_id,
+                                job_id=job.job_id,
+                                artifact=chunk.artifact,
+                            )
+                        except Exception as recovery_exc:
+                            artifacts_valid = False
+                            recovery_errors.append(
+                                f"Chunk {chunk.chunk_number} of "
+                                f"'{entity.entity_name}' failed integrity "
+                                f"verification: {recovery_exc}"
+                            )
+
+                    finalization = entity_checkpoint.finalization
+                    finalized = (
+                        finalization.status.value == "COMMITTED"
+                        and finalization.output is not None
+                    )
+
+                    if finalized and artifacts_valid:
+                        try:
+                            self._checkpoint_store.verify_artifact(
+                                data_model_id=job.data_model_id,
+                                job_id=job.job_id,
+                                artifact=finalization.output,
+                            )
+                        except Exception as recovery_exc:
+                            finalized = False
+                            recovery_errors.append(
+                                f"Final output of '{entity.entity_name}' "
+                                f"failed integrity verification: {recovery_exc}"
+                            )
+
+                    if (
+                        finalized
+                        and artifacts_valid
+                        and entity_checkpoint.committed_rows
+                        == entity_checkpoint.target_rows
+                    ):
+                        entity.status = GenerationEntityStatus.COMPLETED
+                        recovered_rows[entity.entity_name] = (
+                            entity_checkpoint.target_rows
+                        )
+                        usable_rows += entity_checkpoint.target_rows
+                    else:
+                        entity.status = GenerationEntityStatus.FAILED
+
             else:
+                recovery_errors.append(
+                    "Checkpoint manifest is missing during exception recovery."
+                )
+                for entity in job.entities:
+                    entity.generated_rows = 0
+                    entity.completed_chunks = 0
+                    entity.status = GenerationEntityStatus.FAILED
+
+            job.total_generated_rows = committed_rows_total
+            job.progress = (
+                min(
+                    committed_rows_total / job.total_target_rows,
+                    1.0,
+                )
+                if job.total_target_rows > 0
+                else 1.0
+            )
+
+            all_entities_finalized = (
+                manifest is not None
+                and len(manifest.entities) == len(job.entities)
+                and all(
+                    entity.status == GenerationEntityStatus.COMPLETED
+                    for entity in job.entities
+                )
+            )
+
+            if all_entities_finalized:
+                job.status = GenerationJobStatus.COMPLETED
+            elif usable_rows > 0:
                 job.status = GenerationJobStatus.PARTIALLY_COMPLETED
+            else:
+                job.status = GenerationJobStatus.FAILED
+
             job.error = str(exc)
+            if recovery_errors:
+                job.error += " | Recovery verification: " + "; ".join(
+                    recovery_errors
+                )
+
             job.completed_at = datetime.now(timezone.utc)
-
-            for entity in job.entities:
-                recovered = recovered_rows.get(entity.entity_name, 0)
-                entity.generated_rows = recovered
-                entity.status = (
-                    GenerationEntityStatus.COMPLETED
-                    if recovered >= entity.target_rows
-                    else GenerationEntityStatus.FAILED
-                )
-                entity.completed_chunks = (
-                    ceil(recovered / entity.chunk_size)
-                    if recovered > 0 and entity.chunk_size > 0
-                    else 0
-                )
-
             self._job_store.save(job)
 
             is_partial = (
@@ -1587,24 +1954,20 @@ class GenerationService:
         data_model_id: str,
         job_id: str,
     ) -> GenerationJobResponse | None:
-        """Return a generation job from memory or persistent storage."""
+        """Return the authoritative persisted job with attached result data."""
 
-        job = self._jobs.get(job_id)
-
-        if job is None:
-            job = self._job_store.get(
-                data_model_id=data_model_id,
-                job_id=job_id,
-            )
-
-        if job is None:
+        job = self._job_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+        if job is None or job.data_model_id != data_model_id:
+            self._jobs.pop(job_id, None)
             return None
 
         validation = self._validation_store.get(
             data_model_id=data_model_id,
             job_id=job_id,
         )
-
         if validation is not None:
             job.validation = validation
 
@@ -1612,10 +1975,8 @@ class GenerationService:
             data_model_id=data_model_id,
             job_id=job_id,
         )
-
         if quality is not None:
             job.quality = quality
 
         self._jobs[job_id] = job
-
         return job

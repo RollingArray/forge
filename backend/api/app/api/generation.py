@@ -36,6 +36,7 @@ from app.models.generation_model import (
     GenerationReadinessResponse,
 )
 from app.models.generation_log_model import GenerationLogEntryResponse, GenerationLogResponse
+from app.models.generation_persistence import GenerationCheckpointManifest
 from app.core.ai_settings import load_ai_configuration
 from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
@@ -97,12 +98,13 @@ checkpoint_store = GenerationCheckpointStore()
 def _execute_generation_job_and_record_activity(
     data_model_id: str,
     job_id: str,
+    attempt_id: str,
     actor_user_id: str,
 ) -> None:
     """Execute a generation job and record its persisted terminal outcome."""
 
     try:
-        generation_service.execute_job(data_model_id, job_id)
+        generation_service.execute_job(data_model_id, job_id, attempt_id=attempt_id)
     except Exception:
         # The worker normally persists its own terminal status. If an
         # unexpected exception escapes, inspect that persisted status rather
@@ -678,12 +680,13 @@ async def get_generation_log(
 @router.get(
     "/{data_model_id}/generation/{job_id}/checkpoint",
     status_code=status.HTTP_200_OK,
+    response_model=GenerationCheckpointManifest,
 )
 async def get_generation_checkpoint(
     data_model_id: str,
     job_id: str,
     user: AuthUser = Depends(get_authenticated_user),
-) -> dict:
+) -> GenerationCheckpointManifest:
     """Return the durable checkpoint for a generation job."""
 
     if not data_model_access_service.can_generate(
@@ -752,20 +755,7 @@ async def stream_generation_events(
         )
 
     async def event_stream() -> AsyncIterator[str]:
-        """Yield the current snapshot followed by live events."""
-
-        yield (
-            "event: JOB_SNAPSHOT\n"
-            f"data: {job.model_dump_json()}\n\n"
-        )
-
-        if job.status in {
-            "COMPLETED",
-            "PARTIALLY_COMPLETED",
-            "FAILED",
-            "CANCELLED",
-        }:
-            return
+        """Subscribe before sending a fresh snapshot and subsequent events."""
 
         queue = generation_event_broker.subscribe(
             data_model_id=data_model_id,
@@ -773,6 +763,29 @@ async def stream_generation_events(
         )
 
         try:
+            # Refresh after subscription so events published during this
+            # lookup remain queued and cannot be lost before streaming.
+            current_job = generation_service.get_job(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+
+            if current_job is None or current_job.data_model_id != data_model_id:
+                return
+
+            yield (
+                "event: JOB_SNAPSHOT\n"
+                f"data: {current_job.model_dump_json()}\n\n"
+            )
+
+            if current_job.status in {
+                "COMPLETED",
+                "PARTIALLY_COMPLETED",
+                "FAILED",
+                "CANCELLED",
+            }:
+                return
+
             while True:
                 try:
                     event = await asyncio.wait_for(
@@ -1198,7 +1211,15 @@ async def start_generation_job(
             detail="Generation job not found.",
         )
 
-    if job.status == GenerationJobStatus.RUNNING:
+    if job.status in {
+        GenerationJobStatus.PREPARING,
+        GenerationJobStatus.RUNNING,
+    }:
+        if not job.attempt_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Generation job has no execution attempt ID.",
+            )
         if previous_status in {
             GenerationJobStatus.CREATED,
             GenerationJobStatus.INTERRUPTED,
@@ -1228,6 +1249,7 @@ async def start_generation_job(
             _execute_generation_job_and_record_activity,
             data_model_id,
             job_id,
+            job.attempt_id,
             current_user.user_id,
         )
     elif job.status == GenerationJobStatus.FAILED:

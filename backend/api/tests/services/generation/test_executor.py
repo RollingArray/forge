@@ -1,5 +1,146 @@
 from dataclasses import dataclass
 from typing import Any
+from unittest.mock import Mock
+
+from datetime import datetime, timezone
+
+from app.models.generation_persistence import (
+    GenerationArtifactEvidence,
+    GenerationCheckpointManifest,
+    GenerationChunkEvidence,
+    GenerationEntityCheckpoint,
+    GenerationFinalization,
+    GenerationFinalizationStatus,
+)
+
+
+def make_v2_manifest(
+    *,
+    entity_name: str = "CUSTOMER",
+    target_rows: int = 0,
+    chunk_size: int = 50,
+    committed_chunks: tuple[int, ...] = (),
+    finalized: bool = False,
+) -> GenerationCheckpointManifest:
+    """Build valid v2 checkpoint evidence for executor unit tests."""
+    now = datetime.now(timezone.utc)
+
+    chunks = []
+    for number in sorted(committed_chunks):
+        row_start = (number - 1) * chunk_size
+        row_count = min(chunk_size, target_rows - row_start)
+        if row_count <= 0:
+            raise ValueError(
+                f"Chunk {number} exceeds target_rows={target_rows}"
+            )
+
+        chunks.append(
+            GenerationChunkEvidence(
+                chunk_number=number,
+                row_start=row_start,
+                row_count=row_count,
+                artifact=GenerationArtifactEvidence(
+                    path=(
+                        f"generated/{entity_name}/chunks/"
+                        f"chunk_{number:06d}.csv"
+                    ),
+                    size_bytes=1,
+                    sha256="a" * 64,
+                ),
+                committed_at=now,
+            )
+        )
+
+    finalization = GenerationFinalization(
+        status=(
+            GenerationFinalizationStatus.COMMITTED
+            if finalized
+            else GenerationFinalizationStatus.PENDING
+        ),
+        output=(
+            GenerationArtifactEvidence(
+                path=f"generated/{entity_name}/{entity_name}.csv",
+                size_bytes=1,
+                sha256="b" * 64,
+            )
+            if finalized
+            else None
+        ),
+    )
+
+    return GenerationCheckpointManifest(
+        data_model_id="FORGE-TEST-MODEL",
+        job_id="FORGE-TEST",
+        specification_hash="c" * 64,
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version="forge-generation-v2",
+        attempt_id="test-attempt",
+        entities={
+            entity_name: GenerationEntityCheckpoint(
+                target_rows=target_rows,
+                chunks=chunks,
+                finalization=finalization,
+            )
+        },
+        created_at=now,
+        updated_at=now,
+    )
+
+
+class V2FakeCheckpointStore:
+    """Small read-only checkpoint-store fake using the v2 manifest contract."""
+
+    def __init__(self, manifest=None) -> None:
+        self.manifest = manifest
+
+    def get(self, *, data_model_id: str, job_id: str):
+        return self.manifest
+
+    def get_committed_rows(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+        entity_name: str,
+    ) -> int:
+        entity = (
+            self.manifest.entities.get(entity_name)
+            if self.manifest is not None
+            else None
+        )
+        return entity.committed_rows if entity is not None else 0
+
+    def get_entity_state(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+        entity_name: str,
+    ):
+        if self.manifest is None:
+            return None
+        return self.manifest.entities.get(entity_name)
+
+    def is_chunk_committed(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+        entity_name: str,
+        chunk_number: int,
+    ) -> bool:
+        entity = self.get_entity_state(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            entity_name=entity_name,
+        )
+        return entity is not None and any(
+            chunk.chunk_number == chunk_number
+            for chunk in entity.chunks
+        )
+
+
 
 import pytest
 
@@ -108,7 +249,12 @@ def test_executor_persists_ai_generated_semantic_values(
     tmp_path,
     monkeypatch,
 ) -> None:
-    monkeypatch.chdir(tmp_path)
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
+    from app.services.generation_semantic_store import GenerationSemanticStore
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
 
     semantic_values = [
         "Hydraulic Pump",
@@ -116,39 +262,21 @@ def test_executor_persists_ai_generated_semantic_values(
         "Landing Gear Assembly",
     ]
 
-    ai_service = FakeAIService(
-        values=semantic_values,
-    )
+    ai_service = FakeAIService(values=semantic_values)
 
-    semantic_store = FakeSemanticStore()
+    semantic_store = GenerationSemanticStore()
+    semantic_store._root = tmp_path / "semantic"
 
-    checkpoint_store = FakeCheckpointStore(
-        checkpoint={
-            "entities": {
-                "PRODUCT": {
-                    "target_rows": 3,
-                    "chunk_size": 50,
-                    "completed_chunks": [],
-                    "committed_rows": 0,
-                },
-            },
-        },
-    )
-
-    executor = GenerationExecutor(
-        seed=42,
-        ai_service=ai_service,
-        semantic_store=semantic_store,
-        checkpoint_store=checkpoint_store,
-    )
+    data_model_id = "FORGE-SEMANTIC-MODEL"
+    job_id = "FORGE-SEMANTIC-TEST"
+    attempt_id = "semantic-persistence-attempt"
+    artifact_directory = tmp_path / "artifacts"
 
     specification = {
         "entities": [
             {
                 "name": "PRODUCT",
-                "population": {
-                    "count": 3,
-                },
+                "population": {"count": 3},
                 "fields": [
                     {
                         "name": "PRODUCT_NAME",
@@ -156,12 +284,129 @@ def test_executor_persists_ai_generated_semantic_values(
                         "generation": {
                             "generator": "SEMANTIC",
                             "parameters": {
-                                "description": (
-                                    "Realistic aerospace product name."
-                                ),
+                                "description": "Realistic aerospace product name.",
                                 "mode": "UNIQUE",
                             },
                         },
+                    },
+                ],
+            },
+        ],
+        "foreign_keys": [],
+    }
+
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = artifact_directory / "data_model"
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=50,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PRODUCT": 3},
+    )
+
+    artifact_writer = GenerationArtifactWriter(checkpoint_store=checkpoint_store)
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(checkpoint_store=checkpoint_store)
+    artifact_reader._data_directory = artifact_directory
+
+    executor = GenerationExecutor(
+        seed=42,
+        ai_service=ai_service,
+        semantic_store=semantic_store,
+        checkpoint_store=checkpoint_store,
+        artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
+    )
+
+    plan = GenerationPlan(
+        entities=(
+            GenerationEntityPlan(
+                entity_name="PRODUCT",
+                target_rows=3,
+            ),
+        ),
+    )
+
+    executor.execute(
+        data_model_id=data_model_id,
+        specification=specification,
+        plan=plan,
+        job_id=job_id,
+    )
+
+    expected_by_row = {
+        index: value
+        for index, value in enumerate(semantic_values)
+    }
+
+    assert semantic_store.get_unique_values(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    ) == expected_by_row
+
+    persisted = semantic_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+
+    assert persisted is not None
+    assert persisted["mode"] == "UNIQUE"
+    assert persisted["values_by_row"] == {
+        str(index): value
+        for index, value in expected_by_row.items()
+    }
+
+    manifest = checkpoint_store.get(data_model_id, job_id)
+    assert manifest is not None
+    assert manifest.attempt_id == attempt_id
+    assert manifest.entities["PRODUCT"].committed_rows == 3
+
+
+
+class FakeCheckpointStore:
+    def __init__(self, checkpoint=None) -> None:
+        self.checkpoint = checkpoint
+
+    def get(self, *, data_model_id: str, job_id: str):
+        return self.checkpoint
+
+
+def test_executor_uses_250_row_checkpoint_chunks(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
+
+    data_model_id = "FORGE-CHUNK-SIZE-MODEL"
+    job_id = "FORGE-CHUNK-SIZE-TEST"
+    attempt_id = "chunk-size-attempt"
+    chunk_size = 250
+    artifact_directory = tmp_path / "artifacts"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": 251},
+                "identity": {"fields": ["PRODUCT_ID"]},
+                "fields": [
+                    {
+                        "name": "PRODUCT_ID",
+                        "type": "IDENTIFIER",
+                        "identity": {"strategy": "SEQUENTIAL_ID"},
                     },
                 ],
             },
@@ -173,12 +418,40 @@ def test_executor_persists_ai_generated_semantic_values(
         entities=(
             GenerationEntityPlan(
                 entity_name="PRODUCT",
-                target_rows=3,
+                target_rows=251,
             ),
         ),
     )
 
-    def commit_semantic_chunk(
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = artifact_directory / "data_model"
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PRODUCT": 251},
+    )
+
+    artifact_writer = GenerationArtifactWriter(checkpoint_store=checkpoint_store)
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(checkpoint_store=checkpoint_store)
+    artifact_reader._data_directory = artifact_directory
+
+    executor = GenerationExecutor(
+        seed=42,
+        checkpoint_store=checkpoint_store,
+        artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
+    )
+
+    completed_chunks = []
+
+    def record_chunk(
         entity_name,
         chunk_number,
         total_chunks,
@@ -186,40 +459,33 @@ def test_executor_persists_ai_generated_semantic_values(
         chunk_rows,
         *_,
     ) -> None:
-        entity_state = checkpoint_store.checkpoint["entities"][entity_name]
-        completed = entity_state.setdefault("completed_chunks", [])
-
-        if chunk_number not in completed:
-            completed.append(chunk_number)
-            completed.sort()
-
-        entity_state["committed_rows"] = min(
-            len(completed) * entity_state["chunk_size"],
-            entity_state["target_rows"],
+        completed_chunks.append(
+            (entity_name, chunk_number, total_chunks, len(chunk_rows))
         )
 
-    executor.execute(
-        data_model_id="FORGE-SEMANTIC-MODEL",
+    result = executor.execute(
+        data_model_id=data_model_id,
         specification=specification,
         plan=plan,
-        job_id="FORGE-SEMANTIC-TEST",
-        on_chunk_completed=commit_semantic_chunk,
+        job_id=job_id,
+        on_chunk_completed=record_chunk,
     )
 
-    assert semantic_store.persisted[("PRODUCT", "PRODUCT_NAME")] == {
-        "entity_name": "PRODUCT",
-        "field_name": "PRODUCT_NAME",
-        "mode": "UNIQUE",
-        "values": semantic_values,
-    }
+    assert result.entities[0].generated_rows == 251
+    assert completed_chunks == [
+        ("PRODUCT", 1, 2, 250),
+        ("PRODUCT", 2, 2, 1),
+    ]
 
+    manifest = checkpoint_store.get(data_model_id, job_id)
+    assert manifest is not None
+    assert manifest.chunk_size == 250
+    assert manifest.attempt_id == attempt_id
 
-class FakeCheckpointStore:
-    def __init__(self, checkpoint=None) -> None:
-        self.checkpoint = checkpoint
+    entity_state = manifest.entities["PRODUCT"]
+    assert entity_state.committed_rows == 251
+    assert sorted(chunk.chunk_number for chunk in entity_state.chunks) == [1, 2]
 
-    def get(self, *, data_model_id: str, job_id: str):
-        return self.checkpoint
 
 
 def test_executor_detects_existing_checkpoint() -> None:
@@ -251,17 +517,11 @@ def test_executor_detects_missing_checkpoint() -> None:
     )
 
 
-class _FakeCheckpointStore:
-    def __init__(self, checkpoint=None):
-        self._checkpoint = checkpoint
-
-    def get(self, *, data_model_id: str, job_id: str):
-        return self._checkpoint
+class _FakeCheckpointStore(V2FakeCheckpointStore):
+    """Alias retained for the focused executor helper tests."""
 
 
 def test_get_start_chunk_returns_one_without_checkpoint() -> None:
-    from app.services.generation.executor import GenerationExecutor
-
     executor = GenerationExecutor(
         seed=42,
         checkpoint_store=_FakeCheckpointStore(),
@@ -275,19 +535,14 @@ def test_get_start_chunk_returns_one_without_checkpoint() -> None:
 
 
 def test_get_start_chunk_returns_first_uncommitted_chunk() -> None:
-    from app.services.generation.executor import GenerationExecutor
-
-    checkpoint = {
-        "entities": {
-            "CUSTOMER": {
-                "completed_chunks": [1, 2, 3, 4, 5, 6],
-            },
-        },
-    }
-
+    manifest = make_v2_manifest(
+        target_rows=350,
+        chunk_size=50,
+        committed_chunks=(1, 2, 3, 4, 5, 6),
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=_FakeCheckpointStore(checkpoint),
+        checkpoint_store=_FakeCheckpointStore(manifest),
     )
 
     assert executor._get_start_chunk(
@@ -298,19 +553,14 @@ def test_get_start_chunk_returns_first_uncommitted_chunk() -> None:
 
 
 def test_get_start_chunk_handles_non_contiguous_committed_chunks() -> None:
-    from app.services.generation.executor import GenerationExecutor
-
-    checkpoint = {
-        "entities": {
-            "CUSTOMER": {
-                "completed_chunks": [1, 2, 4, 5],
-            },
-        },
-    }
-
+    manifest = make_v2_manifest(
+        target_rows=250,
+        chunk_size=50,
+        committed_chunks=(1, 2, 4, 5),
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=_FakeCheckpointStore(checkpoint),
+        checkpoint_store=_FakeCheckpointStore(manifest),
     )
 
     assert executor._get_start_chunk(
@@ -322,10 +572,17 @@ def test_get_start_chunk_handles_non_contiguous_committed_chunks() -> None:
 
 class FakeArtifactReader:
     def __init__(self, key_space):
-        self.key_space = key_space
+        if isinstance(key_space, dict):
+            self.key_space_by_row = dict(key_space)
+        else:
+            ordered = sorted(key_space, key=repr)
+            self.key_space_by_row = {
+                row_index: key
+                for row_index, key in enumerate(ordered)
+            }
         self.calls = []
 
-    def get_ordered_entity_key_space(
+    def get_identity_keys_by_row(
         self,
         *,
         data_model_id,
@@ -341,7 +598,7 @@ class FakeArtifactReader:
                 "identity_fields": identity_fields,
             }
         )
-        return list(self.key_space)
+        return dict(self.key_space_by_row)
 
 
 def test_restore_entity_key_space_from_artifacts() -> None:
@@ -396,19 +653,16 @@ def test_restore_entity_key_space_from_artifacts() -> None:
     ]
 
 
-def test_entity_is_fully_committed_when_all_chunks_are_present() -> None:
+def test_entity_is_fully_committed_when_all_chunks_and_output_are_committed() -> None:
+    manifest = make_v2_manifest(
+        target_rows=3,
+        chunk_size=1,
+        committed_chunks=(1, 2, 3),
+        finalized=True,
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=FakeCheckpointStore(
-            checkpoint={
-                "entities": {
-                    "CUSTOMER": {
-                        "total_chunks": 3,
-                        "completed_chunks": [1, 2, 3],
-                    },
-                },
-            },
-        ),
+        checkpoint_store=V2FakeCheckpointStore(manifest),
     )
 
     assert executor._is_entity_fully_committed(
@@ -420,18 +674,15 @@ def test_entity_is_fully_committed_when_all_chunks_are_present() -> None:
 
 
 def test_entity_is_not_fully_committed_when_a_chunk_is_missing() -> None:
+    manifest = make_v2_manifest(
+        target_rows=3,
+        chunk_size=1,
+        committed_chunks=(1, 2),
+        finalized=False,
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=FakeCheckpointStore(
-            checkpoint={
-                "entities": {
-                    "CUSTOMER": {
-                        "total_chunks": 3,
-                        "completed_chunks": [1, 2],
-                    },
-                },
-            },
-        ),
+        checkpoint_store=V2FakeCheckpointStore(manifest),
     )
 
     assert not executor._is_entity_fully_committed(
@@ -443,18 +694,35 @@ def test_entity_is_not_fully_committed_when_a_chunk_is_missing() -> None:
 
 
 def test_entity_is_not_fully_committed_for_non_contiguous_chunks() -> None:
+    manifest = make_v2_manifest(
+        target_rows=3,
+        chunk_size=1,
+        committed_chunks=(1, 3),
+        finalized=False,
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=FakeCheckpointStore(
-            checkpoint={
-                "entities": {
-                    "CUSTOMER": {
-                        "total_chunks": 3,
-                        "completed_chunks": [1, 3],
-                    },
-                },
-            },
-        ),
+        checkpoint_store=V2FakeCheckpointStore(manifest),
+    )
+
+    assert not executor._is_entity_fully_committed(
+        data_model_id="FORGE-TEST-MODEL",
+        job_id="FORGE-TEST",
+        entity_name="CUSTOMER",
+        total_chunks=3,
+    )
+
+
+def test_entity_is_not_fully_committed_until_finalization_is_committed() -> None:
+    manifest = make_v2_manifest(
+        target_rows=3,
+        chunk_size=1,
+        committed_chunks=(1, 2, 3),
+        finalized=False,
+    )
+    executor = GenerationExecutor(
+        seed=42,
+        checkpoint_store=V2FakeCheckpointStore(manifest),
     )
 
     assert not executor._is_entity_fully_committed(
@@ -518,24 +786,23 @@ def test_executor_skips_fully_committed_entity_and_restores_keys(
         }
     )
 
-    checkpoint_store = FakeCheckpointStore(
-        checkpoint={
-            "entities": {
-                "CUSTOMER": {
-                    "target_rows": 3,
-                    "chunk_size": 50,
-                    "total_chunks": 1,
-                    "completed_chunks": [1],
-                    "committed_rows": 3,
-                },
-            },
-        },
+    checkpoint_store = V2FakeCheckpointStore(
+        make_v2_manifest(
+            entity_name="CUSTOMER",
+            target_rows=3,
+            chunk_size=50,
+            committed_chunks=(1,),
+            finalized=True,
+        )
     )
+
+    artifact_writer = Mock()
 
     executor = GenerationExecutor(
         seed=42,
         checkpoint_store=checkpoint_store,
         artifact_reader=artifact_reader,
+        artifact_writer=artifact_writer,
     )
 
     specification = {
@@ -606,7 +873,7 @@ def test_executor_skips_fully_committed_entity_and_restores_keys(
 def test_get_committed_rows_returns_zero_without_checkpoint() -> None:
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=FakeCheckpointStore(),
+        checkpoint_store=V2FakeCheckpointStore(),
     )
 
     assert executor._get_committed_rows(
@@ -617,17 +884,14 @@ def test_get_committed_rows_returns_zero_without_checkpoint() -> None:
 
 
 def test_get_durable_generated_rows_returns_checkpoint_total() -> None:
+    manifest = make_v2_manifest(
+        target_rows=300,
+        chunk_size=50,
+        committed_chunks=(1, 2, 3, 4, 5, 6),
+    )
     executor = GenerationExecutor(
         seed=42,
-        checkpoint_store=FakeCheckpointStore(
-            checkpoint={
-                "entities": {
-                    "CUSTOMER": {
-                        "committed_rows": 300,
-                    },
-                },
-            },
-        ),
+        checkpoint_store=V2FakeCheckpointStore(manifest),
     )
 
     assert executor._get_durable_generated_rows(
@@ -637,108 +901,35 @@ def test_get_durable_generated_rows_returns_checkpoint_total() -> None:
     ) == 300
 
 
-def test_executor_resumes_partial_entity_from_checkpoint() -> None:
-    from app.services.generation.context import GenerationContext
+def test_executor_resumes_partial_entity_from_checkpoint(tmp_path) -> None:
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
+    from app.services.generation_semantic_store import GenerationSemanticStore
 
     data_model_id = "FORGE-RESUME-MODEL"
+    job_id = "FORGE-RESUME-TEST"
+    attempt_id = "resume-attempt-001"
+    chunk_size = 50
 
     semantic_values = [
         f"Product {index:03d}"
         for index in range(1, 126)
     ]
 
-    semantic_store = FakeSemanticStore(
-        persisted={
-            ("PRODUCT", "PRODUCT_NAME"): {
-                "entity_name": "PRODUCT",
-                "field_name": "PRODUCT_NAME",
-                "mode": "UNIQUE",
-                "values": semantic_values,
-            },
-        },
-    )
-
-    checkpoint_store = FakeCheckpointStore(
-        checkpoint={
-            "entities": {
-                "PRODUCT": {
-                    "target_rows": 125,
-                    "chunk_size": 50,
-                    "total_chunks": 3,
-                    "completed_chunks": [1, 2],
-                    "committed_rows": 100,
-                },
-            },
-        },
-    )
-
-    artifact_reader = FakeArtifactReader(
-        {
-            (index,)
-            for index in range(1, 101)
-        }
-    )
-
-    from app.services.generation.artifact_writer import (
-        GenerationArtifactWriter,
-    )
-
-    artifact_writer = GenerationArtifactWriter()
-    artifact_writer.initialize_job(data_model_id, "FORGE-RESUME-TEST")
-
-    artifact_writer.write_chunk(
-        data_model_id,
-        "FORGE-RESUME-TEST",
-        "PRODUCT",
-        1,
-        [
-            {
-                "PRODUCT_ID": f"P{index:03d}",
-                "PRODUCT_NAME": semantic_values[index - 1],
-            }
-            for index in range(1, 51)
-        ],
-    )
-
-    artifact_writer.write_chunk(
-        data_model_id,
-        "FORGE-RESUME-TEST",
-        "PRODUCT",
-        2,
-        [
-            {
-                "PRODUCT_ID": f"P{index:03d}",
-                "PRODUCT_NAME": semantic_values[index - 1],
-            }
-            for index in range(51, 101)
-        ],
-    )
-
-    executor = GenerationExecutor(
-        seed=42,
-        ai_service=None,
-        semantic_store=semantic_store,
-        checkpoint_store=checkpoint_store,
-        artifact_reader=artifact_reader,
-    )
-
     specification = {
         "entities": [
             {
                 "name": "PRODUCT",
-                "population": {
-                    "count": 125,
-                },
-                "identity": {
-                    "fields": ["PRODUCT_ID"],
-                },
+                "population": {"count": 125},
+                "identity": {"fields": ["PRODUCT_ID"]},
                 "fields": [
                     {
                         "name": "PRODUCT_ID",
                         "type": "IDENTIFIER",
-                        "identity": {
-                            "strategy": "SEQUENTIAL_ID",
-                        },
+                        "identity": {"strategy": "SEQUENTIAL_ID"},
                     },
                     {
                         "name": "PRODUCT_NAME",
@@ -746,9 +937,7 @@ def test_executor_resumes_partial_entity_from_checkpoint() -> None:
                         "generation": {
                             "generator": "SEMANTIC",
                             "parameters": {
-                                "description": (
-                                    "Realistic aerospace product name."
-                                ),
+                                "description": "Realistic aerospace product name.",
                                 "mode": "UNIQUE",
                             },
                         },
@@ -759,6 +948,88 @@ def test_executor_resumes_partial_entity_from_checkpoint() -> None:
         "foreign_keys": [],
     }
 
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = tmp_path / "data_model"
+
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PRODUCT": 125},
+    )
+
+    artifact_writer = GenerationArtifactWriter(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_writer._data_directory = tmp_path
+
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_reader._data_directory = tmp_path
+
+    semantic_store = GenerationSemanticStore()
+    semantic_store._root = tmp_path / "generation"
+
+    artifact_writer.initialize_job(data_model_id, job_id)
+
+    # Simulate two durably committed chunks before interruption.
+    artifact_writer.write_chunk(
+        data_model_id,
+        job_id,
+        "PRODUCT",
+        1,
+        [
+            {
+                "PRODUCT_ID": str(index),
+                "PRODUCT_NAME": semantic_values[index - 1],
+            }
+            for index in range(1, 51)
+        ],
+        attempt_id=attempt_id,
+        row_start=0,
+    )
+
+    artifact_writer.write_chunk(
+        data_model_id,
+        job_id,
+        "PRODUCT",
+        2,
+        [
+            {
+                "PRODUCT_ID": str(index),
+                "PRODUCT_NAME": semantic_values[index - 1],
+            }
+            for index in range(51, 101)
+        ],
+        attempt_id=attempt_id,
+        row_start=50,
+    )
+
+    semantic_store.commit_unique_values(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+        values_by_row={
+            index: value
+            for index, value in enumerate(semantic_values)
+        },
+    )
+
+    executor = GenerationExecutor(
+        seed=42,
+        ai_service=None,
+        semantic_store=semantic_store,
+        checkpoint_store=checkpoint_store,
+        artifact_reader=artifact_reader,
+        artifact_writer=artifact_writer,
+    )
+
     plan = GenerationPlan(
         entities=(
             GenerationEntityPlan(
@@ -768,60 +1039,22 @@ def test_executor_resumes_partial_entity_from_checkpoint() -> None:
         ),
     )
 
-    def commit_resumed_chunk(
-        entity_name,
-        chunk_number,
-        total_chunks,
-        generated_rows,
-        chunk_rows,
-        *_,
-    ) -> None:
-        entity_state = checkpoint_store.checkpoint["entities"][entity_name]
-        completed = entity_state.setdefault("completed_chunks", [])
-
-        if chunk_number not in completed:
-            completed.append(chunk_number)
-            completed.sort()
-
-        entity_state["committed_rows"] = min(
-            len(completed) * entity_state["chunk_size"],
-            entity_state["target_rows"],
-        )
-
     result = executor.execute(
         data_model_id=data_model_id,
         specification=specification,
         plan=plan,
-        job_id="FORGE-RESUME-TEST",
-        on_chunk_completed=commit_resumed_chunk,
+        job_id=job_id,
     )
 
     assert result.entities[0].generated_rows == 125
 
-    assert result.context.get_key_space(
-        entity_name="PRODUCT",
-        fields=("PRODUCT_ID",),
-    ) == {
-        (index,)
-        for index in range(1, 126)
-    }
+    recovered_manifest = checkpoint_store.get(data_model_id, job_id)
+    assert recovered_manifest is not None
 
-    assert semantic_store.get_calls == [
-        {
-            "data_model_id": data_model_id,
-            "job_id": "FORGE-RESUME-TEST",
-            "entity_name": "PRODUCT",
-            "field_name": "PRODUCT_NAME",
-        },
-    ]
+    entity_state = recovered_manifest.entities["PRODUCT"]
+    assert entity_state.committed_rows == 125
+    assert sorted(chunk.chunk_number for chunk in entity_state.chunks) == [1, 2, 3]
 
-    assert semantic_store.saved == []
-
-    assert result.context.get_semantic_values(
-        entity_name="PRODUCT",
-        field_name="PRODUCT_NAME",
-        chunk_number=3,
-    ) == semantic_values[100:125]
 
 
 @pytest.mark.parametrize(
@@ -840,10 +1073,13 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
     failure_case,
 ):
     from copy import deepcopy
+
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
     from app.services.generation.artifact_reader import GenerationArtifactReader
-    from app.services.generation.executor import GenerationExecutionError
     from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
     from app.services.generation_checkpoint_store import GenerationCheckpointStore
+    from app.services.generation_persistence_errors import ArtifactIntegrityError
     from app.services.generation_semantic_store import (
         GenerationSemanticStore,
         SemanticStoreIntegrityError,
@@ -851,98 +1087,25 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
 
     data_model_id = "FORGE-REAL-RESUME-MODEL"
     job_id = "FORGE-REAL-RESUME-TEST"
-
-    checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = tmp_path / "generation"
-
-    artifact_writer = GenerationArtifactWriter(
-        checkpoint_store=checkpoint_store,
-    )
-    artifact_writer._data_directory = tmp_path
-
-    artifact_reader = GenerationArtifactReader(
-        checkpoint_store=checkpoint_store,
-    )
-    artifact_reader._data_directory = tmp_path
-
-    semantic_store = GenerationSemanticStore()
-    semantic_store._root = tmp_path / "generation"
-
-    artifact_writer.initialize_job(data_model_id, job_id)
+    attempt_id = "semantic-recovery-attempt-001"
+    chunk_size = 50
 
     semantic_values = [
         f"Product {index:03d}"
         for index in range(1, 126)
     ]
 
-    artifact_writer.write_chunk(
-        data_model_id,
-        job_id,
-        "PRODUCT",
-        1,
-        [
-            {
-                "PRODUCT_ID": index,
-                "PRODUCT_NAME": semantic_values[index - 1],
-            }
-            for index in range(1, 51)
-        ],
-    )
-
-    artifact_writer.write_chunk(
-        data_model_id,
-        job_id,
-        "PRODUCT",
-        2,
-        [
-            {
-                "PRODUCT_ID": index,
-                "PRODUCT_NAME": semantic_values[index - 1],
-            }
-            for index in range(51, 101)
-        ],
-    )
-
-    checkpoint_store.save(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        seed=42,
-        entities={
-            "PRODUCT": {
-                "target_rows": 125,
-                "chunk_size": 50,
-                "total_chunks": 3,
-                "completed_chunks": [1, 2],
-                "committed_rows": 100,
-            }
-        },
-        chunk_size=50,
-    )
-
-    checkpoint_before_recovery = deepcopy(
-        checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
-    )
-
-    semantic_path = semantic_store._semantic_path(data_model_id, job_id)
-    assert not semantic_path.exists()
-
     specification = {
         "entities": [
             {
                 "name": "PRODUCT",
-                "population": {
-                    "count": 125,
-                },
-                "identity": {
-                    "fields": ["PRODUCT_ID"],
-                },
+                "population": {"count": 125},
+                "identity": {"fields": ["PRODUCT_ID"]},
                 "fields": [
                     {
                         "name": "PRODUCT_ID",
                         "type": "IDENTIFIER",
-                        "identity": {
-                            "strategy": "SEQUENTIAL_ID",
-                        },
+                        "identity": {"strategy": "SEQUENTIAL_ID"},
                     },
                     {
                         "name": "PRODUCT_NAME",
@@ -963,37 +1126,80 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
         "foreign_keys": [],
     }
 
-    plan = GenerationPlan(
-        entities=(
-            GenerationEntityPlan(
-                entity_name="PRODUCT",
-                target_rows=125,
-            ),
-        ),
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = tmp_path / "data_model"
+
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PRODUCT": 125},
     )
 
-    class RecordingAIService:
-        def __init__(self) -> None:
-            self.calls = []
+    artifact_writer = GenerationArtifactWriter(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_writer._data_directory = tmp_path
 
-        def generate_semantic_values(
-            self,
-            *,
-            description,
-            mode,
-            count,
-            exclude_values=None,
-            on_call_completed=None,
-        ):
-            self.calls.append({
-                "description": description,
-                "mode": mode,
-                "count": count,
-                "exclude_values": list(exclude_values or []),
-            })
-            return semantic_values[100:125]
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_reader._data_directory = tmp_path
 
-    ai_service = RecordingAIService()
+    semantic_store = GenerationSemanticStore()
+    semantic_store._root = tmp_path / "generation"
+
+    artifact_writer.initialize_job(data_model_id, job_id)
+
+    # Publish and commit two chunks before simulating interruption.
+    artifact_writer.write_chunk(
+        data_model_id,
+        job_id,
+        "PRODUCT",
+        1,
+        [
+            {
+                "PRODUCT_ID": index,
+                "PRODUCT_NAME": semantic_values[index - 1],
+            }
+            for index in range(1, 51)
+        ],
+        attempt_id=attempt_id,
+        row_start=0,
+    )
+
+    artifact_writer.write_chunk(
+        data_model_id,
+        job_id,
+        "PRODUCT",
+        2,
+        [
+            {
+                "PRODUCT_ID": index,
+                "PRODUCT_NAME": semantic_values[index - 1],
+            }
+            for index in range(51, 101)
+        ],
+        attempt_id=attempt_id,
+        row_start=50,
+    )
+
+    # No semantic-store file exists. Recovery must reconstruct the first
+    # 100 UNIQUE assignments from the committed artifact chunks.
+    semantic_path = semantic_store._semantic_path(
+        data_model_id,
+        job_id,
+    )
+    assert not semantic_path.exists()
+
+    checkpoint_before_recovery = deepcopy(
+        checkpoint_store.get(data_model_id, job_id)
+    )
+    assert checkpoint_before_recovery is not None
 
     chunks_directory = (
         tmp_path
@@ -1011,29 +1217,66 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
 
     if failure_case == "duplicate":
         content = chunk_one.read_text(encoding="utf-8")
-        content = content.replace("Product 002", "Product 001", 1)
-        chunk_one.write_text(content, encoding="utf-8")
+        assert "Product 002" in content
+        chunk_one.write_text(
+            content.replace("Product 002", "Product 001", 1),
+            encoding="utf-8",
+        )
 
     elif failure_case == "blank":
         content = chunk_one.read_text(encoding="utf-8")
-        content = content.replace("Product 002", "", 1)
-        chunk_one.write_text(content, encoding="utf-8")
+        assert "Product 002" in content
+        chunk_one.write_text(
+            content.replace("Product 002", "", 1),
+            encoding="utf-8",
+        )
 
     elif failure_case == "missing_field":
         content = chunk_one.read_text(encoding="utf-8")
-        content = content.replace(
-            "PRODUCT_ID,PRODUCT_NAME",
-            "PRODUCT_ID",
-            1,
+        assert "PRODUCT_ID,PRODUCT_NAME" in content
+        chunk_one.write_text(
+            content.replace(
+                "PRODUCT_ID,PRODUCT_NAME",
+                "PRODUCT_ID",
+                1,
+            ),
+            encoding="utf-8",
         )
-        chunk_one.write_text(content, encoding="utf-8")
 
     elif failure_case == "missing_chunk":
         chunk_two.unlink()
 
     elif failure_case == "corrupt_store":
         semantic_path.parent.mkdir(parents=True, exist_ok=True)
-        semantic_path.write_text("{ invalid json", encoding="utf-8")
+        semantic_path.write_text(
+            "{ invalid json",
+            encoding="utf-8",
+        )
+
+    class RecordingAIService:
+        def __init__(self) -> None:
+            self.calls = []
+
+        def generate_semantic_values(
+            self,
+            *,
+            description,
+            mode,
+            count,
+            exclude_values=None,
+            on_call_completed=None,
+        ):
+            self.calls.append(
+                {
+                    "description": description,
+                    "mode": mode,
+                    "count": count,
+                    "exclude_values": list(exclude_values or []),
+                }
+            )
+            return semantic_values[100:125]
+
+    ai_service = RecordingAIService()
 
     executor = GenerationExecutor(
         seed=42,
@@ -1044,55 +1287,21 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
         artifact_writer=artifact_writer,
     )
 
-    def commit_resumed_chunk(
-        entity_name,
-        chunk_number,
-        total_chunks,
-        generated_rows,
-        chunk_rows,
-        *_,
-    ) -> None:
-        checkpoint = checkpoint_store.get(
-            data_model_id=data_model_id,
-            job_id=job_id,
-        ) or {}
-        entities = checkpoint.get("entities", {})
-        entity_state = dict(entities.get(entity_name, {}))
-        completed_chunks = list(
-            entity_state.get("completed_chunks", [])
-        )
-
-        if chunk_number not in completed_chunks:
-            completed_chunks.append(chunk_number)
-            completed_chunks.sort()
-
-        chunk_size = checkpoint.get(
-            "chunk_size",
-            entity_state.get("chunk_size", 50),
-        )
-        target_rows = entity_state["target_rows"]
-
-        entity_state["completed_chunks"] = completed_chunks
-        entity_state["committed_rows"] = min(
-            len(completed_chunks) * chunk_size,
-            target_rows,
-        )
-        entities[entity_name] = entity_state
-
-        checkpoint_store.save(
-            data_model_id=data_model_id,
-            job_id=job_id,
-            seed=checkpoint.get("seed", 42),
-            entities=entities,
-            specification_hash=checkpoint.get("specification_hash", ""),
-            chunk_size=chunk_size,
-        )
+    plan = GenerationPlan(
+        entities=(
+            GenerationEntityPlan(
+                entity_name="PRODUCT",
+                target_rows=125,
+            ),
+        ),
+    )
 
     if failure_case is not None:
-        expected_error = {
-            "corrupt_store": SemanticStoreIntegrityError,
-            "missing_chunk": ValueError,
-        }.get(failure_case, GenerationExecutionError)
+        expected_error = (
+            SemanticStoreIntegrityError
+            if failure_case == "corrupt_store"
+            else ArtifactIntegrityError
+        )
 
         original_semantic_content = (
             semantic_path.read_text(encoding="utf-8")
@@ -1106,14 +1315,15 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
                 specification=specification,
                 plan=plan,
                 job_id=job_id,
-                on_chunk_completed=commit_resumed_chunk,
             )
 
+        # Integrity failures must not trigger AI generation or checkpoint
+        # mutation.
         assert ai_service.calls == []
 
         assert checkpoint_store.get(
-            data_model_id=data_model_id,
-            job_id=job_id,
+            data_model_id,
+            job_id,
         ) == checkpoint_before_recovery
 
         if failure_case == "corrupt_store":
@@ -1128,29 +1338,36 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
         specification=specification,
         plan=plan,
         job_id=job_id,
-        on_chunk_completed=commit_resumed_chunk,
     )
 
+    # Only the missing 25 semantic values should require AI generation.
     assert len(ai_service.calls) == 1
     assert ai_service.calls[0]["mode"] == "UNIQUE"
     assert ai_service.calls[0]["count"] == 25
     assert ai_service.calls[0]["exclude_values"] == semantic_values[:100]
 
-    recovered = semantic_store.get(
+    recovered_values = semantic_store.get_unique_values(
         data_model_id=data_model_id,
         job_id=job_id,
         entity_name="PRODUCT",
         field_name="PRODUCT_NAME",
     )
-    assert recovered is not None
-    assert recovered["values"] == semantic_values
 
-    saved_checkpoint = checkpoint_store.get(
-        data_model_id=data_model_id,
-        job_id=job_id,
-    )
-    assert saved_checkpoint["entities"]["PRODUCT"]["completed_chunks"] == [1, 2, 3]
-    assert saved_checkpoint["entities"]["PRODUCT"]["committed_rows"] == 125
+    assert recovered_values == {
+        index: value
+        for index, value in enumerate(semantic_values)
+    }
+
+    saved_manifest = checkpoint_store.get(data_model_id, job_id)
+    assert saved_manifest is not None
+
+    entity_state = saved_manifest.entities["PRODUCT"]
+
+    assert entity_state.committed_rows == 125
+    assert sorted(
+        chunk.chunk_number for chunk in entity_state.chunks
+    ) == [1, 2, 3]
+
     assert result.entities[0].generated_rows == 125
 
     identity_keys = result.context.get_key_space(
@@ -1189,16 +1406,19 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
         for row in rows
     )
 
+
 @pytest.mark.parametrize("relationship_type", ["ONE_TO_MANY", "ONE_TO_ONE"])
 def test_executor_enforces_mandatory_parent_participation(
     tmp_path,
     monkeypatch,
     relationship_type: str,
 ) -> None:
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
     from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
     from app.services.generation_checkpoint_store import GenerationCheckpointStore
-
-    monkeypatch.chdir(tmp_path)
+    from app.services.generation_planner import GenerationPlanner
 
     specification = {
         "entities": [
@@ -1225,26 +1445,14 @@ def test_executor_enforces_mandatory_parent_participation(
         "foreign_keys": [
             {
                 "name": "FK_CHILD_PARENT",
-                "source": {
-                    "entity": "CHILD",
-                    "fields": ["PARENT_ID"],
-                },
-                "target": {
-                    "entity": "PARENT",
-                    "fields": ["PARENT_ID"],
-                },
+                "source": {"entity": "CHILD", "fields": ["PARENT_ID"]},
+                "target": {"entity": "PARENT", "fields": ["PARENT_ID"]},
             },
         ],
         "relationships": [
             {
-                "source": {
-                    "entity": "PARENT",
-                    "fields": ["PARENT_ID"],
-                },
-                "target": {
-                    "entity": "CHILD",
-                    "fields": ["PARENT_ID"],
-                },
+                "source": {"entity": "PARENT", "fields": ["PARENT_ID"]},
+                "target": {"entity": "CHILD", "fields": ["PARENT_ID"]},
                 "type": relationship_type,
                 "source_participation": "MANDATORY",
                 "target_participation": "OPTIONAL",
@@ -1270,76 +1478,43 @@ def test_executor_enforces_mandatory_parent_participation(
 
     data_model_id = "MANDATORY-PARTICIPATION-TEST"
     job_id = "MANDATORY-PARTICIPATION-TEST-JOB"
+    attempt_id = "mandatory-participation-attempt"
+    chunk_size = 50
+    artifact_directory = tmp_path / "artifacts"
 
     checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = tmp_path / "checkpoints"
-
-    initial_checkpoint = checkpoint_store.create_checkpoint(
+    checkpoint_store._root = artifact_directory / "data_model"
+    checkpoint_store.initialize(
         data_model_id=data_model_id,
         job_id=job_id,
         specification=specification,
         seed=42,
-        chunk_size=50,
-        entity_targets={
-            "PARENT": 3,
-            "CHILD": 3,
-        },
-    )
-
-    checkpoint_store.save(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        seed=42,
-        entities=initial_checkpoint["entities"],
-        specification_hash=initial_checkpoint["specification_hash"],
-        chunk_size=50,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PARENT": 3, "CHILD": 3},
     )
 
     artifact_writer = GenerationArtifactWriter(
         checkpoint_store=checkpoint_store,
     )
-    artifact_writer._data_directory = tmp_path / "artifacts"
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_reader._data_directory = artifact_directory
 
     completed_chunks: list[tuple[str, list[dict]]] = []
 
     def capture_chunk(*args) -> None:
-        entity_name = args[0]
-        chunk_number = args[1]
-        rows = args[4]
-
-        completed_chunks.append((entity_name, rows))
-
-        checkpoint = checkpoint_store.get(
-            data_model_id=data_model_id,
-            job_id=job_id,
-        )
-        assert checkpoint is not None
-
-        entity_state = checkpoint["entities"][entity_name]
-        completed = entity_state.setdefault("completed_chunks", [])
-
-        if chunk_number not in completed:
-            completed.append(chunk_number)
-            completed.sort()
-
-        entity_state["committed_rows"] = min(
-            len(completed) * 50,
-            entity_state["target_rows"],
-        )
-
-        checkpoint_store.save(
-            data_model_id=data_model_id,
-            job_id=job_id,
-            seed=42,
-            entities=checkpoint["entities"],
-            specification_hash=checkpoint["specification_hash"],
-            chunk_size=50,
-        )
+        completed_chunks.append((args[0], args[4]))
 
     executor = GenerationExecutor(
         seed=42,
         checkpoint_store=checkpoint_store,
         artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
     )
 
     result = executor.execute(
@@ -1364,15 +1539,8 @@ def test_executor_enforces_mandatory_parent_participation(
         for row in rows
     ]
 
-    parent_ids = {
-        str(row["PARENT_ID"])
-        for row in parent_rows
-    }
-
-    child_parent_ids = {
-        str(row["PARENT_ID"])
-        for row in child_rows
-    }
+    parent_ids = {str(row["PARENT_ID"]) for row in parent_rows}
+    child_parent_ids = {str(row["PARENT_ID"]) for row in child_rows}
 
     assert len(parent_rows) == 3
     assert len(child_rows) == 3
@@ -1380,18 +1548,30 @@ def test_executor_enforces_mandatory_parent_participation(
     assert len(child_parent_ids) == 3
     assert result.generated_rows == 6
 
+    manifest = checkpoint_store.get(data_model_id, job_id)
+    assert manifest is not None
+    assert manifest.attempt_id == attempt_id
+    assert manifest.entities["PARENT"].committed_rows == 3
+    assert manifest.entities["CHILD"].committed_rows == 3
+
+
 
 def test_executor_excludes_previous_chunk_values_for_unique_semantics(
     tmp_path,
     monkeypatch,
 ) -> None:
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
     from app.services.generation_semantic_store import GenerationSemanticStore
     from app.services.generation_checkpoint_store import GenerationCheckpointStore
 
-    monkeypatch.chdir(tmp_path)
-
     data_model_id = "FORGE-UNIQUE-REGRESSION"
     job_id = "FORGE-UNIQUE-CHUNK-TEST"
+    attempt_id = "unique-semantic-attempt"
+    chunk_size = 50
+    artifact_directory = tmp_path / "artifacts"
 
     first_batch = [
         f"Aerospace Product {index:03d}"
@@ -1441,22 +1621,64 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
     semantic_store._root = tmp_path / "semantic"
 
     checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = tmp_path / "checkpoints"
+    checkpoint_store._root = artifact_directory / "data_model"
+
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification={
+            "entities": [
+                {
+                    "name": "PRODUCT",
+                    "population": {"count": 51},
+                    "fields": [
+                        {
+                            "name": "PRODUCT_NAME",
+                            "type": "STRING",
+                            "generation": {
+                                "generator": "SEMANTIC",
+                                "parameters": {
+                                    "description": "Realistic aerospace product name.",
+                                    "mode": "UNIQUE",
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+            "foreign_keys": [],
+        },
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PRODUCT": 51},
+    )
+
+    artifact_writer = GenerationArtifactWriter(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_reader._data_directory = artifact_directory
 
     executor = GenerationExecutor(
         seed=42,
         ai_service=ai_service,
         semantic_store=semantic_store,
         checkpoint_store=checkpoint_store,
+        artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
     )
 
     specification = {
         "entities": [
             {
                 "name": "PRODUCT",
-                "population": {
-                    "count": 51,
-                },
+                "population": {"count": 51},
                 "fields": [
                     {
                         "name": "PRODUCT_NAME",
@@ -1464,9 +1686,7 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
                         "generation": {
                             "generator": "SEMANTIC",
                             "parameters": {
-                                "description": (
-                                    "Realistic aerospace product name."
-                                ),
+                                "description": "Realistic aerospace product name.",
                                 "mode": "UNIQUE",
                             },
                         },
@@ -1486,23 +1706,6 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
         ),
     )
 
-    checkpoint = checkpoint_store.create_checkpoint(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        specification=specification,
-        seed=42,
-        chunk_size=50,
-        entity_targets={"PRODUCT": 51},
-    )
-    checkpoint_store.save(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        seed=42,
-        entities=checkpoint["entities"],
-        specification_hash=checkpoint["specification_hash"],
-        chunk_size=50,
-    )
-
     executor.execute(
         specification=specification,
         plan=plan,
@@ -1511,10 +1714,9 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
     )
 
     assert len(ai_service.calls) == 2
-
     assert ai_service.calls[0]["exclude_values"] == []
-
-    assert ai_service.calls[1]["exclude_values"] == first_batch
+    assert len(ai_service.calls[1]["exclude_values"]) == 50
+    assert set(ai_service.calls[1]["exclude_values"]) == set(first_batch)
 
     persisted = semantic_store.get(
         data_model_id=data_model_id,
@@ -1525,24 +1727,50 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
 
     assert persisted is not None
     assert persisted["mode"] == "UNIQUE"
-    assert persisted["values"] == first_batch + second_batch
+
+    expected_by_row = {
+        index: value
+        for index, value in enumerate(first_batch + second_batch)
+    }
+
+    assert semantic_store.get_unique_values(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    ) == expected_by_row
+
+    assert persisted["values_by_row"] == {
+        str(row_index): value
+        for row_index, value in expected_by_row.items()
+    }
 
     normalized = [
         value.strip().casefold()
-        for value in persisted["values"]
+        for value in expected_by_row.values()
     ]
 
     assert len(normalized) == 51
     assert len(set(normalized)) == 51
 
+    manifest = checkpoint_store.get(data_model_id, job_id)
+    assert manifest is not None
+    assert manifest.attempt_id == attempt_id
+    entity_state = manifest.entities["PRODUCT"]
+    assert entity_state.committed_rows == 51
+    assert sorted(chunk.chunk_number for chunk in entity_state.chunks) == [1, 2]
+
+
 def test_executor_enforces_one_to_one_with_optional_parent_participation(
     tmp_path,
     monkeypatch,
 ) -> None:
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
     from app.services.generation.executor import GenerationExecutor
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
     from app.services.generation_planner import GenerationPlanner
-
-    monkeypatch.chdir(tmp_path)
 
     specification = {
         "entities": [
@@ -1569,26 +1797,14 @@ def test_executor_enforces_one_to_one_with_optional_parent_participation(
         "foreign_keys": [
             {
                 "name": "FK_CHILD_PARENT",
-                "source": {
-                    "entity": "CHILD",
-                    "fields": ["PARENT_ID"],
-                },
-                "target": {
-                    "entity": "PARENT",
-                    "fields": ["PARENT_ID"],
-                },
+                "source": {"entity": "CHILD", "fields": ["PARENT_ID"]},
+                "target": {"entity": "PARENT", "fields": ["PARENT_ID"]},
             },
         ],
         "relationships": [
             {
-                "source": {
-                    "entity": "CHILD",
-                    "fields": ["PARENT_ID"],
-                },
-                "target": {
-                    "entity": "PARENT",
-                    "fields": ["PARENT_ID"],
-                },
+                "source": {"entity": "CHILD", "fields": ["PARENT_ID"]},
+                "target": {"entity": "PARENT", "fields": ["PARENT_ID"]},
                 "type": "ONE_TO_ONE",
                 "source_participation": "MANDATORY",
                 "target_participation": "OPTIONAL",
@@ -1613,81 +1829,45 @@ def test_executor_enforces_one_to_one_with_optional_parent_participation(
     assert mapped_groups[0].child_participation.upper() == "MANDATORY"
     assert mapped_groups[0].parent_participation.upper() == "OPTIONAL"
 
-    from app.services.generation.artifact_writer import GenerationArtifactWriter
-    from app.services.generation_checkpoint_store import GenerationCheckpointStore
-
     data_model_id = "ONE-TO-ONE-OPTIONAL-PARENT-TEST"
     job_id = "ONE-TO-ONE-OPTIONAL-PARENT-TEST-JOB"
+    attempt_id = "one-to-one-optional-parent-attempt"
+    chunk_size = 50
+    artifact_directory = tmp_path / "artifacts"
 
     checkpoint_store = GenerationCheckpointStore()
-    checkpoint_store._root = tmp_path / "checkpoints"
-
-    initial_checkpoint = checkpoint_store.create_checkpoint(
+    checkpoint_store._root = artifact_directory / "data_model"
+    checkpoint_store.initialize(
         data_model_id=data_model_id,
         job_id=job_id,
         specification=specification,
         seed=42,
-        chunk_size=50,
-        entity_targets={
-            "PARENT": 5,
-            "CHILD": 3,
-        },
-    )
-
-    checkpoint_store.save(
-        data_model_id=data_model_id,
-        job_id=job_id,
-        seed=42,
-        entities=initial_checkpoint["entities"],
-        specification_hash=initial_checkpoint["specification_hash"],
-        chunk_size=50,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets={"PARENT": 5, "CHILD": 3},
     )
 
     artifact_writer = GenerationArtifactWriter(
         checkpoint_store=checkpoint_store,
     )
-    artifact_writer._data_directory = tmp_path / "artifacts"
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store,
+    )
+    artifact_reader._data_directory = artifact_directory
 
     completed_chunks: list[tuple[str, list[dict]]] = []
 
     def capture_chunk(*args) -> None:
-        entity_name = args[0]
-        chunk_number = args[1]
-        rows = args[4]
-
-        completed_chunks.append((entity_name, rows))
-
-        checkpoint = checkpoint_store.get(
-            data_model_id=data_model_id,
-            job_id=job_id,
-        )
-        assert checkpoint is not None
-
-        entity_state = checkpoint["entities"][entity_name]
-        completed = entity_state.setdefault("completed_chunks", [])
-
-        if chunk_number not in completed:
-            completed.append(chunk_number)
-            completed.sort()
-
-        entity_state["committed_rows"] = min(
-            len(completed) * 50,
-            entity_state["target_rows"],
-        )
-
-        checkpoint_store.save(
-            data_model_id=data_model_id,
-            job_id=job_id,
-            seed=42,
-            entities=checkpoint["entities"],
-            specification_hash=checkpoint["specification_hash"],
-            chunk_size=50,
-        )
+        completed_chunks.append((args[0], args[4]))
 
     executor = GenerationExecutor(
         seed=42,
         checkpoint_store=checkpoint_store,
         artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
     )
 
     result = executor.execute(
@@ -1712,18 +1892,18 @@ def test_executor_enforces_one_to_one_with_optional_parent_participation(
         for row in rows
     ]
 
-    parent_ids = {
-        str(row["PARENT_ID"])
-        for row in parent_rows
-    }
-
-    child_parent_ids = [
-        str(row["PARENT_ID"])
-        for row in child_rows
-    ]
+    parent_ids = {str(row["PARENT_ID"]) for row in parent_rows}
+    child_parent_ids = [str(row["PARENT_ID"]) for row in child_rows]
 
     assert len(parent_rows) == 5
     assert len(child_rows) == 3
     assert len(set(child_parent_ids)) == 3
     assert set(child_parent_ids).issubset(parent_ids)
     assert result.generated_rows == 8
+
+    manifest = checkpoint_store.get(data_model_id, job_id)
+    assert manifest is not None
+    assert manifest.attempt_id == attempt_id
+    assert manifest.entities["PARENT"].committed_rows == 5
+    assert manifest.entities["CHILD"].committed_rows == 3
+

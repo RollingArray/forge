@@ -1,4 +1,6 @@
 import json
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -18,6 +20,20 @@ def _entry(status: str = "STARTED") -> GenerationLogEntry:
         status=status,
         entity_name="PART",
     )
+
+
+def _append_entries_in_process(args: tuple[str, str, int]) -> int:
+    root, job_id, count = args
+    store = GenerationLogStore(root=Path(root))
+
+    for _ in range(count):
+        store.append(
+            data_model_id="MODEL-1",
+            job_id=job_id,
+            entry=_entry(),
+        )
+
+    return count
 
 
 def _event_path(root: Path, job_id: str) -> Path:
@@ -262,3 +278,151 @@ def test_transient_activity_is_not_persisted_and_sequences_stay_unique(
     )
     assert reloaded is not None
     assert [entry.sequence for entry in reloaded.entries] == [2]
+
+
+def test_concurrent_processes_allocate_unique_durable_sequences(
+    tmp_path: Path,
+) -> None:
+    job_id = "JOB-MULTIPROCESS"
+    GenerationLogStore(root=tmp_path).create(
+        data_model_id="MODEL-1",
+        job_id=job_id,
+    )
+
+    worker_count = 4
+    entries_per_worker = 20
+
+    arguments = [
+        (str(tmp_path), job_id, entries_per_worker)
+        for _ in range(worker_count)
+    ]
+
+    context = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(
+        max_workers=worker_count,
+        mp_context=context,
+    ) as executor:
+        results = list(executor.map(_append_entries_in_process, arguments))
+
+    assert results == [entries_per_worker] * worker_count
+
+    document = GenerationLogStore(root=tmp_path).get(
+        data_model_id="MODEL-1",
+        job_id=job_id,
+    )
+
+    assert document is not None
+    sequences = [entry.sequence for entry in document.entries]
+    expected_count = worker_count * entries_per_worker
+
+    assert len(sequences) == expected_count
+    assert sorted(sequences) == list(range(1, expected_count + 1))
+    assert len(set(sequences)) == expected_count
+
+
+def test_append_repairs_truncated_final_record(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    store.create(data_model_id="MODEL-1", job_id="JOB-TAIL-REPAIR")
+    store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-TAIL-REPAIR",
+        entry=_entry(),
+    )
+
+    event_path = _event_path(tmp_path, "JOB-TAIL-REPAIR")
+    with event_path.open("ab") as handle:
+        handle.write(b'{"sequence":2,"stage":"ENTITY_GENERATION"')
+
+    recorded = store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-TAIL-REPAIR",
+        entry=_entry("COMPLETED"),
+    )
+
+    document = _store(tmp_path).get(
+        data_model_id="MODEL-1",
+        job_id="JOB-TAIL-REPAIR",
+    )
+
+    assert recorded.sequence == 2
+    assert document is not None
+    assert [entry.sequence for entry in document.entries] == [1, 2]
+
+
+def test_append_terminates_valid_final_record_without_newline(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    store.create(data_model_id="MODEL-1", job_id="JOB-NO-NEWLINE")
+    store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-NO-NEWLINE",
+        entry=_entry(),
+    )
+
+    event_path = _event_path(tmp_path, "JOB-NO-NEWLINE")
+    event_path.write_bytes(event_path.read_bytes().rstrip(b"\n"))
+
+    recorded = store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-NO-NEWLINE",
+        entry=_entry("COMPLETED"),
+    )
+
+    records = [
+        json.loads(line)
+        for line in event_path.read_text(encoding="utf-8").splitlines()
+    ]
+
+    assert recorded.sequence == 2
+    assert [record["sequence"] for record in records] == [1, 2]
+
+
+@pytest.mark.parametrize("sequences", [[1, 1], [2, 1]])
+def test_get_rejects_duplicate_or_out_of_order_sequences(
+    tmp_path: Path,
+    sequences: list[int],
+) -> None:
+    store = _store(tmp_path)
+    event_path = _event_path(tmp_path, "JOB-BAD-SEQUENCE")
+    event_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with event_path.open("w", encoding="utf-8") as handle:
+        for sequence in sequences:
+            payload = _entry().model_dump(mode="json")
+            payload["sequence"] = sequence
+            handle.write(json.dumps(payload) + "\n")
+
+    with pytest.raises(ValueError, match="Invalid generation journal sequence"):
+        store.get(
+            data_model_id="MODEL-1",
+            job_id="JOB-BAD-SEQUENCE",
+        )
+
+
+def test_get_preserves_physical_journal_order(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    store.create(data_model_id="MODEL-1", job_id="JOB-ORDER")
+
+    store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-ORDER",
+        entry=_entry("STARTED"),
+    )
+    store.append(
+        data_model_id="MODEL-1",
+        job_id="JOB-ORDER",
+        entry=_entry("COMPLETED"),
+    )
+
+    document = store.get(
+        data_model_id="MODEL-1",
+        job_id="JOB-ORDER",
+    )
+
+    assert document is not None
+    assert [entry.sequence for entry in document.entries] == [1, 2]

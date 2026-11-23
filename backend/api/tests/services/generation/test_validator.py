@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import pytest
+
+from app.constants.generation import GENERATION_ALGORITHM_VERSION
 from pathlib import Path
 
 from app.services.generation.artifact_reader import (
@@ -10,6 +13,7 @@ from app.services.generation.artifact_reader import (
 from app.services.generation_checkpoint_store import (
     GenerationCheckpointStore,
 )
+from app.models.generation_persistence import GenerationArtifactEvidence
 from app.services.generation.validator import (
     GenerationValidator,
 )
@@ -73,39 +77,113 @@ def _commit_chunks(
     job_id: str,
     specification: dict,
 ) -> None:
-    entities = {}
-    generated_root = (
-        root / "data_model" / "TEST-MODEL"
-        / "generation" / job_id / "generated"
+    """Create a v2 manifest and commit evidence for the written CSV chunks."""
+
+    data_model_id = "TEST-MODEL"
+    job_directory = (
+        root / "data_model" / data_model_id / "generation" / job_id
     )
+    generated_root = job_directory / "generated"
 
-    for entity in specification.get("entities", []):
-        entity_name = entity["name"]
-        chunk_directory = (
-            generated_root / entity_name / "chunks"
-        )
-        chunk_numbers = sorted(
-            int(path.stem.removeprefix("chunk_"))
-            for path in chunk_directory.glob("chunk_*.csv")
-            if path.stem.removeprefix("chunk_").isdigit()
-        )
+    entity_targets = {
+        entity["name"]: entity.get("population", {}).get("count", 0)
+        for entity in specification.get("entities", [])
+    }
 
-        entities[entity_name] = {
-            "target_rows": entity.get("population", {}).get("count", 0),
-            "completed_chunks": chunk_numbers,
-        }
+    chunk_files_by_entity = {}
+    multi_chunk_sizes = []
+
+    for entity_name in entity_targets:
+        chunk_directory = generated_root / entity_name / "chunks"
+        chunk_files = sorted(
+            (
+                path
+                for path in chunk_directory.glob("chunk_*.csv")
+                if path.stem.removeprefix("chunk_").isdigit()
+            ),
+            key=lambda path: int(
+                path.stem.removeprefix("chunk_")
+            ),
+        )
+        chunk_files_by_entity[entity_name] = chunk_files
+
+        if len(chunk_files) > 1:
+            with chunk_files[0].open(
+                "r", newline="", encoding="utf-8"
+            ) as handle:
+                first_chunk_rows = sum(1 for _ in csv.DictReader(handle))
+            multi_chunk_sizes.append(first_chunk_rows)
+
+    if multi_chunk_sizes:
+        if len(set(multi_chunk_sizes)) != 1:
+            raise AssertionError(
+                "Multi-chunk validator fixtures must use a consistent "
+                f"chunk size; found {multi_chunk_sizes}."
+            )
+        chunk_size = multi_chunk_sizes[0]
+    else:
+        chunk_size = max(entity_targets.values(), default=1)
+        chunk_size = max(chunk_size, 1)
 
     checkpoint_store = GenerationCheckpointStore()
     checkpoint_store._root = root / "data_model"
 
-    checkpoint_store.save(
-        data_model_id="TEST-MODEL",
+    attempt_id = "validator-test-attempt"
+    seed = (specification.get("generation") or {}).get("seed", 1)
+
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
         job_id=job_id,
-        seed=1,
-        entities=entities,
-        chunk_size=100,
+        specification=specification,
+        seed=seed,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=attempt_id,
+        entity_targets=entity_targets,
     )
 
+    for entity_name, chunk_files in chunk_files_by_entity.items():
+        target_rows = entity_targets[entity_name]
+
+        for chunk_path in chunk_files:
+            chunk_number = int(
+                chunk_path.stem.removeprefix("chunk_")
+            )
+            row_start = (chunk_number - 1) * chunk_size
+
+            with chunk_path.open(
+                "r", newline="", encoding="utf-8"
+            ) as handle:
+                row_count = sum(1 for _ in csv.DictReader(handle))
+
+            expected_row_count = min(
+                chunk_size,
+                target_rows - row_start,
+            )
+            if row_count != expected_row_count:
+                raise AssertionError(
+                    f"{entity_name} chunk {chunk_number}: expected "
+                    f"{expected_row_count} rows for v2 chunk size "
+                    f"{chunk_size}, found {row_count}."
+                )
+
+            content = chunk_path.read_bytes()
+            artifact = GenerationArtifactEvidence(
+                path=chunk_path.relative_to(job_directory).as_posix(),
+                size_bytes=len(content),
+                sha256=hashlib.sha256(content).hexdigest(),
+            )
+
+            checkpoint_store.commit_chunk(
+                data_model_id=data_model_id,
+                job_id=job_id,
+                attempt_id=attempt_id,
+                entity_name=entity_name,
+                chunk_number=chunk_number,
+                row_start=row_start,
+                row_count=row_count,
+                artifact=artifact,
+            )
 
 
 

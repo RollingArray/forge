@@ -89,6 +89,7 @@ class GenerationExecutor:
         """Return whether durable execution state already exists."""
         return self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id) is not None
 
+
     def _get_start_chunk(
         self,
         *,
@@ -96,29 +97,71 @@ class GenerationExecutor:
         job_id: str,
         entity_name: str,
     ) -> int:
-        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
+        """Return the first chunk after the contiguous committed prefix.
+
+        Retained for compatibility with callers that require a contiguous
+        starting point. Sparse recovery must use _get_missing_chunks().
+        """
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if checkpoint is None:
             return 1
 
-        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
-
-        completed_chunks = entity_state.get(
-            "completed_chunks",
-            [],
-        )
-
-        if not completed_chunks:
+        entity_state = checkpoint.entities.get(entity_name)
+        if entity_state is None:
             return 1
 
-        committed_chunk_set = {int(chunk) for chunk in completed_chunks}
+        committed = {
+            chunk.chunk_number
+            for chunk in entity_state.chunks
+        }
 
         next_chunk = 1
-
-        while next_chunk in committed_chunk_set:
+        while next_chunk in committed:
             next_chunk += 1
 
         return next_chunk
+
+    def _get_missing_chunks(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+        entity_name: str,
+        total_chunks: int,
+    ) -> list[int]:
+        """Return every uncommitted chunk in original generation order."""
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+
+        if checkpoint is None:
+            raise GenerationExecutionError(
+                f"Generation checkpoint is missing for job: {job_id}"
+            )
+
+        entity_state = checkpoint.entities.get(entity_name)
+        if entity_state is None:
+            raise GenerationExecutionError(
+                f"Entity {entity_name!r} is missing from the checkpoint."
+            )
+
+        committed = {
+            chunk.chunk_number
+            for chunk in entity_state.chunks
+        }
+
+        return [
+            chunk_number
+            for chunk_number in range(1, total_chunks + 1)
+            if chunk_number not in committed
+        ]
+
+
 
     def _get_committed_rows(
         self,
@@ -127,22 +170,13 @@ class GenerationExecutor:
         job_id: str,
         entity_name: str,
     ) -> int:
-        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
-
-        if checkpoint is None:
-            return 0
-
-        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
-
-        committed_rows = entity_state.get(
-            "committed_rows",
-            0,
+        """Return the authoritative committed row count from the v2 manifest."""
+        return self._checkpoint_store.get_committed_rows(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            entity_name=entity_name,
         )
 
-        if not isinstance(committed_rows, int):
-            return 0
-
-        return max(committed_rows, 0)
 
     def _get_durable_generated_rows(
         self,
@@ -159,6 +193,7 @@ class GenerationExecutor:
             entity_name=entity_name,
         )
 
+
     def _is_entity_fully_committed(
         self,
         *,
@@ -167,27 +202,31 @@ class GenerationExecutor:
         entity_name: str,
         total_chunks: int,
     ) -> bool:
-        if total_chunks <= 0:
-            return True
+        """Completion requires committed chunks and committed final output."""
+        from app.models.generation_persistence import (
+            GenerationFinalizationStatus,
+        )
 
-        checkpoint = self._checkpoint_store.get(data_model_id=data_model_id, job_id=job_id)
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
 
         if checkpoint is None:
             return False
 
-        entity_state = checkpoint.get("entities", {}).get(entity_name, {})
+        entity_state = checkpoint.entities.get(entity_name)
+        if entity_state is None:
+            return False
 
-        completed_chunks = entity_state.get(
-            "completed_chunks",
-            [],
+        return (
+            entity_state.committed_rows == entity_state.target_rows
+            and entity_state.finalization.status
+            == GenerationFinalizationStatus.COMMITTED
+            and entity_state.finalization.output is not None
         )
 
-        completed_chunk_set = {int(chunk) for chunk in completed_chunks}
 
-        return all(
-            chunk_number in completed_chunk_set
-            for chunk_number in range(1, total_chunks + 1)
-        )
 
     def _restore_entity_key_space(
         self,
@@ -199,21 +238,22 @@ class GenerationExecutor:
         field_types: dict[str, Any],
         context: GenerationContext,
     ) -> None:
+        """Restore committed identity keys without losing global row positions."""
         if not identity_fields:
             return
 
-        key_space = self._artifact_reader.get_ordered_entity_key_space(
+        indexed_key_space = self._artifact_reader.get_identity_keys_by_row(
             data_model_id=data_model_id,
             job_id=job_id,
             entity_name=entity_name,
             identity_fields=identity_fields,
         )
 
-        if not key_space:
+        if not indexed_key_space:
             return
 
-        typed_key_space = list(dict.fromkeys(
-            tuple(
+        typed_key_space = {
+            row_index: tuple(
                 convert_value(
                     value,
                     field_types.get(field_name),
@@ -221,16 +261,18 @@ class GenerationExecutor:
                 for field_name, value in zip(
                     identity_fields,
                     key,
+                    strict=True,
                 )
             )
-            for key in key_space
-        ))
+            for row_index, key in indexed_key_space.items()
+        }
 
         context.restore_key_space(
             entity_name=entity_name,
             identity_fields=identity_fields,
             key_space=typed_key_space,
         )
+
 
     def execute(
         self,
@@ -263,6 +305,25 @@ class GenerationExecutor:
         started_at = perf_counter()
         context = GenerationContext()
         entity_runs: list[GenerationEntityRun] = []
+
+        checkpoint = self._checkpoint_store.get(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+        if checkpoint is None:
+            raise GenerationExecutionError(
+                f"Generation checkpoint is missing for job: {job_id}"
+            )
+
+        chunk_size = checkpoint.chunk_size
+        if (
+            not isinstance(chunk_size, int)
+            or isinstance(chunk_size, bool)
+            or chunk_size <= 0
+        ):
+            raise GenerationExecutionError(
+                f"Invalid generation checkpoint chunk size: {chunk_size!r}"
+            )
 
         self._artifact_writer.initialize_job(data_model_id, job_id)
 
@@ -308,7 +369,11 @@ class GenerationExecutor:
 
             target_rows = (entity.get("population") or {}).get("count", 0)
 
-            total_chunks = (target_rows + 50 - 1) // 50 if target_rows > 0 else 0
+            total_chunks = (
+                (target_rows + chunk_size - 1) // chunk_size
+                if target_rows > 0
+                else 0
+            )
 
             if self._is_entity_fully_committed(
                 data_model_id=data_model_id,
@@ -398,13 +463,20 @@ class GenerationExecutor:
                 flush=True,
             )
 
-            start_chunk = self._get_start_chunk(
+            missing_chunk_numbers = self._get_missing_chunks(
                 data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
+                total_chunks=total_chunks,
             )
 
-            is_resuming = start_chunk > 1
+            entity_checkpoint = checkpoint.entities.get(entity_name)
+            if entity_checkpoint is None:
+                raise GenerationExecutionError(
+                    f"Entity {entity_name!r} is missing from the checkpoint."
+                )
+
+            is_resuming = bool(entity_checkpoint.chunks)
 
             # VOCABULARY semantic values are prepared once per entity.
             # UNIQUE values are prepared per generation chunk below.
@@ -499,12 +571,11 @@ class GenerationExecutor:
                             f"expected {SEMANTIC_VOCABULARY_SIZE}."
                         )
 
-                    self._semantic_store.save(
+                    self._semantic_store.save_vocabulary(
                         data_model_id=data_model_id,
                         job_id=job_id,
                         entity_name=entity_name,
                         field_name=field["name"],
-                        mode=normalized_mode,
                         values=semantic_values,
                     )
 
@@ -595,104 +666,118 @@ class GenerationExecutor:
                             "is missing a valid description."
                         )
 
-                    required_end = chunk_end
-                    persisted = self._semantic_store.get(
+                    # Reconcile semantic assignments with every committed
+                    # artifact using original global row positions.
+                    values_by_row = self._semantic_store.get_unique_values(
                         data_model_id=data_model_id,
                         job_id=job_id,
                         entity_name=entity_name,
                         field_name=field_name,
                     )
 
-                    persisted_values = (
-                        persisted.get("values", []) if persisted is not None else []
-                    )
-
-                    # Recover missing UNIQUE semantic state from committed
-                    # artifacts before requesting additional semantic values.
-                    if persisted is None and chunk_start > 0:
-                        recovered_values: list[str] = []
-
-                        try:
-                            committed_rows = self._artifact_reader.iter_entity_chunks(
-                                data_model_id=data_model_id,
-                                job_id=job_id,
-                                entity_name=entity_name,
-                            )
-
-                            for row in committed_rows:
-                                if field_name not in row:
-                                    raise GenerationExecutionError(
-                                        f"Cannot recover semantic state for "
-                                        f"{entity_name}.{field_name}: committed "
-                                        f"artifact is missing the field."
-                                    )
-
-                                value = row[field_name]
-
-                                if not isinstance(value, str) or not value.strip():
-                                    raise GenerationExecutionError(
-                                        f"Cannot recover semantic state for "
-                                        f"{entity_name}.{field_name}: committed "
-                                        f"artifact contains a blank or invalid value."
-                                    )
-
-                                recovered_values.append(value)
-
-                        except GenerationExecutionError:
-                            raise
-                        except Exception as exc:
-                            raise GenerationExecutionError(
-                                f"Could not recover semantic state for "
-                                f"{entity_name}.{field_name} from committed "
-                                f"artifacts: {exc}"
-                            ) from exc
-
-                        if len(recovered_values) != chunk_start:
-                            raise GenerationExecutionError(
-                                f"Cannot recover semantic state for "
-                                f"{entity_name}.{field_name}: found "
-                                f"{len(recovered_values)} committed values, "
-                                f"expected {chunk_start}."
-                            )
-
-                        normalized_values = [
-                            value.strip().casefold()
-                            for value in recovered_values
-                        ]
-
-                        if len(set(normalized_values)) != len(normalized_values):
-                            raise GenerationExecutionError(
-                                f"Cannot recover semantic state for "
-                                f"{entity_name}.{field_name}: committed "
-                                f"artifacts contain duplicate UNIQUE values."
-                            )
-
-                        self._semantic_store.save(
-                            data_model_id=data_model_id,
-                            job_id=job_id,
-                            entity_name=entity_name,
-                            field_name=field_name,
-                            mode="UNIQUE",
-                            values=recovered_values,
-                        )
-
-                        persisted_values = recovered_values
-
-                    if persisted is not None and persisted.get("mode") != "UNIQUE":
+                    if not isinstance(values_by_row, dict):
                         raise GenerationExecutionError(
-                            f"Persisted semantic state is invalid for "
+                            f"Invalid UNIQUE semantic state for "
                             f"{entity_name}.{field_name}."
                         )
 
-                    if len(persisted_values) < required_end:
-                        missing_count = required_end - len(persisted_values)
+                    values_by_row = dict(values_by_row)
 
+                    if any(
+                        isinstance(row_index, bool)
+                        or not isinstance(row_index, int)
+                        or row_index < 0
+                        or row_index >= target_rows
+                        for row_index in values_by_row
+                    ):
+                        raise GenerationExecutionError(
+                            f"UNIQUE semantic state contains an invalid row "
+                            f"position for {entity_name}.{field_name}."
+                        )
+
+                    # Committed artifacts are authoritative for rows already
+                    # published. Recover missing semantic assignments, but
+                    # never silently overwrite a conflicting assignment.
+                    recovered_values: dict[int, str] = {}
+
+                    try:
+                        for row_index, row in self._artifact_reader.iter_entity_rows(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entity_name=entity_name,
+                        ):
+                            if field_name not in row:
+                                raise GenerationExecutionError(
+                                    f"Committed artifact is missing "
+                                    f"{entity_name}.{field_name}."
+                                )
+
+                            value = row[field_name]
+
+                            if not isinstance(value, str) or not value.strip():
+                                raise GenerationExecutionError(
+                                    f"Committed artifact contains a blank or "
+                                    f"invalid UNIQUE value for "
+                                    f"{entity_name}.{field_name} at row "
+                                    f"{row_index}."
+                                )
+
+                            existing_value = values_by_row.get(row_index)
+
+                            if (
+                                existing_value is not None
+                                and existing_value != value
+                            ):
+                                raise GenerationExecutionError(
+                                    f"Semantic store conflicts with committed "
+                                    f"artifact for {entity_name}.{field_name} "
+                                    f"at row {row_index}."
+                                )
+
+                            if existing_value is None:
+                                recovered_values[row_index] = value
+
+                    except GenerationExecutionError:
+                        raise
+                    except Exception as exc:
+                        raise GenerationExecutionError(
+                            f"Could not reconcile UNIQUE semantic state for "
+                            f"{entity_name}.{field_name}: {exc}"
+                        ) from exc
+
+                    if recovered_values:
+                        try:
+                            self._semantic_store.commit_unique_values(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                entity_name=entity_name,
+                                field_name=field_name,
+                                values_by_row=recovered_values,
+                            )
+                        except Exception as exc:
+                            raise GenerationExecutionError(
+                                f"Could not recover UNIQUE semantic values for "
+                                f"{entity_name}.{field_name}: {exc}"
+                            ) from exc
+
+                        values_by_row.update(recovered_values)
+
+                    # Only request values for unassigned positions in this
+                    # chunk. Existing assignments elsewhere remain reserved.
+                    missing_row_indices = [
+                        row_index
+                        for row_index in range(chunk_start, chunk_end)
+                        if row_index not in values_by_row
+                    ]
+
+                    if missing_row_indices:
                         if self._ai_service is None:
                             raise GenerationExecutionError(
                                 f"Semantic generation requires an AI service "
                                 f"for {entity_name}.{field_name}."
                             )
 
+                        missing_count = len(missing_row_indices)
                         semantic_call_number = 0
 
                         def record_semantic_call(
@@ -702,7 +787,6 @@ class GenerationExecutor:
                             refill: bool,
                         ) -> None:
                             nonlocal semantic_call_number
-
                             semantic_call_number += 1
 
                             print(
@@ -737,7 +821,7 @@ class GenerationExecutor:
                                     "entity_name": entity_name,
                                     "field_name": field_name,
                                     "chunk_number": chunk_number,
-                                    "call_number": semantic_call_number + 1,
+                                    "call_number": 1,
                                     "requested_count": missing_count,
                                 },
                             )
@@ -773,54 +857,67 @@ class GenerationExecutor:
                             description=description,
                             mode="UNIQUE",
                             count=missing_count,
-                            exclude_values=persisted_values,
+                            exclude_values=list(values_by_row.values()),
                             on_call_completed=record_semantic_call,
                         )
 
-                        semantic_elapsed_seconds = perf_counter() - semantic_started_at
-
-                        print(
-                            f"[SEMANTIC] "
-                            f"{entity_name}.{field_name} "
-                            f"chunk={chunk_number} "
-                            f"requested={missing_count} "
-                            f"returned={len(semantic_batch)} "
-                            f"time={semantic_elapsed_seconds:.3f}s",
-                            flush=True,
+                        semantic_elapsed_seconds = (
+                            perf_counter() - semantic_started_at
                         )
 
-                        if len(semantic_batch) != missing_count:
+                        if (
+                            not isinstance(semantic_batch, list)
+                            or len(semantic_batch) != missing_count
+                            or any(
+                                not isinstance(value, str) or not value.strip()
+                                for value in semantic_batch
+                            )
+                        ):
                             raise GenerationExecutionError(
                                 f"Semantic generation for "
-                                f"{entity_name}.{field_name} returned "
-                                f"{len(semantic_batch)} values; "
-                                f"expected {missing_count}."
+                                f"{entity_name}.{field_name} returned an "
+                                f"invalid batch; expected {missing_count} "
+                                "non-empty string values."
                             )
 
                         normalized_existing = {
                             value.strip().casefold()
-                            for value in persisted_values
-                            if isinstance(value, str)
+                            for value in values_by_row.values()
                         }
-
                         normalized_batch = [
                             value.strip().casefold()
                             for value in semantic_batch
-                            if isinstance(value, str)
                         ]
 
                         if (
-                            len(normalized_batch) != missing_count
-                            or any(not value for value in normalized_batch)
-                            or len(set(normalized_batch)) != missing_count
+                            len(set(normalized_batch)) != missing_count
                             or normalized_existing.intersection(normalized_batch)
                         ):
                             raise GenerationExecutionError(
                                 f"Semantic generation for "
                                 f"{entity_name}.{field_name} returned "
-                                "blank, duplicate, or previously generated "
-                                "UNIQUE values."
+                                "duplicate or previously assigned UNIQUE values."
                             )
+
+                        new_assignments = dict(
+                            zip(
+                                missing_row_indices,
+                                semantic_batch,
+                                strict=True,
+                            )
+                        )
+
+                        # Persist assignments before row generation. A crash
+                        # after this point can safely reuse these assignments.
+                        self._semantic_store.commit_unique_values(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field_name,
+                            values_by_row=new_assignments,
+                        )
+
+                        values_by_row.update(new_assignments)
 
                         semantic_activity = self._generation_log_store.append(
                             data_model_id=data_model_id,
@@ -848,32 +945,12 @@ class GenerationExecutor:
                                 ),
                             )
 
-                        self._semantic_store.append_unique(
-                            data_model_id=data_model_id,
-                            job_id=job_id,
-                            entity_name=entity_name,
-                            field_name=field_name,
-                            values=semantic_batch,
-                        )
-
-                        persisted_values = [
-                            *persisted_values,
-                            *semantic_batch,
-                        ]
-
-                    chunk_values = persisted_values[chunk_start:chunk_end]
-
-                    if len(chunk_values) != chunk_end - chunk_start:
-                        raise GenerationExecutionError(
-                            f"Semantic state is incomplete for "
-                            f"{entity_name}.{field_name}."
-                        )
-
-                    context.add_semantic_values(
+                    # Register the complete row-indexed mapping. The row
+                    # generator resolves values by global row position.
+                    context.add_unique_semantic_values(
                         entity_name=entity_name,
                         field_name=field_name,
-                        values=chunk_values,
-                        chunk_number=chunk_number,
+                        values_by_row=values_by_row,
                     )
 
             def handle_field_activity(
@@ -920,6 +997,8 @@ class GenerationExecutor:
                     entity_name=completed_entity_name,
                     chunk_number=chunk_number,
                     rows=chunk_rows,
+                    attempt_id=checkpoint.attempt_id,
+                    row_start=(chunk_number - 1) * chunk_size,
                 )
 
                 chunk_peak_memory_bytes[chunk_number] = max(
@@ -1011,7 +1090,9 @@ class GenerationExecutor:
                             and group.child_participation.upper() == "MANDATORY"
                         )
                     ],
-                    start_chunk=start_chunk,
+                    chunk_size=chunk_size,
+                    start_chunk=1,
+                    chunk_numbers=missing_chunk_numbers,
                     on_chunk_start=handle_chunk_start,
                     on_chunk_completed=handle_chunk_completed,
                     on_field_activity=handle_field_activity,
@@ -1028,6 +1109,11 @@ class GenerationExecutor:
                 data_model_id=data_model_id,
                 job_id=job_id,
                 entity_name=entity_name,
+                attempt_id=checkpoint.attempt_id,
+                fieldnames=[
+                    field["name"]
+                    for field in entity.get("fields", [])
+                ],
             )
 
             entity_peak_memory_bytes = max(

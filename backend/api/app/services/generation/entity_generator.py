@@ -44,6 +44,7 @@ class EntityGenerator:
         one_to_one_relationships: list[dict[str, Any]] | None = None,
         chunk_size: int = 50,
         start_chunk: int = 1,
+        chunk_numbers: list[int] | tuple[int, ...] | None = None,
         on_chunk_start: Callable[[str, int, int, int], None] | None = None,
         on_chunk_completed: Callable[[str, int, int, int, list[dict[str, Any]]], None] | None = None,
         on_field_activity: Callable[[str, int, str, str], None] | None = None,
@@ -261,16 +262,63 @@ class EntityGenerator:
 
         generated_rows = 0
 
-        first_chunk_index = (start_chunk - 1) * chunk_size
+        if chunk_numbers is None:
+            # Preserve the original contiguous execution/resume behavior.
+            scheduled_chunk_numbers = range(
+                start_chunk,
+                total_chunks + 1,
+            )
+        else:
+            # An explicit schedule and start_chunk must not compete.
+            if start_chunk != 1:
+                raise EntityGenerationError(
+                    "Specify either chunk_numbers or start_chunk, not both."
+                )
 
-        for chunk_number, chunk_start in enumerate(
-            range(
-                first_chunk_index,
-                target_rows,
-                chunk_size,
-            ),
-            start=start_chunk,
-        ):
+            if not isinstance(chunk_numbers, (list, tuple)):
+                raise EntityGenerationError(
+                    "chunk_numbers must be a list or tuple of positive integers."
+                )
+
+            validated_chunk_numbers: list[int] = []
+
+            for chunk_number in chunk_numbers:
+                if (
+                    isinstance(chunk_number, bool)
+                    or not isinstance(chunk_number, int)
+                    or chunk_number <= 0
+                ):
+                    raise EntityGenerationError(
+                        "Every scheduled chunk number must be a "
+                        "positive integer."
+                    )
+
+                if chunk_number > total_chunks:
+                    raise EntityGenerationError(
+                        f"Scheduled chunk {chunk_number} exceeds the "
+                        f"total chunk count {total_chunks}."
+                    )
+
+                validated_chunk_numbers.append(chunk_number)
+
+            if len(set(validated_chunk_numbers)) != len(
+                validated_chunk_numbers
+            ):
+                raise EntityGenerationError(
+                    "chunk_numbers must not contain duplicates."
+                )
+
+            if validated_chunk_numbers != sorted(validated_chunk_numbers):
+                raise EntityGenerationError(
+                    "chunk_numbers must be in strictly increasing order."
+                )
+
+            scheduled_chunk_numbers = tuple(validated_chunk_numbers)
+
+        for chunk_number in scheduled_chunk_numbers:
+            # Chunk identity and row positions always refer to the original
+            # population, never to the position in the selected schedule.
+            chunk_start = (chunk_number - 1) * chunk_size
             chunk_end = min(
                 chunk_start + chunk_size,
                 target_rows,
@@ -335,15 +383,6 @@ class EntityGenerator:
                     ):
                         identity_rows[local_index][child_field] = value
 
-            self._prepare_chunk_semantic_values(
-                entity_name=entity_name,
-                fields=fields,
-                context=context,
-                chunk_number=chunk_number,
-                chunk_start=chunk_start,
-                chunk_end=chunk_end,
-            )
-
             chunk_rows: list[dict[str, Any]] = []
 
             if on_field_activity is not None:
@@ -385,6 +424,7 @@ class EntityGenerator:
                 entity_name=entity_name,
                 rows=chunk_rows,
                 identity_fields=identity_fields,
+                row_start=chunk_start,
             )
 
             if on_chunk_completed is not None:
@@ -399,47 +439,6 @@ class EntityGenerator:
         return generated_rows
 
     @staticmethod
-    def _prepare_chunk_semantic_values(
-        *,
-        entity_name: str,
-        fields: list[dict[str, Any]],
-        context: GenerationContext,
-        chunk_number: int,
-        chunk_start: int,
-        chunk_end: int,
-    ) -> None:
-        """Prepare the semantic values needed by the current chunk."""
-
-        for field in fields:
-            generation = field.get("generation") or {}
-
-            if generation.get("generator") != "SEMANTIC":
-                continue
-
-            parameters = generation.get("parameters") or {}
-            mode = str(
-                parameters.get("mode", "")
-            ).strip().upper()
-
-            if mode != "UNIQUE":
-                continue
-
-            values = context.get_semantic_values(
-                entity_name=entity_name,
-                field_name=field["name"],
-            )
-
-            if not values:
-                continue
-
-            chunk_values = values[chunk_start:chunk_end]
-
-            context.add_semantic_values(
-                entity_name=entity_name,
-                field_name=field["name"],
-                values=chunk_values,
-                chunk_number=chunk_number,
-            )
 
     @staticmethod
     def _identity_fields(

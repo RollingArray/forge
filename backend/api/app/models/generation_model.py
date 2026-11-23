@@ -3,9 +3,18 @@ File: generation_model.py
 Purpose: FORGE generation API models.
 """
 
+import math
 from typing import Any
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    model_validator,
+)
+
+from app.constants.generation import DEFAULT_GENERATION_CHUNK_SIZE
 
 
 class GenerationEntityReadiness(BaseModel):
@@ -37,6 +46,7 @@ from enum import StrEnum
 
 class GenerationJobStatus(StrEnum):
     """Lifecycle state of a generation job."""
+    PREPARING = "PREPARING"
 
     CREATED = "CREATED"
     PLANNING = "PLANNING"
@@ -47,6 +57,41 @@ class GenerationJobStatus(StrEnum):
     PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+
+
+class GenerationPreparationPhase(StrEnum):
+    """Durable preparation progress before worker execution."""
+
+    CHECKPOINT_PENDING = "CHECKPOINT_PENDING"
+    CHECKPOINT_READY = "CHECKPOINT_READY"
+
+
+class GenerationResumeIntent(BaseModel):
+    """Durable intent to supersede a generation execution attempt."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        strict=True,
+    )
+
+    previous_attempt_id: str = Field(min_length=1, max_length=128)
+    new_attempt_id: str = Field(min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def validate_attempt_transition(self) -> "GenerationResumeIntent":
+        if not self.previous_attempt_id.strip():
+            raise ValueError("previous_attempt_id must not be blank.")
+
+        if not self.new_attempt_id.strip():
+            raise ValueError("new_attempt_id must not be blank.")
+
+        if self.previous_attempt_id == self.new_attempt_id:
+            raise ValueError(
+                "A resume intent must use a different new attempt ID."
+            )
+
+        return self
 
 
 class GenerationEntityStatus(StrEnum):
@@ -92,7 +137,7 @@ class GenerationEntityProgress(BaseModel):
     entity_name: str
     target_rows: int = Field(ge=0)
     generated_rows: int = Field(default=0, ge=0)
-    chunk_size: int = Field(default=50, ge=1)
+    chunk_size: int = Field(default=DEFAULT_GENERATION_CHUNK_SIZE, ge=1)
     completed_chunks: int = Field(default=0, ge=0)
     total_chunks: int = Field(default=0, ge=0)
     status: GenerationEntityStatus = GenerationEntityStatus.NOT_STARTED
@@ -233,6 +278,64 @@ class GenerationJobResponse(BaseModel):
             return None
 
         return self.total_generated_rows / self.elapsed_seconds
+
+
+class GenerationJobRecord(GenerationJobResponse):
+    """Internal persisted representation of a generation job."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="before")
+    @classmethod
+    def discard_legacy_throughput(cls, value: Any) -> Any:
+        """Accept the legacy persisted computed throughput field.
+
+        Throughput is derived from job data. Older persisted records
+        may still contain the previously serialized computed value.
+        """
+        if not isinstance(value, dict):
+            return value
+
+        data = dict(value)
+
+        if "throughput_rows_per_second" not in data:
+            return data
+
+        legacy_value = data.pop("throughput_rows_per_second")
+
+        if legacy_value is not None:
+            if isinstance(legacy_value, bool) or not isinstance(
+                legacy_value, (int, float)
+            ):
+                raise ValueError(
+                    "Legacy throughput_rows_per_second must be a "
+                    "finite non-negative number or None"
+                )
+
+            try:
+                valid = (
+                    math.isfinite(legacy_value)
+                    and legacy_value >= 0
+                )
+            except (OverflowError, TypeError):
+                valid = False
+
+            if not valid:
+                raise ValueError(
+                    "Legacy throughput_rows_per_second must be a "
+                    "finite non-negative number or None"
+                )
+
+        return data
+
+    attempt_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+    )
+    preparation_phase: GenerationPreparationPhase | None = None
+    resume_intent: GenerationResumeIntent | None = None
+
 
 
 class GenerationExecutionSummaryResponse(BaseModel):

@@ -8,20 +8,16 @@ import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock, RLock
 from typing import Any, Iterator
 from uuid import uuid4
 
-from app.repositories.file_lock import create_file_lock
+from app.repositories.file_lock import file_lock_transaction
 from app.interfaces.activity import Activity
 from app.interfaces.activity_repository import ActivityRepository
 
 
 class JsonActivityRepository(ActivityRepository):
     """Persist activity events in independently locked JSONL partitions."""
-
-    _registry_guard = Lock()
-    _path_locks: dict[str, RLock] = {}
 
     def __init__(self) -> None:
         self._data_directory = (
@@ -240,25 +236,13 @@ class JsonActivityRepository(ActivityRepository):
     ) -> Iterator[None]:
         """Serialize a partition across threads, instances and processes."""
 
-        identity_key = identity
-
         lock_path = (
             self._lock_directory
-            / f"{scope}-{identity_key}-{year}-{month}.lock"
+            / f"{scope}-{identity}-{year}-{month}.lock"
         )
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
 
-        lock_key = str(lock_path.resolve())
-
-        with self._registry_guard:
-            thread_lock = self._path_locks.setdefault(
-                lock_key,
-                RLock(),
-            )
-
-        with thread_lock:
-            with create_file_lock(lock_path):
-                yield
+        with file_lock_transaction(lock_path):
+            yield
 
     @staticmethod
     def _to_record(activity: Activity) -> dict[str, Any]:

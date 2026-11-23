@@ -9,13 +9,16 @@ Email: ranjoy.sen@collins.com
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
 from app.constants.data_model_access import DataModelAccessRole
 from app.interfaces.data_model_access import DataModelAccess
 from app.interfaces.data_model_access_repository import (
     DataModelAccessRepository,
+)
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
 )
 
 
@@ -28,7 +31,6 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
             / "data"
             / "data_model_access.json"
         )
-        self._lock = Lock()
 
         self._ensure_store()
 
@@ -42,7 +44,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
 
         now = datetime.now(timezone.utc)
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
             for record in data["access"]:
@@ -81,7 +83,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
     ) -> list[DataModelAccess]:
         """Return all access records for a data model."""
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         return [
@@ -96,7 +98,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
     ) -> list[DataModelAccess]:
         """Return all data model access records for a user."""
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         return [
@@ -112,7 +114,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
     ) -> DataModelAccess | None:
         """Return a user's access to a data model."""
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
         for record in data["access"]:
@@ -132,7 +134,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
     ) -> DataModelAccess | None:
         """Update a user's role for a data model."""
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
             for record in data["access"]:
@@ -153,7 +155,7 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
     ) -> bool:
         """Revoke a user's access to a data model."""
 
-        with self._lock:
+        with generation_file_lock(self._file_path):
             data = self._read_data()
 
             original_count = len(data["access"])
@@ -182,42 +184,35 @@ class JsonDataModelAccessRepository(DataModelAccessRepository):
             exist_ok=True,
         )
 
-        if not self._file_path.exists():
-            self._write_data({"access": []})
+        with generation_file_lock(self._file_path):
+            if not self._file_path.exists():
+                self._write_data({"access": []})
 
     def _read_data(self) -> dict:
         """Read the complete JSON access store."""
 
-        self._ensure_store()
+        with generation_file_lock(self._file_path):
+            self._ensure_store()
 
-        with self._file_path.open(
-            "r",
-            encoding="utf-8",
-        ) as file:
-            return json.load(file)
+            with self._file_path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                return json.load(file)
 
     def _write_data(self, data: dict) -> None:
-        """Write the JSON access store atomically."""
+        """Atomically publish the JSON access store."""
 
-        self._file_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        content = json.dumps(
+            data,
+            indent=2,
+        ) + "\n"
 
-        temporary_path = self._file_path.with_suffix(".tmp")
-
-        with temporary_path.open(
-            "w",
-            encoding="utf-8",
-        ) as file:
-            json.dump(
-                data,
-                file,
-                indent=2,
+        with generation_file_lock(self._file_path):
+            atomic_write_text(
+                self._file_path,
+                content,
             )
-            file.write("\n")
-
-        temporary_path.replace(self._file_path)
 
     @staticmethod
     def _to_access(record: dict) -> DataModelAccess:

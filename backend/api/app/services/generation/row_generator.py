@@ -46,6 +46,19 @@ class RowGenerator:
         fields that have not already been assigned.
         """
 
+        expected_fieldnames = [
+            field["name"]
+            for field in fields
+        ]
+
+        if len(expected_fieldnames) != len(set(expected_fieldnames)):
+            raise RowGenerationError(
+                f"Duplicate field names in specification for "
+                f"entity {entity_name!r}."
+            )
+
+        expected_fieldname_set = set(expected_fieldnames)
+
         row: dict[str, Any] = dict(initial_values or {})
 
         composite_foreign_keys = [
@@ -97,15 +110,35 @@ class RowGenerator:
                 parameters = generation.get("parameters") or {}
                 mode = str(parameters.get("mode", "")).strip().upper()
 
-                if mode in {"UNIQUE", "VOCABULARY"}:
+                if mode == "UNIQUE":
+                    indexed_values = context.get_unique_semantic_values(
+                        entity_name=entity_name,
+                        field_name=field_name,
+                    )
+
+                    if indexed_values is None:
+                        raise RowGenerationError(
+                            f"No row-indexed UNIQUE semantic values available "
+                            f"for {entity_name}.{field_name}."
+                        )
+
+                    row_index = row_number - 1
+                    semantic_value = indexed_values.get(row_index)
+
+                    if not isinstance(semantic_value, str) or not semantic_value.strip():
+                        raise RowGenerationError(
+                            f"Semantic value missing or invalid for "
+                            f"{entity_name}.{field_name} "
+                            f"at global row index {row_index}."
+                        )
+
+                    row[field_name] = semantic_value
+                    continue
+
+                if mode == "VOCABULARY":
                     semantic_values = context.get_semantic_values(
                         entity_name=entity_name,
                         field_name=field_name,
-                        chunk_number=(
-                            chunk_number
-                            if mode == "UNIQUE"
-                            else None
-                        ),
                     )
 
                     if not semantic_values:
@@ -114,28 +147,9 @@ class RowGenerator:
                             f"{entity_name}.{field_name}."
                         )
 
-                    if mode == "UNIQUE":
-                        if chunk_number is not None:
-                            value_index = (
-                                (row_number - 1)
-                                % len(semantic_values)
-                            )
-                        else:
-                            value_index = row_number - 1
-
-                        if value_index >= len(semantic_values):
-                            raise RowGenerationError(
-                                f"Semantic value missing for "
-                                f"{entity_name}.{field_name} "
-                                f"at row {row_number}."
-                            )
-
-                        row[field_name] = semantic_values[value_index]
-                    else:
-                        row[field_name] = self._generator.choose_from(
-                            semantic_values
-                        )
-
+                    row[field_name] = self._generator.choose_from(
+                        semantic_values
+                    )
                     continue
 
             row[field_name] = self._generator.generate_value(
@@ -143,7 +157,31 @@ class RowGenerator:
                 row_number=row_number,
             )
 
-        return row
+        actual_fieldname_set = set(row)
+
+        missing_fields = [
+            name
+            for name in expected_fieldnames
+            if name not in actual_fieldname_set
+        ]
+
+        unexpected_fields = [
+            name
+            for name in row
+            if name not in expected_fieldname_set
+        ]
+
+        if missing_fields or unexpected_fields:
+            raise RowGenerationError(
+                f"Generated row schema mismatch for {entity_name!r}: "
+                f"missing fields={missing_fields}, "
+                f"unexpected fields={unexpected_fields}."
+            )
+
+        return {
+            field_name: row[field_name]
+            for field_name in expected_fieldnames
+        }
 
     def _assign_foreign_key(
         self,

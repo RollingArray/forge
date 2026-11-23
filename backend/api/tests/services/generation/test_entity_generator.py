@@ -177,6 +177,7 @@ def test_context_indexed_key_space_preserves_unique_identity_keys_across_chunks(
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -186,9 +187,10 @@ def test_context_indexed_key_space_preserves_unique_identity_keys_across_chunks(
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=2,
         rows=[
-            {"CUSTOMER_ID": "C2"},
             {"CUSTOMER_ID": "C3"},
+            {"CUSTOMER_ID": "C4"},
         ],
         identity_fields=("CUSTOMER_ID",),
     )
@@ -200,6 +202,7 @@ def test_context_indexed_key_space_preserves_unique_identity_keys_across_chunks(
         ("C1",),
         ("C2",),
         ("C3",),
+        ("C4",),
     ]
 
 
@@ -209,11 +212,11 @@ def test_restore_key_space_builds_indexed_key_space() -> None:
     context.restore_key_space(
         entity_name="CUSTOMER",
         identity_fields=("CUSTOMER_ID",),
-        key_space={
+        key_space=[
             ("C1",),
             ("C2",),
             ("C3",),
-        },
+        ],
     )
 
     indexed_keys = context.get_indexed_key_space(
@@ -233,6 +236,7 @@ def test_context_key_space_preserves_unique_identity_keys_across_chunks() -> Non
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -242,9 +246,10 @@ def test_context_key_space_preserves_unique_identity_keys_across_chunks() -> Non
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=2,
         rows=[
-            {"CUSTOMER_ID": "C2"},
             {"CUSTOMER_ID": "C3"},
+            {"CUSTOMER_ID": "C4"},
         ],
         identity_fields=("CUSTOMER_ID",),
     )
@@ -256,6 +261,7 @@ def test_context_key_space_preserves_unique_identity_keys_across_chunks() -> Non
         ("C1",),
         ("C2",),
         ("C3",),
+        ("C4",),
     }
 
 
@@ -264,6 +270,7 @@ def test_single_field_fk_identity_uses_parent_key_space() -> None:
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -328,6 +335,7 @@ def test_fk_identity_allocation_is_deterministic_for_same_seed() -> None:
     first_context = GenerationContext()
     first_context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -340,6 +348,7 @@ def test_fk_identity_allocation_is_deterministic_for_same_seed() -> None:
     second_context = GenerationContext()
     second_context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -375,6 +384,7 @@ def test_composite_fk_identity_uses_complete_parent_tuples() -> None:
 
     context.add_rows(
         entity_name="PARENT",
+        row_start=0,
         rows=[
             {"A": "A1", "B": "B1"},
             {"A": "A2", "B": "B2"},
@@ -696,11 +706,11 @@ def test_restore_key_space_restores_identity_keys_without_rows() -> None:
     context.restore_key_space(
         entity_name="CUSTOMER",
         identity_fields=("CUSTOMER_ID",),
-        key_space={
+        key_space=[
             ("C1",),
             ("C2",),
             ("C3",),
-        },
+        ],
     )
 
     assert context.get_key_space(
@@ -722,6 +732,7 @@ def test_single_field_fk_uses_indexed_parent_key_space() -> None:
 
     context.add_rows(
         entity_name="CUSTOMER",
+        row_start=0,
         rows=[
             {"CUSTOMER_ID": "C1"},
             {"CUSTOMER_ID": "C2"},
@@ -1304,4 +1315,326 @@ def test_one_to_one_mandatory_parent_participation_requires_equal_populations() 
             foreign_keys=foreign_keys,
             context=context,
             one_to_one_relationships=one_to_one_relationships,
+        )
+
+
+def test_context_preserves_sparse_global_row_positions() -> None:
+    context = GenerationContext()
+
+    context.restore_key_space(
+        entity_name="CUSTOMER",
+        identity_fields=("CUSTOMER_ID",),
+        key_space={
+            0: ("C1",),
+            4: ("C5",),
+            2: ("C3",),
+        },
+    )
+
+    assert context.get_indexed_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == [("C1",), ("C3",), ("C5",)]
+
+    assert context.get_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == {("C1",), ("C3",), ("C5",)}
+
+
+def test_context_add_rows_is_idempotent_at_same_global_positions() -> None:
+    context = GenerationContext()
+    rows = [{"CUSTOMER_ID": "C1"}, {"CUSTOMER_ID": "C2"}]
+
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=rows,
+        identity_fields=("CUSTOMER_ID",),
+        row_start=10,
+    )
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=rows,
+        identity_fields=("CUSTOMER_ID",),
+        row_start=10,
+    )
+
+    assert context.get_indexed_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == [("C1",), ("C2",)]
+
+
+def test_context_rejects_duplicate_identity_at_different_rows() -> None:
+    import pytest
+
+    from app.services.generation.context import (
+        GenerationContextIntegrityError,
+    )
+
+    context = GenerationContext()
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=[{"CUSTOMER_ID": "C1"}],
+        identity_fields=("CUSTOMER_ID",),
+        row_start=0,
+    )
+
+    with pytest.raises(GenerationContextIntegrityError):
+        context.add_rows(
+            entity_name="CUSTOMER",
+            rows=[{"CUSTOMER_ID": "C1"}],
+            identity_fields=("CUSTOMER_ID",),
+            row_start=5,
+        )
+
+    assert context.get_indexed_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == [("C1",)]
+
+
+def test_context_rejects_conflicting_identity_at_same_row() -> None:
+    import pytest
+
+    from app.services.generation.context import (
+        GenerationContextIntegrityError,
+    )
+
+    context = GenerationContext()
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=[{"CUSTOMER_ID": "C1"}],
+        identity_fields=("CUSTOMER_ID",),
+        row_start=0,
+    )
+
+    with pytest.raises(GenerationContextIntegrityError):
+        context.add_rows(
+            entity_name="CUSTOMER",
+            rows=[{"CUSTOMER_ID": "C2"}],
+            identity_fields=("CUSTOMER_ID",),
+            row_start=0,
+        )
+
+    assert context.get_indexed_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == [("C1",)]
+
+
+def test_context_rejects_unordered_key_space_restoration() -> None:
+    import pytest
+
+    from app.services.generation.context import (
+        GenerationContextIntegrityError,
+    )
+
+    context = GenerationContext()
+
+    with pytest.raises(GenerationContextIntegrityError):
+        context.restore_key_space(
+            entity_name="CUSTOMER",
+            identity_fields=("CUSTOMER_ID",),
+            key_space={("C1",), ("C2",)},
+        )
+
+
+def test_context_chunk_registration_is_atomic_on_duplicate_identity() -> None:
+    import pytest
+
+    from app.services.generation.context import (
+        GenerationContextIntegrityError,
+    )
+
+    context = GenerationContext()
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=[{"CUSTOMER_ID": "C1"}],
+        identity_fields=("CUSTOMER_ID",),
+        row_start=0,
+    )
+
+    with pytest.raises(GenerationContextIntegrityError):
+        context.add_rows(
+            entity_name="CUSTOMER",
+            rows=[
+                {"CUSTOMER_ID": "C2"},
+                {"CUSTOMER_ID": "C1"},
+            ],
+            identity_fields=("CUSTOMER_ID",),
+            row_start=1,
+        )
+
+    assert context.get_indexed_key_space(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == [("C1",)]
+
+def test_context_returns_identity_keys_with_original_global_row_positions() -> None:
+    context = GenerationContext()
+
+    context.restore_key_space(
+        entity_name="CUSTOMER",
+        identity_fields=("CUSTOMER_ID",),
+        key_space={
+            0: ("C1",),
+            4: ("C5",),
+            2: ("C3",),
+        },
+    )
+
+    assert context.get_identity_keys_by_row(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == {
+        0: ("C1",),
+        2: ("C3",),
+        4: ("C5",),
+    }
+
+
+def test_context_identity_row_mapping_is_a_defensive_copy() -> None:
+    context = GenerationContext()
+
+    context.add_rows(
+        entity_name="CUSTOMER",
+        rows=[{"CUSTOMER_ID": "C1"}],
+        identity_fields=("CUSTOMER_ID",),
+        row_start=0,
+    )
+
+    returned = context.get_identity_keys_by_row(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    )
+    returned[0] = ("MODIFIED",)
+    returned[5] = ("C6",)
+
+    assert context.get_identity_keys_by_row(
+        entity_name="CUSTOMER",
+        fields=("CUSTOMER_ID",),
+    ) == {0: ("C1",)}
+
+def test_generate_executes_only_explicit_sparse_chunks() -> None:
+    entity = {
+        "name": "TEST_ENTITY",
+        "population": {"count": 225},
+        "fields": [_sequential_identity_field()],
+        "identity": {"fields": ["ID"]},
+    }
+
+    context = GenerationContext()
+    completed_chunks: list[tuple[int, int, int, int]] = []
+
+    def on_chunk_completed(
+        entity_name: str,
+        chunk_number: int,
+        total_chunks: int,
+        generated_rows: int,
+        chunk_rows: list[dict],
+    ) -> None:
+        completed_chunks.append(
+            (
+                chunk_number,
+                total_chunks,
+                generated_rows,
+                len(chunk_rows),
+            )
+        )
+
+    generated_rows = EntityGenerator(seed=42).generate(
+        entity=entity,
+        foreign_keys=[],
+        context=context,
+        chunk_size=50,
+        chunk_numbers=[2, 4, 5],
+        on_chunk_completed=on_chunk_completed,
+    )
+
+    assert generated_rows == 125
+
+    assert completed_chunks == [
+        (2, 5, 50, 50),
+        (4, 5, 100, 50),
+        (5, 5, 125, 25),
+    ]
+
+    identity_keys_by_row = context.get_identity_keys_by_row(
+        entity_name="TEST_ENTITY",
+        fields=("ID",),
+    )
+
+    expected_positions = {
+        row_index: (row_index + 1,)
+        for start, end in (
+            (50, 100),
+            (150, 200),
+            (200, 225),
+        )
+        for row_index in range(start, end)
+    }
+
+    assert identity_keys_by_row == expected_positions
+
+    # Committed or previously generated chunks must not be regenerated.
+    assert 0 not in identity_keys_by_row
+    assert 49 not in identity_keys_by_row
+    assert 100 not in identity_keys_by_row
+    assert 149 not in identity_keys_by_row
+
+
+def test_generate_rejects_invalid_explicit_chunk_schedules() -> None:
+    import pytest
+
+    entity = {
+        "name": "TEST_ENTITY",
+        "population": {"count": 225},
+        "fields": [_sequential_identity_field()],
+        "identity": {"fields": ["ID"]},
+    }
+
+    invalid_schedules = [
+        [2, 2],
+        [0],
+        [-1],
+        [6],
+        [3, 2],
+        [True],
+        [2.0],
+        "2,4",
+    ]
+
+    for schedule in invalid_schedules:
+        with pytest.raises(EntityGenerationError):
+            EntityGenerator(seed=42).generate(
+                entity=entity,
+                foreign_keys=[],
+                context=GenerationContext(),
+                chunk_size=50,
+                chunk_numbers=schedule,
+            )
+
+
+def test_generate_rejects_combining_start_chunk_and_chunk_numbers() -> None:
+    import pytest
+
+    entity = {
+        "name": "TEST_ENTITY",
+        "population": {"count": 225},
+        "fields": [_sequential_identity_field()],
+        "identity": {"fields": ["ID"]},
+    }
+
+    with pytest.raises(
+        EntityGenerationError,
+        match="Specify either chunk_numbers or start_chunk",
+    ):
+        EntityGenerator(seed=42).generate(
+            entity=entity,
+            foreign_keys=[],
+            context=GenerationContext(),
+            chunk_size=50,
+            start_chunk=2,
+            chunk_numbers=[4, 5],
         )

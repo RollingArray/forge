@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from app.constants.generation import DEFAULT_GENERATION_CHUNK_SIZE
 from app.models.generation_model import (
     GenerationEntityProgress,
     GenerationJobResponse,
@@ -158,6 +159,8 @@ def test_warning_only_specification_allows_job_creation():
 
     assert job is not None
     assert job.status == GenerationJobStatus.CREATED
+    assert job.entities[0].chunk_size == DEFAULT_GENERATION_CHUNK_SIZE
+    assert job.entities[0].total_chunks == 1
     assert validator.calls == 1
     planner.build.assert_called_once()
     service._job_store.save.assert_called_once()
@@ -176,6 +179,7 @@ def test_invalid_specification_blocks_created_job_before_lifecycle_changes():
 
     job = make_job(GenerationJobStatus.CREATED)
     service._jobs[job.job_id] = job
+    service._job_store.get.return_value = job
 
     with pytest.raises(SpecificationValidationError):
         service.start_job(
@@ -202,6 +206,7 @@ def test_invalid_specification_blocks_interrupted_job_before_reconciliation():
 
     job = make_job(GenerationJobStatus.INTERRUPTED)
     service._jobs[job.job_id] = job
+    service._job_store.get.return_value = job
 
     service._reconcile_recovery_checkpoint = MagicMock()
 

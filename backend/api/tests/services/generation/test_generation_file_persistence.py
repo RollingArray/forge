@@ -143,3 +143,127 @@ def test_atomic_write_does_not_retry_access_denied(
     assert len(attempts) == 1
     assert path.read_text(encoding="utf-8") == "original"
     assert list(tmp_path.glob(".state.json.*.tmp")) == []
+
+def test_atomic_write_syncs_parent_directory_after_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "state.json"
+    observed = []
+
+    def verify_directory_sync(directory: Path) -> None:
+        observed.append((directory, path.read_text(encoding="utf-8")))
+
+    monkeypatch.setattr(
+        persistence,
+        "_sync_directory",
+        verify_directory_sync,
+    )
+
+    persistence.atomic_write_text(path, "published")
+
+    assert observed == [(tmp_path, "published")]
+
+
+def test_directory_sync_ignores_unsupported_open_operation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unsupported_open(directory, flags):
+        raise OSError(errno.EINVAL, "directory sync unsupported")
+
+    import errno
+
+    monkeypatch.setattr(persistence.os, "open", unsupported_open)
+
+    persistence._sync_directory(tmp_path)
+
+
+def test_directory_sync_ignores_unsupported_fsync(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import errno
+
+    closed = []
+
+    monkeypatch.setattr(
+        persistence.os,
+        "open",
+        lambda directory, flags: 987,
+    )
+    monkeypatch.setattr(
+        persistence.os,
+        "fsync",
+        lambda fd: (_ for _ in ()).throw(
+            OSError(errno.EINVAL, "directory fsync unsupported")
+        ),
+    )
+    monkeypatch.setattr(
+        persistence.os,
+        "close",
+        lambda fd: closed.append(fd),
+    )
+
+    persistence._sync_directory(tmp_path)
+
+    assert closed == [987]
+
+
+def test_directory_sync_propagates_genuine_io_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import errno
+
+    closed = []
+
+    monkeypatch.setattr(
+        persistence.os,
+        "open",
+        lambda directory, flags: 987,
+    )
+    monkeypatch.setattr(
+        persistence.os,
+        "fsync",
+        lambda fd: (_ for _ in ()).throw(
+            OSError(errno.EIO, "I/O failure")
+        ),
+    )
+    monkeypatch.setattr(
+        persistence.os,
+        "close",
+        lambda fd: closed.append(fd),
+    )
+
+    with pytest.raises(OSError, match="I/O failure"):
+        persistence._sync_directory(tmp_path)
+
+    assert closed == [987]
+
+
+def test_atomic_write_reports_directory_sync_failure_after_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import errno
+
+    path = tmp_path / "state.json"
+    path.write_text("original", encoding="utf-8")
+
+    def fail_directory_sync(directory: Path) -> None:
+        raise OSError(errno.EIO, "directory durability failure")
+
+    monkeypatch.setattr(
+        persistence,
+        "_sync_directory",
+        fail_directory_sync,
+    )
+
+    with pytest.raises(OSError, match="directory durability failure"):
+        persistence.atomic_write_text(path, "replacement")
+
+    # Replacement already happened. The error means durability is
+    # unconfirmed, not that publication was rolled back.
+    assert path.read_text(encoding="utf-8") == "replacement"
+    assert list(tmp_path.glob(".state.json.*.tmp")) == []

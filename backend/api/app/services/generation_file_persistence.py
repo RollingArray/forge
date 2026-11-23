@@ -4,58 +4,75 @@ Shared, cross-platform persistence primitives for generation state files.
 
 from __future__ import annotations
 
+import errno
 import os
 import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from threading import Lock, RLock
-from typing import Iterator
+from typing import Callable, Iterator, TextIO
 
-from app.repositories.file_lock import create_file_lock
-
-
-_registry_guard = Lock()
-_path_locks: dict[str, RLock] = {}
+from app.repositories.file_lock import file_lock_transaction
 
 _REPLACE_RETRIES = 4
 _REPLACE_RETRY_DELAY_SECONDS = 0.05
 _TRANSIENT_WINDOWS_ERRORS = {32, 33}
 
+_UNSUPPORTED_DIRECTORY_SYNC_ERRORS = {
+    errno.EINVAL,
+    errno.ENOSYS,
+    getattr(errno, "ENOTSUP", errno.EINVAL),
+    getattr(errno, "EOPNOTSUPP", errno.EINVAL),
+}
+
+
+def _sync_directory(directory: Path) -> None:
+    """Sync directory-entry metadata where the platform supports it."""
+    if os.name == "nt":
+        return
+
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+
+    try:
+        directory_fd = os.open(directory, flags)
+    except OSError as exc:
+        if exc.errno in _UNSUPPORTED_DIRECTORY_SYNC_ERRORS:
+            return
+        raise
+
+    try:
+        try:
+            os.fsync(directory_fd)
+        except OSError as exc:
+            if exc.errno not in _UNSUPPORTED_DIRECTORY_SYNC_ERRORS:
+                raise
+    finally:
+        os.close(directory_fd)
+
 
 @contextmanager
 def generation_file_lock(path: Path) -> Iterator[None]:
-    """
-    Serialize access to one generation file across threads and processes.
-
-    All readers and writers of a destination must use this same lock.
-    """
-
+    """Serialize access to one generation file across threads and processes."""
     lock_path = (
         path.parent
         / ".locks"
         / f"{path.name}.lock"
     )
-    lock_key = str(lock_path.resolve())
 
-    with _registry_guard:
-        thread_lock = _path_locks.setdefault(
-            lock_key,
-            RLock(),
-        )
-
-    with thread_lock:
-        with create_file_lock(lock_path):
-            yield
+    with file_lock_transaction(lock_path):
+        yield
 
 
-def atomic_write_text(path: Path, content: str) -> None:
+def atomic_write_file(
+    path: Path,
+    write_content: Callable[[TextIO], None],
+) -> None:
     """
-    Atomically replace a text file using a unique temporary file.
+    Atomically publish a text file using a unique same-directory temp file.
 
-    The caller is responsible for acquiring generation_file_lock(path).
+    The callback writes to the temporary file. The file is flushed and
+    fsynced before replacement. The destination is never opened for writing.
     """
-
     path.parent.mkdir(parents=True, exist_ok=True)
 
     file_descriptor, temporary_name = tempfile.mkstemp(
@@ -71,14 +88,16 @@ def atomic_write_text(path: Path, content: str) -> None:
             file_descriptor,
             "w",
             encoding="utf-8",
+            newline="",
         ) as handle:
-            handle.write(content)
+            write_content(handle)
             handle.flush()
             os.fsync(handle.fileno())
 
         for attempt in range(_REPLACE_RETRIES + 1):
             try:
                 os.replace(temporary_path, path)
+                _sync_directory(path.parent)
                 break
             except OSError as exc:
                 is_transient_windows_error = (
@@ -100,3 +119,11 @@ def atomic_write_text(path: Path, content: str) -> None:
     except Exception:
         temporary_path.unlink(missing_ok=True)
         raise
+
+
+def atomic_write_text(path: Path, content: str) -> None:
+    """Atomically replace a text file using a unique temporary file."""
+    atomic_write_file(
+        path,
+        lambda handle: handle.write(content),
+    )

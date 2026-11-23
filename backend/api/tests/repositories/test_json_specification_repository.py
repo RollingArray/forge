@@ -87,23 +87,25 @@ def test_nested_transactions_acquire_and_release_file_lock_once(
     tmp_path,
     monkeypatch,
 ):
-    import app.repositories.json_specification_repository as repository_module
+    import app.repositories.file_lock as file_lock_module
 
     repository = JsonSpecificationRepository()
     monkeypatch.setattr(repository, "_data_directory", tmp_path)
 
     class TrackingLock:
-        def __init__(self):
+        def __init__(self, path):
+            self.path = path
             self.acquire_count = 0
             self.release_count = 0
 
-        def acquire(self):
+        def acquire(self, timeout=None):
             self.acquire_count += 1
+            return self
 
         def release(self):
             self.release_count += 1
 
-    tracking_lock = TrackingLock()
+    tracking_lock = TrackingLock(tmp_path / "tracked.lock")
     factory_calls = []
 
     def create_tracking_lock(path):
@@ -111,7 +113,7 @@ def test_nested_transactions_acquire_and_release_file_lock_once(
         return tracking_lock
 
     monkeypatch.setattr(
-        repository_module,
+        file_lock_module,
         "create_file_lock",
         create_tracking_lock,
     )

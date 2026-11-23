@@ -7,27 +7,14 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
 from app.interfaces.favorite import Favorite, FavoriteResourceType, JOB_RESOURCE_TYPES
 from app.interfaces.favorite_repository import FavoriteRepository
-
-
-_LOCKS_GUARD = Lock()
-_USER_LOCKS: dict[str, Lock] = {}
-
-
-def _lock_for(path: Path) -> Lock:
-    """Return a process-wide lock shared by repository instances."""
-
-    key = str(path.resolve())
-    with _LOCKS_GUARD:
-        lock = _USER_LOCKS.get(key)
-        if lock is None:
-            lock = Lock()
-            _USER_LOCKS[key] = lock
-        return lock
+from app.services.generation_file_persistence import (
+    atomic_write_text,
+    generation_file_lock,
+)
 
 
 class JsonFavoriteRepository(FavoriteRepository):
@@ -70,7 +57,7 @@ class JsonFavoriteRepository(FavoriteRepository):
             raise ValueError("entity_name is only valid for generated tables.")
 
         path = self._path_for_user(user_id)
-        with _lock_for(path):
+        with generation_file_lock(path):
             data = self._read_data(path)
 
             for record in data["favorites"]:
@@ -99,7 +86,7 @@ class JsonFavoriteRepository(FavoriteRepository):
         """Return only the specified user's favorites, newest first."""
 
         path = self._path_for_user(user_id)
-        with _lock_for(path):
+        with generation_file_lock(path):
             data = self._read_data(path)
 
         favorites = [
@@ -113,7 +100,7 @@ class JsonFavoriteRepository(FavoriteRepository):
         """Delete a favorite only from its owner's file."""
 
         path = self._path_for_user(user_id)
-        with _lock_for(path):
+        with generation_file_lock(path):
             data = self._read_data(path)
 
             for index, record in enumerate(data["favorites"]):
@@ -149,19 +136,14 @@ class JsonFavoriteRepository(FavoriteRepository):
 
     @staticmethod
     def _write_data(path: Path, data: dict) -> None:
-        """Atomically replace a user's JSON file."""
+        """Atomically publish a user's JSON favorites file."""
 
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary_path = path.with_suffix(".tmp")
+        content = json.dumps(
+            data,
+            indent=2,
+        ) + "\n"
 
-        try:
-            with temporary_path.open("w", encoding="utf-8") as file:
-                json.dump(data, file, indent=2)
-                file.write("\n")
-            temporary_path.replace(path)
-        finally:
-            if temporary_path.exists():
-                temporary_path.unlink()
+        atomic_write_text(path, content)
 
     @staticmethod
     def _to_record(favorite: Favorite) -> dict:
