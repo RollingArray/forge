@@ -14,5 +14,6 @@
 
 export const environment = {
   production: true,
+  sseDiagnostics: false,
   apiBaseUrl: '/api/v1',
 } as const;

@@ -5,6 +5,8 @@ Purpose: FORGE generation API endpoints.
 
 import asyncio
 import json
+import logging
+from datetime import datetime, timezone
 from collections.abc import AsyncIterator
 from csv import DictReader
 from pathlib import Path
@@ -41,7 +43,10 @@ from app.core.ai_settings import load_ai_configuration
 from app.services.ai_service import AIService
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.generation_service import GenerationService
-from app.services.generation_event_broker import GenerationEventBroker
+from app.services.generation_event_broker import (
+    GenerationEventBroker,
+    SSE_DIAGNOSTICS_ENABLED,
+)
 from app.services.generation_checkpoint_store import GenerationCheckpointStore
 from app.services.generation.artifact_writer import GenerationArtifactWriter
 from app.services.ollama_ai_provider import OllamaAIProvider
@@ -70,6 +75,21 @@ def _ensure_job_contains_artifact_entity(
 
 
 
+logger = logging.getLogger(__name__)
+
+
+def _sse_event_purpose(event_type: str, data: dict) -> str:
+    if event_type == "GENERATION_ACTIVITY":
+        return f"{data.get('stage', 'UNKNOWN')}:{data.get('status', 'UNKNOWN')}"
+    return {
+        "JOB_SNAPSHOT": "Initial generation job state",
+        "CHUNK_COMMITTED": "Live generated-row and checkpoint progress",
+        "ENTITY_COMPLETED": "Entity completion and progress",
+        "GENERATION_COMPLETED": "Final generation status",
+        "SEMANTIC_CALL_STARTED": "Active semantic call indicator",
+    }.get(event_type, "Generation event")
+
+
 router = APIRouter(
     prefix="/data-models",
     tags=["Generation"],
@@ -81,7 +101,9 @@ ai_service = AIService(
     ),
 )
 
-generation_event_broker = GenerationEventBroker()
+generation_event_broker = GenerationEventBroker(
+    diagnostics_enabled=SSE_DIAGNOSTICS_ENABLED,
+)
 
 generation_service = GenerationService(
     ai_service=ai_service,
@@ -757,6 +779,14 @@ async def stream_generation_events(
     async def event_stream() -> AsyncIterator[str]:
         """Subscribe before sending a fresh snapshot and subsequent events."""
 
+        diagnostics_enabled = generation_event_broker.diagnostics_enabled
+
+        if diagnostics_enabled:
+            stream_started_at = datetime.now(timezone.utc)
+            yielded_by_type: dict[str, int] = {}
+            purposes: dict[str, int] = {}
+            keepalive_count = 0
+
         queue = generation_event_broker.subscribe(
             data_model_id=data_model_id,
             job_id=job_id,
@@ -773,9 +803,18 @@ async def stream_generation_events(
             if current_job is None or current_job.data_model_id != data_model_id:
                 return
 
+            snapshot_data = current_job.model_dump_json()
+
+            if diagnostics_enabled:
+                yielded_by_type["JOB_SNAPSHOT"] = (
+                    yielded_by_type.get("JOB_SNAPSHOT", 0) + 1
+                )
+                purpose = _sse_event_purpose("JOB_SNAPSHOT", {})
+                purposes[purpose] = purposes.get(purpose, 0) + 1
+
             yield (
                 "event: JOB_SNAPSHOT\n"
-                f"data: {current_job.model_dump_json()}\n\n"
+                f"data: {snapshot_data}\n\n"
             )
 
             if current_job.status in {
@@ -793,8 +832,19 @@ async def stream_generation_events(
                         timeout=15.0,
                     )
                 except asyncio.TimeoutError:
+                    if diagnostics_enabled:
+                        keepalive_count += 1
+
                     yield ": keepalive\n\n"
                     continue
+
+                if diagnostics_enabled:
+                    event_type = event.event_type
+                    yielded_by_type[event_type] = (
+                        yielded_by_type.get(event_type, 0) + 1
+                    )
+                    purpose = _sse_event_purpose(event_type, event.data)
+                    purposes[purpose] = purposes.get(purpose, 0) + 1
 
                 yield (
                     f"event: {event.event_type}\n"
@@ -813,6 +863,30 @@ async def stream_generation_events(
                 job_id=job_id,
                 queue=queue,
             )
+
+            if diagnostics_enabled:
+                stream_ended_at = datetime.now(timezone.utc)
+                yielded_summary = ", ".join(
+                    f"{event_type}={count}"
+                    for event_type, count in sorted(yielded_by_type.items())
+                ) or "none"
+                purpose_summary = ", ".join(
+                    f"{purpose}={count}"
+                    for purpose, count in sorted(purposes.items())
+                ) or "none"
+                logger.info(
+                    "SSE stream summary "
+                    "data_model_id=%s job_id=%s "
+                    "started_at=%s ended_at=%s "
+                    "yielded_frames={%s} purposes={%s} keepalives=%d",
+                    data_model_id,
+                    job_id,
+                    stream_started_at.isoformat(),
+                    stream_ended_at.isoformat(),
+                    yielded_summary,
+                    purpose_summary,
+                    keepalive_count,
+                )
 
     return StreamingResponse(
         event_stream(),

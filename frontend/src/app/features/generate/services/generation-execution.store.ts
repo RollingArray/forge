@@ -11,6 +11,7 @@ import {
   GenerationCheckpointLiveProgress,
 } from '../../../core/interfaces/generation-checkpoint.interface';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 
 
@@ -204,7 +205,42 @@ export class GenerationExecutionStore {
   handleEvent(
     event: GenerationSseEvent,
   ): void {
-    console.log('GENERATION EVENT', event);
+    let beforeSavedChunks = 0;
+    let beforeGeneratedRows = 0;
+
+    if (environment.sseDiagnostics) {
+      if (event.type === 'CHUNK_COMMITTED') {
+        const checkpointBefore = this.generationCheckpointLiveProgress();
+        const beforeEntity = checkpointBefore?.entities[event.data.entity_name];
+        beforeSavedChunks = beforeEntity?.saved_chunks ?? 0;
+        beforeGeneratedRows = beforeEntity?.generated_rows ?? 0;
+      }
+
+      const uiHandler: Record<GenerationSseEvent['type'], string> = {
+        JOB_SNAPSHOT: 'generationJob / isGenerating',
+        GENERATION_ACTIVITY: 'generationActivities',
+        SEMANTIC_CALL_STARTED: 'activeSemanticCall',
+        CHUNK_COMMITTED: 'applyChunkProgress / live checkpoint projection',
+        ENTITY_COMPLETED: 'applyEntityCompleted / live entity completion',
+        GENERATION_COMPLETED: 'applyGenerationCompleted / terminal job state',
+      };
+
+      const data = event.data as unknown as Record<string, unknown>;
+      console.info('[FORGE SSE][RECEIVED]', {
+        timestamp: new Date().toISOString(),
+        eventType: event.type,
+        purpose: event.type === 'GENERATION_ACTIVITY'
+          ? `${String(data['stage'] ?? 'UNKNOWN')}:${String(data['status'] ?? 'UNKNOWN')}`
+          : event.type,
+        uiHandler: uiHandler[event.type],
+        jobId: this.generationJob()?.job_id ?? data['job_id'] ?? null,
+        entity: data['entity_name'] ?? null,
+        field: data['field_name'] ?? null,
+        stage: data['stage'] ?? null,
+        status: data['status'] ?? null,
+        chunk: data['chunk_number'] ?? null,
+      });
+    }
 
     this.lastEvent.set(event);
 
@@ -246,6 +282,27 @@ export class GenerationExecutionStore {
         this.activeSemanticCall.set(null);
         this.applyGenerationCompleted(event.data);
         break;
+    }
+
+    if (environment.sseDiagnostics && event.type === 'CHUNK_COMMITTED') {
+      const checkpointAfter = this.generationCheckpointLiveProgress();
+      const afterEntity = checkpointAfter?.entities[event.data.entity_name];
+
+      console.info('[FORGE SSE][UI UPDATE]', {
+        timestamp: new Date().toISOString(),
+        eventType: event.type,
+        entity: event.data.entity_name,
+        savedBatches: {
+          before: beforeSavedChunks,
+          after: afterEntity?.saved_chunks ?? 0,
+        },
+        generatedRows: {
+          before: beforeGeneratedRows,
+          after: afterEntity?.generated_rows ?? 0,
+        },
+        targetRows: afterEntity?.target_rows ?? event.data.entity_target_rows,
+        projectionUpdated: Boolean(afterEntity),
+      });
     }
   }
 

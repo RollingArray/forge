@@ -63,9 +63,10 @@ def configure_events_endpoint(monkeypatch, get_job, broker):
 
 def test_events_endpoint_subscribes_before_refreshed_snapshot(
     monkeypatch,
+    caplog,
 ):
     async def scenario():
-        broker = GenerationEventBroker()
+        broker = GenerationEventBroker(diagnostics_enabled=True)
         job = make_job()
         calls = 0
 
@@ -85,6 +86,7 @@ def test_events_endpoint_subscribes_before_refreshed_snapshot(
 
             return job
 
+        caplog.set_level("INFO", logger=generation_api.__name__)
         configure_events_endpoint(monkeypatch, get_job, broker)
 
         response = await generation_api.stream_generation_events(
@@ -122,6 +124,20 @@ def test_events_endpoint_subscribes_before_refreshed_snapshot(
             await anext(iterator)
 
         assert (DATA_MODEL_ID, JOB_ID) not in broker._subscribers
+
+        summary_records = [
+            record.message
+            for record in caplog.records
+            if "SSE stream summary" in record.message
+        ]
+        assert len(summary_records) == 1
+        summary = summary_records[0]
+        assert "JOB_SNAPSHOT=1" in summary
+        assert "GENERATION_ACTIVITY=1" in summary
+        assert "GENERATION_COMPLETED=1" in summary
+        assert "keepalives=0" in summary
+        assert "Initial generation job state=1" in summary
+        assert "Final generation status=1" in summary
 
     asyncio.run(scenario())
 

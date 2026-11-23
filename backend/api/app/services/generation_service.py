@@ -4,6 +4,7 @@ Purpose: FORGE generation planning and readiness service.
 """
 
 from datetime import datetime, timezone
+import logging
 import csv
 from pathlib import Path
 from math import ceil
@@ -52,11 +53,32 @@ from app.services.generation_checkpoint_store import (
 from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_quality_store import GenerationQualityStore
 from app.services.generation_validation_store import GenerationValidationStore
-from app.services.generation_event_broker import GenerationEventBroker
+from app.services.generation_event_broker import (
+    GenerationEventBroker,
+    SSE_DIAGNOSTICS_ENABLED,
+)
 from app.services.generation_log_store import GenerationLogStore
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
 from app.services.specification_validation_error import SpecificationValidationError
+
+
+logger = logging.getLogger(__name__)
+
+
+def _format_sse_event_counts(counts: dict[str, int]) -> str:
+    purposes = {
+        "CHUNK_COMMITTED": "chunk/checkpoint progress",
+        "ENTITY_COMPLETED": "entity completion",
+        "GENERATION_ACTIVITY": "generation activity",
+        "GENERATION_COMPLETED": "terminal job status",
+        "SEMANTIC_CALL_STARTED": "semantic call started",
+    }
+    return ", ".join(
+        f"{event_type}[{purposes.get(event_type, 'other')}]:{count}"
+        for event_type, count in sorted(counts.items())
+    ) or "none"
+
 
 
 class GenerationService:
@@ -101,7 +123,9 @@ class GenerationService:
         self._event_broker = (
             event_broker
             if event_broker is not None
-            else GenerationEventBroker()
+            else GenerationEventBroker(
+                diagnostics_enabled=SSE_DIAGNOSTICS_ENABLED,
+            )
         )
         self._generation_log_store = (
             generation_log_store
@@ -654,27 +678,61 @@ class GenerationService:
     ) -> None:
         """Publish the existing terminal event for any completed job outcome."""
 
-        self._event_broker.publish(
-            data_model_id=job.data_model_id,
-            job_id=job.job_id,
-            event_type="GENERATION_COMPLETED",
-            data={
-                "job_id": job.job_id,
-                "status": job.status.value,
-                "generated_rows": job.total_generated_rows,
-                "expected_rows": job.total_target_rows,
-                "elapsed_seconds": job.elapsed_seconds,
-                "throughput_rows_per_second": (
-                    job.total_generated_rows / job.elapsed_seconds
-                    if job.elapsed_seconds and job.elapsed_seconds > 0
-                    else None
-                ),
-                "peak_memory_mb": job.peak_memory_mb,
-                "valid": valid,
-                "error_count": error_count,
-                "progress": job.progress,
-            },
-        )
+        diagnostics_enabled = self._event_broker.diagnostics_enabled
+
+        if diagnostics_enabled:
+            self._event_broker.begin_job_diagnostics(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+            )
+
+        try:
+            self._event_broker.publish(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                event_type="GENERATION_COMPLETED",
+                data={
+                    "job_id": job.job_id,
+                    "status": job.status.value,
+                    "generated_rows": job.total_generated_rows,
+                    "expected_rows": job.total_target_rows,
+                    "elapsed_seconds": job.elapsed_seconds,
+                    "throughput_rows_per_second": (
+                        job.total_generated_rows / job.elapsed_seconds
+                        if job.elapsed_seconds and job.elapsed_seconds > 0
+                        else None
+                    ),
+                    "peak_memory_mb": job.peak_memory_mb,
+                    "valid": valid,
+                    "error_count": error_count,
+                    "progress": job.progress,
+                },
+            )
+
+            if diagnostics_enabled:
+                diagnostics = self._event_broker.diagnostics_snapshot(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                )
+                logger.info(
+                    "[FORGE SSE][JOB] timestamp=%s job_id=%s status=%s "
+                    "published={%s} scheduled={%s}",
+                    datetime.now(timezone.utc).isoformat(),
+                    job.job_id,
+                    job.status.value,
+                    _format_sse_event_counts(
+                        diagnostics["published_by_type"]
+                    ),
+                    _format_sse_event_counts(
+                        diagnostics["scheduled_by_type"]
+                    ),
+                )
+        finally:
+            if diagnostics_enabled:
+                self._event_broker.end_job_diagnostics(
+                    data_model_id=job.data_model_id,
+                    job_id=job.job_id,
+                )
 
     def _reconcile_resume_intent_under_lease(
         self,
@@ -1117,6 +1175,14 @@ class GenerationService:
             if worker_key not in self._active_workers:
                 return
 
+        diagnostics_enabled = self._event_broker.diagnostics_enabled
+
+        if diagnostics_enabled:
+            self._event_broker.begin_job_diagnostics(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+
         try:
             job_directory = (
                 Path(__file__).resolve().parents[2]
@@ -1182,6 +1248,12 @@ class GenerationService:
                 return
 
         finally:
+            if diagnostics_enabled:
+                self._event_broker.end_job_diagnostics(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                )
+
             with self._worker_lock:
                 self._active_workers.discard(worker_key)
 
@@ -1516,6 +1588,27 @@ class GenerationService:
                         "progress": job.progress,
                     },
                 )
+
+                if self._event_broker.diagnostics_enabled:
+                    diagnostics = self._event_broker.diagnostics_snapshot(
+                        data_model_id=job.data_model_id,
+                        job_id=job.job_id,
+                    )
+                    published = diagnostics["published_by_entity"].get(
+                        entity_run.entity_name, {}
+                    )
+                    scheduled = diagnostics["scheduled_by_entity"].get(
+                        entity_run.entity_name, {}
+                    )
+                    logger.info(
+                        "[FORGE SSE][ENTITY] timestamp=%s job_id=%s "
+                        "entity=%s published={%s} scheduled={%s}",
+                        datetime.now(timezone.utc).isoformat(),
+                        job.job_id,
+                        entity_run.entity_name,
+                        _format_sse_event_counts(published),
+                        _format_sse_event_counts(scheduled),
+                    )
 
             result = run_service.run(
                 specification=specification,
