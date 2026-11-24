@@ -678,14 +678,14 @@ Objective: Verify realistic end-to-end user journeys using Aerospace Enterprise 
 - [pending] **MS28-12**: Reload and inspect generated results. Expected result: Results and specification remain consistent.
 
 ##### MS29: Generation navigation and job context isolation
-Status: [pending]
+Status: [done]
 Objective: Verify that navigation between Population and Generate does not leak execution state from a previously selected generation job.
-- [pending] **MS29-01**: Complete generation and navigate back to Population. Expected result: Population is displayed correctly.
-- [pending] **MS29-02**: Review and accept the population plan again. Expected result: Navigation returns to the job-less Generate route.
-- [pending] **MS29-03**: Open the job-less Generate route after a previous job has completed. Expected result: A clean landing page appears without stale job details, status, checkpoint or activity history.
-- [pending] **MS29-04**: Open the previous job-specific URL. Expected result: The previous job and its persisted execution details are restored.
-- [pending] **MS29-05**: Navigate between two job-specific URLs. Expected result: Job state and events remain isolated.
-- [pending] **MS29-06**: Refresh the job-less Generate route. Expected result: The page remains clean and does not restore an unrelated job.
+- [done] **MS29-01**: Complete generation and navigate back to Population. Expected result: Population is displayed correctly.
+- [done] **MS29-02**: Review and accept the population plan again. Expected result: Navigation returns to the job-less Generate route.
+- [done] **MS29-03**: Open the job-less Generate route after a previous job has completed. Expected result: A clean landing page appears without stale job details, status, checkpoint or activity history.
+- [done] **MS29-04**: Open the previous job-specific URL. Expected result: The previous job and its persisted execution details are restored.
+- [done] **MS29-05**: Navigate between two job-specific URLs. Expected result: Job state and events remain isolated.
+- [done] **MS29-06**: Refresh the job-less Generate route. Expected result: The page remains clean and does not restore an unrelated job.
 
 ##### MS30: Generation start retry and execution lifecycle
 Status: [pending]
@@ -713,7 +713,7 @@ Execution order and restart plan:
 - [pending] Investigate cross-platform file persistence and establish the backend regression contract.
 - [pending] Resume the existing Model Studio catalogue at MS09; preserve its current acceptance cases.
 - [pending] Continue MS10-MS27 in the established order, subject to investigation findings and agreed priorities.
-- [pending] Implement MS29-MS31 generation lifecycle coverage at the appropriate point after the current behavior is agreed.
+- [done] Implement MS29 generation navigation and job context isolation coverage; MS30-MS31 generation lifecycle coverage remains pending.
 - [pending] Complete MS28 integrated Aerospace Enterprise Model v2 acceptance after its prerequisite capabilities and lifecycle coverage are validated.
 
 Additional suite-specific acceptance checks and implementation notes:
