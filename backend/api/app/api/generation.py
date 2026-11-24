@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from app.core.authentication_dependency import get_authenticated_user
 from app.constants.activity import ActivityType
 from app.repositories.json_data_model_repository import JsonDataModelRepository
+from app.repositories.file_lock import FileLockTimeout
 from app.services.activity_service import ActivityService
 from app.interfaces.auth_user import AuthUser
 from app.models.generation_model import (
@@ -1272,6 +1273,14 @@ async def start_generation_job(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=exc.result,
+        ) from exc
+    except FileLockTimeout as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Generation job is already being prepared or executed. "
+                "Please try again."
+            ),
         ) from exc
     except ValueError as exc:
         raise HTTPException(

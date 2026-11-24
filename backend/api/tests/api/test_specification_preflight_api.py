@@ -168,6 +168,136 @@ def test_start_generation_job_returns_422_for_invalid_specification(
         )
     )
 
+
+def _hold_generation_execution_lease_in_process(
+    job_directory,
+    release_event,
+    status_queue,
+):
+    from app.services.generation_execution_lease import (
+        generation_execution_lease,
+    )
+
+    try:
+        with generation_execution_lease(
+            job_directory,
+            timeout=5.0,
+        ):
+            status_queue.put(("acquired", None))
+
+            if not release_event.wait(timeout=10):
+                raise AssertionError(
+                    "Timed out waiting to release the execution lease."
+                )
+
+        status_queue.put(("released", None))
+
+    except BaseException as exc:
+        status_queue.put(
+            ("error", f"{type(exc).__name__}: {exc}")
+        )
+        raise
+
+
+def test_start_generation_job_returns_409_when_execution_lease_is_busy(
+    tmp_path,
+    monkeypatch,
+):
+    import multiprocessing
+
+    from app.services.generation_execution_lease import (
+        generation_execution_lease,
+    )
+
+    context = multiprocessing.get_context("spawn")
+    release_event = context.Event()
+    status_queue = context.Queue()
+
+    holder = context.Process(
+        target=_hold_generation_execution_lease_in_process,
+        args=(tmp_path, release_event, status_queue),
+    )
+
+    created_job = SimpleNamespace(
+        status=GenerationJobStatus.CREATED
+    )
+    background_tasks = BackgroundTasks()
+
+    holder.start()
+
+    try:
+        status, detail = status_queue.get(timeout=10)
+        assert status == "acquired", detail
+
+        def attempt_start(**kwargs):
+            with generation_execution_lease(
+                tmp_path,
+                timeout=0.0,
+            ):
+                raise AssertionError(
+                    "Start unexpectedly acquired an already-held lease."
+                )
+
+        generation_service = SimpleNamespace(
+            get_job=lambda **kwargs: created_job,
+            start_job=attempt_start,
+        )
+
+        monkeypatch.setattr(
+            generation_api,
+            "data_model_access_service",
+            SimpleNamespace(can_generate=lambda **kwargs: True),
+        )
+        monkeypatch.setattr(
+            generation_api,
+            "generation_service",
+            generation_service,
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(
+                generation_api.start_generation_job(
+                    data_model_id=DATA_MODEL_ID,
+                    job_id="test-job",
+                    background_tasks=background_tasks,
+                    current_user=USER,
+                )
+            )
+
+        assert exc_info.value.status_code == 409
+        assert exc_info.value.detail == (
+            "Generation job is already being prepared or executed. "
+            "Please try again."
+        )
+        assert background_tasks.tasks == []
+        assert created_job.status == GenerationJobStatus.CREATED
+
+    finally:
+        release_event.set()
+        holder.join(timeout=15)
+
+        if holder.is_alive():
+            holder.terminate()
+            holder.join(timeout=5)
+
+    assert not holder.is_alive(), (
+        "Execution lease holder did not exit."
+    )
+    assert holder.exitcode == 0, (
+        f"Execution lease process exited with code {holder.exitcode}."
+    )
+
+    status, detail = status_queue.get(timeout=5)
+    assert status == "released", detail
+
+    # Confirm that the OS-level lease is reusable after child exit.
+    with generation_execution_lease(tmp_path, timeout=0.0):
+        pass
+
+    status_queue.close()
+    status_queue.join_thread()
+
+
 def configure_invalid_population_validation(monkeypatch):
     monkeypatch.setattr(
         specification_api,
