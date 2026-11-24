@@ -19,7 +19,11 @@
             ? 'Generation partially completed'
             : generationJob()?.status === 'FAILED'
               ? 'Generation failed'
-              : generationReadiness()?.ready
+              : generationJob()?.status === 'INTERRUPTED'
+                ? 'Generation interrupted'
+                : generationJob()?.status === 'CANCELLED'
+                  ? 'Generation cancelled'
+                  : generationReadiness()?.ready
                 ? 'Generation is ready'
                 : 'Generation is not ready'
   "
@@ -34,7 +38,11 @@
             ? 'Some generated data is available to review and download.'
             : generationJob()?.status === 'FAILED'
               ? 'Generation could not be completed. Review the execution details.'
-              : generationReadiness()?.ready
+              : generationJob()?.status === 'INTERRUPTED'
+                ? 'Generation was interrupted. Resume from the latest saved checkpoint.'
+                : generationJob()?.status === 'CANCELLED'
+                  ? 'Generation was cancelled. Review any available output in Results.'
+                  : generationReadiness()?.ready
                 ? 'Review the generation workspace before starting execution.'
                 : 'Resolve the generation readiness issues before continuing.'
   "
@@ -49,7 +57,11 @@
           ? (generationActionLoading() ? 'Starting Generation' : 'Retry Start')
           : generationJob()?.status === 'FAILED'
             ? 'Generation Failed'
-            : 'Start Generation'
+            : generationJob()?.status === 'INTERRUPTED'
+              ? 'Generation Interrupted'
+              : generationJob()?.status === 'CANCELLED'
+                ? 'Generation Cancelled'
+                : 'Start Generation'
   "
   [primaryIcon]="'arrow_forward'"
   [primaryDisabled]="

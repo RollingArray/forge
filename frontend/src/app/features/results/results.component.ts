@@ -254,6 +254,52 @@ export class ResultsComponent {
     ]);
   }
 
+  actionBarTitle(): string {
+    switch (this.generationExecution()?.status) {
+      case 'COMPLETED':
+        return 'Generation completed';
+      case 'PARTIALLY_COMPLETED':
+        return 'Generation partially completed';
+      case 'FAILED':
+        return 'Generation failed';
+      case 'CANCELLED':
+        return 'Generation cancelled';
+      case 'INTERRUPTED':
+        return 'Generation interrupted';
+      case 'RUNNING':
+      case 'QUEUED':
+      case 'PLANNING':
+      case 'PREPARING':
+      case 'CREATED':
+        return 'Generation not yet complete';
+      default:
+        return 'Generation outcome unavailable';
+    }
+  }
+
+  actionBarDescription(): string {
+    switch (this.generationExecution()?.status) {
+      case 'COMPLETED':
+        return 'Generated data is ready for review and download.';
+      case 'PARTIALLY_COMPLETED':
+        return 'Generation produced partial results. Review the generated data and validation outcome.';
+      case 'FAILED':
+        return 'Generation did not produce usable output. Review the execution outcome.';
+      case 'CANCELLED':
+        return 'Generation was cancelled. Review the available execution details.';
+      case 'INTERRUPTED':
+        return 'Generation was interrupted. Review the available execution details.';
+      case 'RUNNING':
+      case 'QUEUED':
+      case 'PLANNING':
+      case 'PREPARING':
+      case 'CREATED':
+        return 'Generation has not reached a terminal state. Review the execution details.';
+      default:
+        return 'The execution outcome could not be retrieved.';
+    }
+  }
+
   backToGenerate(): void {
     if (!this.dataModelId) {
       return;
