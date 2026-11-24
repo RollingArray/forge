@@ -45,7 +45,7 @@
       : generationJob()?.status === 'RUNNING'
         ? 'Generation in Progress'
         : generationJob()?.status === 'CREATED'
-          ? 'Starting Generation'
+          ? (generationActionLoading() ? 'Starting Generation' : 'Retry Start')
           : generationJob()?.status === 'FAILED'
             ? 'Generation Failed'
             : 'Start Generation'
@@ -53,7 +53,9 @@
   [primaryIcon]="'arrow_forward'"
   [primaryDisabled]="
     generationLoading() ||
+    generationActionLoading() ||
     (generationJob() !== null &&
+      generationJob()?.status !== 'CREATED' &&
       generationJob()?.status !== 'COMPLETED' &&
       generationJob()?.status !== 'PARTIALLY_COMPLETED')
   "

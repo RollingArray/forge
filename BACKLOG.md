@@ -677,6 +677,45 @@ Objective: Verify realistic end-to-end user journeys using Aerospace Enterprise 
 - [pending] **MS28-11**: Run generated-data verification. Expected result: Schema, types, keys, FKs, relationships and constraints pass.
 - [pending] **MS28-12**: Reload and inspect generated results. Expected result: Results and specification remain consistent.
 
+##### MS29: Generation navigation and job context isolation
+Status: [pending]
+Objective: Verify that navigation between Population and Generate does not leak execution state from a previously selected generation job.
+- [pending] **MS29-01**: Complete generation and navigate back to Population. Expected result: Population is displayed correctly.
+- [pending] **MS29-02**: Review and accept the population plan again. Expected result: Navigation returns to the job-less Generate route.
+- [pending] **MS29-03**: Open the job-less Generate route after a previous job has completed. Expected result: A clean landing page appears without stale job details, status, checkpoint or activity history.
+- [pending] **MS29-04**: Open the previous job-specific URL. Expected result: The previous job and its persisted execution details are restored.
+- [pending] **MS29-05**: Navigate between two job-specific URLs. Expected result: Job state and events remain isolated.
+- [pending] **MS29-06**: Refresh the job-less Generate route. Expected result: The page remains clean and does not restore an unrelated job.
+
+##### MS30: Generation start retry and execution lifecycle
+Status: [pending]
+Objective: Verify that generation can be started or retried safely and that the UI reflects the actual execution state.
+- [pending] **MS30-01**: Start generation from a newly created job. Expected result: The job transitions into execution.
+- [pending] **MS30-02**: Retry a job in CREATED state. Expected result: Generation starts successfully.
+- [pending] **MS30-03**: Attempt another start while the job is PREPARING or RUNNING. Expected result: Duplicate execution is prevented.
+- [pending] **MS30-04**: Verify retry failure handling. Expected result: The job remains recoverable and the user receives an actionable error.
+- [pending] **MS30-05**: Verify interrupted job handling. Expected result: Resume follows the persisted checkpoint rather than starting an unrelated execution.
+- [pending] **MS30-06**: Verify terminal job behavior. Expected result: Completed and partially completed jobs expose the appropriate actions.
+
+##### MS31: Generation event stream and recovery
+Status: [pending]
+Objective: Verify that the generation UI receives and presents the correct execution events and recovers from connection interruptions.
+- [pending] **MS31-01**: Connect to a running job. Expected result: Current job state is displayed.
+- [pending] **MS31-02**: Receive generation events. Expected result: Events update the correct job's UI state.
+- [pending] **MS31-03**: Disconnect from the event stream. Expected result: Backend execution continues.
+- [pending] **MS31-04**: Reconnect to a running job. Expected result: Current persisted state is recovered and subsequent events are received.
+- [pending] **MS31-05**: Recover checkpoint information after reconnection. Expected result: UI checkpoint state agrees with persisted execution state.
+- [pending] **MS31-06**: Switch between jobs during event-stream activity. Expected result: Events from one job never update another job's state.
+
+
+Execution order and restart plan:
+- [pending] Complete review and validation of the current generation navigation and retry changes before E2E implementation.
+- [pending] Investigate cross-platform file persistence and establish the backend regression contract.
+- [pending] Resume the existing Model Studio catalogue at MS09; preserve its current acceptance cases.
+- [pending] Continue MS10-MS27 in the established order, subject to investigation findings and agreed priorities.
+- [pending] Implement MS29-MS31 generation lifecycle coverage at the appropriate point after the current behavior is agreed.
+- [pending] Complete MS28 integrated Aerospace Enterprise Model v2 acceptance after its prerequisite capabilities and lifecycle coverage are validated.
+
 Additional suite-specific acceptance checks and implementation notes:
 
 - [done] MS08: Verify that POISSON is rejected for INTEGER and DECIMAL generation because it is not supported by the current validator and generator, despite appearing in the shared distribution vocabulary.
@@ -784,6 +823,29 @@ These remain visible in the engineering backlog. They may be promoted into RC sc
 
 The above indicate that source investigations have been completed.
 They do not indicate that corrective work or end-to-end acceptance has passed.
+
+### Open engineering investigation: Cross-platform file persistence
+
+Status: [pending]
+Objective: Establish and verify a genuinely cross-platform file-persistence design across macOS, Windows and Linux. This is an engineering and backend-regression investigation, not an E2E suite by default.
+
+Scope:
+- [pending] Atomic file writes and replacement semantics.
+- [pending] Durability guarantees after successful persistence.
+- [pending] Safe concurrent readers and writers.
+- [pending] Cross-platform locking and process coordination.
+- [pending] Recovery from interrupted or partially completed writes.
+- [pending] Consistency between generation jobs, checkpoints and persisted artifacts.
+- [pending] Filesystem behavior and guarantees across supported operating systems.
+- [pending] Backend regression tests for the agreed persistence contract.
+
+Acceptance:
+- [pending] Architecture and failure modes are documented before corrective implementation.
+- [pending] No database is introduced; file-based persistence remains the design.
+- [pending] Atomicity, durability, concurrency safety and recovery guarantees are demonstrated.
+- [pending] Backend regression tests pass.
+- [pending] Any necessary UI-level acceptance scenarios are identified separately after the architecture and backend behavior are established.
+
 (forge) e10936535@INM138734 forge %
 
 ---

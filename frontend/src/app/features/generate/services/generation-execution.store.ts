@@ -24,6 +24,92 @@ export class GenerationExecutionStore {
 
   private executionSubscription: Subscription | null = null;
 
+  private activeDataModelId: string | null = null;
+  private activeJobId: string | null = null;
+  private contextRevision = 0;
+
+  /**
+   * Start a clean in-memory execution context.
+   * This never cancels or deletes the persisted backend job.
+   */
+  beginNewExecution(dataModelId: string): number {
+    this.activateContext(dataModelId, null);
+    return this.contextRevision;
+  }
+
+  /**
+   * Establish ownership of one specific persisted generation job.
+   */
+  restoreExecution(dataModelId: string, jobId: string): number {
+    this.activateContext(dataModelId, jobId);
+    return this.contextRevision;
+  }
+
+  /**
+   * Current revision token for guarding asynchronous responses.
+   */
+  getContextRevision(): number {
+    return this.contextRevision;
+  }
+
+  /**
+   * Check whether an asynchronous operation still belongs to
+   * the currently active execution context.
+   */
+  isCurrentContext(
+    dataModelId: string,
+    jobId: string | null,
+    revision: number,
+  ): boolean {
+    return (
+      revision === this.contextRevision &&
+      dataModelId === this.activeDataModelId &&
+      (jobId === null || jobId === this.activeJobId)
+    );
+  }
+
+  /**
+   * Disconnect live UI updates without affecting backend execution.
+   */
+  disconnect(): void {
+    this.executionSubscription?.unsubscribe();
+    this.executionSubscription = null;
+  }
+
+  private activateContext(
+    dataModelId: string,
+    jobId: string | null,
+  ): void {
+    this.disconnect();
+
+    this.contextRevision += 1;
+    this.activeDataModelId = dataModelId;
+    this.activeJobId = jobId;
+
+    this.generationJob.set(null);
+    this.generationCheckpoint.set(null);
+    this.generationCheckpointLiveProgress.set(null);
+    this.lastEvent.set(null);
+    this.generationActivities.set([]);
+    this.isGenerating.set(false);
+    this.sseConnectionError.set(null);
+    this.activeSemanticCall.set(null);
+  }
+
+  private ensureJobContext(job: GenerationJobResponse): void {
+    if (
+      this.activeDataModelId !== job.data_model_id ||
+      (this.activeJobId !== null && this.activeJobId !== job.job_id)
+    ) {
+      this.activateContext(job.data_model_id, job.job_id);
+      return;
+    }
+
+    if (this.activeJobId === null) {
+      this.activeJobId = job.job_id;
+    }
+  }
+
 
 
   readonly generationJob = signal<GenerationJobResponse | null>(null);
@@ -45,7 +131,17 @@ export class GenerationExecutionStore {
   >(null);
 
 
-  setCheckpoint(checkpoint: GenerationCheckpoint): void {
+  setCheckpoint(
+    checkpoint: GenerationCheckpoint,
+    expectedRevision: number = this.contextRevision,
+  ): void {
+    if (
+      expectedRevision !== this.contextRevision ||
+      checkpoint.job_id !== this.activeJobId ||
+      this.activeDataModelId === null
+    ) {
+      return;
+    }
     const current = this.generationCheckpoint();
 
     if (current?.job_id === checkpoint.job_id) {
@@ -167,7 +263,16 @@ export class GenerationExecutionStore {
 
   setJob(
     job: GenerationJobResponse,
+    expectedRevision: number = this.contextRevision,
   ): void {
+    if (
+      expectedRevision !== this.contextRevision ||
+      !job.data_model_id
+    ) {
+      return;
+    }
+
+    this.ensureJobContext(job);
     this.generationJob.set(job);
   }
 
@@ -175,8 +280,15 @@ export class GenerationExecutionStore {
     dataModelId: string,
     jobId: string,
   ): void {
+    if (
+      dataModelId !== this.activeDataModelId ||
+      jobId !== this.activeJobId
+    ) {
+      return;
+    }
 
-    this.executionSubscription?.unsubscribe();
+    this.disconnect();
+    const subscriptionRevision = this.contextRevision;
     this.sseConnectionError.set(null);
 
     this.executionSubscription = this.generationService
@@ -186,10 +298,18 @@ export class GenerationExecutionStore {
       )
       .subscribe({
         next: (event) => {
+          if (subscriptionRevision !== this.contextRevision) {
+            return;
+          }
+
           this.sseConnectionError.set(null);
-          this.handleEvent(event);
+          this.handleEvent(event, subscriptionRevision);
         },
         error: (error: unknown) => {
+          if (subscriptionRevision !== this.contextRevision) {
+            return;
+          }
+
           this.executionSubscription = null;
           this.sseConnectionError.set(
             error instanceof Error
@@ -204,7 +324,16 @@ export class GenerationExecutionStore {
 
   handleEvent(
     event: GenerationSseEvent,
+    expectedRevision: number = this.contextRevision,
   ): void {
+    if (
+      expectedRevision !== this.contextRevision ||
+      this.activeDataModelId === null ||
+      this.activeJobId === null
+    ) {
+      return;
+    }
+
     let beforeSavedChunks = 0;
     let beforeGeneratedRows = 0;
 
