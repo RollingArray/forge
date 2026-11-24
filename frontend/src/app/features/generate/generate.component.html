@@ -1,5 +1,6 @@
 <app-workflow-page
   class="generate-workflow-page"
+  [class.activity-panel-visible]="showLiveGenerationActivity()"
   [steps]="steps"
   [activeStep]="activeStep"
   [pageIcon]="'database'"
@@ -158,11 +159,13 @@
       />
     </app-workflow-row>
 
-    <aside class="generation-activity-panel">
-      <app-generation-activity
-        [activities]="generationActivities()"
-        [isGenerating]="isGenerating()"
-      />
-    </aside>
+    @if (showLiveGenerationActivity()) {
+      <aside class="generation-activity-panel">
+        <app-generation-activity
+          [activities]="generationActivities()"
+          [isGenerating]="isGenerating()"
+        />
+      </aside>
+    }
   </section>
 </app-workflow-page>

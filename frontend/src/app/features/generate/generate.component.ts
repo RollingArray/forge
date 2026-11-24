@@ -238,6 +238,16 @@ export class GenerateComponent {
   readonly generationLoading = signal(true);
   readonly generationError = signal<string | null>(null);
   readonly generationJob = this.executionStore.generationJob;
+
+  readonly showLiveGenerationActivity = computed(() => {
+    const status = this.generationJob()?.status;
+
+    return (
+      status === 'PREPARING' ||
+      status === 'QUEUED' ||
+      status === 'RUNNING'
+    );
+  });
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
   readonly generationActivities = this.executionStore.generationActivities;
   readonly isGenerating = this.executionStore.isGenerating;

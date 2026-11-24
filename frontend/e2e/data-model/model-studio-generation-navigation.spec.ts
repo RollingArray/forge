@@ -468,10 +468,6 @@ test.describe('MS29 - Generation navigation and job context isolation', () => {
     ).toBeVisible();
 
     await expect(
-      page.getByText('Waiting for generation activity', { exact: true }),
-    ).toBeVisible();
-
-    await expect(
       page.getByText('Recovery information is not available yet', {
         exact: true,
       }),
@@ -494,7 +490,21 @@ test.describe('MS29 - Generation navigation and job context isolation', () => {
   }, testInfo) => {
     const current = requireScenario();
 
+    // Capture the exact GET response consumed by Angular during restoration.
+    const uiJobResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+
+      return (
+        response.request().method() === 'GET' &&
+        url.pathname ===
+          `/api/v1/data-models/${current.modelId}/generation/${current.jobId}`
+      );
+    }, { timeout: 30_000 });
+
     await page.goto(generationUrl(current.modelId, current.jobId));
+
+    const uiJobResponse = await uiJobResponsePromise;
+    expect(uiJobResponse.status()).toBe(200);
 
     const job = await getGenerationJob(
       page,
@@ -511,6 +521,14 @@ test.describe('MS29 - Generation navigation and job context isolation', () => {
     await expect(
       page.getByText('Generation completed', { exact: true }),
     ).toBeVisible();
+
+    await expect(
+      page.getByText('Live Generation Activity', { exact: true }),
+    ).toHaveCount(0);
+
+    await expect(
+      page.locator('.generation-activity-panel'),
+    ).toHaveCount(0);
 
     await attachEvidence(testInfo, 'ms29-04-restored-generation-job.json', {
       model_id: current.modelId,
@@ -611,10 +629,6 @@ test.describe('MS29 - Generation navigation and job context isolation', () => {
 
     await expect(
       page.getByText('No entity execution data yet', { exact: true }),
-    ).toBeVisible();
-
-    await expect(
-      page.getByText('Waiting for generation activity', { exact: true }),
     ).toBeVisible();
 
     await expect(
