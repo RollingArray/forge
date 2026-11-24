@@ -1,10 +1,16 @@
+import hashlib
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 
-from app.constants.generation import DEFAULT_GENERATION_CHUNK_SIZE
+from app.constants.generation import (
+    DEFAULT_GENERATION_CHUNK_SIZE,
+    GENERATION_ALGORITHM_VERSION,
+)
+from app.models.generation_persistence import GenerationArtifactEvidence
 from app.models.generation_model import (
     GenerationEntityProgress,
     GenerationJobRecord,
@@ -15,6 +21,8 @@ from app.models.generation_model import (
 )
 from app.repositories.file_lock import FileLockTimeout
 import app.services.generation_service as generation_service_module
+from app.services.generation_checkpoint_store import GenerationCheckpointStore
+from app.services.generation_job_store import GenerationJobStore
 from app.services.generation_service import GenerationService
 
 
@@ -695,3 +703,189 @@ def test_startup_recovery_marks_preparing_job_interrupted():
     service._job_store.save.assert_called_once_with(job)
 
 
+
+
+def test_interrupted_resume_preserves_real_committed_checkpoint_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    """Resume a partially committed job using real file-backed stores."""
+
+    chunk_size = 5
+    old_attempt_id = "recovery-attempt-001"
+    new_attempt_id = "resume-attempt-real-store-002"
+
+    specification = {
+        "name": "Test Model",
+        "generation": {"seed": 42},
+        "entities": [],
+    }
+
+    job_store = GenerationJobStore()
+    job_store._root = tmp_path
+
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = tmp_path
+
+    service = GenerationService(
+        specification_service=FakeSpecificationService(specification),
+        specification_validation_service=FakeValidationService(),
+        checkpoint_store=checkpoint_store,
+        generation_log_store=MagicMock(),
+    )
+    service._job_store = job_store
+    service._generation_planner = MagicMock()
+    service._generation_planner.build.return_value = SimpleNamespace(
+        entities=[
+            SimpleNamespace(
+                entity_name="ORGANIZATION",
+                target_rows=10,
+            )
+        ]
+    )
+
+    job = make_job(
+        GenerationJobStatus.INTERRUPTED,
+        chunk_size=chunk_size,
+    )
+    job.attempt_id = old_attempt_id
+    job.error = "Previous execution was interrupted."
+
+    checkpoint_store.initialize(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+        specification=specification,
+        seed=42,
+        chunk_size=chunk_size,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id=old_attempt_id,
+        entity_targets={"ORGANIZATION": 10},
+    )
+
+    artifact_bytes = (
+        b"ID,NAME\n"
+        b"1,Organization One\n"
+        b"2,Organization Two\n"
+        b"3,Organization Three\n"
+        b"4,Organization Four\n"
+        b"5,Organization Five\n"
+    )
+    artifact_relative_path = "generated/organization/chunk-1.csv"
+    artifact_path = (
+        checkpoint_store._job_directory(DATA_MODEL_ID, JOB_ID)
+        / artifact_relative_path
+    )
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    artifact_path.write_bytes(artifact_bytes)
+
+    artifact = GenerationArtifactEvidence(
+        path=artifact_relative_path,
+        size_bytes=len(artifact_bytes),
+        sha256=hashlib.sha256(artifact_bytes).hexdigest(),
+    )
+
+    checkpoint_store.commit_chunk(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+        attempt_id=old_attempt_id,
+        entity_name="ORGANIZATION",
+        chunk_number=1,
+        row_start=0,
+        row_count=chunk_size,
+        artifact=artifact,
+    )
+
+    before_resume = checkpoint_store.get(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+    )
+    assert before_resume is not None
+    assert before_resume.attempt_id == old_attempt_id
+    assert before_resume.entities["ORGANIZATION"].committed_rows == 5
+    assert [
+        chunk.chunk_number
+        for chunk in before_resume.entities["ORGANIZATION"].chunks
+    ] == [1]
+
+    original_chunk_evidence = (
+        before_resume.entities["ORGANIZATION"].chunks[0]
+    )
+    original_artifact_bytes = artifact_path.read_bytes()
+    original_artifact_hash = hashlib.sha256(
+        original_artifact_bytes
+    ).hexdigest()
+
+    job_store.save(job)
+
+    monkeypatch.setattr(
+        generation_service_module,
+        "generation_execution_lease",
+        lambda *args, **kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        generation_service_module,
+        "uuid4",
+        lambda: SimpleNamespace(hex=new_attempt_id),
+    )
+
+    resumed = service.start_job(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+    )
+
+    assert resumed is not None
+    assert resumed.status == GenerationJobStatus.PREPARING
+    assert resumed.attempt_id == new_attempt_id
+    assert resumed.attempt_id != old_attempt_id
+    assert resumed.resume_intent is None
+    assert resumed.preparation_phase == (
+        GenerationPreparationPhase.CHECKPOINT_READY
+    )
+    assert resumed.error is None
+
+    persisted_job = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert persisted_job is not None
+    assert persisted_job.status == GenerationJobStatus.PREPARING
+    assert persisted_job.attempt_id == new_attempt_id
+    assert persisted_job.resume_intent is None
+    assert persisted_job.preparation_phase == (
+        GenerationPreparationPhase.CHECKPOINT_READY
+    )
+
+    persisted_checkpoint = checkpoint_store.get(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+    )
+    assert persisted_checkpoint is not None
+    assert persisted_checkpoint.attempt_id == new_attempt_id
+
+    entity_checkpoint = persisted_checkpoint.entities["ORGANIZATION"]
+    assert entity_checkpoint.committed_rows == 5
+    assert [chunk.chunk_number for chunk in entity_checkpoint.chunks] == [1]
+    assert entity_checkpoint.chunks[0] == original_chunk_evidence
+
+    # The committed artifact remains byte-for-byte identical and verifiable.
+    assert artifact_path.read_bytes() == original_artifact_bytes
+    assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == (
+        original_artifact_hash
+    )
+    checkpoint_store.verify_artifact(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+        artifact=entity_checkpoint.chunks[0].artifact,
+    )
+
+    # The job projection is rebuilt from durable checkpoint evidence.
+    assert persisted_job.total_generated_rows == 5
+    assert persisted_job.progress == 0.5
+    assert persisted_job.entities[0].generated_rows == 5
+    assert persisted_job.entities[0].completed_chunks == 1
+    assert persisted_job.entities[0].total_chunks == 2
+
+    # Chunk 2 remains outstanding for the resumed executor.
+    assert [
+        chunk.chunk_number
+        for chunk in entity_checkpoint.chunks
+    ] == [1]
+
+    assert (DATA_MODEL_ID, JOB_ID) in service._active_workers
