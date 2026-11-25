@@ -16,6 +16,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 
 import {
   GenerationEntityProgress,
+  GenerationChunkProgressEvent,
   GenerationSemanticCallProgressEvent,
 } from '../../models/generation.models';
 
@@ -48,6 +49,7 @@ export class EntityGenerationProgressComponent
   readonly totalGeneratedRows = input(0);
   readonly totalTargetRows = input(0);
   readonly activeSemanticCall = input<GenerationSemanticCallProgressEvent | null>(null);
+  readonly activeChunkProgress = input<GenerationChunkProgressEvent | null>(null);
 
   isSemanticActive(entity: GenerationEntityProgress): boolean {
     const call = this.activeSemanticCall();
@@ -79,18 +81,57 @@ export class EntityGenerationProgressComponent
     return call.requested_count;
   }
 
-  progress(entity: GenerationEntityProgress): number {
-    if (entity.total_chunks <= 0) {
+  liveGeneratedRows(entity: GenerationEntityProgress): number {
+    const live = this.activeChunkProgress();
+
+    if (
+      !live ||
+      live.entity_name !== entity.entity_name ||
+      entity.target_rows <= 0
+    ) {
       return 0;
     }
 
-    return Math.min(
-      Math.max(
-        (entity.completed_chunks / entity.total_chunks) * 100,
-        0,
-      ),
-      100,
+    const remainingRows = Math.max(
+      entity.target_rows - entity.generated_rows,
+      0,
     );
+
+    return Math.min(
+      Math.max(live.chunk_generated_rows, 0),
+      Math.max(live.chunk_target_rows, 0),
+      remainingRows,
+    );
+  }
+
+  committedProgress(entity: GenerationEntityProgress): number {
+    if (entity.target_rows <= 0) {
+      return entity.status === 'COMPLETED' ? 100 : 0;
+    }
+
+    return this.clampProgress(
+      (entity.generated_rows / entity.target_rows) * 100,
+    );
+  }
+
+  liveProgress(entity: GenerationEntityProgress): number {
+    if (entity.target_rows <= 0) {
+      return 0;
+    }
+
+    return this.clampProgress(
+      (this.liveGeneratedRows(entity) / entity.target_rows) * 100,
+    );
+  }
+
+  progress(entity: GenerationEntityProgress): number {
+    return this.clampProgress(
+      this.committedProgress(entity) + this.liveProgress(entity),
+    );
+  }
+
+  private clampProgress(value: number): number {
+    return Math.min(Math.max(value, 0), 100);
   }
 
   statusLabel(entity: GenerationEntityProgress): string {

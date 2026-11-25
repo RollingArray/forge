@@ -449,6 +449,7 @@ class GenerationExecutor:
             entity_peak_memory_bytes = process.memory_info().rss
             chunk_runs: list[GenerationChunkRun] = []
             chunk_started_at: dict[int, float] = {}
+            chunk_progress_last_published_at: dict[int, float] = {}
             chunk_peak_memory_bytes: dict[int, int] = {}
             entity_semantic_calls: list[dict[str, object]] = []
             chunk_semantic_calls: dict[
@@ -1131,6 +1132,37 @@ class GenerationExecutor:
                         ),
                     )
 
+            def handle_chunk_progress(
+                progress_entity_name: str,
+                chunk_number: int,
+                chunk_generated_rows: int,
+                chunk_target_rows: int,
+            ) -> None:
+                if self._event_broker is None:
+                    return
+
+                now = perf_counter()
+                last_published_at = (
+                    chunk_progress_last_published_at.get(chunk_number, 0.0)
+                )
+                is_final = chunk_generated_rows >= chunk_target_rows
+
+                if not is_final and now - last_published_at < 0.25:
+                    return
+
+                self._event_broker.publish(
+                    data_model_id=data_model_id,
+                    job_id=job_id,
+                    event_type="CHUNK_PROGRESS",
+                    data={
+                        "entity_name": progress_entity_name,
+                        "chunk_number": chunk_number,
+                        "chunk_generated_rows": chunk_generated_rows,
+                        "chunk_target_rows": chunk_target_rows,
+                    },
+                )
+                chunk_progress_last_published_at[chunk_number] = now
+
             def handle_chunk_completed(
                 completed_entity_name: str,
                 chunk_number: int,
@@ -1242,6 +1274,7 @@ class GenerationExecutor:
                     chunk_numbers=missing_chunk_numbers,
                     on_chunk_start=handle_chunk_start,
                     on_chunk_completed=handle_chunk_completed,
+                    on_chunk_progress=handle_chunk_progress,
                     on_field_activity=handle_field_activity,
                 )
             except Exception as exc:

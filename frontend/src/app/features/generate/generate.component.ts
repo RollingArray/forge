@@ -200,6 +200,7 @@ export class GenerateComponent {
     return status === 'PREPARING' || status === 'QUEUED' || status === 'RUNNING';
   });
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
+  readonly activeChunkProgress = this.executionStore.activeChunkProgress;
   readonly generationActivities = this.executionStore.generationActivities;
   readonly isGenerating = this.executionStore.isGenerating;
   readonly sseConnectionError = this.executionStore.sseConnectionError;

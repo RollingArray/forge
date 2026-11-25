@@ -62,10 +62,13 @@
             </span>
 
             <span class="entity-row-count">
-              {{ entity.generated_rows | number }}
+              {{ (entity.generated_rows + liveGeneratedRows(entity)) | number }}
               /
               {{ entity.target_rows | number }}
               rows
+              <ng-container *ngIf="liveGeneratedRows(entity) > 0">
+                ({{ liveGeneratedRows(entity) | number }} in progress)
+              </ng-container>
             </span>
           </div>
         </div>
@@ -158,7 +161,13 @@
               class="progress-fill"
               [class.is-running]="entity.status === 'RUNNING'"
               [class.is-failed]="entity.status === 'FAILED'"
-              [style.width.%]="progress(entity)"
+              [style.width.%]="committedProgress(entity)"
+            ></div>
+            <div
+              class="progress-fill-live"
+              *ngIf="liveProgress(entity) > 0"
+              [style.left.%]="committedProgress(entity)"
+              [style.width.%]="liveProgress(entity)"
             ></div>
           </div>
 

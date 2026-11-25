@@ -1638,3 +1638,46 @@ def test_generate_rejects_combining_start_chunk_and_chunk_numbers() -> None:
             start_chunk=2,
             chunk_numbers=[4, 5],
         )
+
+
+def test_generate_reports_progress_after_each_row_in_chunk() -> None:
+    entity = {
+        "name": "TEST_ENTITY",
+        "population": {"count": 5},
+        "fields": [_sequential_identity_field()],
+        "identity": {"fields": ["ID"]},
+    }
+
+    progress: list[tuple[str, int, int, int]] = []
+
+    def on_chunk_progress(
+        entity_name: str,
+        chunk_number: int,
+        generated_in_chunk: int,
+        chunk_target_rows: int,
+    ) -> None:
+        progress.append(
+            (
+                entity_name,
+                chunk_number,
+                generated_in_chunk,
+                chunk_target_rows,
+            )
+        )
+
+    generated_rows = EntityGenerator(seed=42).generate(
+        entity=entity,
+        foreign_keys=[],
+        context=GenerationContext(),
+        chunk_size=2,
+        on_chunk_progress=on_chunk_progress,
+    )
+
+    assert generated_rows == 5
+    assert progress == [
+        ("TEST_ENTITY", 1, 1, 2),
+        ("TEST_ENTITY", 1, 2, 2),
+        ("TEST_ENTITY", 2, 1, 2),
+        ("TEST_ENTITY", 2, 2, 2),
+        ("TEST_ENTITY", 3, 1, 1),
+    ]

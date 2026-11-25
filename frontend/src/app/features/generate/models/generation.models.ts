@@ -156,6 +156,13 @@ export interface GenerationChunkCommittedEvent {
   checkpoint_updated_at: string;
 }
 
+export interface GenerationChunkProgressEvent {
+  entity_name: string;
+  chunk_number: number;
+  chunk_generated_rows: number;
+  chunk_target_rows: number;
+}
+
 export interface GenerationEntityCompletedEvent {
   entity_name: string;
   target_rows: number;
@@ -236,6 +243,10 @@ export type GenerationSseEvent =
   | {
       type: 'SEMANTIC_CALL_PROGRESS';
       data: GenerationSemanticCallProgressEvent;
+    }
+  | {
+      type: 'CHUNK_PROGRESS';
+      data: GenerationChunkProgressEvent;
     }
   | {
       type: 'GENERATION_ACTIVITY';

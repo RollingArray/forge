@@ -94,6 +94,7 @@ export class GenerationExecutionStore {
     this.isGenerating.set(false);
     this.sseConnectionError.set(null);
     this.activeSemanticCall.set(null);
+    this.activeChunkProgress.set(null);
   }
 
   private ensureJobContext(job: GenerationJobResponse): void {
@@ -130,6 +131,12 @@ export class GenerationExecutionStore {
     >['data'] | null
   >(null);
 
+  readonly activeChunkProgress = signal<
+    Extract<
+      GenerationSseEvent,
+      { type: 'CHUNK_PROGRESS' }
+    >['data'] | null
+  >(null);
 
   setCheckpoint(
     checkpoint: GenerationCheckpoint,
@@ -350,6 +357,7 @@ export class GenerationExecutionStore {
         GENERATION_STARTED: 'generationJob / isGenerating',
         GENERATION_ACTIVITY: 'generationActivities',
         SEMANTIC_CALL_PROGRESS: 'activeSemanticCall',
+        CHUNK_PROGRESS: 'activeChunkProgress',
         CHUNK_COMMITTED: 'applyChunkProgress / live checkpoint projection',
         ENTITY_COMPLETED: 'applyEntityCompleted / live entity completion',
         GENERATION_COMPLETED: 'applyGenerationCompleted / terminal job state',
@@ -397,14 +405,24 @@ export class GenerationExecutionStore {
         this.activeSemanticCall.set(event.data);
         break;
 
+      case 'CHUNK_PROGRESS':
+        this.activeChunkProgress.set(event.data);
+        break;
+
       case 'CHUNK_COMMITTED':
         this.activeSemanticCall.set(null);
+        this.activeChunkProgress.set(null);
         this.applyChunkProgress(event.data);
         this.applyLiveCheckpointChunk(event.data);
         break;
 
 
       case 'ENTITY_COMPLETED':
+        if (
+          this.activeChunkProgress()?.entity_name === event.data.entity_name
+        ) {
+          this.activeChunkProgress.set(null);
+        }
         this.applyEntityCompleted(event.data);
         this.applyLiveEntityCompletion(event.data);
         break;
@@ -416,6 +434,7 @@ export class GenerationExecutionStore {
 
         this.isGenerating.set(false);
         this.activeSemanticCall.set(null);
+        this.activeChunkProgress.set(null);
 
         if (current) {
           this.generationJob.set({
@@ -432,6 +451,7 @@ export class GenerationExecutionStore {
       case 'GENERATION_COMPLETED':
         this.isGenerating.set(false);
         this.activeSemanticCall.set(null);
+        this.activeChunkProgress.set(null);
         this.applyGenerationCompleted(event.data);
         break;
     }

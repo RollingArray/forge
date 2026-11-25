@@ -15,6 +15,7 @@ import { ApiLoadingMessage } from '../../../core/enums/api-loading-message.enum'
 import { API_LOADING_MESSAGE } from '../../../core/tokens/api-loading-message.token';
 import {
   GenerationChunkCommittedEvent,
+  GenerationChunkProgressEvent,
   GenerationActivityEvent,
   GenerationCompletedEvent,
   GenerationControlEvent,
@@ -225,6 +226,15 @@ export class GenerationService {
               data: JSON.parse(
                 event.data,
               ) as GenerationChunkCommittedEvent,
+            };
+          }
+
+          if (event.type === 'CHUNK_PROGRESS') {
+            return {
+              type: 'CHUNK_PROGRESS',
+              data: JSON.parse(
+                event.data,
+              ) as GenerationChunkProgressEvent,
             };
           }
 
