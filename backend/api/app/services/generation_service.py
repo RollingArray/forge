@@ -37,6 +37,7 @@ from app.models.generation_model import (
     GenerationSemanticCallProgress,
     GenerationJobRecord,
     GenerationPreparationPhase,
+    GenerationLifecyclePhase,
     GenerationResumeIntent,
 )
 from app.services.ai_service import AIService
@@ -51,6 +52,13 @@ from app.services.generation_checkpoint_store import (
     compute_specification_hash,
 )
 from app.services.generation_job_store import GenerationJobStore
+from app.services.generation_job_control_store import (
+    GenerationJobControlRequest,
+    GenerationJobControlStore,
+)
+from app.services.generation_job_transition import (
+    generation_job_transition_lock,
+)
 from app.services.generation_quality_store import GenerationQualityStore
 from app.services.generation_validation_store import GenerationValidationStore
 from app.services.generation_event_broker import (
@@ -64,6 +72,19 @@ from app.services.specification_validation_error import SpecificationValidationE
 
 
 logger = logging.getLogger(__name__)
+
+
+class GenerationControlStop(Exception):
+    """Signal an intentional stop at a committed chunk boundary."""
+
+    def __init__(self, status: GenerationJobStatus) -> None:
+        if status not in {
+            GenerationJobStatus.PAUSED,
+            GenerationJobStatus.CANCELLED,
+        }:
+            raise ValueError("Invalid generation control-stop status.")
+        self.status = status
+        super().__init__(status.value)
 
 
 def _format_sse_event_counts(counts: dict[str, int]) -> str:
@@ -113,6 +134,7 @@ class GenerationService:
         self._generation_run_service = generation_run_service
         self._ai_service = ai_service
         self._job_store = GenerationJobStore()
+        self._control_store = GenerationJobControlStore()
         self._quality_store = GenerationQualityStore()
         self._validation_store = GenerationValidationStore()
         self._checkpoint_store = (
@@ -543,6 +565,21 @@ class GenerationService:
 
         return manifest
 
+    @staticmethod
+    def _checkpoint_has_unfinished_work(
+        manifest: GenerationCheckpointManifest,
+    ) -> bool:
+        """Return whether any entity still needs generation or finalization.
+
+        Callers must validate the checkpoint and its committed artifacts
+        before relying on this result.
+        """
+        return any(
+            entity_checkpoint.committed_rows < entity_checkpoint.target_rows
+            or entity_checkpoint.finalization.status
+            != GenerationFinalizationStatus.COMMITTED
+            for entity_checkpoint in manifest.entities.values()
+        )
 
     def get_readiness(
         self,
@@ -748,10 +785,18 @@ class GenerationService:
         until the checkpoint has been verified under the new attempt.
         """
 
-        if job.status != GenerationJobStatus.INTERRUPTED:
+        resumable_source_statuses = {
+            GenerationJobStatus.INTERRUPTED,
+            GenerationJobStatus.FAILED,
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+            GenerationJobStatus.PAUSED,
+            GenerationJobStatus.CANCELLED,
+        }
+        if job.status not in resumable_source_statuses:
             raise ValueError(
                 "A resume intent can only be reconciled for an "
-                "INTERRUPTED job."
+                "INTERRUPTED, FAILED, PARTIALLY_COMPLETED, PAUSED, "
+                "or CANCELLED job."
             )
 
         intent = job.resume_intent
@@ -877,7 +922,13 @@ class GenerationService:
                         continue
 
                     pending_resume = (
-                        job.status == GenerationJobStatus.INTERRUPTED
+                        job.status in {
+                            GenerationJobStatus.INTERRUPTED,
+                            GenerationJobStatus.FAILED,
+                            GenerationJobStatus.PARTIALLY_COMPLETED,
+                            GenerationJobStatus.PAUSED,
+                            GenerationJobStatus.CANCELLED,
+                        }
                         and job.resume_intent is not None
                     )
 
@@ -917,27 +968,146 @@ class GenerationService:
                             specification=specification,
                         )
 
-                    self._reconcile_recovery_checkpoint(
+                    manifest = self._reconcile_recovery_checkpoint(
                         data_model_id=data_model_id,
                         job=job,
                         specification=specification,
                     )
 
-                    previous_status = job.status
-                    previous_error = job.error
+                    job_directory = self._job_store._job_path(
+                        data_model_id,
+                        job_id,
+                    ).parent
 
-                    job.status = GenerationJobStatus.INTERRUPTED
-                    job.error = None
+                    with generation_job_transition_lock(job_directory):
+                        # Reload authoritative state after acquiring the lock.
+                        current_job = self._job_store.get(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                        )
 
-                    try:
-                        self._job_store.save(job)
-                    except Exception:
-                        job.status = previous_status
-                        job.error = previous_error
-                        raise
+                        if current_job is None:
+                            continue
 
-                    self._jobs[job.job_id] = job
-                    recovered += 1
+                        if current_job.status not in {
+                            GenerationJobStatus.PREPARING,
+                            GenerationJobStatus.RUNNING,
+                        }:
+                            continue
+
+                        if (
+                            current_job.lifecycle_phase
+                            == GenerationLifecyclePhase.FINALIZING
+                            and self._checkpoint_has_unfinished_work(manifest)
+                        ):
+                            raise ValueError(
+                                "A FINALIZING job has unfinished checkpoint "
+                                "work. Recovery will not alter its attempt."
+                            )
+
+                        # Rebuild projection from verified manifest evidence.
+                        # Artifact verification happened before taking this lock.
+                        if isinstance(manifest, GenerationCheckpointManifest):
+                            self._apply_manifest_progress_to_job(
+                                job=current_job,
+                                manifest=manifest,
+                            )
+
+                        control_applied = False
+
+                        # Consume durable controls left behind by a crashed
+                        # worker. Controls are valid only during GENERATING.
+                        if (
+                            current_job.status == GenerationJobStatus.RUNNING
+                            and current_job.lifecycle_phase
+                            == GenerationLifecyclePhase.GENERATING
+                        ):
+                            control_request = self._control_store.get_request(
+                                data_model_id,
+                                job_id,
+                            )
+
+                            while control_request is not None:
+                                requested_status = {
+                                    GenerationJobControlRequest.PAUSE:
+                                        GenerationJobStatus.PAUSED,
+                                    GenerationJobControlRequest.CANCEL:
+                                        GenerationJobStatus.CANCELLED,
+                                }[control_request]
+
+                                previous_status = current_job.status
+                                previous_error = current_job.error
+                                previous_completed_at = current_job.completed_at
+
+                                current_job.status = requested_status
+                                current_job.error = None
+                                current_job.completed_at = (
+                                    datetime.now(timezone.utc)
+                                    if requested_status
+                                    == GenerationJobStatus.CANCELLED
+                                    else None
+                                )
+
+                                try:
+                                    # Persist the outcome before clearing
+                                    # the request.
+                                    self._job_store.save(current_job)
+                                except Exception:
+                                    # Atomic replacement may have completed
+                                    # before a later durability operation
+                                    # failed. Check authoritative state.
+                                    durable_job = self._job_store.get(
+                                        data_model_id=data_model_id,
+                                        job_id=job_id,
+                                    )
+                                    if (
+                                        durable_job is None
+                                        or durable_job.status != requested_status
+                                    ):
+                                        current_job.status = previous_status
+                                        current_job.error = previous_error
+                                        current_job.completed_at = (
+                                            previous_completed_at
+                                        )
+                                        raise
+
+                                    current_job = durable_job
+
+                                cleared = (
+                                    self._control_store.clear_request_if_matches(
+                                        data_model_id,
+                                        job_id,
+                                        control_request,
+                                    )
+                                )
+                                control_applied = True
+
+                                if cleared:
+                                    break
+
+                                # Do not erase a newer request that replaced
+                                # the one just consumed.
+                                control_request = self._control_store.get_request(
+                                    data_model_id,
+                                    job_id,
+                                )
+
+                        if not control_applied:
+                            previous_status = current_job.status
+                            previous_error = current_job.error
+
+                            current_job.status = GenerationJobStatus.INTERRUPTED
+                            current_job.error = None
+
+                            try:
+                                self._job_store.save(current_job)
+                            except Exception:
+                                current_job.status = previous_status
+                                current_job.error = previous_error
+                                raise
+
+                        self._jobs[current_job.job_id] = current_job
+                        recovered += 1
 
             except FileLockTimeout:
                 continue
@@ -998,7 +1168,13 @@ class GenerationService:
                     "or active worker."
                 )
 
-        if job.status == GenerationJobStatus.INTERRUPTED:
+        if job.status in {
+            GenerationJobStatus.INTERRUPTED,
+            GenerationJobStatus.FAILED,
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+            GenerationJobStatus.PAUSED,
+            GenerationJobStatus.CANCELLED,
+        }:
             specification = self._specification_service.get_specification(
                 data_model_id=data_model_id,
             )
@@ -1023,11 +1199,55 @@ class GenerationService:
                 if job.resume_intent is None:
                     # Validate all existing evidence before recording an
                     # intention to supersede the current attempt.
-                    self._validate_recovery_checkpoint(
+                    manifest = self._validate_recovery_checkpoint(
                         data_model_id=data_model_id,
                         job=job,
                         specification=specification,
                     )
+
+                    if (
+                        job.lifecycle_phase
+                        == GenerationLifecyclePhase.FINALIZING
+                    ):
+                        if self._checkpoint_has_unfinished_work(manifest):
+                            raise ValueError(
+                                "A FINALIZING job has unfinished checkpoint "
+                                "work. Refusing to supersede its attempt."
+                            )
+
+                        snapshot = job.model_copy(deep=True)
+
+                        try:
+                            self._apply_manifest_progress_to_job(
+                                job=job,
+                                manifest=manifest,
+                            )
+                            job.status = GenerationJobStatus.PREPARING
+                            job.preparation_phase = (
+                                GenerationPreparationPhase.CHECKPOINT_READY
+                            )
+                            job.completed_at = None
+                            job.error = None
+
+                            # Retain lifecycle phase, attempt ID and checkpoint.
+                            self._job_store.save(job)
+                            self._jobs[job.job_id] = job
+
+                        except Exception:
+                            job.__dict__.clear()
+                            job.__dict__.update(snapshot.__dict__)
+                            self._jobs[job.job_id] = job
+                            raise
+
+                        return job
+
+                    if not self._checkpoint_has_unfinished_work(manifest):
+                        raise ValueError(
+                            f"Generation job '{job_id}' has no unfinished "
+                            "work to resume. Its checkpoint shows that all "
+                            "entities are finalized. Review the existing "
+                            "generation results instead."
+                        )
 
                     if not job.attempt_id:
                         raise ValueError(
@@ -1232,10 +1452,28 @@ class GenerationService:
                             specification=specification,
                         )
 
+                    was_preparing = (
+                        job.status == GenerationJobStatus.PREPARING
+                    )
+
                     job.status = GenerationJobStatus.RUNNING
+                    if job.lifecycle_phase != GenerationLifecyclePhase.FINALIZING:
+                        job.lifecycle_phase = GenerationLifecyclePhase.GENERATING
                     job.error = None
                     self._job_store.save(job)
                     self._jobs[job.job_id] = job
+
+                    if was_preparing:
+                        self._event_broker.publish(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            event_type="GENERATION_STARTED",
+                            data=GenerationJobResponse.model_validate(
+                                job.model_dump(
+                                    include=set(GenerationJobResponse.model_fields),
+                                )
+                            ).model_dump(mode="json"),
+                        )
 
                     self._execute_job_reserved(
                         data_model_id=data_model_id,
@@ -1332,6 +1570,110 @@ class GenerationService:
                     ),
                 ),
             )
+
+            def consume_control_or_enter_finalizing(
+                *,
+                advance_to_finalizing: bool = False,
+            ):
+                job_directory = self._job_store._job_path(
+                    job.data_model_id,
+                    job.job_id,
+                ).parent
+
+                consumed_status = None
+
+                with generation_job_transition_lock(job_directory):
+                    current_job = self._job_store.get(
+                        data_model_id=job.data_model_id,
+                        job_id=job.job_id,
+                    )
+
+                    if current_job is None:
+                        raise RuntimeError(
+                            "Generation job disappeared while processing "
+                            "a lifecycle transition."
+                        )
+
+                    if current_job.status != GenerationJobStatus.RUNNING:
+                        raise RuntimeError(
+                            "Generation job is no longer RUNNING during "
+                            "a lifecycle transition."
+                        )
+
+                    if (
+                        current_job.lifecycle_phase
+                        == GenerationLifecyclePhase.GENERATING
+                    ):
+                        control_request = self._control_store.get_request(
+                            job.data_model_id,
+                            job.job_id,
+                        )
+
+                        while control_request is not None:
+                            consumed_status = {
+                                GenerationJobControlRequest.PAUSE:
+                                    GenerationJobStatus.PAUSED,
+                                GenerationJobControlRequest.CANCEL:
+                                    GenerationJobStatus.CANCELLED,
+                            }[control_request]
+
+                            current_job.status = consumed_status
+                            current_job.error = None
+                            current_job.completed_at = (
+                                datetime.now(timezone.utc)
+                                if consumed_status
+                                == GenerationJobStatus.CANCELLED
+                                else None
+                            )
+
+                            # Persist the outcome before clearing its request.
+                            self._job_store.save(current_job)
+
+                            cleared = (
+                                self._control_store.clear_request_if_matches(
+                                    job.data_model_id,
+                                    job.job_id,
+                                    control_request,
+                                )
+                            )
+
+                            if cleared:
+                                break
+
+                            # A newer request may have replaced the one
+                            # we observed. Re-read and process that request.
+                            control_request = self._control_store.get_request(
+                                job.data_model_id,
+                                job.job_id,
+                            )
+
+                        if (
+                            consumed_status is None
+                            and advance_to_finalizing
+                        ):
+                            current_job.lifecycle_phase = (
+                                GenerationLifecyclePhase.FINALIZING
+                            )
+                            self._job_store.save(current_job)
+
+                    elif (
+                        current_job.lifecycle_phase
+                        == GenerationLifecyclePhase.FINALIZING
+                    ):
+                        # Idempotent when resuming finalization.
+                        pass
+
+                    elif advance_to_finalizing:
+                        raise RuntimeError(
+                            "Cannot enter FINALIZING from lifecycle phase "
+                            f"{current_job.lifecycle_phase!r}."
+                        )
+
+                    if consumed_status is not None or advance_to_finalizing:
+                        job.__dict__.clear()
+                        job.__dict__.update(current_job.__dict__)
+
+                return consumed_status
 
             def on_chunk_completed(
                 entity_name: str,
@@ -1481,6 +1823,17 @@ class GenerationService:
                     },
                 )
 
+                consumed_status = consume_control_or_enter_finalizing()
+                if consumed_status is not None:
+                    raise GenerationControlStop(consumed_status)
+
+            def on_generation_finalizing() -> None:
+                consumed_status = consume_control_or_enter_finalizing(
+                    advance_to_finalizing=True,
+                )
+                if consumed_status is not None:
+                    raise GenerationControlStop(consumed_status)
+
             def on_entity_completed(entity_run) -> None:
                 manifest = self._checkpoint_store.get(
                     data_model_id=job.data_model_id,
@@ -1617,6 +1970,7 @@ class GenerationService:
                 job_id=job_id,
                 on_entity_completed=on_entity_completed,
                 on_chunk_completed=on_chunk_completed,
+                on_generation_finalizing=on_generation_finalizing,
             )
 
             peak_memory_bytes = max(
@@ -1792,6 +2146,51 @@ class GenerationService:
                 job,
                 valid=result.validation.valid,
                 error_count=result.validation.error_count,
+            )
+
+        except GenerationControlStop as stop:
+            job.status = stop.status
+            job.error = None
+            job.completed_at = (
+                datetime.now(timezone.utc)
+                if stop.status == GenerationJobStatus.CANCELLED
+                else None
+            )
+
+            # The transition handler already persisted the outcome.
+            # Reload the authoritative record instead of saving a stale
+            # in-memory projection outside the transition lock.
+            persisted_job = self._job_store.get(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+            )
+            if persisted_job is None:
+                raise RuntimeError(
+                    "Generation job disappeared after control transition."
+                )
+
+            if persisted_job.status != stop.status:
+                raise RuntimeError(
+                    "Persisted generation status does not match the "
+                    "completed control transition."
+                )
+
+            job = persisted_job
+            self._jobs[job.job_id] = job
+
+            self._event_broker.publish(
+                data_model_id=job.data_model_id,
+                job_id=job.job_id,
+                event_type=(
+                    "GENERATION_PAUSED"
+                    if stop.status == GenerationJobStatus.PAUSED
+                    else "GENERATION_CANCELLED"
+                ),
+                data={
+                    "status": stop.status.value,
+                    "generated_rows": job.total_generated_rows,
+                    "progress": job.progress,
+                },
             )
 
         except Exception as exc:
@@ -1997,6 +2396,80 @@ class GenerationService:
                 valid=False,
                 error_count=1,
             )
+
+    def _request_job_control(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+        control_request: GenerationJobControlRequest,
+    ) -> GenerationJobResponse:
+        """Persist a control request against an authoritative lifecycle state."""
+
+        job_path = self._job_store._job_path(data_model_id, job_id)
+        job_directory = job_path.parent
+
+        with generation_job_transition_lock(job_directory):
+            job = self._job_store.get(
+                data_model_id=data_model_id,
+                job_id=job_id,
+            )
+
+            if job is None or job.data_model_id != data_model_id:
+                raise ValueError("Generation job not found.")
+
+            if (
+                job.status != GenerationJobStatus.RUNNING
+                or job.lifecycle_phase
+                != GenerationLifecyclePhase.GENERATING
+            ):
+                phase = (
+                    job.lifecycle_phase.value
+                    if job.lifecycle_phase is not None
+                    else "UNKNOWN"
+                )
+                raise ValueError(
+                    f"Cannot request {control_request.value.lower()} for "
+                    f"job in {job.status.value}/{phase} state. "
+                    "Only RUNNING jobs accept controls."
+                )
+
+            self._control_store.request(
+                data_model_id,
+                job_id,
+                control_request,
+            )
+
+            self._jobs[job.job_id] = job
+            return job
+
+    def pause_job(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse:
+        """Request a pause at the next committed chunk boundary."""
+
+        return self._request_job_control(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            control_request=GenerationJobControlRequest.PAUSE,
+        )
+
+    def cancel_job(
+        self,
+        *,
+        data_model_id: str,
+        job_id: str,
+    ) -> GenerationJobResponse:
+        """Request cancellation at the next committed chunk boundary."""
+
+        return self._request_job_control(
+            data_model_id=data_model_id,
+            job_id=job_id,
+            control_request=GenerationJobControlRequest.CANCEL,
+        )
 
     def get_generation_log(
         self,

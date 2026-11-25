@@ -11,6 +11,7 @@ from app.models.generation_model import (
     GenerationJobResponse,
     GenerationJobStatus,
     GenerationPreparationPhase,
+    GenerationLifecyclePhase,
     GenerationResumeIntent,
 )
 from app.services import generation_file_persistence
@@ -347,6 +348,7 @@ def test_lifecycle_fields_are_not_exposed_by_public_response_model() -> None:
         attempt_id="attempt-new",
     )
     job.preparation_phase = GenerationPreparationPhase.CHECKPOINT_READY
+    job.lifecycle_phase = GenerationLifecyclePhase.FINALIZING
     job.resume_intent = GenerationResumeIntent(
         previous_attempt_id="attempt-old",
         new_attempt_id="attempt-new",
@@ -360,30 +362,47 @@ def test_lifecycle_fields_are_not_exposed_by_public_response_model() -> None:
 
     assert "attempt_id" not in public_payload
     assert "preparation_phase" not in public_payload
+    assert "lifecycle_phase" not in public_payload
     assert "resume_intent" not in public_payload
 
 
+@pytest.mark.parametrize(
+    "status",
+    [
+        GenerationJobStatus.INTERRUPTED,
+        GenerationJobStatus.FAILED,
+        GenerationJobStatus.PARTIALLY_COMPLETED,
+    ],
+)
 def test_job_store_lists_jobs_with_recoverable_resume_intents(
-    tmp_path: Path,
+    tmp_path,
     monkeypatch,
+    status,
 ) -> None:
     store = _store(tmp_path, monkeypatch)
 
     store.save(_job("JOB-PREPARING", GenerationJobStatus.PREPARING))
     store.save(_job("JOB-RUNNING", GenerationJobStatus.RUNNING))
-    store.save(_job("JOB-INTERRUPTED", GenerationJobStatus.INTERRUPTED))
 
-    interrupted_resume = _job(
-        "JOB-INTERRUPTED-RESUME",
-        GenerationJobStatus.INTERRUPTED,
+    resumable = _job(
+        f"JOB-{status.value}-RESUME",
+        status,
         attempt_id="attempt-old",
     )
-    interrupted_resume.resume_intent = GenerationResumeIntent(
+    resumable.resume_intent = GenerationResumeIntent(
         previous_attempt_id="attempt-old",
         new_attempt_id="attempt-new",
     )
-    store.save(interrupted_resume)
+    store.save(resumable)
 
+    # Terminal jobs without a durable resume intent stay out of recovery.
+    store.save(_job("JOB-FAILED", GenerationJobStatus.FAILED))
+    store.save(
+        _job(
+            "JOB-PARTIAL",
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+        )
+    )
     store.save(_job("JOB-CREATED", GenerationJobStatus.CREATED))
 
     jobs = store.list_recoverable()
@@ -391,7 +410,7 @@ def test_job_store_lists_jobs_with_recoverable_resume_intents(
     assert {job.job_id for job in jobs} == {
         "JOB-PREPARING",
         "JOB-RUNNING",
-        "JOB-INTERRUPTED-RESUME",
+        f"JOB-{status.value}-RESUME",
     }
 
 

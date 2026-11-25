@@ -822,6 +822,7 @@ async def stream_generation_events(
                 "COMPLETED",
                 "PARTIALLY_COMPLETED",
                 "FAILED",
+                "PAUSED",
                 "CANCELLED",
             }:
                 return
@@ -1239,6 +1240,76 @@ async def download_generation_artifact(
 
 
 @router.post(
+    "/{data_model_id}/generation/{job_id}/pause",
+    response_model=GenerationJobResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def pause_generation_job(
+    data_model_id: str,
+    job_id: str,
+    current_user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationJobResponse:
+    """Request a cooperative pause at the next committed chunk boundary."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=current_user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        return generation_service.pause_job(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+    except ValueError as exc:
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if str(exc) == "Generation job not found."
+            else status.HTTP_409_CONFLICT
+        )
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+
+
+@router.post(
+    "/{data_model_id}/generation/{job_id}/cancel",
+    response_model=GenerationJobResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def cancel_generation_job(
+    data_model_id: str,
+    job_id: str,
+    current_user: AuthUser = Depends(get_authenticated_user),
+) -> GenerationJobResponse:
+    """Request cooperative cancellation at the next committed chunk boundary."""
+
+    if not data_model_access_service.can_generate(
+        data_model_id=data_model_id,
+        user_id=current_user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    try:
+        return generation_service.cancel_job(
+            data_model_id=data_model_id,
+            job_id=job_id,
+        )
+    except ValueError as exc:
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if str(exc) == "Generation job not found."
+            else status.HTTP_409_CONFLICT
+        )
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+
+
+@router.post(
     "/{data_model_id}/generation/{job_id}/start",
     response_model=GenerationJobResponse,
     status_code=status.HTTP_200_OK,
@@ -1306,6 +1377,10 @@ async def start_generation_job(
         if previous_status in {
             GenerationJobStatus.CREATED,
             GenerationJobStatus.INTERRUPTED,
+            GenerationJobStatus.FAILED,
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+            GenerationJobStatus.PAUSED,
+            GenerationJobStatus.CANCELLED,
         }:
             data_model = data_model_repository.get_by_id_any(data_model_id)
             if data_model is not None:
@@ -1323,7 +1398,14 @@ async def start_generation_job(
                         "status": job.status.value,
                         "requested_rows": job.total_target_rows,
                         "resumed": (
-                            previous_status == GenerationJobStatus.INTERRUPTED
+                            previous_status
+                            in {
+                                GenerationJobStatus.INTERRUPTED,
+                                GenerationJobStatus.FAILED,
+                                GenerationJobStatus.PARTIALLY_COMPLETED,
+                                GenerationJobStatus.PAUSED,
+                                GenerationJobStatus.CANCELLED,
+                            }
                         ),
                     },
                 )

@@ -17,6 +17,7 @@ import {
   GenerationChunkCommittedEvent,
   GenerationActivityEvent,
   GenerationCompletedEvent,
+  GenerationControlEvent,
   GenerationEntityCompletedEvent,
   GenerationSemanticCallStartedEvent,
   GenerationJobResponse,
@@ -178,6 +179,22 @@ export class GenerationService {
     );
   }
 
+  pauseGenerationJob(
+    dataModelId: string,
+    jobId: string,
+  ): Observable<GenerationJobResponse> {
+    return this.http.post<GenerationJobResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/generation/${jobId}/pause`,
+      {},
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.PausingGeneration,
+        ),
+      },
+    );
+  }
+
   connectToGenerationEvents(
     dataModelId: string,
     jobId: string,
@@ -191,6 +208,13 @@ export class GenerationService {
           if (event.type === 'JOB_SNAPSHOT') {
             return {
               type: 'JOB_SNAPSHOT',
+              data: JSON.parse(event.data) as GenerationJobResponse,
+            };
+          }
+
+          if (event.type === 'GENERATION_STARTED') {
+            return {
+              type: 'GENERATION_STARTED',
               data: JSON.parse(event.data) as GenerationJobResponse,
             };
           }
@@ -237,6 +261,20 @@ export class GenerationService {
               data: JSON.parse(
                 event.data,
               ) as GenerationCompletedEvent,
+            };
+          }
+
+          if (event.type === 'GENERATION_PAUSED') {
+            return {
+              type: 'GENERATION_PAUSED',
+              data: JSON.parse(event.data) as GenerationControlEvent,
+            };
+          }
+
+          if (event.type === 'GENERATION_CANCELLED') {
+            return {
+              type: 'GENERATION_CANCELLED',
+              data: JSON.parse(event.data) as GenerationControlEvent,
             };
           }
 

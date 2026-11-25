@@ -25,6 +25,7 @@ export type GenerationJobStatus =
   | 'PLANNING'
   | 'QUEUED'
   | 'RUNNING'
+  | 'PAUSED'
   | 'INTERRUPTED'
   | 'COMPLETED'
   | 'PARTIALLY_COMPLETED'
@@ -203,9 +204,19 @@ export interface GenerationSemanticCallStartedEvent {
   requested_count: number;
 }
 
+export interface GenerationControlEvent {
+  status: 'PAUSED' | 'CANCELLED';
+  generated_rows: number;
+  progress: number;
+}
+
 export type GenerationSseEvent =
   | {
       type: 'JOB_SNAPSHOT';
+      data: GenerationJobResponse;
+    }
+  | {
+      type: 'GENERATION_STARTED';
       data: GenerationJobResponse;
     }
   | {
@@ -227,4 +238,12 @@ export type GenerationSseEvent =
   | {
       type: 'GENERATION_COMPLETED';
       data: GenerationCompletedEvent;
+    }
+  | {
+      type: 'GENERATION_PAUSED';
+      data: GenerationControlEvent;
+    }
+  | {
+      type: 'GENERATION_CANCELLED';
+      data: GenerationControlEvent;
     };

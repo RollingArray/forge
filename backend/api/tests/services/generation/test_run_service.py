@@ -1,4 +1,6 @@
 import logging
+
+import pytest
 from types import SimpleNamespace
 
 from app.models.generation_model import GenerationJobStatus
@@ -148,3 +150,100 @@ def test_generation_with_zero_rows_is_reported_as_failed():
     assert result.requested_rows == 3
     assert result.generated_rows == 0
     assert result.validation.valid is False
+
+
+
+class RecordingExecutor(FakeExecutor):
+    def __init__(self, events):
+        super().__init__()
+        self.events = events
+
+    def execute(self, **kwargs):
+        self.events.append("execute")
+        return super().execute(**kwargs)
+
+
+class RecordingValidator(FakeValidator):
+    def __init__(self, events):
+        super().__init__()
+        self.events = events
+        self.calls = 0
+
+    def validate(self, **kwargs):
+        self.calls += 1
+        self.events.append("validate")
+        return super().validate(**kwargs)
+
+
+class RecordingQualityService:
+    def __init__(self, events):
+        self.events = events
+        self.calls = 0
+
+    def build_quality_profile(self, **kwargs):
+        self.calls += 1
+        self.events.append("quality")
+        return None
+
+
+def test_finalizing_callback_runs_after_execution_and_before_validation():
+    events = []
+    validator = RecordingValidator(events)
+    quality_service = RecordingQualityService(events)
+
+    service = GenerationRunService(
+        executor=RecordingExecutor(events),
+        validator=validator,
+        quality_service=quality_service,
+    )
+
+    result = service.run(
+        specification={
+            "generation": {"seed": 42, "scenario": "NORMAL"},
+            "entities": [],
+        },
+        plan=SimpleNamespace(),
+        data_model_id="model-1",
+        job_id="job-finalizing-order",
+        on_generation_finalizing=lambda: events.append("finalizing"),
+    )
+
+    assert result.status == GenerationJobStatus.COMPLETED
+    assert events == ["execute", "finalizing", "validate", "quality"]
+    assert validator.calls == 1
+    assert quality_service.calls == 1
+
+
+def test_finalizing_callback_failure_prevents_validation_and_quality():
+    events = []
+    validator = RecordingValidator(events)
+    quality_service = RecordingQualityService(events)
+
+    service = GenerationRunService(
+        executor=RecordingExecutor(events),
+        validator=validator,
+        quality_service=quality_service,
+    )
+
+    def fail_finalization():
+        events.append("finalizing")
+        raise RuntimeError("Unable to persist FINALIZING transition")
+
+    with pytest.raises(
+        RuntimeError,
+        match="Unable to persist FINALIZING transition",
+    ):
+        service.run(
+            specification={
+                "generation": {"seed": 42, "scenario": "NORMAL"},
+                "entities": [],
+            },
+            plan=SimpleNamespace(),
+            data_model_id="model-1",
+            job_id="job-finalizing-failure",
+            on_generation_finalizing=fail_finalization,
+        )
+
+    assert events == ["execute", "finalizing"]
+    assert validator.calls == 0
+    assert quality_service.calls == 0

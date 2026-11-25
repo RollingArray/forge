@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, HTTPException
 
 from app.api import generation as generation_api
 from app.api import specification as specification_api
+from app.constants.activity import ActivityType
 from app.interfaces.auth_user import AuthUser
 from app.models.generation_model import GenerationJobStatus
 from app.models.specification_field_model import (
@@ -169,6 +170,88 @@ def test_start_generation_job_returns_422_for_invalid_specification(
     )
 
 
+@pytest.mark.parametrize(
+    ("previous_status", "expected_resumed"),
+    [
+        (GenerationJobStatus.CREATED, False),
+        (GenerationJobStatus.INTERRUPTED, True),
+        (GenerationJobStatus.FAILED, True),
+        (GenerationJobStatus.PARTIALLY_COMPLETED, True),
+    ],
+)
+def test_start_generation_job_records_start_and_resume_activity(
+    monkeypatch,
+    previous_status,
+    expected_resumed,
+):
+    previous_job = SimpleNamespace(status=previous_status)
+    started_job = SimpleNamespace(
+        status=GenerationJobStatus.PREPARING,
+        attempt_id="attempt-002",
+        job_id="test-job",
+        total_target_rows=100,
+    )
+    recorded_activities = []
+
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_access_service",
+        SimpleNamespace(can_generate=lambda **kwargs: True),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "generation_service",
+        SimpleNamespace(
+            get_job=lambda **kwargs: previous_job,
+            start_job=lambda **kwargs: started_job,
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_repository",
+        SimpleNamespace(
+            get_by_id_any=lambda data_model_id: SimpleNamespace(
+                owner_user_id="owner-user",
+                name="Test Model",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "activity_service",
+        SimpleNamespace(
+            record=lambda **kwargs: recorded_activities.append(kwargs)
+        ),
+    )
+
+    background_tasks = BackgroundTasks()
+
+    result = asyncio.run(
+        generation_api.start_generation_job(
+            data_model_id=DATA_MODEL_ID,
+            job_id="test-job",
+            background_tasks=background_tasks,
+            current_user=USER,
+        )
+    )
+
+    assert result is started_job
+    assert len(background_tasks.tasks) == 1
+    assert len(recorded_activities) == 1
+
+    activity = recorded_activities[0]
+    assert activity["owner_user_id"] == "owner-user"
+    assert activity["actor_user_id"] == USER.user_id
+    assert activity["activity_type"] == ActivityType.GENERATION_STARTED
+    assert activity["data_model_id"] == DATA_MODEL_ID
+    assert activity["job_id"] == "test-job"
+    assert activity["metadata"] == {
+        "status": GenerationJobStatus.PREPARING.value,
+        "requested_rows": 100,
+        "resumed": expected_resumed,
+    }
+
+
 def _hold_generation_execution_lease_in_process(
     job_directory,
     release_event,
@@ -219,7 +302,8 @@ def test_start_generation_job_returns_409_when_execution_lease_is_busy(
     )
 
     created_job = SimpleNamespace(
-        status=GenerationJobStatus.CREATED
+        status=GenerationJobStatus.RUNNING,
+        attempt_id="existing-attempt-001",
     )
     background_tasks = BackgroundTasks()
 
@@ -270,7 +354,8 @@ def test_start_generation_job_returns_409_when_execution_lease_is_busy(
             "Please try again."
         )
         assert background_tasks.tasks == []
-        assert created_job.status == GenerationJobStatus.CREATED
+        assert created_job.status == GenerationJobStatus.RUNNING
+        assert created_job.attempt_id == "existing-attempt-001"
 
     finally:
         release_event.set()
@@ -445,3 +530,185 @@ def test_generation_readiness_returns_422_for_invalid_specification(
         )
     )
 
+
+
+@pytest.mark.parametrize(
+    ("route_name", "service_method"),
+    [
+        ("pause_generation_job", "pause_job"),
+        ("cancel_generation_job", "cancel_job"),
+    ],
+)
+def test_generation_control_routes_accept_running_job(
+    monkeypatch,
+    route_name,
+    service_method,
+):
+    running_job = SimpleNamespace(
+        data_model_id=DATA_MODEL_ID,
+        job_id="test-job",
+        status=GenerationJobStatus.RUNNING,
+    )
+    calls = []
+
+    def request_control(**kwargs):
+        calls.append(kwargs)
+        return running_job
+
+    service = SimpleNamespace(
+        **{service_method: request_control}
+    )
+
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_access_service",
+        SimpleNamespace(can_generate=lambda **kwargs: True),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "generation_service",
+        service,
+    )
+
+    result = asyncio.run(
+        getattr(generation_api, route_name)(
+            data_model_id=DATA_MODEL_ID,
+            job_id="test-job",
+            current_user=USER,
+        )
+    )
+
+    assert result is running_job
+    assert calls == [{
+        "data_model_id": DATA_MODEL_ID,
+        "job_id": "test-job",
+    }]
+
+
+@pytest.mark.parametrize(
+    ("route_name", "service_method"),
+    [
+        ("pause_generation_job", "pause_job"),
+        ("cancel_generation_job", "cancel_job"),
+    ],
+)
+def test_generation_control_routes_return_404_for_missing_job(
+    monkeypatch,
+    route_name,
+    service_method,
+):
+    def request_control(**kwargs):
+        raise ValueError("Generation job not found.")
+
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_access_service",
+        SimpleNamespace(can_generate=lambda **kwargs: True),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "generation_service",
+        SimpleNamespace(**{service_method: request_control}),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(
+            getattr(generation_api, route_name)(
+                data_model_id=DATA_MODEL_ID,
+                job_id="missing-job",
+                current_user=USER,
+            )
+        )
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Generation job not found."
+
+
+@pytest.mark.parametrize(
+    ("route_name", "service_method"),
+    [
+        ("pause_generation_job", "pause_job"),
+        ("cancel_generation_job", "cancel_job"),
+    ],
+)
+def test_generation_control_routes_return_409_for_invalid_transition(
+    monkeypatch,
+    route_name,
+    service_method,
+):
+    detail = (
+        "Cannot request pause for a job in COMPLETED state. "
+        "Only RUNNING jobs accept controls."
+    )
+
+    def request_control(**kwargs):
+        raise ValueError(detail)
+
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_access_service",
+        SimpleNamespace(can_generate=lambda **kwargs: True),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "generation_service",
+        SimpleNamespace(**{service_method: request_control}),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(
+            getattr(generation_api, route_name)(
+                data_model_id=DATA_MODEL_ID,
+                job_id="test-job",
+                current_user=USER,
+            )
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == detail
+
+
+@pytest.mark.parametrize(
+    "route_name",
+    [
+        "pause_generation_job",
+        "cancel_generation_job",
+    ],
+)
+def test_generation_control_routes_hide_inaccessible_data_models(
+    monkeypatch,
+    route_name,
+):
+    service_called = False
+
+    def unexpected_call(**kwargs):
+        nonlocal service_called
+        service_called = True
+        raise AssertionError("Service must not be called.")
+
+    monkeypatch.setattr(
+        generation_api,
+        "data_model_access_service",
+        SimpleNamespace(can_generate=lambda **kwargs: False),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "generation_service",
+        SimpleNamespace(
+            pause_job=unexpected_call,
+            cancel_job=unexpected_call,
+        ),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(
+            getattr(generation_api, route_name)(
+                data_model_id=DATA_MODEL_ID,
+                job_id="test-job",
+                current_user=USER,
+            )
+        )
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Data model not found."
+    assert service_called is False

@@ -122,6 +122,13 @@ class GenerationJobStore:
             GenerationJobStatus.PREPARING,
             GenerationJobStatus.RUNNING,
         }
+        resume_intent_source_statuses = {
+            GenerationJobStatus.INTERRUPTED,
+            GenerationJobStatus.FAILED,
+            GenerationJobStatus.PARTIALLY_COMPLETED,
+            GenerationJobStatus.PAUSED,
+            GenerationJobStatus.CANCELLED,
+        }
 
         return [
             job
@@ -129,7 +136,7 @@ class GenerationJobStore:
             if (
                 job.status in recoverable_statuses
                 or (
-                    job.status == GenerationJobStatus.INTERRUPTED
+                    job.status in resume_intent_source_statuses
                     and job.resume_intent is not None
                 )
             )

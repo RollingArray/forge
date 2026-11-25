@@ -22,10 +22,14 @@
     [description]="actionBarDescription()"
     [secondaryLabel]="secondaryLabel()"
     [secondaryIcon]="secondaryIcon()"
+    [contextualActionLabel]="contextualActionLabel()"
+    [contextualActionIcon]="contextualActionIcon()"
+    [contextualActionDisabled]="contextualActionDisabled()"
     [primaryLabel]="primaryLabel()"
     [primaryIcon]="primaryIcon()"
     [primaryDisabled]="primaryDisabled()"
     (secondaryAction)="secondaryAction.emit()"
+    (contextualAction)="contextualAction.emit()"
     (primaryAction)="primaryAction.emit()"
   />
 </section>

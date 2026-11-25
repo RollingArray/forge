@@ -194,3 +194,179 @@ def test_checkpoint_failure_propagates_when_failed_state_cannot_be_persisted(
     assert persisted.error is None
 
     assert (DATA_MODEL_ID, JOB_ID) not in service._active_workers
+
+
+def test_duplicate_start_rejects_existing_active_worker_without_mutation(
+    tmp_path,
+    monkeypatch,
+):
+    service, job_store, checkpoint_store, _ = build_start_service(
+        tmp_path,
+        monkeypatch,
+    )
+
+    job = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert job is not None
+
+    job.status = GenerationJobStatus.RUNNING
+    job.attempt_id = "existing-attempt-001"
+    job.started_at = datetime.now(timezone.utc)
+    job_store.save(job)
+
+    worker_key = (DATA_MODEL_ID, JOB_ID)
+    service._active_workers.add(worker_key)
+
+    with pytest.raises(
+        ValueError,
+        match="already has a scheduled or active worker",
+    ):
+        service.start_job(
+            data_model_id=DATA_MODEL_ID,
+            job_id=JOB_ID,
+        )
+
+    persisted = job_store.get(DATA_MODEL_ID, JOB_ID)
+
+    assert persisted is not None
+    assert persisted.status == GenerationJobStatus.RUNNING
+    assert persisted.attempt_id == "existing-attempt-001"
+    assert persisted.started_at == job.started_at
+
+    # The duplicate request must not disturb the original worker reservation.
+    assert worker_key in service._active_workers
+
+    # It must not initialize or replace the original execution checkpoint.
+    checkpoint_store.initialize.assert_not_called()
+
+
+def _prepare_job_for_execution(job_store, status=GenerationJobStatus.PREPARING):
+    job = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert job is not None
+
+    job.status = status
+    job.attempt_id = "attempt-generation-start-test"
+    job.started_at = datetime.now(timezone.utc)
+    job_store.save(job)
+
+    return job
+
+
+def _prepare_execution_service(service, monkeypatch):
+    service._active_workers.add((DATA_MODEL_ID, JOB_ID))
+
+    # Isolate this test from checkpoint implementation details. The test
+    # concerns only the durable status transition and its SSE publication.
+    monkeypatch.setattr(
+        service,
+        "_validate_recovery_checkpoint",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        service,
+        "_execute_job_reserved",
+        lambda **kwargs: None,
+    )
+
+
+def test_execute_job_publishes_started_after_running_is_persisted(
+    tmp_path,
+    monkeypatch,
+):
+    service, job_store, _, event_broker = build_start_service(
+        tmp_path,
+        monkeypatch,
+    )
+    job = _prepare_job_for_execution(job_store)
+    _prepare_execution_service(service, monkeypatch)
+
+    def assert_running_is_already_durable(**kwargs):
+        persisted = job_store.get(DATA_MODEL_ID, JOB_ID)
+        assert persisted is not None
+        assert persisted.status == GenerationJobStatus.RUNNING
+
+    event_broker.publish.side_effect = assert_running_is_already_durable
+
+    service.execute_job(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+        attempt_id=job.attempt_id,
+    )
+
+    event_broker.publish.assert_called_once()
+    published = event_broker.publish.call_args.kwargs
+
+    assert published["event_type"] == "GENERATION_STARTED"
+    assert published["data"]["status"] == GenerationJobStatus.RUNNING.value
+    assert "attempt_id" not in published["data"]
+    assert "preparation_phase" not in published["data"]
+    assert "lifecycle_phase" not in published["data"]
+    assert "resume_intent" not in published["data"]
+
+    persisted = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert persisted is not None
+    assert persisted.status == GenerationJobStatus.RUNNING
+
+
+def test_execute_job_does_not_publish_duplicate_started_event_for_running_job(
+    tmp_path,
+    monkeypatch,
+):
+    service, job_store, _, event_broker = build_start_service(
+        tmp_path,
+        monkeypatch,
+    )
+    job = _prepare_job_for_execution(
+        job_store,
+        status=GenerationJobStatus.RUNNING,
+    )
+    _prepare_execution_service(service, monkeypatch)
+
+    service.execute_job(
+        data_model_id=DATA_MODEL_ID,
+        job_id=JOB_ID,
+        attempt_id=job.attempt_id,
+    )
+
+    event_broker.publish.assert_not_called()
+
+    persisted = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert persisted is not None
+    assert persisted.status == GenerationJobStatus.RUNNING
+
+
+def test_execute_job_does_not_publish_started_when_running_save_fails(
+    tmp_path,
+    monkeypatch,
+):
+    service, job_store, _, event_broker = build_start_service(
+        tmp_path,
+        monkeypatch,
+    )
+    job = _prepare_job_for_execution(job_store)
+    _prepare_execution_service(service, monkeypatch)
+
+    original_save = job_store.save
+
+    def fail_running_save(candidate):
+        if candidate.status == GenerationJobStatus.RUNNING:
+            raise OSError("Simulated RUNNING persistence failure.")
+        original_save(candidate)
+
+    monkeypatch.setattr(job_store, "save", fail_running_save)
+
+    with pytest.raises(
+        OSError,
+        match="Simulated RUNNING persistence failure",
+    ):
+        service.execute_job(
+            data_model_id=DATA_MODEL_ID,
+            job_id=JOB_ID,
+            attempt_id=job.attempt_id,
+        )
+
+    event_broker.publish.assert_not_called()
+
+    persisted = job_store.get(DATA_MODEL_ID, JOB_ID)
+    assert persisted is not None
+    assert persisted.status == GenerationJobStatus.PREPARING
+    assert (DATA_MODEL_ID, JOB_ID) not in service._active_workers

@@ -347,11 +347,14 @@ export class GenerationExecutionStore {
 
       const uiHandler: Record<GenerationSseEvent['type'], string> = {
         JOB_SNAPSHOT: 'generationJob / isGenerating',
+        GENERATION_STARTED: 'generationJob / isGenerating',
         GENERATION_ACTIVITY: 'generationActivities',
         SEMANTIC_CALL_STARTED: 'activeSemanticCall',
         CHUNK_COMMITTED: 'applyChunkProgress / live checkpoint projection',
         ENTITY_COMPLETED: 'applyEntityCompleted / live entity completion',
         GENERATION_COMPLETED: 'applyGenerationCompleted / terminal job state',
+        GENERATION_PAUSED: 'applyGenerationControl / paused job state',
+        GENERATION_CANCELLED: 'applyGenerationControl / cancelled job state',
       };
 
       const data = event.data as unknown as Record<string, unknown>;
@@ -376,6 +379,7 @@ export class GenerationExecutionStore {
     switch (event.type) {
 
       case 'JOB_SNAPSHOT':
+      case 'GENERATION_STARTED':
         this.generationJob.set(event.data);
         this.isGenerating.set(
           event.data.status === 'PREPARING' ||
@@ -405,6 +409,25 @@ export class GenerationExecutionStore {
         this.applyLiveEntityCompletion(event.data);
         break;
 
+
+      case 'GENERATION_PAUSED':
+      case 'GENERATION_CANCELLED': {
+        const current = this.generationJob();
+
+        this.isGenerating.set(false);
+        this.activeSemanticCall.set(null);
+
+        if (current) {
+          this.generationJob.set({
+            ...current,
+            status: event.data.status,
+            total_generated_rows: event.data.generated_rows,
+            progress: event.data.progress,
+          });
+        }
+
+        break;
+      }
 
       case 'GENERATION_COMPLETED':
         this.isGenerating.set(false);

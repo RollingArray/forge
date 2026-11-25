@@ -31,13 +31,25 @@
       />
     }
 
-    <app-forge-button
-      [label]="primaryLabel()"
-      [icon]="primaryIcon()"
-      variant="primary"
-      [disabled]="primaryDisabled()"
-      (clicked)="handlePrimaryAction()"
-    />
+    @if (contextualActionLabel()) {
+      <app-forge-button
+        [label]="contextualActionLabel()"
+        [icon]="contextualActionIcon()"
+        variant="primary"
+        [disabled]="contextualActionDisabled()"
+        (clicked)="handleContextualAction()"
+      />
+    }
+
+    @if (primaryLabel()) {
+      <app-forge-button
+        [label]="primaryLabel()"
+        [icon]="primaryIcon()"
+        [variant]="contextualActionLabel() ? 'secondary' : 'primary'"
+        [disabled]="primaryDisabled()"
+        (clicked)="handlePrimaryAction()"
+      />
+    }
 
   </div>
 

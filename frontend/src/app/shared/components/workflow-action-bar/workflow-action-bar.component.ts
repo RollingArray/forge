@@ -36,15 +36,28 @@ export class WorkflowActionBarComponent {
   readonly secondaryLabel = input('');
   readonly secondaryIcon = input('arrow_back');
 
+  readonly contextualActionLabel = input('');
+  readonly contextualActionIcon = input('pause');
+  readonly contextualActionDisabled = input(false);
+
   readonly primaryLabel = input.required<string>();
   readonly primaryIcon = input('arrow_forward');
   readonly primaryDisabled = input(false);
 
   readonly secondaryAction = output<void>();
+  readonly contextualAction = output<void>();
   readonly primaryAction = output<void>();
 
   handleSecondaryAction(): void {
     this.secondaryAction.emit();
+  }
+
+  handleContextualAction(): void {
+    if (this.contextualActionDisabled()) {
+      return;
+    }
+
+    this.contextualAction.emit();
   }
 
   handlePrimaryAction(): void {

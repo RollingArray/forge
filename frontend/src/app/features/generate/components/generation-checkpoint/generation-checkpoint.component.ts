@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   GenerationCheckpoint,
@@ -20,10 +20,6 @@ export class GenerationCheckpointComponent {
   readonly checkpoint = input<GenerationCheckpoint | null>(null);
   readonly liveProgress = input<GenerationCheckpointLiveProgress | null>(null);
   readonly loading = input(false);
-  readonly canResume = input(false);
-  readonly resuming = input(false);
-  readonly resumeRequested = output<void>();
-
   readonly savedBatchCount = computed(() => {
     const live = this.liveProgress();
 

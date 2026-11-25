@@ -56,6 +56,7 @@ class GenerationRunService:
             ],
             None,
         ] | None = None,
+        on_generation_finalizing: Callable[[], None] | None = None,
     ) -> GenerationResult:
         generation = specification.get("generation") or {}
 
@@ -70,6 +71,10 @@ class GenerationRunService:
             on_entity_completed=on_entity_completed,
             on_chunk_completed=on_chunk_completed,
         )
+
+        # Persist the lifecycle transition before post-generation work.
+        if on_generation_finalizing is not None:
+            on_generation_finalizing()
 
         validation = self._validator.validate(
             specification=specification,

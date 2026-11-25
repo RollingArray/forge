@@ -1,5 +1,13 @@
 import { formatStatusLabel } from '../../shared/utils/status-label.util';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,11 +30,7 @@ import { GenerationPipelineComponent } from './components/generation-pipeline/ge
 import { EntityGenerationProgressComponent } from './components/entity-generation-progress/entity-generation-progress.component';
 import { GenerationCheckpointComponent } from './components/generation-checkpoint/generation-checkpoint.component';
 import { GenerationActivityComponent } from '../../shared/components/generation-activity/generation-activity.component';
-import {
-  GenerationJobResponse,
-  GenerationReadiness,
-} from './models/generation.models';
-
+import { GenerationJobResponse, GenerationReadiness } from './models/generation.models';
 
 @Component({
   selector: 'app-generate',
@@ -76,20 +80,12 @@ export class GenerateComponent {
       this.executionStore.disconnect();
     });
 
-    this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        this.handleRouteParameters(
-          params.get('dataModelId') ?? '',
-          params.get('jobId') ?? '',
-        );
-      });
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.handleRouteParameters(params.get('dataModelId') ?? '', params.get('jobId') ?? '');
+    });
   }
 
-  private handleRouteParameters(
-    dataModelId: string,
-    jobId: string,
-  ): void {
+  private handleRouteParameters(dataModelId: string, jobId: string): void {
     this.dataModelId = dataModelId;
     this.jobId = jobId;
 
@@ -100,6 +96,7 @@ export class GenerateComponent {
     this.generationCheckpointLoading.set(false);
     this.generationCheckpointError.set(null);
     this.generationActionLoading.set(false);
+    this.generationPauseRequested.set(false);
 
     if (!dataModelId) {
       this.executionStore.disconnect();
@@ -121,11 +118,7 @@ export class GenerateComponent {
     }
   }
 
-  private loadExistingGenerationJob(
-    dataModelId: string,
-    jobId: string,
-    revision: number,
-  ): void {
+  private loadExistingGenerationJob(dataModelId: string, jobId: string, revision: number): void {
     if (!dataModelId || !jobId) {
       return;
     }
@@ -135,20 +128,11 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (job) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
-          if (
-            job.data_model_id !== dataModelId ||
-            job.job_id !== jobId
-          ) {
+          if (job.data_model_id !== dataModelId || job.job_id !== jobId) {
             this.generationError.set(
               'The backend returned a different generation job than the one requested.',
             );
@@ -157,40 +141,25 @@ export class GenerateComponent {
 
           this.executionStore.setJob(job, revision);
 
-          if (
-            job.status === 'PREPARING' ||
-            job.status === 'QUEUED' ||
-            job.status === 'RUNNING'
-          ) {
+          if (job.status === 'PREPARING' || job.status === 'QUEUED' || job.status === 'RUNNING') {
             this.executionStore.connect(dataModelId, job.job_id);
           }
 
           this.loadGenerationCheckpoint(dataModelId, job.job_id, revision);
         },
         error: (error) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
           this.generationError.set(
-            error?.error?.detail ??
-              error?.message ??
-              'Generation job could not be loaded.',
+            error?.error?.detail ?? error?.message ?? 'Generation job could not be loaded.',
           );
         },
       });
   }
 
-  private loadGenerationReadiness(
-    dataModelId: string,
-    revision: number,
-  ): void {
+  private loadGenerationReadiness(dataModelId: string, revision: number): void {
     if (!dataModelId) {
       this.generationLoading.set(false);
       this.generationError.set('Data model could not be identified.');
@@ -202,13 +171,7 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (readiness) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              null,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, null, revision)) {
             return;
           }
 
@@ -216,20 +179,12 @@ export class GenerateComponent {
           this.generationLoading.set(false);
         },
         error: () => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              null,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, null, revision)) {
             return;
           }
 
           this.generationLoading.set(false);
-          this.generationError.set(
-            'Generation readiness could not be loaded.',
-          );
+          this.generationError.set('Generation readiness could not be loaded.');
         },
       });
   }
@@ -242,11 +197,7 @@ export class GenerateComponent {
   readonly showLiveGenerationActivity = computed(() => {
     const status = this.generationJob()?.status;
 
-    return (
-      status === 'PREPARING' ||
-      status === 'QUEUED' ||
-      status === 'RUNNING'
-    );
+    return status === 'PREPARING' || status === 'QUEUED' || status === 'RUNNING';
   });
   readonly activeSemanticCall = this.executionStore.activeSemanticCall;
   readonly generationActivities = this.executionStore.generationActivities;
@@ -257,35 +208,25 @@ export class GenerateComponent {
   readonly generationCheckpointLoading = signal(false);
   readonly generationCheckpointError = signal<string | null>(null);
   readonly generationActionLoading = signal(false);
+  readonly generationPauseRequested = signal(false);
 
   readonly pipelineNodes = computed(() =>
-    this.pipelineMapper.fromReadiness(
-      this.generationReadiness(),
-      this.generationJob(),
-    ),
+    this.pipelineMapper.fromReadiness(this.generationReadiness(), this.generationJob()),
   );
 
-  readonly pipelineGraph = computed(() =>
-    this.pipelineMapper.toGraph(
-      this.pipelineNodes(),
-    ),
-  );
-  readonly generationJobIdDisplay = computed(
-    () => this.generationJob()?.job_id ?? '—',
+  readonly pipelineGraph = computed(() => this.pipelineMapper.toGraph(this.pipelineNodes()));
+  readonly generationJobIdDisplay = computed(() => this.generationJob()?.job_id ?? '—');
+
+  readonly generationJobDetail = computed(() =>
+    this.generationJob() !== null ? 'Generation job created' : 'Assigned when generation starts',
   );
 
-  readonly generationJobDetail = computed(
-    () =>
-      this.generationJob() !== null
-        ? 'Generation job created'
-        : 'Assigned when generation starts',
-  );
-
-  readonly generationTargetRowsDisplay = computed(
-    () =>
-      (this.generationJob()?.total_target_rows ??
-        this.generationReadiness()?.total_target_rows ??
-        0).toLocaleString(),
+  readonly generationTargetRowsDisplay = computed(() =>
+    (
+      this.generationJob()?.total_target_rows ??
+      this.generationReadiness()?.total_target_rows ??
+      0
+    ).toLocaleString(),
   );
 
   readonly generationEntitiesDisplay = computed(
@@ -297,22 +238,19 @@ export class GenerateComponent {
       )?.toLocaleString() ?? '—',
   );
 
-  readonly generationThroughputDisplay = computed(
-    () => {
-      const throughput = this.generationJob()?.throughput_rows_per_second;
+  readonly generationThroughputDisplay = computed(() => {
+    const throughput = this.generationJob()?.throughput_rows_per_second;
 
-      return throughput !== null && throughput !== undefined
-        ? `${Math.round(throughput).toLocaleString()} rows/sec`
-        : '—';
-    },
-  );
+    return throughput !== null && throughput !== undefined
+      ? `${Math.round(throughput).toLocaleString()} rows/sec`
+      : '—';
+  });
 
-  readonly generationThroughputDetail = computed(
-    () =>
-      this.generationJob()?.throughput_rows_per_second !== null &&
-      this.generationJob()?.throughput_rows_per_second !== undefined
-        ? 'Measured generation throughput'
-        : 'Available after execution completes',
+  readonly generationThroughputDetail = computed(() =>
+    this.generationJob()?.throughput_rows_per_second !== null &&
+    this.generationJob()?.throughput_rows_per_second !== undefined
+      ? 'Measured generation throughput'
+      : 'Available after execution completes',
   );
 
   readonly generationMetrics = computed<readonly MetricCardData[]>(() => [
@@ -370,9 +308,7 @@ export class GenerateComponent {
           return;
         }
 
-        this.router.navigate(
-          ['/workspace', this.dataModelId, 'data-model', 'results', jobId],
-        );
+        this.router.navigate(['/workspace', this.dataModelId, 'data-model', 'results', jobId]);
         break;
       }
     }
@@ -404,12 +340,91 @@ export class GenerateComponent {
       return;
     }
 
-    if (
-      job.status === 'COMPLETED' ||
-      job.status === 'PARTIALLY_COMPLETED'
-    ) {
+    if (job.status === 'COMPLETED' || job.status === 'PARTIALLY_COMPLETED') {
       this.continueToResults();
     }
+  }
+
+  handleContextualAction(): void {
+    const status = this.generationJob()?.status;
+
+    if (
+      status === 'PAUSED' ||
+      status === 'INTERRUPTED' ||
+      status === 'FAILED' ||
+      status === 'PARTIALLY_COMPLETED' ||
+      status === 'CANCELLED'
+    ) {
+      this.generationPauseRequested.set(false);
+      this.resumeGeneration();
+      return;
+    }
+
+    if (status === 'RUNNING') {
+      this.pauseGeneration();
+    }
+  }
+
+  pauseGeneration(): void {
+
+    const job = this.generationJob();
+    const dataModelId = this.dataModelId;
+    const revision = this.executionStore.getContextRevision();
+
+    const contextIsCurrent =
+      !!dataModelId &&
+      !!job &&
+      this.executionStore.isCurrentContext(dataModelId, job.job_id, revision);
+
+    if (
+      !dataModelId ||
+      !job ||
+      job.status !== 'RUNNING' ||
+      this.generationActionLoading() ||
+      this.generationPauseRequested() ||
+      !contextIsCurrent
+    ) {
+      return;
+    }
+
+    this.generationError.set(null);
+    this.generationActionLoading.set(true);
+
+    this.generationService
+      .pauseGenerationJob(dataModelId, job.job_id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (!this.executionStore.isCurrentContext(dataModelId, job.job_id, revision)) {
+            return;
+          }
+
+          if (response.data_model_id !== dataModelId || response.job_id !== job.job_id) {
+            this.generationActionLoading.set(false);
+            this.generationError.set(
+              'The backend returned a different generation job than the one requested.',
+            );
+            return;
+          }
+
+          this.generationPauseRequested.set(true);
+          this.generationActionLoading.set(false);
+        },
+        error: (error) => {
+          if (!this.executionStore.isCurrentContext(dataModelId, job.job_id, revision)) {
+            return;
+          }
+
+          this.generationPauseRequested.set(false);
+          this.generationActionLoading.set(false);
+
+          this.generationError.set(
+            error?.error?.detail ?? error?.message ?? 'Generation pause could not be requested.',
+          );
+
+          this.loadExistingGenerationJob(dataModelId, job.job_id, revision);
+        },
+      });
   }
 
   resumeGeneration(): void {
@@ -420,13 +435,13 @@ export class GenerateComponent {
     if (
       !dataModelId ||
       !job ||
-      job.status !== 'INTERRUPTED' ||
+      (job.status !== 'INTERRUPTED' &&
+        job.status !== 'FAILED' &&
+        job.status !== 'PARTIALLY_COMPLETED' &&
+        job.status !== 'PAUSED' &&
+        job.status !== 'CANCELLED') ||
       this.generationActionLoading() ||
-      !this.executionStore.isCurrentContext(
-        dataModelId,
-        job.job_id,
-        revision,
-      )
+      !this.executionStore.isCurrentContext(dataModelId, job.job_id, revision)
     ) {
       return;
     }
@@ -439,20 +454,11 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resumedJob) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              job.job_id,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, job.job_id, revision)) {
             return;
           }
 
-          if (
-            resumedJob.data_model_id !== dataModelId ||
-            resumedJob.job_id !== job.job_id
-          ) {
+          if (resumedJob.data_model_id !== dataModelId || resumedJob.job_id !== job.job_id) {
             this.generationActionLoading.set(false);
             this.generationError.set(
               'The backend returned a different generation job than the one requested.',
@@ -461,22 +467,13 @@ export class GenerateComponent {
           }
 
           this.executionStore.setJob(resumedJob, revision);
+          this.generationPauseRequested.set(false);
           this.executionStore.connect(dataModelId, resumedJob.job_id);
-          this.loadGenerationCheckpoint(
-            dataModelId,
-            resumedJob.job_id,
-            revision,
-          );
+          this.loadGenerationCheckpoint(dataModelId, resumedJob.job_id, revision);
           this.generationActionLoading.set(false);
         },
         error: (error) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              job.job_id,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, job.job_id, revision)) {
             return;
           }
 
@@ -512,13 +509,7 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (job) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              null,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, null, revision)) {
             return;
           }
 
@@ -534,29 +525,16 @@ export class GenerateComponent {
 
           // Keep the landing route until the backend confirms that
           // the newly created job has started.
-          this.startExistingGenerationJob(
-            dataModelId,
-            job.job_id,
-            revision,
-            true,
-          );
+          this.startExistingGenerationJob(dataModelId, job.job_id, revision, true);
         },
         error: (error) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              null,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, null, revision)) {
             return;
           }
 
           this.generationActionLoading.set(false);
           this.generationError.set(
-            error?.error?.detail ??
-              error?.message ??
-              'Unable to create the generation job.',
+            error?.error?.detail ?? error?.message ?? 'Unable to create the generation job.',
           );
         },
       });
@@ -579,11 +557,7 @@ export class GenerateComponent {
     if (
       !dataModelId ||
       !jobId ||
-      !this.executionStore.isCurrentContext(
-        dataModelId,
-        jobId,
-        revision,
-      )
+      !this.executionStore.isCurrentContext(dataModelId, jobId, revision)
     ) {
       return;
     }
@@ -596,20 +570,11 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (startedJob) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
-          if (
-            startedJob.data_model_id !== dataModelId ||
-            startedJob.job_id !== jobId
-          ) {
+          if (startedJob.data_model_id !== dataModelId || startedJob.job_id !== jobId) {
             this.generationActionLoading.set(false);
             this.generationError.set(
               'The backend returned a different generation job than the one requested.',
@@ -622,13 +587,7 @@ export class GenerateComponent {
 
           if (navigateOnSuccess) {
             void this.router.navigate(
-              [
-                '/workspace',
-                dataModelId,
-                'data-model',
-                'generate',
-                startedJob.job_id,
-              ],
+              ['/workspace', dataModelId, 'data-model', 'generate', startedJob.job_id],
               { replaceUrl: true },
             );
             return;
@@ -642,20 +601,10 @@ export class GenerateComponent {
             this.executionStore.connect(dataModelId, jobId);
           }
 
-          this.loadGenerationCheckpoint(
-            dataModelId,
-            jobId,
-            revision,
-          );
+          this.loadGenerationCheckpoint(dataModelId, jobId, revision);
         },
         error: (error) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
@@ -669,11 +618,7 @@ export class GenerateComponent {
       });
   }
 
-  private loadGenerationCheckpoint(
-    dataModelId: string,
-    jobId: string,
-    revision: number,
-  ): void {
+  private loadGenerationCheckpoint(dataModelId: string, jobId: string, revision: number): void {
     if (!dataModelId || !jobId) {
       return;
     }
@@ -688,13 +633,7 @@ export class GenerateComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (checkpoint) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
@@ -702,13 +641,7 @@ export class GenerateComponent {
           this.generationCheckpointLoading.set(false);
         },
         error: (error) => {
-          if (
-            !this.executionStore.isCurrentContext(
-              dataModelId,
-              jobId,
-              revision,
-            )
-          ) {
+          if (!this.executionStore.isCurrentContext(dataModelId, jobId, revision)) {
             return;
           }
 
@@ -721,9 +654,7 @@ export class GenerateComponent {
           }
 
           this.generationCheckpointError.set(
-            error?.error?.detail ??
-              error?.message ??
-              'Generation checkpoint could not be loaded.',
+            error?.error?.detail ?? error?.message ?? 'Generation checkpoint could not be loaded.',
           );
         },
       });
@@ -734,6 +665,7 @@ export class GenerateComponent {
       status === 'COMPLETED' ||
       status === 'PARTIALLY_COMPLETED' ||
       status === 'FAILED' ||
+      status === 'PAUSED' ||
       status === 'CANCELLED'
     );
   }
@@ -743,14 +675,12 @@ export class GenerateComponent {
       return;
     }
 
-    this.router.navigate(
-      [
-        '/workspace',
-        this.dataModelId,
-        'data-model',
-        'results',
-        this.generationJob()!.job_id,
-      ],
-    );
+    this.router.navigate([
+      '/workspace',
+      this.dataModelId,
+      'data-model',
+      'results',
+      this.generationJob()!.job_id,
+    ]);
   }
 }

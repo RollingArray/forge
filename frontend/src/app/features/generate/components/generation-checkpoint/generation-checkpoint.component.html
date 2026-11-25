@@ -37,18 +37,6 @@
         </ng-template>
       </div>
 
-        <button
-          *ngIf="canResume()"
-          type="button"
-          class="generation-resume-button"
-          [disabled]="resuming()"
-          (click)="resumeRequested.emit()"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">
-            {{ resuming() ? 'progress_activity' : 'play_arrow' }}
-          </span>
-          <span>{{ resuming() ? 'Resuming…' : 'Resume Generation' }}</span>
-        </button>
     </div>
     </div>
 

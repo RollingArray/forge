@@ -52,6 +52,7 @@ class GenerationJobStatus(StrEnum):
     PLANNING = "PLANNING"
     QUEUED = "QUEUED"
     RUNNING = "RUNNING"
+    PAUSED = "PAUSED"
     INTERRUPTED = "INTERRUPTED"
     COMPLETED = "COMPLETED"
     PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED"
@@ -64,6 +65,14 @@ class GenerationPreparationPhase(StrEnum):
 
     CHECKPOINT_PENDING = "CHECKPOINT_PENDING"
     CHECKPOINT_READY = "CHECKPOINT_READY"
+
+
+class GenerationLifecyclePhase(StrEnum):
+    """Durable phase of generation job execution."""
+
+    PREPARING = "PREPARING"
+    GENERATING = "GENERATING"
+    FINALIZING = "FINALIZING"
 
 
 class GenerationResumeIntent(BaseModel):
@@ -334,6 +343,7 @@ class GenerationJobRecord(GenerationJobResponse):
         max_length=128,
     )
     preparation_phase: GenerationPreparationPhase | None = None
+    lifecycle_phase: GenerationLifecyclePhase | None = None
     resume_intent: GenerationResumeIntent | None = None
 
 

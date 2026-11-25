@@ -11,57 +11,87 @@
   [actionBarTitle]="
     generationLoading()
       ? 'Loading generation plan'
-      : generationJob()?.status === 'RUNNING'
-        ? 'Generation in progress'
-        : generationJob()?.status === 'COMPLETED'
-          ? 'Generation completed'
-          : generationJob()?.status === 'PARTIALLY_COMPLETED'
-            ? 'Generation partially completed'
-            : generationJob()?.status === 'FAILED'
-              ? 'Generation failed'
-              : generationJob()?.status === 'INTERRUPTED'
-                ? 'Generation interrupted'
-                : generationJob()?.status === 'CANCELLED'
-                  ? 'Generation cancelled'
-                  : generationReadiness()?.ready
-                ? 'Generation is ready'
-                : 'Generation is not ready'
+      : generationJob()?.status === 'PREPARING'
+        ? 'Preparing generation'
+        : generationJob()?.status === 'RUNNING'
+          ? 'Generation in progress'
+          : generationJob()?.status === 'PAUSED'
+            ? 'Generation paused'
+            : generationJob()?.status === 'COMPLETED'
+              ? 'Generation completed'
+              : generationJob()?.status === 'PARTIALLY_COMPLETED'
+                ? 'Generation partially completed'
+                : generationJob()?.status === 'FAILED'
+                  ? 'Generation failed'
+                  : generationJob()?.status === 'INTERRUPTED'
+                    ? 'Generation interrupted'
+                    : generationJob()?.status === 'CANCELLED'
+                      ? 'Generation cancelled'
+                      : generationReadiness()?.ready
+                        ? 'Generation is ready'
+                        : 'Generation is not ready'
   "
   [actionBarDescription]="
     generationLoading()
       ? 'Loading the generation plan from the backend.'
-      : generationJob()?.status === 'RUNNING'
-        ? 'Synthetic data is currently being generated.'
-        : generationJob()?.status === 'COMPLETED'
-          ? 'Generated data is ready for review.'
-          : generationJob()?.status === 'PARTIALLY_COMPLETED'
-            ? 'Some generated data is available to review and download.'
-            : generationJob()?.status === 'FAILED'
-              ? 'Generation could not be completed. Review the execution details.'
-              : generationJob()?.status === 'INTERRUPTED'
-                ? 'Generation was interrupted. Resume from the latest saved checkpoint.'
-                : generationJob()?.status === 'CANCELLED'
-                  ? 'Generation was cancelled. Review any available output in Results.'
-                  : generationReadiness()?.ready
-                ? 'Review the generation workspace before starting execution.'
-                : 'Resolve the generation readiness issues before continuing.'
+      : generationJob()?.status === 'PREPARING'
+        ? 'Preparing the generation workspace and validating saved progress.'
+        : generationJob()?.status === 'RUNNING'
+          ? 'Synthetic data is currently being generated.'
+          : generationJob()?.status === 'PAUSED'
+            ? 'Generation is paused. Resume to continue from the latest saved checkpoint.'
+            : generationJob()?.status === 'COMPLETED'
+              ? 'Generated data is ready for review.'
+              : generationJob()?.status === 'PARTIALLY_COMPLETED'
+                ? 'Some generated data is available to review and download.'
+                : generationJob()?.status === 'FAILED'
+                  ? 'Generation could not be completed. Resume from the latest saved checkpoint or review the execution details.'
+                  : generationJob()?.status === 'INTERRUPTED'
+                    ? 'Generation was interrupted. Resume from the latest saved checkpoint.'
+                    : generationJob()?.status === 'CANCELLED'
+                      ? 'Generation was cancelled. Resume from the latest saved checkpoint or review available output.'
+                      : generationReadiness()?.ready
+                        ? 'Review the generation workspace before starting execution.'
+                        : 'Resolve the generation readiness issues before continuing.'
   "
   [secondaryLabel]="'Back to Population'"
   [secondaryIcon]="'arrow_back'"
-  [primaryLabel]="
-    generationJob()?.status === 'COMPLETED' || generationJob()?.status === 'PARTIALLY_COMPLETED'
-      ? 'Continue to Results'
+  [contextualActionLabel]="
+    generationPauseRequested()
+      ? 'Pausing at next checkpoint...'
       : generationJob()?.status === 'RUNNING'
-        ? 'Generation in Progress'
-        : generationJob()?.status === 'CREATED'
-          ? (generationActionLoading() ? 'Starting Generation' : 'Retry Start')
-          : generationJob()?.status === 'FAILED'
-            ? 'Generation Failed'
-            : generationJob()?.status === 'INTERRUPTED'
-              ? 'Generation Interrupted'
-              : generationJob()?.status === 'CANCELLED'
-                ? 'Generation Cancelled'
-                : 'Start Generation'
+        ? 'Pause Generation'
+        : generationJob()?.status === 'PAUSED' ||
+          generationJob()?.status === 'INTERRUPTED' ||
+          generationJob()?.status === 'FAILED' ||
+          generationJob()?.status === 'PARTIALLY_COMPLETED' ||
+          generationJob()?.status === 'CANCELLED'
+          ? 'Resume Generation'
+          : ''
+  "
+  [contextualActionIcon]="
+    generationJob()?.status === 'RUNNING' ? 'pause' : 'play_arrow'
+  "
+  [contextualActionDisabled]="
+    generationActionLoading() ||
+    (generationPauseRequested() && generationJob()?.status !== 'PAUSED')
+  "
+  (contextualAction)="handleContextualAction()"
+  [primaryLabel]="
+    generationJob()?.status === 'RUNNING' ||
+    generationJob()?.status === 'PAUSED' ||
+    generationJob()?.status === 'INTERRUPTED' ||
+    generationJob()?.status === 'FAILED' ||
+    generationJob()?.status === 'CANCELLED'
+      ? ''
+      : generationJob()?.status === 'COMPLETED' ||
+        generationJob()?.status === 'PARTIALLY_COMPLETED'
+        ? 'Continue to Results'
+        : generationJob()?.status === 'PREPARING'
+          ? 'Preparing Generation'
+          : generationJob()?.status === 'CREATED'
+            ? (generationActionLoading() ? 'Starting Generation' : 'Retry Start')
+            : 'Start Generation'
   "
   [primaryIcon]="'arrow_forward'"
   [primaryDisabled]="
@@ -150,9 +180,6 @@
         [checkpoint]="generationCheckpoint()"
         [liveProgress]="generationCheckpointLiveProgress()"
         [loading]="generationCheckpointLoading()"
-        [canResume]="generationJob()?.status === 'INTERRUPTED'"
-        [resuming]="generationActionLoading()"
-        (resumeRequested)="resumeGeneration()"
       />
     </app-workflow-row>
 
