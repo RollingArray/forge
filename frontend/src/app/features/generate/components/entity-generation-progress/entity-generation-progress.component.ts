@@ -16,7 +16,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 
 import {
   GenerationEntityProgress,
-  GenerationSemanticCallStartedEvent,
+  GenerationSemanticCallProgressEvent,
 } from '../../models/generation.models';
 
 import { WorkspaceHeaderComponent } from '../../../../shared/components/workspace-header/workspace-header.component';
@@ -47,12 +47,12 @@ export class EntityGenerationProgressComponent
   readonly entities = input<GenerationEntityProgress[]>([]);
   readonly totalGeneratedRows = input(0);
   readonly totalTargetRows = input(0);
-  readonly activeSemanticCall = input<GenerationSemanticCallStartedEvent | null>(null);
+  readonly activeSemanticCall = input<GenerationSemanticCallProgressEvent | null>(null);
 
   isSemanticActive(entity: GenerationEntityProgress): boolean {
     const call = this.activeSemanticCall();
 
-    return call?.entity_name === entity.entity_name;
+    return call?.entity_name === entity.entity_name && call.status === 'STARTED';
   }
 
   semanticFieldLabel(entity: GenerationEntityProgress): string | null {

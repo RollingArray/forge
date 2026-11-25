@@ -88,6 +88,7 @@ def _sse_event_purpose(event_type: str, data: dict) -> str:
         "ENTITY_COMPLETED": "Entity completion and progress",
         "GENERATION_COMPLETED": "Final generation status",
         "SEMANTIC_CALL_STARTED": "Active semantic call indicator",
+        "SEMANTIC_CALL_PROGRESS": "Live semantic attempt progress",
     }.get(event_type, "Generation event")
 
 

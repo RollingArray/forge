@@ -196,6 +196,7 @@ class AIProvider(ABC):
         count: int,
         exclude_values: list[str] | None = None,
         on_call_completed: Callable[[int, int, float, bool], None] | None = None,
+        on_progress: Callable[[dict[str, int | float | bool | str]], None] | None = None,
     ) -> list[str]:
         """Generate semantic STRING values for production data generation."""
         raise NotImplementedError

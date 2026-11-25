@@ -126,7 +126,7 @@ export class GenerationExecutionStore {
   readonly activeSemanticCall = signal<
     Extract<
       GenerationSseEvent,
-      { type: 'SEMANTIC_CALL_STARTED' }
+      { type: 'SEMANTIC_CALL_PROGRESS' }
     >['data'] | null
   >(null);
 
@@ -349,7 +349,7 @@ export class GenerationExecutionStore {
         JOB_SNAPSHOT: 'generationJob / isGenerating',
         GENERATION_STARTED: 'generationJob / isGenerating',
         GENERATION_ACTIVITY: 'generationActivities',
-        SEMANTIC_CALL_STARTED: 'activeSemanticCall',
+        SEMANTIC_CALL_PROGRESS: 'activeSemanticCall',
         CHUNK_COMMITTED: 'applyChunkProgress / live checkpoint projection',
         ENTITY_COMPLETED: 'applyEntityCompleted / live entity completion',
         GENERATION_COMPLETED: 'applyGenerationCompleted / terminal job state',
@@ -393,7 +393,7 @@ export class GenerationExecutionStore {
         this.appendGenerationActivity(event.data);
         break;
 
-      case 'SEMANTIC_CALL_STARTED':
+      case 'SEMANTIC_CALL_PROGRESS':
         this.activeSemanticCall.set(event.data);
         break;
 

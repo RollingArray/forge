@@ -164,6 +164,7 @@ class FakeAIService:
         count: int,
         exclude_values: list[str] | None = None,
         on_call_completed=None,
+        on_progress=None,
     ) -> list[str]:
         assert description == "Realistic aerospace product name."
         assert mode == "UNIQUE"
@@ -1265,6 +1266,7 @@ def test_resume_with_missing_semantic_store_reconstructs_values_from_artifacts(
             count,
             exclude_values=None,
             on_call_completed=None,
+            on_progress=None,
         ):
             self.calls.append(
                 {
@@ -1570,6 +1572,7 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
     data_model_id = "FORGE-UNIQUE-REGRESSION"
     job_id = "FORGE-UNIQUE-CHUNK-TEST"
     attempt_id = "unique-semantic-attempt"
+    event_broker = Mock()
     chunk_size = 50
     artifact_directory = tmp_path / "artifacts"
 
@@ -1591,6 +1594,7 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
             count: int,
             exclude_values: list[str] | None = None,
             on_call_completed=None,
+            on_progress=None,
         ) -> list[str]:
             call_number = len(self.calls)
 
@@ -1602,6 +1606,54 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
                     "exclude_values": list(exclude_values or []),
                 }
             )
+
+            # Simulate the provider's attempt-level progress callbacks.
+            # The first chunk needs 30 + 20 values; the second needs 1.
+            if on_progress is not None:
+                attempts = (
+                    [
+                        (1, 30, 0, 30, 30),
+                        (2, 20, 30, 20, 50),
+                    ]
+                    if call_number == 0
+                    else [(1, 1, 0, 1, 1)]
+                )
+                max_attempts = 7 if call_number == 0 else 6
+
+                for attempt, requested, before, returned, total in attempts:
+                    refill = attempt > 1
+
+                    on_progress({
+                        "status": "STARTED",
+                        "attempt_number": attempt,
+                        "max_attempts": max_attempts,
+                        "requested_count": requested,
+                        "total_count": count,
+                        "total_unique_count": before,
+                        "refill": refill,
+                    })
+
+                    if on_call_completed is not None:
+                        on_call_completed(
+                            requested,
+                            returned,
+                            0.25,
+                            refill,
+                        )
+
+                    on_progress({
+                        "status": "COMPLETED",
+                        "attempt_number": attempt,
+                        "max_attempts": max_attempts,
+                        "requested_count": requested,
+                        "returned_count": returned,
+                        "new_unique_count": returned,
+                        "duplicate_count": 0,
+                        "total_count": count,
+                        "total_unique_count": total,
+                        "elapsed_seconds": 0.25,
+                        "refill": refill,
+                    })
 
             if call_number == 0:
                 assert count == 50
@@ -1672,6 +1724,7 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
         checkpoint_store=checkpoint_store,
         artifact_writer=artifact_writer,
         artifact_reader=artifact_reader,
+        event_broker=event_broker,
     )
 
     specification = {
@@ -1714,6 +1767,54 @@ def test_executor_excludes_previous_chunk_values_for_unique_semantics(
     )
 
     assert len(ai_service.calls) == 2
+
+    progress_events = [
+        call.kwargs["data"]
+        for call in event_broker.publish.call_args_list
+        if call.kwargs.get("event_type") == "SEMANTIC_CALL_PROGRESS"
+    ]
+
+    assert [
+        (
+            event["status"],
+            event["attempt_number"],
+            event["chunk_number"],
+        )
+        for event in progress_events
+    ] == [
+        ("STARTED", 1, 1),
+        ("COMPLETED", 1, 1),
+        ("STARTED", 2, 1),
+        ("COMPLETED", 2, 1),
+        ("STARTED", 1, 2),
+        ("COMPLETED", 1, 2),
+    ]
+
+    first_chunk_completions = [
+        event
+        for event in progress_events
+        if event["status"] == "COMPLETED"
+        and event["chunk_number"] == 1
+    ]
+
+    assert [
+        event["total_unique_count"]
+        for event in first_chunk_completions
+    ] == [30, 50]
+
+    assert [
+        event["new_unique_count"]
+        for event in first_chunk_completions
+    ] == [30, 20]
+
+    assert all(
+        event["entity_name"] == "PRODUCT"
+        and event["field_name"] == "PRODUCT_NAME"
+        and event["duplicate_count"] == 0
+        for event in progress_events
+        if event["status"] == "COMPLETED"
+    )
+
     assert ai_service.calls[0]["exclude_values"] == []
     assert len(ai_service.calls[1]["exclude_values"]) == 50
     assert set(ai_service.calls[1]["exclude_values"]) == set(first_batch)
@@ -1907,3 +2008,425 @@ def test_executor_enforces_one_to_one_with_optional_parent_participation(
     assert manifest.entities["PARENT"].committed_rows == 5
     assert manifest.entities["CHILD"].committed_rows == 3
 
+def _build_vocabulary_activity_executor(
+    *,
+    tmp_path,
+    ai_service,
+    event_broker,
+    target_rows: int = 10,
+):
+    from app.constants.generation import GENERATION_ALGORITHM_VERSION
+    from app.services.generation.artifact_reader import GenerationArtifactReader
+    from app.services.generation.artifact_writer import GenerationArtifactWriter
+    from app.services.generation.executor import GenerationExecutor
+    from app.services.generation_checkpoint_store import GenerationCheckpointStore
+    from app.services.generation_log_store import GenerationLogStore
+    from app.services.generation_semantic_store import GenerationSemanticStore
+
+    data_model_id = "FORGE-VOCABULARY-ACTIVITY-MODEL"
+    job_id = "FORGE-VOCABULARY-ACTIVITY-TEST"
+    artifact_directory = tmp_path / "artifacts"
+
+    specification = {
+        "entities": [
+            {
+                "name": "PRODUCT",
+                "population": {"count": target_rows},
+                "fields": [
+                    {
+                        "name": "PRODUCT_NAME",
+                        "type": "STRING",
+                        "generation": {
+                            "generator": "SEMANTIC",
+                            "parameters": {
+                                "description": "Realistic aerospace product name.",
+                                "mode": "VOCABULARY",
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+        "foreign_keys": [],
+    }
+
+    checkpoint_store = GenerationCheckpointStore()
+    checkpoint_store._root = artifact_directory / "data_model"
+    checkpoint_store.initialize(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        specification=specification,
+        seed=42,
+        chunk_size=50,
+        algorithm_version=GENERATION_ALGORITHM_VERSION,
+        attempt_id="vocabulary-activity-attempt",
+        entity_targets={"PRODUCT": target_rows},
+    )
+
+    artifact_writer = GenerationArtifactWriter(
+        checkpoint_store=checkpoint_store
+    )
+    artifact_writer._data_directory = artifact_directory
+
+    artifact_reader = GenerationArtifactReader(
+        checkpoint_store=checkpoint_store
+    )
+    artifact_reader._data_directory = artifact_directory
+
+    semantic_store = GenerationSemanticStore()
+    semantic_store._root = tmp_path / "semantic"
+
+    generation_log_store = GenerationLogStore(
+        root=tmp_path / "generation-logs"
+    )
+
+    executor = GenerationExecutor(
+        seed=42,
+        ai_service=ai_service,
+        semantic_store=semantic_store,
+        checkpoint_store=checkpoint_store,
+        event_broker=event_broker,
+        generation_log_store=generation_log_store,
+        artifact_writer=artifact_writer,
+        artifact_reader=artifact_reader,
+    )
+
+    plan = GenerationPlan(
+        entities=(
+            GenerationEntityPlan(
+                entity_name="PRODUCT",
+                target_rows=target_rows,
+            ),
+        ),
+    )
+
+    return (
+        executor,
+        specification,
+        plan,
+        data_model_id,
+        job_id,
+        generation_log_store,
+        semantic_store,
+    )
+
+
+def test_executor_publishes_vocabulary_activity_lifecycle(
+    tmp_path,
+) -> None:
+    from unittest.mock import Mock
+
+    event_broker = Mock()
+    semantic_values = [
+        f"Aerospace Product {index:02d}"
+        for index in range(1, 11)
+    ]
+
+    class VocabularyAIService:
+        def generate_semantic_values(
+            self,
+            *,
+            description,
+            mode,
+            count,
+            exclude_values=None,
+            on_call_completed=None,
+            on_progress=None,
+        ):
+            assert description == "Realistic aerospace product name."
+            assert mode == "VOCABULARY"
+            assert count == 10
+
+            # The STARTED activity must already have been published
+            # before control reaches the AI provider.
+            assert any(
+                call.kwargs.get("event_type") == "GENERATION_ACTIVITY"
+                and call.kwargs.get("data", {}).get("stage")
+                == "SEMANTIC_GENERATION"
+                and call.kwargs.get("data", {}).get("status") == "STARTED"
+                for call in event_broker.publish.call_args_list
+            )
+
+            if on_progress is not None:
+                on_progress({
+                    "status": "STARTED",
+                    "attempt_number": 1,
+                    "max_attempts": 6,
+                    "requested_count": 10,
+                    "total_count": 10,
+                    "total_unique_count": 0,
+                    "refill": False,
+                })
+
+            if on_call_completed is not None:
+                on_call_completed(10, 10, 0.4, False)
+
+            if on_progress is not None:
+                on_progress({
+                    "status": "COMPLETED",
+                    "attempt_number": 1,
+                    "max_attempts": 6,
+                    "requested_count": 10,
+                    "returned_count": 10,
+                    "new_unique_count": 10,
+                    "duplicate_count": 0,
+                    "total_count": 10,
+                    "total_unique_count": 10,
+                    "elapsed_seconds": 0.4,
+                    "refill": False,
+                })
+
+            return semantic_values
+
+    (
+        executor,
+        specification,
+        plan,
+        data_model_id,
+        job_id,
+        generation_log_store,
+        semantic_store,
+    ) = _build_vocabulary_activity_executor(
+        tmp_path=tmp_path,
+        ai_service=VocabularyAIService(),
+        event_broker=event_broker,
+    )
+
+    executor.execute(
+        data_model_id=data_model_id,
+        specification=specification,
+        plan=plan,
+        job_id=job_id,
+    )
+
+    journal = generation_log_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+    assert journal is not None
+
+    semantic_entries = [
+        entry
+        for entry in journal.entries
+        if entry.stage == "SEMANTIC_GENERATION"
+    ]
+
+    assert [entry.status for entry in semantic_entries] == [
+        "STARTED",
+        "COMPLETED",
+    ]
+    assert all(
+        entry.entity_name == "PRODUCT"
+        and entry.field_name == "PRODUCT_NAME"
+        and entry.requested_count == 10
+        for entry in semantic_entries
+    )
+    assert semantic_entries[1].elapsed_seconds is not None
+
+    semantic_events = [
+        call.kwargs["data"]
+        for call in event_broker.publish.call_args_list
+        if call.kwargs.get("event_type") == "GENERATION_ACTIVITY"
+        and call.kwargs.get("data", {}).get("stage")
+        == "SEMANTIC_GENERATION"
+    ]
+
+    assert [event["status"] for event in semantic_events] == [
+        "STARTED",
+        "COMPLETED",
+    ]
+    assert all(event["requested_count"] == 10 for event in semantic_events)
+
+    progress_events = [
+        call.kwargs["data"]
+        for call in event_broker.publish.call_args_list
+        if call.kwargs.get("event_type") == "SEMANTIC_CALL_PROGRESS"
+    ]
+
+    assert [event["status"] for event in progress_events] == [
+        "STARTED",
+        "COMPLETED",
+    ]
+
+    started, completed = progress_events
+
+    assert started["entity_name"] == "PRODUCT"
+    assert started["field_name"] == "PRODUCT_NAME"
+    assert started["attempt_number"] == 1
+    assert started["total_count"] == 10
+    assert started["total_unique_count"] == 0
+    assert "chunk_number" not in started
+
+    assert completed["attempt_number"] == 1
+    assert completed["requested_count"] == 10
+    assert completed["returned_count"] == 10
+    assert completed["new_unique_count"] == 10
+    assert completed["duplicate_count"] == 0
+    assert completed["total_unique_count"] == 10
+    assert completed["elapsed_seconds"] == 0.4
+    assert "chunk_number" not in completed
+
+    persisted = semantic_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+
+    assert persisted is not None
+    assert persisted["mode"] == "VOCABULARY"
+    assert persisted["values"] == semantic_values
+
+
+def test_executor_publishes_failed_vocabulary_activity(
+    tmp_path,
+) -> None:
+    from unittest.mock import Mock
+
+    event_broker = Mock()
+
+    class FailingVocabularyAIService:
+        def generate_semantic_values(
+            self,
+            *,
+            description,
+            mode,
+            count,
+            exclude_values=None,
+            on_call_completed=None,
+            on_progress=None,
+        ):
+            assert mode == "VOCABULARY"
+            assert count == 10
+            raise RuntimeError("Vocabulary provider unavailable")
+
+    (
+        executor,
+        specification,
+        plan,
+        data_model_id,
+        job_id,
+        generation_log_store,
+        _semantic_store,
+    ) = _build_vocabulary_activity_executor(
+        tmp_path=tmp_path,
+        ai_service=FailingVocabularyAIService(),
+        event_broker=event_broker,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Vocabulary provider unavailable",
+    ):
+        executor.execute(
+            data_model_id=data_model_id,
+            specification=specification,
+            plan=plan,
+            job_id=job_id,
+        )
+
+    journal = generation_log_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+    assert journal is not None
+
+    semantic_entries = [
+        entry
+        for entry in journal.entries
+        if entry.stage == "SEMANTIC_GENERATION"
+    ]
+
+    assert [entry.status for entry in semantic_entries] == [
+        "STARTED",
+        "FAILED",
+    ]
+
+    failed_entry = semantic_entries[-1]
+    assert failed_entry.requested_count == 10
+    assert failed_entry.error_type == "RuntimeError"
+    assert failed_entry.error_message == "Vocabulary provider unavailable"
+    assert failed_entry.elapsed_seconds is not None
+
+    semantic_events = [
+        call.kwargs["data"]
+        for call in event_broker.publish.call_args_list
+        if call.kwargs.get("event_type") == "GENERATION_ACTIVITY"
+        and call.kwargs.get("data", {}).get("stage")
+        == "SEMANTIC_GENERATION"
+    ]
+
+    assert [event["status"] for event in semantic_events] == [
+        "STARTED",
+        "FAILED",
+    ]
+    assert semantic_events[-1]["error_type"] == "RuntimeError"
+
+
+def test_executor_accepts_larger_persisted_vocabulary_for_smaller_target(
+    tmp_path,
+) -> None:
+    from unittest.mock import Mock
+
+    event_broker = Mock()
+    (
+        executor,
+        specification,
+        plan,
+        data_model_id,
+        job_id,
+        generation_log_store,
+        semantic_store,
+    ) = _build_vocabulary_activity_executor(
+        tmp_path=tmp_path,
+        ai_service=None,
+        event_broker=event_broker,
+        target_rows=10,
+    )
+
+    legacy_values = [
+        f"Legacy aerospace product {index:02d}"
+        for index in range(1, 51)
+    ]
+    semantic_store.save_vocabulary(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+        values=legacy_values,
+    )
+
+    executor.execute(
+        data_model_id=data_model_id,
+        specification=specification,
+        plan=plan,
+        job_id=job_id,
+    )
+
+    journal = generation_log_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+    )
+    assert journal is not None
+    assert not any(
+        entry.stage == "SEMANTIC_GENERATION"
+        for entry in journal.entries
+    )
+
+    persisted = semantic_store.get(
+        data_model_id=data_model_id,
+        job_id=job_id,
+        entity_name="PRODUCT",
+        field_name="PRODUCT_NAME",
+    )
+    assert persisted is not None
+    assert persisted["values"] == legacy_values
+
+    semantic_events = [
+        call.kwargs["data"]
+        for call in event_broker.publish.call_args_list
+        if call.kwargs.get("event_type") == "GENERATION_ACTIVITY"
+        and call.kwargs.get("data", {}).get("stage")
+        == "SEMANTIC_GENERATION"
+    ]
+    assert semantic_events == []

@@ -196,12 +196,22 @@ export interface GenerationActivityEvent {
   peak_memory_mb?: number;
 }
 
-export interface GenerationSemanticCallStartedEvent {
+export interface GenerationSemanticCallProgressEvent {
   entity_name: string;
   field_name: string;
-  chunk_number: number;
+  status: 'STARTED' | 'COMPLETED';
+  attempt_number: number;
+  max_attempts: number;
   call_number: number;
   requested_count: number;
+  returned_count?: number;
+  new_unique_count?: number;
+  duplicate_count?: number;
+  total_count: number;
+  total_unique_count: number;
+  elapsed_seconds?: number;
+  refill: boolean;
+  chunk_number?: number;
 }
 
 export interface GenerationControlEvent {
@@ -224,8 +234,8 @@ export type GenerationSseEvent =
       data: GenerationChunkCommittedEvent;
     }
   | {
-      type: 'SEMANTIC_CALL_STARTED';
-      data: GenerationSemanticCallStartedEvent;
+      type: 'SEMANTIC_CALL_PROGRESS';
+      data: GenerationSemanticCallProgressEvent;
     }
   | {
       type: 'GENERATION_ACTIVITY';

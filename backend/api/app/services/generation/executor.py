@@ -514,6 +514,13 @@ class GenerationExecutor:
                         f"{entity_name}.{field['name']}."
                     )
 
+                effective_vocabulary_size = min(
+                    SEMANTIC_VOCABULARY_SIZE,
+                    target_rows,
+                )
+                if effective_vocabulary_size <= 0:
+                    continue
+
                 persisted = self._semantic_store.get(
                     data_model_id=data_model_id,
                     job_id=job_id,
@@ -526,7 +533,7 @@ class GenerationExecutor:
 
                     if (
                         persisted.get("mode") != normalized_mode
-                        or len(semantic_values) != SEMANTIC_VOCABULARY_SIZE
+                        or len(semantic_values) < effective_vocabulary_size
                     ):
                         raise GenerationExecutionError(
                             f"Persisted semantic state is invalid for "
@@ -556,28 +563,151 @@ class GenerationExecutor:
                             }
                         )
 
-                    semantic_values = self._ai_service.generate_semantic_values(
-                        description=description,
-                        mode=normalized_mode,
-                        count=SEMANTIC_VOCABULARY_SIZE,
-                        on_call_completed=record_entity_semantic_call,
-                    )
+                    def publish_entity_semantic_progress(
+                        progress: dict[str, object],
+                    ) -> None:
+                        if self._event_broker is None:
+                            return
 
-                    if len(semantic_values) != SEMANTIC_VOCABULARY_SIZE:
-                        raise GenerationExecutionError(
-                            f"Semantic generation for "
-                            f"{entity_name}.{field['name']} returned "
-                            f"{len(semantic_values)} values; "
-                            f"expected {SEMANTIC_VOCABULARY_SIZE}."
+                        attempt_number = int(progress["attempt_number"])
+                        self._event_broker.publish(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            event_type="SEMANTIC_CALL_PROGRESS",
+                            data={
+                                "entity_name": entity_name,
+                                "field_name": field["name"],
+                                "status": progress["status"],
+                                "attempt_number": attempt_number,
+                                "call_number": attempt_number,
+                                "max_attempts": progress["max_attempts"],
+                                "requested_count": progress["requested_count"],
+                                "returned_count": progress.get("returned_count"),
+                                "new_unique_count": progress.get("new_unique_count"),
+                                "duplicate_count": progress.get("duplicate_count"),
+                                "total_count": progress["total_count"],
+                                "total_unique_count": progress["total_unique_count"],
+                                "elapsed_seconds": progress.get("elapsed_seconds"),
+                                "refill": progress["refill"],
+                            },
                         )
 
-                    self._semantic_store.save_vocabulary(
+                    semantic_started_activity = self._generation_log_store.append(
                         data_model_id=data_model_id,
                         job_id=job_id,
-                        entity_name=entity_name,
-                        field_name=field["name"],
-                        values=semantic_values,
+                        entry=GenerationLogEntry(
+                            sequence=0,
+                            entity_name=entity_name,
+                            stage="SEMANTIC_GENERATION",
+                            status="STARTED",
+                            field_name=field["name"],
+                            requested_count=effective_vocabulary_size,
+                        ),
                     )
+
+                    if self._event_broker is not None:
+                        self._event_broker.publish(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            event_type="GENERATION_ACTIVITY",
+                            data=semantic_started_activity.model_dump(
+                                mode="json",
+                                exclude_none=True,
+                            ),
+                        )
+
+                    semantic_started_at = perf_counter()
+
+                    try:
+                        semantic_values = (
+                            self._ai_service.generate_semantic_values(
+                                description=description,
+                                mode=normalized_mode,
+                                count=effective_vocabulary_size,
+                                on_call_completed=record_entity_semantic_call,
+                                on_progress=publish_entity_semantic_progress,
+                            )
+                        )
+
+                        if len(semantic_values) != effective_vocabulary_size:
+                            raise GenerationExecutionError(
+                                f"Semantic generation for "
+                                f"{entity_name}.{field['name']} returned "
+                                f"{len(semantic_values)} values; "
+                                f"expected {effective_vocabulary_size}."
+                            )
+
+                        self._semantic_store.save_vocabulary(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entity_name=entity_name,
+                            field_name=field["name"],
+                            values=semantic_values,
+                        )
+                    except Exception as exc:
+                        semantic_elapsed_seconds = (
+                            perf_counter() - semantic_started_at
+                        )
+                        semantic_failed_activity = (
+                            self._generation_log_store.append(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                entry=GenerationLogEntry(
+                                    sequence=0,
+                                    entity_name=entity_name,
+                                    stage="SEMANTIC_GENERATION",
+                                    status="FAILED",
+                                    field_name=field["name"],
+                                    requested_count=effective_vocabulary_size,
+                                    elapsed_seconds=semantic_elapsed_seconds,
+                                    error_type=type(exc).__name__,
+                                    error_message=str(exc),
+                                ),
+                            )
+                        )
+
+                        if self._event_broker is not None:
+                            self._event_broker.publish(
+                                data_model_id=data_model_id,
+                                job_id=job_id,
+                                event_type="GENERATION_ACTIVITY",
+                                data=semantic_failed_activity.model_dump(
+                                    mode="json",
+                                    exclude_none=True,
+                                ),
+                            )
+
+                        raise
+
+                    semantic_elapsed_seconds = (
+                        perf_counter() - semantic_started_at
+                    )
+                    semantic_completed_activity = (
+                        self._generation_log_store.append(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            entry=GenerationLogEntry(
+                                sequence=0,
+                                entity_name=entity_name,
+                                stage="SEMANTIC_GENERATION",
+                                status="COMPLETED",
+                                field_name=field["name"],
+                                requested_count=effective_vocabulary_size,
+                                elapsed_seconds=semantic_elapsed_seconds,
+                            ),
+                        )
+                    )
+
+                    if self._event_broker is not None:
+                        self._event_broker.publish(
+                            data_model_id=data_model_id,
+                            job_id=job_id,
+                            event_type="GENERATION_ACTIVITY",
+                            data=semantic_completed_activity.model_dump(
+                                mode="json",
+                                exclude_none=True,
+                            ),
+                        )
 
                 context.add_semantic_values(
                     entity_name=entity_name,
@@ -812,17 +942,33 @@ class GenerationExecutor:
                                 }
                             )
 
-                        if self._event_broker is not None:
+                        def publish_semantic_progress(
+                            progress: dict[str, object],
+                        ) -> None:
+                            if self._event_broker is None:
+                                return
+
+                            attempt_number = int(progress["attempt_number"])
                             self._event_broker.publish(
                                 data_model_id=data_model_id,
                                 job_id=job_id,
-                                event_type="SEMANTIC_CALL_STARTED",
+                                event_type="SEMANTIC_CALL_PROGRESS",
                                 data={
                                     "entity_name": entity_name,
                                     "field_name": field_name,
                                     "chunk_number": chunk_number,
-                                    "call_number": 1,
-                                    "requested_count": missing_count,
+                                    "status": progress["status"],
+                                    "attempt_number": attempt_number,
+                                    "call_number": attempt_number,
+                                    "max_attempts": progress["max_attempts"],
+                                    "requested_count": progress["requested_count"],
+                                    "returned_count": progress.get("returned_count"),
+                                    "new_unique_count": progress.get("new_unique_count"),
+                                    "duplicate_count": progress.get("duplicate_count"),
+                                    "total_count": progress["total_count"],
+                                    "total_unique_count": progress["total_unique_count"],
+                                    "elapsed_seconds": progress.get("elapsed_seconds"),
+                                    "refill": progress["refill"],
                                 },
                             )
 
@@ -859,6 +1005,7 @@ class GenerationExecutor:
                             count=missing_count,
                             exclude_values=list(values_by_row.values()),
                             on_call_completed=record_semantic_call,
+                            on_progress=publish_semantic_progress,
                         )
 
                         semantic_elapsed_seconds = (

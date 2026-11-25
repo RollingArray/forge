@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { GenerationActivityEvent } from '../../../features/generate/models/generation.models';
+import {
+  GenerationActivityEvent,
+  GenerationSemanticCallProgressEvent,
+} from '../../../features/generate/models/generation.models';
 
 @Component({
   selector: 'app-generation-activity',
@@ -12,6 +15,7 @@ import { GenerationActivityEvent } from '../../../features/generate/models/gener
 export class GenerationActivityComponent {
   readonly activities = input<GenerationActivityEvent[]>([]);
   readonly isGenerating = input(false);
+  readonly activeSemanticCall = input<GenerationSemanticCallProgressEvent | null>(null);
 
   visibleActivities(): GenerationActivityEvent[] {
     return this.activities()
@@ -104,6 +108,12 @@ export class GenerationActivityComponent {
 
   activityDetail(activity: GenerationActivityEvent): string {
     if (activity.stage === 'SEMANTIC_GENERATION') {
+      const progress = this.semanticProgressDetail(activity);
+
+      if (progress) {
+        return progress;
+      }
+
       const details: string[] = [];
 
       if (activity.requested_count != null) {
@@ -111,7 +121,7 @@ export class GenerationActivityComponent {
       }
 
       if (activity.status === 'STARTED') {
-        details.push('AI-assisted generation may take a little longer');
+        details.push('Waiting for AI call details');
       } else if (activity.elapsed_seconds != null) {
         details.push(`${activity.elapsed_seconds.toFixed(1)}s`);
       }
@@ -128,6 +138,49 @@ export class GenerationActivityComponent {
     }
 
     return '';
+  }
+
+  private semanticProgressDetail(
+    activity: GenerationActivityEvent,
+  ): string | null {
+    const call = this.activeSemanticCall();
+
+    if (
+      !call ||
+      call.entity_name !== activity.entity_name ||
+      call.field_name !== activity.field_name
+    ) {
+      return null;
+    }
+
+    const total = `${call.total_unique_count.toLocaleString()}/${call.total_count.toLocaleString()} unique`;
+
+    if (call.status === 'STARTED') {
+      return (
+        `AI call ${call.attempt_number}/${call.max_attempts} running` +
+        ` · ${total} values`
+      );
+    }
+
+    const details = [
+      `Attempt ${call.attempt_number}/${call.max_attempts} completed`,
+    ];
+
+    if (call.new_unique_count != null) {
+      details.push(`${call.new_unique_count} new`);
+    }
+
+    if (call.duplicate_count != null) {
+      details.push(`${call.duplicate_count} duplicates`);
+    }
+
+    if (call.elapsed_seconds != null) {
+      details.push(`${call.elapsed_seconds.toFixed(1)}s`);
+    }
+
+    details.push(total);
+
+    return details.join(' · ');
   }
 
   entityLabel(activity: GenerationActivityEvent): string {

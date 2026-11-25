@@ -2056,6 +2056,7 @@ class OllamaAIProvider(AIProvider):
         count: int,
         exclude_values: list[str] | None = None,
         on_call_completed: Callable[[int, int, float, bool], None] | None = None,
+        on_progress: Callable[[dict[str, int | float | bool | str]], None] | None = None,
     ) -> list[str]:
         """Generate semantic STRING values for production generation."""
 
@@ -2110,6 +2111,17 @@ class OllamaAIProvider(AIProvider):
                 count - len(collected_values),
                 semantic_request_batch_size,
             )
+
+            if on_progress is not None:
+                on_progress({
+                    "status": "STARTED",
+                    "attempt_number": attempt_count,
+                    "max_attempts": max_attempts,
+                    "requested_count": remaining,
+                    "total_count": count,
+                    "total_unique_count": len(collected_values),
+                    "refill": attempt_count > 1,
+                })
 
             request_payload = {
                 "model": self._model,
@@ -2176,32 +2188,6 @@ class OllamaAIProvider(AIProvider):
                     )
 
                 ollama_elapsed_seconds = perf_counter() - ollama_started_at
-
-                response_message = payload.get("message")
-                response_content = (
-                    response_message.get("content")
-                    if isinstance(response_message, dict)
-                    else None
-                )
-
-                returned_count = 0
-
-                if isinstance(response_content, str):
-                    try:
-                        response_data = json.loads(response_content)
-                        values = response_data.get("values")
-                        if isinstance(values, list):
-                            returned_count = len(values)
-                    except json.JSONDecodeError:
-                        pass
-
-                if on_call_completed is not None:
-                    on_call_completed(
-                        remaining,
-                        returned_count,
-                        ollama_elapsed_seconds,
-                        attempt_count > 1,
-                    )
             except (OSError, URLError) as exc:
                 raise RuntimeError(
                     "FORGE AI could not reach the configured Ollama provider.",
@@ -2268,6 +2254,29 @@ class OllamaAIProvider(AIProvider):
                     duplicate_count += 1
 
             newly_accepted = len(collected_values) - unique_before
+
+            if on_call_completed is not None:
+                on_call_completed(
+                    remaining,
+                    len(values),
+                    ollama_elapsed_seconds,
+                    attempt_count > 1,
+                )
+
+            if on_progress is not None:
+                on_progress({
+                    "status": "COMPLETED",
+                    "attempt_number": attempt_count,
+                    "max_attempts": max_attempts,
+                    "requested_count": remaining,
+                    "returned_count": len(values),
+                    "new_unique_count": newly_accepted,
+                    "duplicate_count": duplicate_count,
+                    "total_count": count,
+                    "total_unique_count": len(collected_values),
+                    "elapsed_seconds": ollama_elapsed_seconds,
+                    "refill": attempt_count > 1,
+                })
 
             print(
                 "[SEMANTIC-VALUES] "

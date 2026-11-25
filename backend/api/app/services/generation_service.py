@@ -94,6 +94,7 @@ def _format_sse_event_counts(counts: dict[str, int]) -> str:
         "GENERATION_ACTIVITY": "generation activity",
         "GENERATION_COMPLETED": "terminal job status",
         "SEMANTIC_CALL_STARTED": "semantic call started",
+        "SEMANTIC_CALL_PROGRESS": "semantic attempt progress",
     }
     return ", ".join(
         f"{event_type}[{purposes.get(event_type, 'other')}]:{count}"

@@ -19,7 +19,7 @@ import {
   GenerationCompletedEvent,
   GenerationControlEvent,
   GenerationEntityCompletedEvent,
-  GenerationSemanticCallStartedEvent,
+  GenerationSemanticCallProgressEvent,
   GenerationJobResponse,
   GenerationExecutionSummaryResponse,
   GenerationValidationResponse,
@@ -228,12 +228,12 @@ export class GenerationService {
             };
           }
 
-          if (event.type === 'SEMANTIC_CALL_STARTED') {
+          if (event.type === 'SEMANTIC_CALL_PROGRESS') {
             return {
-              type: 'SEMANTIC_CALL_STARTED',
+              type: 'SEMANTIC_CALL_PROGRESS',
               data: JSON.parse(
                 event.data,
-              ) as GenerationSemanticCallStartedEvent,
+              ) as GenerationSemanticCallProgressEvent,
             };
           }
 
