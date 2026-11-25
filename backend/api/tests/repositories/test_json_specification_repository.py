@@ -132,3 +132,58 @@ def test_nested_transactions_acquire_and_release_file_lock_once(
     assert tracking_lock.acquire_count == 1
     assert tracking_lock.release_count == 1
     assert len(factory_calls) == 1
+
+
+def test_delete_removes_specification_and_empty_model_directory(
+    tmp_path,
+    monkeypatch,
+):
+    repository = JsonSpecificationRepository()
+    monkeypatch.setattr(repository, "_data_directory", tmp_path)
+
+    repository.save(
+        "MODEL-DELETE",
+        {"model": {"name": "Temporary copy"}},
+    )
+
+    model_directory = tmp_path / "data_model" / "MODEL-DELETE"
+    assert (model_directory / "specification.json").exists()
+
+    assert repository.delete("MODEL-DELETE") is True
+    assert not (model_directory / "specification.json").exists()
+    assert not model_directory.exists()
+
+
+def test_delete_preserves_unrelated_files_in_model_directory(
+    tmp_path,
+    monkeypatch,
+):
+    repository = JsonSpecificationRepository()
+    monkeypatch.setattr(repository, "_data_directory", tmp_path)
+
+    repository.save(
+        "MODEL-PRESERVE",
+        {"model": {"name": "Temporary copy"}},
+    )
+
+    model_directory = tmp_path / "data_model" / "MODEL-PRESERVE"
+    unrelated_file = model_directory / "unrelated.json"
+    unrelated_file.write_text('{"preserve": true}', encoding="utf-8")
+
+    assert repository.delete("MODEL-PRESERVE") is True
+
+    assert not (model_directory / "specification.json").exists()
+    assert unrelated_file.exists()
+    assert unrelated_file.read_text(encoding="utf-8") == (
+        '{"preserve": true}'
+    )
+
+
+def test_delete_is_safe_when_specification_does_not_exist(
+    tmp_path,
+    monkeypatch,
+):
+    repository = JsonSpecificationRepository()
+    monkeypatch.setattr(repository, "_data_directory", tmp_path)
+
+    assert repository.delete("MODEL-MISSING") is False

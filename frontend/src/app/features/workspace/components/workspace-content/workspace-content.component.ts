@@ -54,4 +54,5 @@ export class WorkspaceContentComponent {
   readonly dataModelSelected = output<DataModel>();
   readonly editRequested = output<DataModel>();
   readonly shareRequested = output<DataModel>();
+  readonly duplicateRequested = output<DataModel>();
 }

@@ -37,6 +37,7 @@ export class RecentDataModelsComponent {
   readonly dataModelSelected = output<DataModel>();
   readonly editRequested = output<DataModel>();
   readonly shareRequested = output<DataModel>();
+  readonly duplicateRequested = output<DataModel>();
   readonly newDataModel = output<void>();
 
   selectDataModel(dataModel: DataModel): void {
@@ -49,6 +50,10 @@ export class RecentDataModelsComponent {
 
   shareDataModel(dataModel: DataModel): void {
     this.shareRequested.emit(dataModel);
+  }
+
+  duplicateDataModel(dataModel: DataModel): void {
+    this.duplicateRequested.emit(dataModel);
   }
 
   createDataModel(): void {

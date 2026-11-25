@@ -111,6 +111,30 @@ class JsonSpecificationRepository:
                 return None
             return self._read(specification_path)
 
+    def delete(self, data_model_id: str) -> bool:
+        """Remove a specification created for a model being rolled back.
+
+        Only the canonical specification and its temporary write file are
+        removed. Other files in the model directory are never recursively
+        deleted.
+        """
+        specification_path = self._specification_path(data_model_id)
+        temporary_path = specification_path.with_suffix(".tmp")
+
+        with self.transaction(data_model_id):
+            existed = specification_path.exists() or temporary_path.exists()
+
+            specification_path.unlink(missing_ok=True)
+            temporary_path.unlink(missing_ok=True)
+
+            try:
+                specification_path.parent.rmdir()
+            except OSError:
+                # Preserve any unrelated files in the directory.
+                pass
+
+        return existed
+
     def save_if_revision(
         self,
         data_model_id: str,

@@ -6,6 +6,9 @@ Author: Ranjoy Sen
 Email: ranjoy.sen@collins.com
 """
 
+import logging
+from copy import deepcopy
+
 from app.constants.activity import ActivityType
 from app.interfaces.data_model import DataModel
 from app.interfaces.data_model_access_repository import DataModelAccessRepository
@@ -19,6 +22,9 @@ from app.services.data_model_access_service import DataModelAccessService
 from app.repositories.json_specification_repository import JsonSpecificationRepository
 
 
+logger = logging.getLogger(__name__)
+
+
 class DataModelService:
     """Coordinate FORGE data model operations."""
 
@@ -28,6 +34,7 @@ class DataModelService:
         data_model_access_repository: DataModelAccessRepository | None = None,
         activity_service: ActivityService | None = None,
         data_model_access_service: DataModelAccessService | None = None,
+        specification_repository: JsonSpecificationRepository | None = None,
     ) -> None:
         self._data_model_repository = (
             data_model_repository
@@ -53,7 +60,11 @@ class DataModelService:
                 activity_service=self._activity_service,
             )
         )
-        self._specification_repository = JsonSpecificationRepository()
+        self._specification_repository = (
+            specification_repository
+            if specification_repository is not None
+            else JsonSpecificationRepository()
+        )
 
     def create_data_model(
         self,
@@ -93,6 +104,97 @@ class DataModelService:
         )
 
         return data_model
+
+    def duplicate_data_model(
+        self,
+        data_model_id: str,
+        owner_user_id: str,
+    ) -> DataModel | None:
+        """Duplicate an owner's model and its canonical specification."""
+
+        source = self._data_model_repository.get_by_id(
+            data_model_id=data_model_id,
+            owner_user_id=owner_user_id,
+        )
+        if source is None:
+            return None
+
+        source_specification = self._specification_repository.read(
+            data_model_id
+        )
+        if source_specification is None:
+            return None
+
+        source_model = source_specification.get("model")
+        if not isinstance(source_model, dict):
+            raise ValueError(
+                "The source specification has no valid model object."
+            )
+
+        # Preserve the complete original ID while keeping the card name
+        # within the existing 120-character API limit.
+        suffix = f" - {source.data_model_id}"
+        prefix = "Copy of "
+        available_name_length = 120 - len(prefix) - len(suffix)
+        copied_source_name = source.name[:available_name_length].rstrip()
+        duplicate_name = f"{prefix}{copied_source_name}{suffix}"
+
+        copied_specification = deepcopy(source_specification)
+        copied_specification["model"]["name"] = duplicate_name
+
+        duplicate = self._data_model_repository.create(
+            owner_user_id=owner_user_id,
+            name=duplicate_name,
+            description=source.description,
+            color=source.color,
+            tags=list(source.tags),
+        )
+
+        try:
+            self._specification_repository.save(
+                duplicate.data_model_id,
+                copied_specification,
+            )
+        except Exception:
+            # Roll back both sides of the new model. Repository cleanup
+            # removes only the canonical specification and temporary file.
+            try:
+                self._specification_repository.delete(
+                    duplicate.data_model_id
+                )
+            finally:
+                self._data_model_repository.delete(
+                    data_model_id=duplicate.data_model_id,
+                    owner_user_id=owner_user_id,
+                )
+            raise
+
+        try:
+            self._activity_service.record(
+                owner_user_id=owner_user_id,
+                actor_user_id=owner_user_id,
+                activity_type=ActivityType.DATA_MODEL_DUPLICATED,
+                title="Data Model duplicated",
+                description=(
+                    f"Duplicated Data Model '{source.name}' "
+                    f"as '{duplicate.name}'"
+                ),
+                data_model_id=duplicate.data_model_id,
+                metadata={
+                    "data_model_name": duplicate.name,
+                    "source_data_model_id": source.data_model_id,
+                    "source_data_model_name": source.name,
+                },
+            )
+        except Exception:
+            # The model and specification are already safely persisted.
+            # Activity history must not make a successful copy appear failed.
+            logger.exception(
+                "Failed to record duplication activity for Data Model %s",
+                duplicate.data_model_id,
+            )
+
+        return duplicate
 
     def update_data_model(
         self,

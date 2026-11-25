@@ -206,6 +206,21 @@ export class WorkspaceService {
     );
   }
 
+  duplicateDataModel(dataModelId: string): Observable<DataModelResponse> {
+    return this.http.post<DataModelResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/duplicate`,
+      {},
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.CreatingDataModel,
+        ),
+      },
+    ).pipe(
+      tap(() => this.invalidateDataModelsCache()),
+    );
+  }
+
   updateDataModel(
     dataModelId: string,
     request: UpdateDataModelRequest,

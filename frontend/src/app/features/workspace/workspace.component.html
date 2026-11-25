@@ -28,6 +28,7 @@
           (dataModelSelected)="handleDataModelSelected($event)"
           (editRequested)="handleDataModelEditRequested($event)"
           (shareRequested)="handleDataModelShareRequested($event)"
+          (duplicateRequested)="handleDataModelDuplicateRequested($event)"
         />
       </div>
 
@@ -61,5 +62,22 @@
   <app-data-model-share-dialog
     [dataModel]="dataModel"
     (closed)="closeDataModelShareDialog()"
+  />
+}
+
+@if (duplicateDataModelTarget(); as dataModel) {
+  <app-confirmation-dialog
+    title="Duplicate this Data Model?"
+    message="A separate copy will be created. The original Data Model will remain unchanged."
+    icon="content_copy"
+    severity="info"
+    confirmLabel="Duplicate Data Model"
+    cancelLabel="Cancel"
+    [subject]="dataModel.name"
+    context="Included: complete specification, entities, fields, identity keys, foreign keys, relationships, constraints, description, colour and tags. Excluded: generated datasets, generation jobs, checkpoints and execution history. The copy receives a new Data Model ID and a name beginning with 'Copy of'."
+    [busy]="duplicatingDataModel()"
+    [error]="duplicateDataModelError()"
+    (confirmed)="confirmDataModelDuplication()"
+    (cancelled)="cancelDataModelDuplication()"
   />
 }

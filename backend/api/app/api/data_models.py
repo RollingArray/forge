@@ -71,6 +71,41 @@ async def create_data_model(
     )
 
 
+@router.post(
+    "/{data_model_id}/duplicate",
+    response_model=DataModelModel,
+    status_code=status.HTTP_201_CREATED,
+)
+async def duplicate_data_model(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> DataModelModel:
+    """Duplicate a data model owned by the authenticated user."""
+
+    data_model = data_model_service.duplicate_data_model(
+        data_model_id=data_model_id,
+        owner_user_id=user.user_id,
+    )
+
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found or its specification is missing.",
+        )
+
+    return DataModelModel(
+        data_model_id=data_model.data_model_id,
+        owner_user_id=data_model.owner_user_id,
+        name=data_model.name,
+        description=data_model.description,
+        color=data_model.color,
+        tags=data_model.tags,
+        status=data_model.status,
+        created_at=data_model.created_at,
+        updated_at=data_model.updated_at,
+    )
+
+
 @router.put(
     "/{data_model_id}",
     response_model=DataModelModel,

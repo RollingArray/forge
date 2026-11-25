@@ -33,15 +33,34 @@
       <p>{{ dataModel().description }}</p>
     </div>
 
-    <button
-      type="button"
-      class="more-button"
-      title="Edit Data Model"
-      aria-label="Edit Data Model"
-      (click)="edit($event)"
-    >
-      <span class="material-symbols-outlined more-icon"> more_vert </span>
-    </button>
+    <div class="card-actions">
+      <button
+        type="button"
+        class="more-button"
+        title="Data Model actions"
+        aria-label="Data Model actions"
+        aria-haspopup="true"
+        [attr.aria-expanded]="actionsMenuOpen()"
+        (click)="toggleActionsMenu($event)"
+      >
+        <span class="material-symbols-outlined more-icon"> more_vert </span>
+      </button>
+
+      @if (actionsMenuOpen()) {
+        <div class="actions-menu" role="menu" (click)="$event.stopPropagation()">
+          <button type="button" role="menuitem" (click)="edit($event)">
+            <span class="material-symbols-outlined">edit</span>
+            Edit
+          </button>
+          @if (dataModel().accessRole === 'OWNER') {
+            <button type="button" role="menuitem" (click)="duplicate($event)">
+              <span class="material-symbols-outlined">content_copy</span>
+              Duplicate
+            </button>
+          }
+        </div>
+      }
+    </div>
   </div>
 
   @if (dataModel().tags.length > 0) {

@@ -129,6 +129,49 @@
 }
 
 /* More actions */
+.card-actions {
+  position: relative;
+  display: grid;
+  justify-items: end;
+}
+
+.actions-menu {
+  position: absolute;
+  z-index: 20;
+  top: 27px;
+  right: 0;
+  display: grid;
+  min-width: 148px;
+  padding: 5px;
+  border: 1px solid #e7e4ef;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(35, 29, 65, 0.14);
+}
+
+.actions-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #343750;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+}
+
+.actions-menu button:hover {
+  background: #f5f3fb;
+}
+
+.actions-menu .material-symbols-outlined {
+  font-size: 16px;
+}
+
 .more-button {
   display: grid;
   width: 22px;

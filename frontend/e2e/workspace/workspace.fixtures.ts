@@ -75,7 +75,11 @@ async function deleteWorkspaceModel(
   const card = await findUniqueModelCard(page, modelName);
 
   await card.getByRole('button', {
-    name: 'Edit Data Model',
+    name: 'Data Model actions',
+  }).click();
+
+  await card.getByRole('menuitem', {
+    name: 'Edit',
   }).click();
 
   const editDialog = page.getByRole('dialog', {

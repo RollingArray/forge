@@ -46,6 +46,9 @@ import {
 import {
   DataModelShareDialogComponent,
 } from './components/data-model-share-dialog/data-model-share-dialog.component';
+import {
+  ConfirmationDialogComponent,
+} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-workspace',
@@ -57,6 +60,7 @@ import {
     WorkspaceRightRailComponent,
     WorkspaceTemplatesComponent,
     DataModelShareDialogComponent,
+    ConfirmationDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workspace.component.html',
@@ -79,6 +83,9 @@ export class WorkspaceComponent {
   readonly sharingDataModel = signal<DataModel | null>(null);
   readonly dataModelShareDialogOpen = signal(false);
   readonly savingDataModel = signal(false);
+  readonly duplicateDataModelTarget = signal<DataModel | null>(null);
+  readonly duplicatingDataModel = signal(false);
+  readonly duplicateDataModelError = signal<string | null>(null);
 
   constructor() {
     this.loadWorkspace();
@@ -136,6 +143,56 @@ export class WorkspaceComponent {
   handleDataModelShareRequested(dataModel: DataModel): void {
     this.sharingDataModel.set(dataModel);
     this.dataModelShareDialogOpen.set(true);
+  }
+
+  handleDataModelDuplicateRequested(dataModel: DataModel): void {
+    if (dataModel.accessRole !== 'OWNER') return;
+
+    this.duplicateDataModelError.set(null);
+    this.duplicateDataModelTarget.set(dataModel);
+  }
+
+  cancelDataModelDuplication(): void {
+    if (this.duplicatingDataModel()) return;
+
+    this.duplicateDataModelTarget.set(null);
+    this.duplicateDataModelError.set(null);
+  }
+
+  confirmDataModelDuplication(): void {
+    const dataModel = this.duplicateDataModelTarget();
+
+    if (!dataModel || this.duplicatingDataModel()) return;
+
+    this.duplicatingDataModel.set(true);
+    this.duplicateDataModelError.set(null);
+
+    this.workspaceService.duplicateDataModel(dataModel.dataModelId).subscribe({
+      next: (response) => {
+        this.duplicatingDataModel.set(false);
+        this.duplicateDataModelTarget.set(null);
+        this.duplicateDataModelError.set(null);
+        this.loadWorkspace();
+
+        this.notificationService.success(
+          'Data Model duplicated',
+          'A copy of the Data Model was created successfully.',
+        );
+
+        void this.router.navigate([
+          '/workspace',
+          response.data_model_id,
+          'model-studio',
+        ]);
+      },
+      error: (error: unknown) => {
+        console.error('[FORGE Workspace] Failed to duplicate Data Model:', error);
+        this.duplicatingDataModel.set(false);
+        this.duplicateDataModelError.set(
+          'The Data Model could not be duplicated. Please try again.',
+        );
+      },
+    });
   }
 
   closeDataModelShareDialog(): void {
