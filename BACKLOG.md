@@ -689,13 +689,13 @@ Objective: Verify that navigation between Population and Generate does not leak 
 
 ##### MS30: Generation start retry and execution lifecycle
 Status: [pending]
-Objective: Verify that generation can be started or retried safely and that the UI reflects the actual execution state.
-- [pending] **MS30-01**: Start generation from a newly created job. Expected result: The job transitions into execution.
-- [pending] **MS30-02**: Retry a job in CREATED state. Expected result: Generation starts successfully.
-- [pending] **MS30-03**: Attempt another start while the job is PREPARING or RUNNING. Expected result: Duplicate execution is prevented.
-- [pending] **MS30-04**: Verify retry failure handling. Expected result: The job remains recoverable and the user receives an actionable error.
-- [pending] **MS30-05**: Verify interrupted job handling. Expected result: Resume follows the persisted checkpoint rather than starting an unrelated execution.
-- [pending] **MS30-06**: Verify terminal job behavior. Expected result: Completed and partially completed jobs expose the appropriate actions.
+Objective: Verify that generation can be started, retried and recovered safely, that duplicate execution is prevented, and that the UI accurately reflects the persisted execution state.
+- [done] **MS30-01**: Start generation from a newly created job. Expected result: The job transitions from CREATED into execution, and the UI reflects the actual backend execution state.
+- [done] **MS30-02**: Retry a job in CREATED state. Expected result: Generation starts successfully using the existing job, without creating an unintended duplicate job or execution.
+- [done] **MS30-03**: Attempt another start while the job is PREPARING or RUNNING. Expected result: Duplicate execution is prevented, the existing execution remains unaffected, and the second request receives a controlled response rather than an unhandled server error. Evidence: `test_start_generation_job_returns_409_when_execution_lease_is_busy` and `test_duplicate_start_rejects_existing_active_worker_without_mutation`; 13 targeted API and service tests passed.
+- [pending] **MS30-04**: Verify retry failure handling. Expected result: A failed start or retry leaves the job in a consistent, recoverable state, and the user receives an actionable error.
+- [pending] **MS30-05**: Verify interrupted job handling. Expected result: Resuming an interrupted job follows its persisted checkpoint and existing execution context rather than starting an unrelated execution or losing previously completed work.
+- [pending] **MS30-06**: Verify terminal job behavior. Expected result: Completed and partially completed jobs expose only the actions appropriate to their persisted execution state, and the UI does not offer invalid lifecycle transitions.
 
 ##### MS31: Generation event stream and recovery
 Status: [pending]
