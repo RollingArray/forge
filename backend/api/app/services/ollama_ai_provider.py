@@ -2087,12 +2087,15 @@ class OllamaAIProvider(AIProvider):
 
         collected_set = {value.casefold() for value in excluded_values}
 
-        # Bound repeated refill calls when the model returns duplicate values
-        # or persistently underproduces. The initial request plus up to 5
-        # refill attempts gives the provider a finite recovery window.
-        max_attempts = 6
-        attempt_count = 0
+        # Request at most 30 values per LLM call. Calculate the minimum
+        # number of calls from the requested count, then allow five
+        # additional attempts to recover from duplicates or underproduction.
         semantic_request_batch_size = 30
+        minimum_attempts = (
+            count + semantic_request_batch_size - 1
+        ) // semantic_request_batch_size
+        max_attempts = minimum_attempts + 5
+        attempt_count = 0
 
         while len(collected_values) < count:
             if attempt_count >= max_attempts:
@@ -2197,7 +2200,7 @@ class OllamaAIProvider(AIProvider):
                         remaining,
                         returned_count,
                         ollama_elapsed_seconds,
-                        len(collected_values) > 0,
+                        attempt_count > 1,
                     )
             except (OSError, URLError) as exc:
                 raise RuntimeError(
@@ -2269,17 +2272,13 @@ class OllamaAIProvider(AIProvider):
             print(
                 "[SEMANTIC-VALUES] "
                 f"mode={normalized_mode} "
+                f"attempt={attempt_count}/{max_attempts} "
                 f"requested={remaining} "
                 f"raw_returned={len(values)} "
                 f"new_unique={newly_accepted} "
                 f"duplicates={duplicate_count} "
                 f"total_unique={len(collected_values)}/{count}"
             )
-
-            if not values:
-                raise RuntimeError(
-                    "FORGE AI semantic generation returned no usable values.",
-                )
 
         normalized_values = collected_values[:count]
 

@@ -606,3 +606,87 @@ def test_vocabulary_generation_honors_previous_values(monkeypatch):
 
     assert result == ["France", "Japan"]
     assert len(calls) == 1
+
+
+
+def test_semantic_generation_uses_actual_count_below_batch_limit(monkeypatch):
+    values = [f"Description {i}" for i in range(10)]
+    provider, calls = _provider(monkeypatch, [values])
+
+    result = provider.generate_semantic_values(
+        description="Revision description",
+        mode="UNIQUE",
+        count=10,
+    )
+
+    assert result == values
+    assert len(calls) == 1
+    assert "Count: 10" in calls[0]["messages"][1]["content"]
+
+
+def test_semantic_generation_supports_411_values_across_batches(monkeypatch):
+    expected = [f"Revision description {i}" for i in range(411)]
+    responses = [
+        expected[start:start + 30]
+        for start in range(0, len(expected), 30)
+    ]
+
+    provider, calls = _provider(monkeypatch, responses)
+
+    result = provider.generate_semantic_values(
+        description="Aerospace product revision description",
+        mode="UNIQUE",
+        count=411,
+    )
+
+    requested_counts = [
+        int(
+            call["messages"][1]["content"]
+            .split("Count: ", 1)[1]
+            .splitlines()[0]
+        )
+        for call in calls
+    ]
+
+    assert result == expected
+    assert len(result) == 411
+    assert len(calls) == 14
+    assert requested_counts == [30] * 13 + [21]
+
+
+def test_semantic_generation_retries_empty_batch(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [
+            [],
+            ["Alpha", "Beta"],
+        ],
+    )
+
+    result = provider.generate_semantic_values(
+        description="Revision description",
+        mode="UNIQUE",
+        count=2,
+    )
+
+    assert result == ["Alpha", "Beta"]
+    assert len(calls) == 2
+
+
+def test_semantic_generation_fails_after_bounded_empty_retries(monkeypatch):
+    provider, calls = _provider(
+        monkeypatch,
+        [[] for _ in range(6)],
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="after 6 attempts: requested 10, collected 0",
+    ):
+        provider.generate_semantic_values(
+            description="Revision description",
+            mode="UNIQUE",
+            count=10,
+        )
+
+    assert len(calls) == 6
