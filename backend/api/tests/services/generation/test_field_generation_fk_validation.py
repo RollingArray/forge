@@ -93,6 +93,33 @@ def test_planner_fk_source_still_rejects_malformed_generation_structure():
         GenerationPlanner().validate_generation_configuration(specification)
 
 
+@pytest.mark.parametrize(
+    ("malformed_configuration", "expected_error"),
+    [
+        ({"identity": []}, "identity must be an object"),
+        ({"generation": []}, "generation must be an object"),
+    ],
+)
+def test_planner_fk_source_rejects_malformed_configuration_structures(
+    malformed_configuration,
+    expected_error,
+):
+    specification = make_planner_fk_spec(
+        {"name": "PARENT_CODE_FK", "type": "STRING"}
+    )
+    specification["entities"][1]["fields"][0].update(
+        malformed_configuration
+    )
+
+    with pytest.raises(
+        GenerationPlanningError,
+        match=expected_error,
+    ):
+        GenerationPlanner().validate_generation_configuration(
+            specification
+        )
+
+
 def test_non_fk_string_still_requires_scalar_generation():
     specification = make_planner_fk_spec(
         {"name": "PARENT_CODE_FK", "type": "STRING"}

@@ -252,35 +252,15 @@ def _validate_generation_configuration(
             }:
                 fail(entity_name, field_name, f"unsupported field type {field_type!r}.")
 
-            identity = field.get("identity")
-            generation = field.get("generation")
+            is_fk_source = (
+                entity_name,
+                field_name,
+            ) in foreign_key_fields
 
-            if identity is not None and not isinstance(identity, dict):
-                fail(entity_name, field_name, "identity must be an object.")
-            if generation is not None and not isinstance(generation, dict):
-                fail(entity_name, field_name, "generation must be an object.")
-
-            identity = identity or {}
-            generation = generation or {}
-
-            parameters = generation.get("parameters")
-            if parameters is not None and not isinstance(parameters, dict):
-                fail(entity_name, field_name, "parameters must be an object.")
-            parameters = parameters or {}
-
-            # FK assignment supplies values before scalar generation, but
-            # structural validation above still applies to these fields.
-            if (entity_name, field_name) in foreign_key_fields:
-                if field_type == "IDENTIFIER" and (
-                    identity.get("strategy") != "SEQUENTIAL_ID"
-                ):
-                    fail(
-                        entity_name, field_name,
-                        "IDENTIFIER requires SEQUENTIAL_ID.",
-                    )
-                continue
-
-            errors = validate_field_generation(field)
+            errors = validate_field_generation(
+                field,
+                require_generation=not is_fk_source,
+            )
             if errors:
                 fail(entity_name, field_name, errors[0])
 

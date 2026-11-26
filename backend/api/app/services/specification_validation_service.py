@@ -285,9 +285,7 @@ class SpecificationValidationService:
 
                     for error in validate_field_generation(
                         field_definition,
-                        require_generation=(
-                            not is_fk_source or field_type == "IDENTIFIER"
-                        ),
+                        require_generation=not is_fk_source,
                     ):
                         add(
                             "error",
