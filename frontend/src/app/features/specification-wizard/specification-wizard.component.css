@@ -555,46 +555,6 @@ app-workflow-content {
   gap: 8px;
 }
 
-.wizard-tool-button {
-  display: inline-flex;
-  min-height: 35px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 11px;
-  border: 1px solid #ded6ed;
-  border-radius: 8px;
-  background: #fff;
-  color: #5b4789;
-  font: inherit;
-  font-size: 10px;
-  font-weight: 750;
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
-}
-
-.wizard-tool-button:hover {
-  border-color: #a995d5;
-  background: #faf8ff;
-  transform: translateY(-1px);
-}
-
-.wizard-tool-button .material-symbols-outlined {
-  font-size: 16px;
-}
-
-.sample-button {
-  border-color: #d8ccef;
-  background: #6b52a5;
-  color: #fff;
-}
-
-.sample-button:hover {
-  border-color: #5c438f;
-  background: #5c438f;
-  color: #fff;
-}
 
 .section-resource-actions {
   margin: -3px 0 15px;
@@ -616,7 +576,8 @@ app-workflow-content {
     flex-direction: column;
   }
 
-  .wizard-tool-button {
+  .resource-buttons app-forge-button,
+  .section-resource-actions app-forge-button {
     width: 100%;
   }
 }

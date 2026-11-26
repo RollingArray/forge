@@ -29,14 +29,13 @@ import { ForgeSpecificationModel } from '../interfaces/forge-specification-model
 import { ForgeSpecificationRelationship } from '../interfaces/forge-specification-relationship.interface';
 import { ForgeRelationshipEndpointValue } from '../types/forge-relationship-endpoint-value.type';
 import {
-  SpecificationImportApplyRequest,
-  SpecificationImportApplyResponse,
-  SpecificationImportCsv,
-  SpecificationImportPreviewResponse,
-} from '../interfaces/specification-import.interface';
-import {
   SpecificationValidationResult,
 } from '../interfaces/specification-validation.interface';
+import { SpecificationReplacementCsv } from '../interfaces/specification-replacement-csv.interface';
+import { SpecificationReplacementPreviewResponse } from '../interfaces/specification-replacement-preview-response.interface';
+import { SpecificationReplacementApplyRequest } from '../interfaces/specification-replacement-apply-request.interface';
+import { SpecificationReplacementApplyResponse } from '../interfaces/specification-replacement-apply-response.interface';
+import { SpecificationReplacementValidationResponse } from '../interfaces/specification-replacement-validation-response.interface';
 
 
 type PopulationScaling = 'FIXED' | 'SCALABLE';
@@ -165,33 +164,94 @@ export class SpecificationService {
 
   private readonly apiBaseUrl = environment.apiBaseUrl;
 
-  previewImport(
+  exportReplacement(
     dataModelId: string,
-    csv: SpecificationImportCsv,
-  ): Observable<SpecificationImportPreviewResponse> {
-    return this.http.post<SpecificationImportPreviewResponse>(
-      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/import/preview`,
-      { csv },
+  ): Observable<SpecificationReplacementCsv> {
+    return this.http.get<SpecificationReplacementCsv>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/replacement/export`,
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
-          ApiLoadingMessage.PreviewingSpecificationImport,
+          ApiLoadingMessage.ExportingSpecificationReplacement,
         ),
       },
     );
   }
 
-  applyImport(
+  previewReplacement(
     dataModelId: string,
-    request: SpecificationImportApplyRequest,
-  ): Observable<SpecificationImportApplyResponse> {
-    return this.http.post<SpecificationImportApplyResponse>(
-      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/import/apply`,
+    csv: SpecificationReplacementCsv,
+  ): Observable<SpecificationReplacementPreviewResponse> {
+    return this.http.post<SpecificationReplacementPreviewResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/replacement/preview`,
+      { csv },
+      {
+        context: new HttpContext().set(
+          API_LOADING_MESSAGE,
+          ApiLoadingMessage.PreviewingSpecificationReplacement,
+        ),
+      },
+    );
+  }
+
+  validateReplacement(
+    dataModelId: string,
+    request: SpecificationReplacementApplyRequest,
+  ): Observable<{
+    baseRevision: string;
+    csvDigest: string;
+    summary: Record<string, number>;
+    validation: SpecificationValidationResult;
+    specification: ForgeSpecification;
+  }> {
+    return this.http
+      .post<SpecificationReplacementValidationResponse>(
+        `${this.apiBaseUrl}/data-models/${dataModelId}/specification/replacement/validate`,
+        request,
+        {
+          context: new HttpContext().set(
+            API_LOADING_MESSAGE,
+            ApiLoadingMessage.ValidatingDataModel,
+          ),
+        },
+      )
+      .pipe(
+        map((response) => ({
+          baseRevision: response.base_revision,
+          csvDigest: response.csv_digest,
+          summary: response.summary,
+          validation: {
+            modelName: response.validation.model_name,
+            specificationVersion: response.validation.specification_version,
+            vocabularyVersion: response.validation.vocabulary_version,
+            errors: response.validation.errors,
+            warnings: response.validation.warnings,
+            unsupported: response.validation.unsupported,
+            passed: response.validation.passed,
+            totalChecks: response.validation.total_checks,
+            entitiesValidated: response.validation.entities_validated,
+            canContinue: response.validation.can_continue,
+            findings: response.validation.findings,
+            entities: response.validation.entities,
+          },
+          specification: this.mapSpecification(
+            response.specification as unknown as SpecificationResponse,
+          ),
+        })),
+      );
+  }
+
+  applyReplacement(
+    dataModelId: string,
+    request: SpecificationReplacementApplyRequest,
+  ): Observable<SpecificationReplacementApplyResponse> {
+    return this.http.post<SpecificationReplacementApplyResponse>(
+      `${this.apiBaseUrl}/data-models/${dataModelId}/specification/replacement/apply`,
       request,
       {
         context: new HttpContext().set(
           API_LOADING_MESSAGE,
-          ApiLoadingMessage.ApplyingSpecificationImport,
+          ApiLoadingMessage.ApplyingSpecificationReplacement,
         ),
       },
     );

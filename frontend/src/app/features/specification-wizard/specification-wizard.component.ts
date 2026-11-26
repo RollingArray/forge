@@ -1,26 +1,31 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpContext,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { WorkflowPageHeaderComponent } from '../../shared/components/workflow-page-header/workflow-page-header.component';
 import { WorkflowContentComponent } from '../../shared/components/workflow-content/workflow-content.component';
 import { WorkflowActionBarComponent } from '../../shared/components/workflow-action-bar/workflow-action-bar.component';
+import { ForgeButtonComponent } from '../../shared/components/forge-button/forge-button.component';
 import { WorkspaceSimpleTableComponent } from '../../shared/components/workspace-simple-table/workspace-simple-table.component';
 import { WorkspaceSimpleTableColumn } from '../../shared/components/workspace-simple-table/workspace-simple-table.models';
 import { SpecificationService } from '../../core/services/specification.service';
 import { NotificationService } from '../../core/services/notification.service';
-import {
-  SpecificationImportApplyRequest,
-  SpecificationImportCsv,
-  SpecificationImportPreviewResponse,
-} from '../../core/interfaces/specification-import.interface';
+import { SpecificationReplacementCsv } from '../../core/interfaces/specification-replacement-csv.interface';
+import { SpecificationReplacementPreviewResponse } from '../../core/interfaces/specification-replacement-preview-response.interface';
 
 type CsvSectionKey =
   | 'entities'
@@ -54,16 +59,27 @@ interface CsvParsePreview {
     WorkflowPageHeaderComponent,
     WorkflowContentComponent,
     WorkflowActionBarComponent,
+    ForgeButtonComponent,
     WorkspaceSimpleTableComponent,
   ],
   templateUrl: './specification-wizard.component.html',
   styleUrl: './specification-wizard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SpecificationWizardComponent {
-  private readonly http = inject(HttpClient);
+export class SpecificationWizardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+
+  private readonly sampleBase = '/assets/forge-samples/aerospace/';
+
+  private readonly sampleFiles: Record<CsvSectionKey, string> = {
+    entities: '01_entities.csv',
+    fields_and_keys: '02_fields_and_keys.csv',
+    foreign_keys: '03_foreign_keys.csv',
+    relationships: '04_relationships.csv',
+    constraints: '05_constraints.csv',
+  };
   private readonly specificationService = inject(SpecificationService);
   private readonly notificationService = inject(NotificationService);
 
@@ -102,9 +118,12 @@ export class SpecificationWizardComponent {
     },
   ];
 
+  @ViewChild('replacementReview')
+  private replacementReview?: ElementRef<HTMLElement>;
+
   readonly activeSection = signal<CsvSectionKey>('entities');
 
-  readonly csvText = signal<SpecificationImportCsv>({
+  readonly csvText = signal<SpecificationReplacementCsv>({
     entities: '',
     fields_and_keys: '',
     foreign_keys: '',
@@ -115,9 +134,7 @@ export class SpecificationWizardComponent {
   readonly previewInProgress = signal(false);
   readonly previewError = signal<string | null>(null);
   readonly previewResponse =
-    signal<SpecificationImportPreviewResponse | null>(null);
-  readonly previewedCsv = signal<SpecificationImportCsv | null>(null);
-  readonly applyInProgress = signal(false);
+    signal<SpecificationReplacementPreviewResponse | null>(null);
 
   readonly activeSectionDefinition = computed(
     () =>
@@ -170,88 +187,261 @@ export class SpecificationWizardComponent {
       !this.previewInProgress(),
   );
 
-  readonly canApply = computed(() => {
-    const response = this.previewResponse();
-    const snapshot = this.previewedCsv();
-
-    return Boolean(
-      response &&
-      response.can_apply &&
-      response.conflicts.length === 0 &&
-      response.issues.length === 0 &&
-      snapshot &&
-      JSON.stringify(snapshot) === JSON.stringify(this.csvText()) &&
-      !this.previewInProgress() &&
-      !this.applyInProgress(),
-    );
-  });
-
   readonly previewSummary = computed(() => {
     const summary = this.previewResponse()?.summary;
     return summary ? Object.entries(summary) : [];
   });
 
-  private readonly sampleFiles: Record<CsvSectionKey, string> = {
-    entities: '01_entities.csv',
-    fields_and_keys: '02_fields_and_keys.csv',
-    foreign_keys: '03_foreign_keys.csv',
-    relationships: '04_relationships.csv',
-    constraints: '05_constraints.csv',
-  };
+  ngOnInit(): void {
+    const navigationState =
+      this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    const restoredCsv = navigationState?.['replacementCsv'] as
+      | SpecificationReplacementCsv
+      | undefined;
+
+    const hasRestorableCsv =
+      restoredCsv &&
+      this.sections.every(
+        (section) =>
+          typeof restoredCsv[section.key] === 'string',
+      );
+
+    if (hasRestorableCsv) {
+      this.csvText.set({ ...restoredCsv });
+      this.activeSection.set('entities');
+      this.resetPreviewState();
+      return;
+    }
+
+    this.loadCurrentSpecification(false);
+  }
+
+  loadCurrentSpecification(showSuccessNotification = true): void {
+    if (!this.dataModelId) {
+      return;
+    }
+
+    this.previewError.set(null);
+
+    this.specificationService
+      .exportReplacement(this.dataModelId)
+      .subscribe({
+        next: (csv) => {
+          this.csvText.set(csv);
+          this.activeSection.set('entities');
+          this.resetPreviewState();
+          if (showSuccessNotification) {
+            this.notificationService.success(
+              'Current specification loaded',
+              'All five canonical CSV sections are ready for editing.',
+            );
+          }
+        },
+        error: (error: unknown) => {
+          console.error(
+            '[FORGE Specification Wizard] Export failed:',
+            error,
+          );
+
+          const detail =
+            error instanceof HttpErrorResponse
+              ? error.error?.detail ?? error.error
+              : error;
+
+          const message =
+            typeof detail === 'string'
+              ? detail
+              : detail
+                ? JSON.stringify(detail, null, 2)
+                : 'The current specification could not be exported.';
+
+          this.previewError.set(message);
+
+          this.notificationService.error(
+            'Specification export failed',
+            message,
+          );
+        },
+      });
+  }
+
+
+  downloadTemplate(): void {
+    const anchor = document.createElement('a');
+    anchor.href = '/assets/forge-templates/forge-specification-template.zip';
+    anchor.download = 'forge-specification-template.zip';
+    anchor.click();
+  }
 
   loadAerospaceSample(): void {
-    const base = '/assets/forge-samples/aerospace/';
+    this.loadAerospaceSampleSections();
+  }
 
+  loadActiveSectionSample(): void {
+    this.loadAerospaceSampleSections(this.activeSection());
+  }
+
+  private loadAerospaceSampleSections(
+    onlySection?: CsvSectionKey,
+  ): void {
     forkJoin({
-      entities: this.http.get(`${base}${this.sampleFiles.entities}`, { responseType: 'text' }),
-      fields_and_keys: this.http.get(`${base}${this.sampleFiles.fields_and_keys}`, { responseType: 'text' }),
-      foreign_keys: this.http.get(`${base}${this.sampleFiles.foreign_keys}`, { responseType: 'text' }),
-      relationships: this.http.get(`${base}${this.sampleFiles.relationships}`, { responseType: 'text' }),
-      constraints: this.http.get(`${base}${this.sampleFiles.constraints}`, { responseType: 'text' }),
+      entities: this.http.get(
+        `${this.sampleBase}${this.sampleFiles.entities}`,
+        { responseType: 'text' },
+      ),
+      fields_and_keys: this.http.get(
+        `${this.sampleBase}${this.sampleFiles.fields_and_keys}`,
+        { responseType: 'text' },
+      ),
+      foreign_keys: this.http.get(
+        `${this.sampleBase}${this.sampleFiles.foreign_keys}`,
+        { responseType: 'text' },
+      ),
+      relationships: this.http.get(
+        `${this.sampleBase}${this.sampleFiles.relationships}`,
+        { responseType: 'text' },
+      ),
+      constraints: this.http.get(
+        `${this.sampleBase}${this.sampleFiles.constraints}`,
+        { responseType: 'text' },
+      ),
     }).subscribe({
-      next: (csv) => {
-        this.csvText.set(csv);
-        this.activeSection.set('entities');
-        this.resetPreviewState();
-        this.notificationService.success(
-          'Aerospace sample loaded',
-          'All five sections are populated. Review the CSV and run Preview to validate it against this Data Model.',
-        );
+      next: (legacy) => {
+        try {
+          const converted = this.convertAerospaceSample(legacy);
+
+          if (onlySection) {
+            this.setSectionCsv(onlySection, converted[onlySection]);
+            this.notificationService.success(
+              'Aerospace sample loaded',
+              `${onlySection} sample is ready for editing.`,
+            );
+          } else {
+            this.csvText.set(converted);
+            this.activeSection.set('entities');
+            this.resetPreviewState();
+            this.notificationService.success(
+              'Aerospace sample loaded',
+              'All five sample sections are ready for editing.',
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[FORGE Specification Wizard] Sample conversion failed:',
+            error,
+          );
+          this.notificationService.error(
+            'Sample loading failed',
+            error instanceof Error
+              ? error.message
+              : 'The Aerospace sample could not be converted.',
+          );
+        }
       },
       error: (error: unknown) => {
-        console.error('[FORGE Specification Wizard] Failed to load aerospace sample:', error);
-        this.previewError.set(
-          'The aerospace sample files could not be loaded. Check that the sample assets are available.',
+        console.error(
+          '[FORGE Specification Wizard] Sample loading failed:',
+          error,
         );
         this.notificationService.error(
           'Sample loading failed',
-          'FORGE could not load all five aerospace CSV files.',
+          'The original Aerospace sample files could not be loaded.',
         );
       },
     });
   }
 
-  loadActiveSectionSample(): void {
-    const section = this.activeSection();
-    const file = this.sampleFiles[section];
-    const url = `/assets/forge-samples/aerospace/${file}`;
+  private convertAerospaceSample(
+    legacy: SpecificationReplacementCsv,
+  ): SpecificationReplacementCsv {
+    const parseRecords = (content: string): Record<string, string>[] => {
+      const parsed = this.parseCsv(content);
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
 
-    this.http.get(url, { responseType: 'text' }).subscribe({
-      next: (content) => {
-        this.setSectionCsv(section, content);
-        this.notificationService.success(
-          `${this.activeSectionDefinition().label} sample loaded`,
-          'The active section has been replaced. Review it before running Preview.',
-        );
-      },
-      error: (error: unknown) => {
-        console.error('[FORGE Specification Wizard] Failed to load section sample:', error);
-        this.previewError.set(
-          `The sample for ${this.activeSectionDefinition().label} could not be loaded.`,
-        );
-        this.notificationService.error('Sample loading failed', 'The section sample could not be loaded.');
-      },
-    });
+      return parsed.rows.map((row) => {
+        const record: Record<string, string> = {};
+        parsed.headers.forEach((header, index) => {
+          record[header] = String(row[`column${index}`] ?? '');
+        });
+        return record;
+      });
+    };
+
+    const serialize = (
+      headers: string[],
+      records: Record<string, string>[],
+    ): string => {
+      const escape = (value: string): string => {
+        if (/[",\r\n]/.test(value)) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      };
+
+      return [
+        headers.map(escape).join(','),
+        ...records.map((record) =>
+          headers.map((header) => escape(record[header] ?? '')).join(','),
+        ),
+      ].join('\n');
+    };
+
+    const entities = parseRecords(legacy.entities);
+    const fields = parseRecords(legacy.fields_and_keys);
+    const foreignKeys = parseRecords(legacy.foreign_keys);
+    const relationships = parseRecords(legacy.relationships);
+    const constraints = parseRecords(legacy.constraints);
+
+    const fieldHeaders = this.sections
+      .find((section) => section.key === 'fields_and_keys')!
+      .header.split(',');
+
+    return {
+      entities: serialize(
+        ['entity', 'description', 'population_count', 'population_scaling'],
+        entities,
+      ),
+      fields_and_keys: serialize(fieldHeaders, fields),
+      foreign_keys: serialize(
+        ['source_entity', 'source_fields', 'target_entity'],
+        foreignKeys,
+      ),
+      relationships: serialize(
+        [
+          'source_entity',
+          'target_entity',
+          'type',
+          'source_participation',
+          'target_participation',
+        ],
+        relationships,
+      ),
+      constraints: serialize(
+        ['entity', 'field', 'operator', 'value'],
+        constraints,
+      ),
+    };
+  }
+
+  downloadActiveCsv(): void {
+    const section = this.activeSection();
+    const content = this.csvText()[section];
+
+    if (!content.trim()) {
+      return;
+    }
+
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+
+    anchor.href = url;
+    anchor.download = `${section}.csv`;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
   }
 
   private setSectionCsv(section: CsvSectionKey, content: string): void {
@@ -264,7 +454,6 @@ export class SpecificationWizardComponent {
 
   private resetPreviewState(): void {
     this.previewResponse.set(null);
-    this.previewedCsv.set(null);
     this.previewError.set(null);
   }
 
@@ -286,7 +475,7 @@ export class SpecificationWizardComponent {
     return this.csvText()[section].trim().length > 0;
   }
 
-  previewImport(): void {
+  previewReplacement(): void {
     if (!this.dataModelId || !this.canPreview()) {
       return;
     }
@@ -294,29 +483,61 @@ export class SpecificationWizardComponent {
     this.previewInProgress.set(true);
     this.previewError.set(null);
     this.previewResponse.set(null);
-    this.previewedCsv.set(null);
+
     const csvSnapshot = { ...this.csvText() };
 
     this.specificationService
-      .previewImport(this.dataModelId, csvSnapshot)
+      .previewReplacement(this.dataModelId, csvSnapshot)
       .subscribe({
         next: (response) => {
           this.previewResponse.set(response);
-          this.previewedCsv.set(csvSnapshot);
           this.previewInProgress.set(false);
+
+          if (!response.can_apply || response.issues.length > 0) {
+            const issueCount = response.issues.length;
+
+            this.notificationService.error(
+              'CSV replacement needs attention',
+              issueCount > 0
+                ? `FORGE found ${issueCount} CSV conversion issue${issueCount === 1 ? '' : 's'}. Review the details below and correct the CSV before continuing.`
+                : 'The replacement could not be prepared. Review the details below.',
+            );
+
+            requestAnimationFrame(() => {
+              this.replacementReview?.nativeElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              });
+
+              this.replacementReview?.nativeElement.focus({
+                preventScroll: true,
+              });
+            });
+
+            return;
+          }
+
+          const request = {
+            base_revision: response.base_revision,
+            csv_digest: response.csv_digest,
+            csv: csvSnapshot,
+          };
+
+          void this.router.navigate(
+            ['/workspace', this.dataModelId, 'model-validation'],
+            { state: { replacement: request } },
+          );
         },
         error: (error: unknown) => {
           const detail =
-            error instanceof HttpErrorResponse
-              ? error.error?.detail
-              : null;
+            error instanceof HttpErrorResponse ? error.error?.detail : null;
 
           this.previewError.set(
             typeof detail === 'string'
               ? detail
               : detail
                 ? JSON.stringify(detail)
-                : 'FORGE could not preview this CSV import. Check the CSV content and try again.',
+                : 'FORGE could not preview this specification replacement.',
           );
           this.previewInProgress.set(false);
         },
@@ -324,73 +545,7 @@ export class SpecificationWizardComponent {
   }
 
   handlePrimaryAction(): void {
-    if (this.canApply()) {
-      this.applyImport();
-      return;
-    }
-
-    this.previewImport();
-  }
-
-  applyImport(): void {
-    const preview = this.previewResponse();
-    const csvSnapshot = this.previewedCsv();
-
-    if (!this.dataModelId || !preview || !csvSnapshot || !this.canApply()) {
-      return;
-    }
-
-    const request: SpecificationImportApplyRequest = {
-      base_revision: preview.base_revision,
-      csv_digest: preview.csv_digest,
-      csv: { ...csvSnapshot },
-    };
-
-    this.applyInProgress.set(true);
-    this.previewError.set(null);
-
-    this.specificationService
-      .applyImport(this.dataModelId, request)
-      .subscribe({
-        next: (response) => {
-          this.applyInProgress.set(false);
-          const message = response.applied
-            ? 'The CSV additions have been applied to the specification.'
-            : 'The specification is up to date. No additional changes were required.';
-
-          this.notificationService.success(
-            'Specification import complete',
-            message,
-          );
-
-          this.returnToModelStudio();
-        },
-        error: (error: unknown) => {
-          this.applyInProgress.set(false);
-          const status =
-            error instanceof HttpErrorResponse ? error.status : null;
-          const detail =
-            error instanceof HttpErrorResponse
-              ? error.error?.detail
-              : null;
-
-          this.previewError.set(
-            status === 409
-              ? 'The specification changed after this preview was created. Run Preview again before applying.'
-              : typeof detail === 'string'
-                ? detail
-                : detail
-                  ? JSON.stringify(detail)
-                  : 'FORGE could not apply this CSV import. Review the preview and try again.',
-          );
-
-          this.notificationService.error(
-            'Specification import failed',
-            this.previewError() ?? 'The CSV import could not be applied.',
-            status,
-          );
-        },
-      });
+    this.previewReplacement();
   }
 
   formatFinding(finding: Record<string, unknown>): string {

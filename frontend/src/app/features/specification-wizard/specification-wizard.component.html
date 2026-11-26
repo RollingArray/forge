@@ -2,7 +2,7 @@
   <app-workflow-page-header
     icon="table_view"
     title="Build your Specification"
-    description="Paste your structured CSV data one section at a time. FORGE will parse each section, show a live preview, and check the proposed additions against your existing specification."
+    description="Edit the five CSV sections of your canonical specification. Preview the complete replacement before explicitly applying it."
     progress="CSV specification wizard"
   />
 
@@ -23,26 +23,31 @@
 
         <div class="wizard-resource-actions">
           <div class="resource-copy">
-            <strong>Start with a template or sample</strong>
-            <span>Use the blank CSV structure, or load an example into this Data Model.</span>
+            <strong>Start with your specification, a template or sample</strong>
+            <span
+              >Your current specification loads automatically. You can also download the CSV
+              template or load an example.</span
+            >
           </div>
           <div class="resource-buttons">
-            <a
-              class="wizard-tool-button template-button"
-              href="/assets/forge-templates/forge-specification-template.zip"
-              download
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">download</span>
-              Download CSV Template
-            </a>
-            <button
-              type="button"
-              class="wizard-tool-button sample-button"
-              (click)="loadAerospaceSample()"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">science</span>
-              Load Complete Aerospace Sample
-            </button>
+            <app-forge-button
+              label="Download CSV Template"
+              icon="download"
+              variant="secondary"
+              (clicked)="downloadTemplate()"
+            />
+            <app-forge-button
+              label="Load Complete Aerospace Sample"
+              icon="science"
+              variant="secondary"
+              (clicked)="loadAerospaceSample()"
+            />
+            <app-forge-button
+              label="Reload Current Specification"
+              icon="sync"
+              variant="secondary"
+              (clicked)="loadCurrentSpecification()"
+            />
           </div>
         </div>
 
@@ -83,14 +88,19 @@
             </div>
 
             <div class="section-resource-actions">
-              <button
-                type="button"
-                class="wizard-tool-button section-sample-button"
-                (click)="loadActiveSectionSample()"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                Load Sample for This Section
-              </button>
+              <app-forge-button
+                label="Load Sample for This Section"
+                icon="auto_awesome"
+                variant="secondary"
+                (clicked)="loadActiveSectionSample()"
+              />
+              <app-forge-button
+                label="Download This CSV"
+                icon="download"
+                variant="secondary"
+                [disabled]="!sectionHasContent(activeSection())"
+                (clicked)="downloadActiveCsv()"
+              />
             </div>
 
             <div class="header-reference">
@@ -101,7 +111,7 @@
               <code>{{ activeSectionDefinition().header }}</code>
             </div>
 
-            <label class="csv-label" for="csv-section-input">Paste CSV content</label>
+            <label class="csv-label" for="csv-section-input">Edit CSV content</label>
             <textarea
               id="csv-section-input"
               class="csv-textarea"
@@ -109,7 +119,7 @@
               autocapitalize="off"
               autocomplete="off"
               [value]="activeCsv()"
-              [placeholder]="activeSectionDefinition().header + ' Paste your CSV rows here...'"
+              [placeholder]="activeSectionDefinition().header + ' Enter or edit CSV rows here...'"
               (input)="updateCsv($event)"
             ></textarea>
 
@@ -148,7 +158,9 @@
                 height="390px"
                 [showSearch]="false"
                 emptyMessage="Add CSV data rows to see the preview."
-                [summary]="previewRows().length + (previewRows().length === 1 ? ' data row' : ' data rows')"
+                [summary]="
+                  previewRows().length + (previewRows().length === 1 ? ' data row' : ' data rows')
+                "
               />
             } @else {
               <div class="preview-empty">
@@ -167,7 +179,9 @@
               CSV formatting needs attention
             </div>
             @for (issue of parseIssues(); track issue.label) {
-              <p><strong>{{ issue.label }}:</strong> {{ issue.error }}</p>
+              <p>
+                <strong>{{ issue.label }}:</strong> {{ issue.error }}
+              </p>
             }
           </div>
         }
@@ -181,12 +195,21 @@
       }
 
       @if (previewResponse(); as result) {
-        <section class="import-review forge-card" aria-label="CSV import review">
+        <section
+          #replacementReview
+          class="import-review forge-card"
+          aria-label="CSV replacement review"
+          aria-live="polite"
+          tabindex="-1"
+        >
           <div class="review-heading">
             <div>
-              <span class="wizard-eyebrow">BACKEND VALIDATION</span>
-              <h2>Import preview</h2>
-              <p>FORGE compared the CSV records with the current Data Model specification.</p>
+              <span class="wizard-eyebrow">REPLACEMENT PREVIEW</span>
+              <h2>Specification replacement preview</h2>
+              <p>
+                Review CSV conversion results here. Canonical specification validation is performed
+                separately in Model Validation.
+              </p>
             </div>
             <span class="review-status" [class.review-ready]="result.can_apply">
               {{ result.can_apply ? 'Ready to apply' : 'Needs attention' }}
@@ -202,30 +225,18 @@
             }
           </div>
 
-          @if (result.additions.length > 0) {
-            <div class="review-list">
-              <h3>New records ({{ result.additions.length }})</h3>
-              @for (item of result.additions; track $index) {
-                <p>{{ formatFinding(item) }}</p>
-              }
-            </div>
-          }
+          <div class="review-list">
+            <h3>Replacement scope</h3>
+            <p>All five CSV-managed sections will be replaced by the reviewed CSV content.</p>
+            <p>
+              Rows omitted from the CSV files will be removed. Unrelated specification metadata is
+              preserved by the backend.
+            </p>
+          </div>
 
-          @if (result.already_present.length > 0) {
-            <div class="review-list">
-              <h3>Already present ({{ result.already_present.length }})</h3>
-              @for (item of result.already_present; track $index) {
-                <p>{{ formatFinding(item) }}</p>
-              }
-            </div>
-          }
-
-          @if (result.conflicts.length > 0 || result.issues.length > 0) {
+          @if (result.issues.length > 0) {
             <div class="review-list review-problems">
-              <h3>Conflicts and validation issues</h3>
-              @for (item of result.conflicts; track $index) {
-                <p>{{ formatFinding(item) }}</p>
-              }
+              <h3>CSV conversion issues</h3>
               @for (item of result.issues; track $index) {
                 <p>{{ formatFinding(item) }}</p>
               }
@@ -239,12 +250,12 @@
   <app-workflow-action-bar
     icon="table_view"
     title="CSV Specification Wizard"
-    description="Preview checks your CSV against the current specification. Nothing is saved at this stage."
+    description="Preview checks CSV conversion. Applying replaces all five CSV-managed sections. Canonical readiness is reviewed separately."
     secondaryLabel="Back to Model Studio"
     secondaryIcon="arrow_back"
-    [primaryLabel]="applyInProgress() ? 'Applying import…' : previewInProgress() ? 'Previewing import…' : canApply() ? 'Apply additions & open Model Studio' : 'Preview CSV import'"
-    [primaryIcon]="canApply() ? 'check_circle' : 'fact_check'"
-    [primaryDisabled]="previewInProgress() || applyInProgress() || (!canApply() && !canPreview())"
+    [primaryLabel]="previewInProgress() ? 'Preparing replacement…' : 'Apply replacement'"
+    primaryIcon="published_with_changes"
+    [primaryDisabled]="!canPreview()"
     (secondaryAction)="returnToModelStudio()"
     (primaryAction)="handlePrimaryAction()"
   />

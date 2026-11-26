@@ -32,6 +32,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ArcElement,
   BarController,
@@ -46,6 +47,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SpecificationService } from '../../core/services/specification.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { SpecificationReplacementApplyRequest } from '../../core/interfaces/specification-replacement-apply-request.interface';
 import { SpecificationValidationResult } from '../../core/interfaces/specification-validation.interface';
 import { WorkflowPageComponent } from '../../shared/components/workflow-page/workflow-page.component';
 import { WorkflowRowComponent } from '../../shared/components/workflow-row/workflow-row.component';
@@ -93,6 +96,7 @@ export class ModelValidationComponent
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly specificationService = inject(SpecificationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
@@ -114,6 +118,9 @@ export class ModelValidationComponent
   readonly validation = signal<SpecificationValidationResult | null>(null);
   readonly specification = signal<ForgeSpecification | null>(null);
   readonly error = signal<string | null>(null);
+  readonly replacementRequest =
+    signal<SpecificationReplacementApplyRequest | null>(null);
+  readonly replacementInProgress = signal(false);
   readonly primaryKeyCount = computed(() =>
     this.specification()?.entities.filter(
       (entity) => (entity.identity?.fields?.length ?? 0) > 0,
@@ -159,6 +166,25 @@ export class ModelValidationComponent
   constructor() {
     if (!this.dataModelId) {
       this.error.set('Data Model ID is missing.');
+      return;
+    }
+
+    const navigationState =
+      this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    const replacement = navigationState?.['replacement'] as
+      | SpecificationReplacementApplyRequest
+      | undefined;
+
+    if (
+      replacement &&
+      typeof replacement.base_revision === 'string' &&
+      typeof replacement.csv_digest === 'string' &&
+      replacement.csv &&
+      ['entities', 'fields_and_keys', 'foreign_keys', 'relationships', 'constraints']
+        .every((key) => typeof replacement.csv[key as keyof typeof replacement.csv] === 'string')
+    ) {
+      this.replacementRequest.set(replacement);
+      this.validateReplacementCandidate(this.dataModelId, replacement);
       return;
     }
 
@@ -225,6 +251,13 @@ export class ModelValidationComponent
       return;
     }
 
+    if (this.replacementRequest()) {
+      if (step === 'model') {
+        this.returnToSpecificationWizard();
+      }
+      return;
+    }
+
     switch (step) {
       case 'model':
         this.backToModelStudio();
@@ -256,7 +289,11 @@ export class ModelValidationComponent
   }
 
   continueToPopulation(): void {
-    if (!this.dataModelId || !this.validation()?.canContinue) {
+    if (
+      !this.dataModelId ||
+      this.replacementRequest() ||
+      !this.validation()?.canContinue
+    ) {
       return;
     }
 
@@ -266,6 +303,128 @@ export class ModelValidationComponent
       'data-model',
       'population',
     ]);
+  }
+
+  handlePrimaryAction(): void {
+    if (this.replacementRequest()) {
+      this.confirmReplacement();
+      return;
+    }
+
+    this.continueToPopulation();
+  }
+
+  private validateReplacementCandidate(
+    dataModelId: string,
+    request: SpecificationReplacementApplyRequest,
+  ): void {
+    this.specificationService
+      .validateReplacement(dataModelId, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.specification.set(response.specification);
+          this.validation.set(response.validation);
+          this.error.set(null);
+          this.changeDetectorRef.detectChanges();
+
+          requestAnimationFrame(() => {
+            this.renderValidationChart();
+          });
+        },
+        error: (error: unknown) => {
+          const detail =
+            error instanceof HttpErrorResponse
+              ? error.error?.detail
+              : null;
+
+          this.error.set(
+            error instanceof HttpErrorResponse && error.status === 409
+              ? 'The saved specification has changed since this replacement was prepared. Return to the CSV Wizard and prepare the replacement again.'
+              : typeof detail === 'string'
+                ? detail
+                : 'Unable to validate the replacement candidate.',
+          );
+        },
+      });
+  }
+
+  confirmReplacement(): void {
+    const request = this.replacementRequest();
+
+    if (
+      !this.dataModelId ||
+      !request ||
+      !this.validation()?.canContinue ||
+      this.replacementInProgress()
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Confirm replacement of all five CSV-managed specification sections? The current saved sections will be replaced.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.replacementInProgress.set(true);
+    this.error.set(null);
+
+    this.specificationService
+      .applyReplacement(this.dataModelId, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.replacementInProgress.set(false);
+          this.replacementRequest.set(null);
+
+          this.notificationService.success(
+            'Specification replacement complete',
+            response.applied
+              ? 'The five CSV-managed sections have been replaced. Validation results are shown below.'
+              : 'The specification was saved successfully.',
+          );
+        },
+        error: (error: unknown) => {
+          this.replacementInProgress.set(false);
+
+          const status =
+            error instanceof HttpErrorResponse ? error.status : null;
+          const detail =
+            error instanceof HttpErrorResponse
+              ? error.error?.detail
+              : null;
+
+          const message =
+            status === 409
+              ? 'The specification changed before the replacement could be saved. Return to the CSV Wizard and prepare it again.'
+              : typeof detail === 'string'
+                ? detail
+                : 'The replacement could not be saved. The original specification has not been replaced.';
+
+          this.error.set(message);
+          this.notificationService.error(
+            'Specification replacement failed',
+            message,
+            status,
+          );
+        },
+      });
+  }
+
+  returnToSpecificationWizard(): void {
+    const request = this.replacementRequest();
+
+    if (!this.dataModelId || !request) {
+      return;
+    }
+
+    void this.router.navigate(
+      ['/workspace', this.dataModelId, 'specification-wizard'],
+      { state: { replacementCsv: request.csv } },
+    );
   }
 
   backToModelStudio(): void {
