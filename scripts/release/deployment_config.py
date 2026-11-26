@@ -17,7 +17,6 @@ Responsibilities:
 - Apply runtime email configuration safely.
 """
 
-
 import argparse
 import json
 import os
@@ -45,14 +44,12 @@ def ollama_config(path):
 def ollama_model(path, model):
     payload = load_json(path)
     models = payload.get("models", [])
-    names = {
-        str(item.get("name", ""))
-        for item in models
-        if isinstance(item, dict)
-    }
+    names = {str(item.get("name", "")) for item in models if isinstance(item, dict)}
 
     if model not in names:
-        print("Available models:", ", ".join(sorted(names)) or "<none>", file=sys.stderr)
+        print(
+            "Available models:", ", ".join(sorted(names)) or "<none>", file=sys.stderr
+        )
         raise SystemExit(1)
 
     print(f"PASS: Corporate Ollama model available: {model}")
@@ -69,7 +66,9 @@ def runtime_email(source_path, runtime_config):
     if not smtp.get("host") or not smtp.get("port") or not smtp.get("sender"):
         raise SystemExit("Local SMTP host, port and sender must be configured.")
     if smtp.get("username"):
-        raise SystemExit("Unexpected SMTP username. Review local E2E SMTP configuration.")
+        raise SystemExit(
+            "Unexpected SMTP username. Review local E2E SMTP configuration."
+        )
     if any(k.lower() in {"password", "passwd", "secret", "api_key"} for k in smtp):
         raise SystemExit("SMTP credentials must not be copied into the E2E runtime.")
 
@@ -94,17 +93,27 @@ def stage_config(source, stage, deploy_ai_base_url, deploy_ai_model):
     auth = load_json(src_cfg / "authentication.json")
 
     smtp = email.setdefault("smtp", {})
-    smtp["host"] = "REPLACE_WITH_APPROVED_SMTP_HOST"
-    smtp["sender"] = "REPLACE_WITH_APPROVED_SENDER"
-    smtp["username"] = ""
+    smtp.update({
+        "host": "mailhub.utc.com",
+        "port": 25,
+        "username": "",
+        "sender": "forge@collins.com",
+        "display_name": "FORGE",
+        "use_starttls": False,
+        "timeout_seconds": 15,
+    })
     for key in list(smtp):
         if key.lower() in {"password", "passwd", "secret", "api_key"}:
             smtp.pop(key)
 
-    email.setdefault("magic_link", {})["frontend_base_url"] = os.environ.get(
-        "FORGE_FRONTEND_BASE_URL",
-        "https://REPLACE-WITH-FORGE-HOST",
-    ).strip().rstrip("/")
+    magic_link = email.setdefault("magic_link", {})
+    magic_link["expiration_minutes"] = 5
+    magic_link["frontend_base_url"] = (
+        os.environ.get(
+            "FORGE_FRONTEND_BASE_URL",
+            "https://forge.ai.in.collins.com/",
+        ).strip()
+    )
 
     token = auth.get("development_token", {})
     if not email["magic_link"]["frontend_base_url"].startswith(("http://", "https://")):

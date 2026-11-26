@@ -127,10 +127,17 @@ def test_stage_config_sanitizes_auth_and_smtp(tmp_path, monkeypatch):
 
     assert ai["base_url"] == "http://approved-host:11434"
     assert ai["model"] == "approved-model"
-    assert email["smtp"]["host"] == "REPLACE_WITH_APPROVED_SMTP_HOST"
-    assert email["smtp"]["sender"] == "REPLACE_WITH_APPROVED_SENDER"
-    assert email["smtp"]["username"] == ""
+    assert email["smtp"] == {
+        "host": "mailhub.utc.com",
+        "port": 25,
+        "username": "",
+        "sender": "forge@collins.com",
+        "display_name": "FORGE",
+        "use_starttls": False,
+        "timeout_seconds": 15,
+    }
     assert "password" not in email["smtp"]
+    assert email["magic_link"]["expiration_minutes"] == 5
     assert email["magic_link"]["frontend_base_url"] == "https://forge.example.com"
     assert "secret" not in auth["development_token"]
     assert auth["allowed_domains"] == ["example.com"]
@@ -211,3 +218,56 @@ def test_release_nginx_configs_allow_ai_generation_timeout():
         "proxy_pass http://127.0.0.1:18765;\n"
         "      proxy_read_timeout 210s;"
     ) in bundle
+
+
+def test_deployment_bundle_uses_production_ollama_model_by_default():
+    """Protect the production deployment model from accidental drift."""
+    repo_root = Path(__file__).resolve().parents[3]
+    bundle = repo_root / "scripts/release/deployment_bundle.sh"
+    content = bundle.read_text()
+
+    assert 'DEPLOY_AI_MODEL="${FORGE_DEPLOY_AI_MODEL:-gpt-oss:20b}"' in content
+    assert "gemma4-jfrog-Q4:1.0" not in content
+
+
+def test_stage_config_defaults_to_production_email_configuration(tmp_path, monkeypatch):
+    """Production staging must use the approved SMTP and frontend settings."""
+    source = tmp_path / "source"
+    config = source / "backend/api/config"
+    config.mkdir(parents=True)
+
+    write_json(config / "ai.json", {
+        "provider": "ollama",
+        "base_url": "http://old-host",
+        "model": "old-model",
+    })
+    write_json(config / "email.json", {
+        "smtp": {},
+        "magic_link": {},
+    })
+    write_json(config / "authentication.json", {})
+
+    monkeypatch.delenv("FORGE_FRONTEND_BASE_URL", raising=False)
+
+    stage = tmp_path / "stage"
+    stage_config(source, stage, "http://10.254.231.222:11434", "gpt-oss:20b")
+
+    staged = stage / "backend/api/config"
+    email = json.loads((staged / "email.json").read_text())
+    ai = json.loads((staged / "ai.json").read_text())
+
+    assert ai["model"] == "gpt-oss:20b"
+    assert ai["base_url"] == "http://10.254.231.222:11434"
+    assert email["smtp"] == {
+        "host": "mailhub.utc.com",
+        "port": 25,
+        "username": "",
+        "sender": "forge@collins.com",
+        "display_name": "FORGE",
+        "use_starttls": False,
+        "timeout_seconds": 15,
+    }
+    assert email["magic_link"] == {
+        "expiration_minutes": 5,
+        "frontend_base_url": "https://forge.ai.in.collins.com/",
+    }

@@ -17,7 +17,6 @@ Responsibilities:
 - Test rejection of invalid or unsafe archive contents.
 """
 
-
 import json
 import zipfile
 
@@ -45,10 +44,18 @@ def valid_auth():
 def valid_email():
     return {
         "smtp": {
+            "host": "mailhub.utc.com",
+            "port": 25,
             "username": "",
-            "host": "REPLACE_WITH_APPROVED_SMTP_HOST",
-            "sender": "REPLACE_WITH_APPROVED_SENDER",
-        }
+            "sender": "forge@collins.com",
+            "display_name": "FORGE",
+            "use_starttls": False,
+            "timeout_seconds": 15,
+        },
+        "magic_link": {
+            "expiration_minutes": 5,
+            "frontend_base_url": "https://forge.ai.in.collins.com/",
+        },
     }
 
 
@@ -101,4 +108,25 @@ def test_verify_archive_rejects_missing_config(tmp_path):
         output.writestr("unrelated.txt", "content")
 
     with pytest.raises(SystemExit, match="Required configuration"):
+        verify_archive(archive)
+
+
+
+def test_verify_archive_rejects_wrong_smtp_configuration(tmp_path):
+    archive = tmp_path / "deployment.zip"
+    email = valid_email()
+    email["smtp"]["port"] = 587
+    make_archive(archive, valid_auth(), email)
+
+    with pytest.raises(SystemExit, match="SMTP configuration mismatch"):
+        verify_archive(archive)
+
+
+def test_verify_archive_rejects_wrong_frontend_url(tmp_path):
+    archive = tmp_path / "deployment.zip"
+    email = valid_email()
+    email["magic_link"]["frontend_base_url"] = "http://localhost:4200"
+    make_archive(archive, valid_auth(), email)
+
+    with pytest.raises(SystemExit, match="frontend URL"):
         verify_archive(archive)

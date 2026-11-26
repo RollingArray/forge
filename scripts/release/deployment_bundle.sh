@@ -76,7 +76,7 @@ cp -R "$BROWSER"/. "$STAGE/frontend"/
 # SMTP username/password, or local runtime JSON data.
 # Deployment-only AI overrides. Source ai.json remains unchanged.
 DEPLOY_AI_BASE_URL="${FORGE_DEPLOY_AI_BASE_URL:-http://10.254.231.222:11434}"
-DEPLOY_AI_MODEL="${FORGE_DEPLOY_AI_MODEL:-gemma4-jfrog-Q4:1.0}"
+DEPLOY_AI_MODEL="${FORGE_DEPLOY_AI_MODEL:-gpt-oss:20b}"
 
 "$PYTHON" "$ROOT/scripts/release/deployment_config.py" stage-config \
   "$ROOT" "$STAGE" "$DEPLOY_AI_BASE_URL" "$DEPLOY_AI_MODEL"
@@ -122,7 +122,7 @@ Check `http://127.0.0.1:8000/health` locally on the host after starting the API.
 ## Configuration required before use
 Review `backend/api/config/ai.json`, `email.json`, and `authentication.json`:
 - The build sets the deployment Ollama endpoint and model in `ai.json`.
-  Defaults: `http://10.254.231.222:11434` and `gemma4-jfrog-Q4:1.0`.
+  Defaults: `http://10.254.231.222:11434` and `gpt-oss:20b`.
   Override them with `FORGE_DEPLOY_AI_BASE_URL` and `FORGE_DEPLOY_AI_MODEL`
   when running the build for another deployment environment.
 - Verify `email.json` contains the approved SMTP settings for this deployment.

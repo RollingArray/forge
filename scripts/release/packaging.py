@@ -45,10 +45,27 @@ def verify_archive(path):
 
         if smtp.get("username") != "":
             raise SystemExit("ERROR: SMTP username was not sanitized.")
-        if smtp.get("host") != "REPLACE_WITH_APPROVED_SMTP_HOST":
-            raise SystemExit("ERROR: SMTP host was not sanitized.")
-        if smtp.get("sender") != "REPLACE_WITH_APPROVED_SENDER":
-            raise SystemExit("ERROR: SMTP sender was not sanitized.")
+        expected_smtp = {
+            "host": "mailhub.utc.com",
+            "port": 25,
+            "username": "",
+            "sender": "forge@collins.com",
+            "display_name": "FORGE",
+            "use_starttls": False,
+            "timeout_seconds": 15,
+        }
+
+        for key, expected in expected_smtp.items():
+            if smtp.get(key) != expected:
+                raise SystemExit(
+                    f"ERROR: Deployment SMTP configuration mismatch: {key}."
+                )
+
+        magic_link = email.get("magic_link", {})
+        if magic_link.get("expiration_minutes") != 5:
+            raise SystemExit("ERROR: Magic-link expiration must be 5 minutes.")
+        if magic_link.get("frontend_base_url") != "https://forge.ai.in.collins.com/":
+            raise SystemExit("ERROR: Deployment frontend URL is incorrect.")
 
     print("Archive authentication secret check: PASS")
     print("Archive SMTP sanitization check: PASS")
