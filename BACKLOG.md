@@ -196,7 +196,7 @@ Status: [active]
 
 Objective:
 - Implement and execute the finalized FORGE Model Studio E2E Test Catalogue.
-- Complete all 28 suites, MS01–MS28, one suite at a time.
+- Complete all 31 suites, MS01–MS31, one suite at a time.
 - Use Aerospace Enterprise Model v2 as the primary integrated test model.
 
 Execution standards:
@@ -559,54 +559,55 @@ Objective: Verify AI-assisted constraint proposals.
 - [pending] **MS20-12**: Record acceptance. Expected result: Acceptance activity is recorded.
 - [pending] **MS20-13**: Save reviewed constraint. Expected result: Constraint is persisted.
 
-##### MS21: CSV wizard
+##### MS21: Specification Wizard navigation and state
 Status: [pending]
-Objective: Verify CSV import workflow navigation and state.
-- [pending] **MS21-01**: Open CSV wizard. Expected result: Wizard opens.
-- [pending] **MS21-02**: Navigate between wizard steps. Expected result: Correct step is displayed.
-- [pending] **MS21-03**: Upload valid CSV set. Expected result: Files are accepted.
-- [pending] **MS21-04**: Upload unsupported or missing file. Expected result: Validation message appears.
-- [pending] **MS21-05**: Navigate backwards. Expected result: Previous state is retained.
-- [pending] **MS21-06**: Cancel wizard. Expected result: No unintended import is applied.
-- [pending] **MS21-07**: Reopen wizard. Expected result: Initial or persisted state is correct.
-- [pending] **MS21-08**: Complete wizard navigation. Expected result: User reaches the intended final step.
+Objective: Verify navigation and CSV state management in the specification replacement workflow.
+- [pending] **MS21-01**: Open Specification Wizard for a selected data model. Expected result: Wizard opens with the correct model context.
+- [pending] **MS21-02**: Load the complete Aerospace sample. Expected result: All five CSV sections are populated with the expected sample content.
+- [pending] **MS21-03**: Navigate between the five CSV sections. Expected result: Each section displays its corresponding CSV content.
+- [pending] **MS21-04**: Edit CSV content and navigate between sections. Expected result: Edits remain intact.
+- [pending] **MS21-05**: Return from Model Validation to the Wizard. Expected result: Candidate CSV edits are preserved.
+- [pending] **MS21-06**: Leave the Wizard before applying a replacement. Expected result: The persisted specification remains unchanged.
+- [pending] **MS21-07**: Reopen the Wizard. Expected result: CSV content reflects the persisted specification.
+- [pending] **MS21-08**: Prepare a replacement candidate. Expected result: Candidate is prepared and the user is routed to Model Validation.
 
-##### MS22: CSV validation
+##### MS22: CSV structure and conversion validation
 Status: [pending]
-Objective: Verify CSV schema and data validation.
-- [pending] Required CSV files and headers
-- [pending] Unexpected columns
-- [pending] Missing required values
-- [pending] Invalid field types and configuration values
-- [pending] Invalid identity definitions
-- [pending] Invalid FK source/target fields
-- [pending] Invalid relationship endpoints
-- [pending] Invalid constraint definitions
-- [pending] Row-level errors and actionable diagnostics
-- [pending] Validation summary and error location
+Objective: Verify CSV syntax, expected structure and basic value conversion in the Specification Wizard. Business and specification validation remain the responsibility of Model Validation.
+- [pending] **MS22-01**: Provide all five required CSV sections with valid headers. Expected result: CSV structure is accepted.
+- [pending] **MS22-02**: Omit required headers. Expected result: Missing headers are reported.
+- [pending] **MS22-03**: Provide unexpected columns. Expected result: Unexpected columns are reported.
+- [pending] **MS22-04**: Provide malformed CSV quoting or delimiters. Expected result: CSV parsing errors are reported.
+- [pending] **MS22-05**: Provide values that cannot be converted to the expected basic types. Expected result: Conversion errors are reported.
+- [pending] **MS22-06**: Provide multiple malformed rows. Expected result: Diagnostics identify the affected rows and errors.
+- [pending] **MS22-07**: Attempt candidate preparation with structural or conversion errors. Expected result: Candidate preparation is blocked.
+- [pending] **MS22-08**: Correct the reported CSV errors and retry. Expected result: Candidate preparation can proceed.
 
-##### MS23: CSV preview
+##### MS23: Candidate preparation and canonical validation
 Status: [pending]
-Objective: Verify imported specification preview before applying it.
-- [pending] Parsed entities and fields match CSV input
-- [pending] Identity fields and ordering are displayed correctly
-- [pending] FK and relationship mappings are resolved correctly
-- [pending] Constraints appear with the expected field and operator
-- [pending] Preview accurately represents validation errors
-- [pending] Returning to previous steps does not silently alter input
-- [pending] Preview does not persist the specification prematurely
+Objective: Verify that prepared replacement candidates are validated by the canonical Model Validation service before persistence.
+- [pending] **MS23-01**: Prepare a structurally valid candidate. Expected result: Candidate is displayed in Model Validation.
+- [pending] **MS23-02**: Verify candidate entities and fields. Expected result: Model Validation reflects the submitted CSV definitions.
+- [pending] **MS23-03**: Verify identity definitions and ordering. Expected result: Identity fields and their positions are represented correctly.
+- [pending] **MS23-04**: Verify foreign-key and relationship mappings. Expected result: Candidate mappings are represented correctly.
+- [pending] **MS23-05**: Verify constraint definitions. Expected result: Candidate constraints are represented correctly.
+- [pending] **MS23-06**: Submit a structurally valid but canonically invalid candidate. Expected result: Canonical validation findings are displayed and replacement is blocked.
+- [pending] **MS23-07**: Submit a candidate with warnings but no blocking findings. Expected result: Warnings are displayed and an eligible replacement can proceed.
+- [pending] **MS23-08**: Return to the Wizard to correct candidate CSV. Expected result: Previous CSV edits are preserved and can be corrected.
+- [pending] **MS23-09**: Prepare and validate a candidate without applying it. Expected result: Persisted specification remains unchanged.
 
-##### MS24: CSV apply and stale protection
+##### MS24: Replacement confirmation, persistence and stale protection
 Status: [pending]
-Objective: Verify applying the imported specification safely.
-- [pending] Valid CSV import is applied
-- [pending] Imported entities, fields, identities, FKs, relationships and constraints persist
-- [pending] Invalid CSV cannot be applied
-- [pending] Repeated submission does not create duplicate structures
-- [pending] Stale specification state is detected
-- [pending] Failed import leaves specification consistent
-- [pending] Reload confirms the applied specification
-- [pending] User can recover from a failed or stale operation
+Objective: Verify safe, complete replacement of the persisted specification.
+- [pending] **MS24-01**: Confirm a valid replacement. Expected result: All five CSV-managed sections are replaced.
+- [pending] **MS24-02**: Apply a replacement to a specification that contains unrelated top-level metadata. Expected result: The five CSV-managed sections are replaced and unrelated metadata is preserved.
+- [pending] **MS24-03**: Cancel the replacement confirmation. Expected result: Original persisted specification remains unchanged.
+- [pending] **MS24-04**: Attempt to apply an invalid candidate. Expected result: Replacement is rejected and original specification remains unchanged.
+- [pending] **MS24-05**: Modify the persisted specification after candidate preparation. Expected result: Stale revision is detected and replacement is rejected.
+- [pending] **MS24-06**: Submit a candidate with a mismatched CSV digest. Expected result: Candidate is rejected.
+- [pending] **MS24-07**: Simulate an apply API failure. Expected result: Persisted specification remains consistent and an actionable error is displayed.
+- [pending] **MS24-08**: Reload after successful replacement. Expected result: All five replaced sections are restored from persisted state.
+- [pending] **MS24-09**: Repeat or retry replacement submission. Expected result: No partial or duplicate replacement occurs and the final specification remains consistent.
 
 ##### MS25: Model integrity and validation
 Status: [pending]
@@ -640,7 +641,7 @@ Objective: Verify that Model Studio state survives reload and navigation.
 - [pending] Relationship and participation
 - [pending] Field and relationship constraints
 - [pending] AI-reviewed and manually modified values
-- [pending] CSV import
+- [pending] CSV specification replacement
 - [pending] Reload after every successful save
 - [pending] Navigation away and back
 - [pending] Failed save does not corrupt persisted state
@@ -672,7 +673,7 @@ Objective: Verify realistic end-to-end user journeys using Aerospace Enterprise 
 - [pending] **MS28-06**: Apply relationship participation and generate data. Expected result: Cardinality and participation validate.
 - [pending] **MS28-07**: Add constraints and generate data. Expected result: Constraints are evaluated correctly.
 - [pending] **MS28-08**: Use AI proposals, review, save and reload. Expected result: Reviewed values are persisted.
-- [pending] **MS28-09**: Import Aerospace CSV specification. Expected result: Imported model is equivalent to expected specification.
+- [pending] **MS28-09**: Replace the specification using the Aerospace CSV set. Expected result: Persisted model is equivalent to the expected Aerospace specification.
 - [pending] **MS28-10**: Generate complete Aerospace dataset. Expected result: Expected entities and record counts are produced.
 - [pending] **MS28-11**: Run generated-data verification. Expected result: Schema, types, keys, FKs, relationships and constraints pass.
 - [pending] **MS28-12**: Reload and inspect generated results. Expected result: Results and specification remain consistent.
@@ -712,6 +713,12 @@ Execution order and restart plan:
 - [pending] Complete review and validation of the current generation navigation and retry changes before E2E implementation.
 - [pending] Investigate cross-platform file persistence and establish the backend regression contract.
 - [pending] Resume the existing Model Studio catalogue at MS09; preserve its current acceptance cases.
+- [pending] Migrate existing E2E setup flows to the replacement workflow:
+  - Update `frontend/e2e/data-model/model-studio.fixtures.ts` and its populated specification helper.
+  - Update the Aerospace import journey in `frontend/e2e/data-model/data-model-setup.spec.ts`.
+  - Update specification setup helpers in `model-studio-field-generation.spec.ts`, `model-studio-generation-lifecycle.spec.ts` and `model-studio-generation-navigation.spec.ts`.
+  - Replace obsolete additive-import selectors and assertions with candidate preparation, Model Validation and replacement confirmation.
+  - Verify dependent Model Studio and generation E2E suites continue to pass.
 - [pending] Continue MS10-MS27 in the established order, subject to investigation findings and agreed priorities.
 - [done] Implement MS29 generation navigation and job context isolation coverage; MS30-MS31 generation lifecycle coverage remains pending.
 - [pending] Complete MS28 integrated Aerospace Enterprise Model v2 acceptance after its prerequisite capabilities and lifecycle coverage are validated.
@@ -740,7 +747,7 @@ AI-specific execution requirements:
 
 Execution layers:
 - [pending] Authoring flows: Playwright coverage for entities, fields, keys, FKs, relationships, constraints and AI assistance.
-- [pending] Import flows: Playwright coverage for CSV wizard, validation, preview and apply.
+- [pending] Specification replacement flows: Playwright coverage for CSV editing, structural checks, candidate preparation, canonical Model Validation, confirmation, persistence and stale-state protection.
 - [pending] Backend regression: Pytest coverage for specification validation, generation, identity, FK, relationship and constraint logic.
 - [pending] Frontend build validation: Angular production build.
 - [pending] Integrated E2E: Playwright journeys using Aerospace Enterprise Model v2.
@@ -761,10 +768,10 @@ Aerospace Enterprise Model v2 output verification:
 - [pending] For statistical distributions, use sufficiently large populations and tolerances rather than expecting a particular random sequence.
 
 Exit criteria:
-- [pending] All 28 suites and their listed test cases are implemented and passing.
+- [pending] All 31 suites and their listed test cases are implemented and passing.
 - [pending] UI behavior and applicable API/specification persistence outcomes are verified.
 - [pending] AI proposal, apply, review, save and reload stages are independently verified.
-- [pending] CSV validation, preview, apply and stale-state protection are verified.
+- [pending] CSV structural validation, candidate preparation, canonical validation, replacement confirmation, persistence and stale-state protection are verified.
 - [pending] Aerospace Enterprise Model v2 integrated workflows are executed successfully.
 - [pending] Generated datasets and output files are checked for schema, types, formats, record counts, identities, foreign keys, relationships, constraints and semantic behavior.
 - [pending] Backend Pytest regression suite passes.
