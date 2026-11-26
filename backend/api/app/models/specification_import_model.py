@@ -70,3 +70,47 @@ class SpecificationImportApplyResponse(BaseModel):
     applied: bool
     summary: dict[str, int]
     specification_revision: str
+
+
+class SpecificationReplacementPreviewRequest(BaseModel):
+    """Request to preview a complete five-section specification replacement."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    csv: SpecificationImportCsvModel
+
+
+class SpecificationReplacementValidationRequest(BaseModel):
+    """Validate the exact CSV replacement candidate without persisting it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    base_revision: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    csv_digest: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    csv: SpecificationImportCsvModel
+
+
+class SpecificationReplacementApplyRequest(BaseModel):
+    """Apply the exact CSV content reviewed against a canonical revision."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    base_revision: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    csv_digest: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    csv: SpecificationImportCsvModel

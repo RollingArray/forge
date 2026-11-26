@@ -7,6 +7,7 @@ Email: ranjoy.sen@collins.com
 """
 
 import hashlib
+import logging
 import json
 from typing import Literal
 
@@ -50,6 +51,9 @@ from app.models.specification_import_model import (
     SpecificationImportPreviewResponse,
     SpecificationImportApplyRequest,
     SpecificationImportApplyResponse,
+    SpecificationReplacementPreviewRequest,
+    SpecificationReplacementValidationRequest,
+    SpecificationReplacementApplyRequest,
 )
 from app.services.data_model_access_service import DataModelAccessService
 from app.services.activity_service import ActivityService
@@ -63,7 +67,16 @@ from app.services.population_service import PopulationService
 from app.services.specification_service import SpecificationService
 from app.services.specification_validation_service import SpecificationValidationService
 from app.services.specification_import_service import SpecificationImportService
+from app.services.specification_csv_replacement_service import (
+    SpecificationCsvReplacementService,
+)
+from app.services.specification_csv_export_service import (
+    SpecificationCsvExportService,
+)
 from app.services.specification_validation_error import SpecificationValidationError
+
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
@@ -78,6 +91,10 @@ data_model_access_service = DataModelAccessService()
 activity_service = ActivityService()
 data_model_repository = JsonDataModelRepository()
 specification_import_service = SpecificationImportService()
+specification_csv_replacement_service = (
+    SpecificationCsvReplacementService()
+)
+specification_csv_export_service = SpecificationCsvExportService()
 specification_import_repository = JsonSpecificationRepository()
 
 
@@ -1383,3 +1400,386 @@ async def specification_import_apply(
         summary=merged["summary"],
         specification_revision=resulting_revision,
     )
+
+
+def _replacement_csv_digest(csv_sections: dict[str, str]) -> str:
+    """Hash the exact normalized CSV request payload."""
+    canonical_csv = json.dumps(
+        csv_sections,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical_csv).hexdigest()
+
+
+def _replacement_summary(specification: dict) -> dict[str, int]:
+    """Return counts for the five complete replacement sections."""
+    entities = specification.get("entities", [])
+    return {
+        "entities": len(entities),
+        "fields_and_keys": sum(
+            len(entity.get("fields", []))
+            for entity in entities
+            if isinstance(entity, dict)
+            and isinstance(entity.get("fields", []), list)
+        ),
+        "foreign_keys": len(specification.get("foreign_keys", [])),
+        "relationships": len(specification.get("relationships", [])),
+        "constraints": len(specification.get("constraints", [])),
+    }
+
+
+@router.get(
+    "/{data_model_id}/specification/replacement/export",
+    status_code=status.HTTP_200_OK,
+)
+async def specification_replacement_export(
+    data_model_id: str,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict[str, str]:
+    """Export the five editable specification sections as CSV."""
+
+    if not data_model_access_service.can_view(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    specification = specification_service.get_specification(
+        data_model_id=data_model_id,
+    )
+
+    if specification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Specification not found.",
+        )
+
+    try:
+        return specification_csv_export_service.export(specification)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/{data_model_id}/specification/replacement/preview",
+    status_code=status.HTTP_200_OK,
+)
+async def specification_replacement_preview(
+    data_model_id: str,
+    request: SpecificationReplacementPreviewRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Validate a complete replacement without writing the specification."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    existing = specification_import_repository.read(data_model_id)
+    baseline = (
+        existing
+        if existing is not None
+        else specification_import_repository._create_empty_specification(
+            model_name=data_model.name,
+            model_description=data_model.description,
+        )
+    )
+
+    csv_sections = request.csv.model_dump()
+    converted = specification_csv_replacement_service.convert(
+        csv_sections=csv_sections,
+        existing_specification=baseline,
+    )
+    csv_digest = _replacement_csv_digest(csv_sections)
+    base_revision = specification_import_repository.revision(baseline)
+
+    if converted["issues"]:
+        return {
+            "base_revision": base_revision,
+            "csv_digest": csv_digest,
+            "can_apply": False,
+            "summary": {
+                "entities": 0,
+                "fields_and_keys": 0,
+                "foreign_keys": 0,
+                "relationships": 0,
+                "constraints": 0,
+            },
+            "validation": None,
+            "issues": converted["issues"],
+            "candidate": None,
+        }
+
+    candidate = converted["specification"]
+
+    return {
+        "base_revision": base_revision,
+        "csv_digest": csv_digest,
+        "can_apply": True,
+        "summary": _replacement_summary(candidate),
+        "validation": None,
+        "issues": [],
+        "candidate": candidate,
+    }
+
+
+@router.post(
+    "/{data_model_id}/specification/replacement/validate",
+    status_code=status.HTTP_200_OK,
+)
+async def specification_replacement_validate(
+    data_model_id: str,
+    request: SpecificationReplacementValidationRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Validate a converted replacement using the canonical validator."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    csv_sections = request.csv.model_dump()
+
+    if _replacement_csv_digest(csv_sections) != request.csv_digest:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The CSV content differs from the prepared replacement.",
+        )
+
+    try:
+        with specification_import_repository.transaction(data_model_id):
+            existing = specification_import_repository.read(data_model_id)
+            baseline = (
+                existing
+                if existing is not None
+                else specification_import_repository._create_empty_specification(
+                    model_name=data_model.name,
+                    model_description=data_model.description,
+                )
+            )
+
+            current_revision = specification_import_repository.revision(baseline)
+            if current_revision != request.base_revision:
+                raise SpecificationRevisionConflict(
+                    "The specification changed after preparation. "
+                    "Return to the Wizard and prepare the replacement again."
+                )
+
+            converted = specification_csv_replacement_service.convert(
+                csv_sections=csv_sections,
+                existing_specification=baseline,
+            )
+
+            if converted["issues"]:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "message": "The replacement CSV contains conversion errors.",
+                        "issues": converted["issues"],
+                    },
+                )
+
+            candidate = converted["specification"]
+
+            # Reuse the exact validation service used by Model Validation.
+            validation = specification_validation_service.validate(candidate)
+
+            return {
+                "base_revision": current_revision,
+                "csv_digest": request.csv_digest,
+                "summary": _replacement_summary(candidate),
+                "validation": validation,
+                "specification": candidate,
+            }
+
+    except SpecificationRevisionConflict as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/{data_model_id}/specification/replacement/apply",
+    status_code=status.HTTP_200_OK,
+)
+async def specification_replacement_apply(
+    data_model_id: str,
+    request: SpecificationReplacementApplyRequest,
+    user: AuthUser = Depends(get_authenticated_user),
+) -> dict:
+    """Apply the reviewed CSV replacement against the exact specification revision."""
+
+    if not data_model_access_service.can_edit(
+        data_model_id=data_model_id,
+        user_id=user.user_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    data_model = data_model_repository.get_by_id_any(
+        data_model_id=data_model_id,
+    )
+    if data_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data model not found.",
+        )
+
+    csv_sections = request.csv.model_dump()
+    actual_digest = _replacement_csv_digest(csv_sections)
+
+    if actual_digest != request.csv_digest:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The CSV content differs from the reviewed preview.",
+        )
+
+    try:
+        # The repository lock serializes the complete read, revision check,
+        # conversion, validation, and conditional write.
+        with specification_import_repository.transaction(data_model_id):
+            existing = specification_import_repository.read(data_model_id)
+            baseline = (
+                existing
+                if existing is not None
+                else specification_import_repository._create_empty_specification(
+                    model_name=data_model.name,
+                    model_description=data_model.description,
+                )
+            )
+
+            current_revision = specification_import_repository.revision(
+                baseline
+            )
+            if current_revision != request.base_revision:
+                raise SpecificationRevisionConflict(
+                    "The specification changed after preview. "
+                    "Refresh the preview before applying the replacement."
+                )
+
+            converted = specification_csv_replacement_service.convert(
+                csv_sections=csv_sections,
+                existing_specification=baseline,
+            )
+            if converted["issues"]:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "message": "The replacement CSV contains errors.",
+                        "issues": converted["issues"],
+                    },
+                )
+
+            candidate = converted["specification"]
+
+            # Enforce the same Model Validation rules again while holding
+            # the repository transaction. Invalid candidates are never saved.
+            validation = specification_validation_service.validate(candidate)
+
+            if not validation.get("can_continue", False):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "message": (
+                            "The replacement specification failed Model Validation."
+                        ),
+                        "validation": validation,
+                    },
+                )
+
+            saved = specification_import_repository.save_if_revision(
+                data_model_id=data_model_id,
+                expected_revision=request.base_revision,
+                specification=candidate,
+                missing_specification=(
+                    baseline if existing is None else None
+                ),
+            )
+            resulting_revision = specification_import_repository.revision(
+                saved
+            )
+
+    except SpecificationRevisionConflict as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    summary = _replacement_summary(saved)
+
+    try:
+        activity_service.record(
+            owner_user_id=data_model.owner_user_id,
+            actor_user_id=user.user_id,
+            activity_type=ActivityType.SPECIFICATION_IMPORT_APPLIED,
+            title="Specification replaced",
+            description=(
+                "The Specification Wizard replaced the five CSV-managed "
+                "specification sections."
+            ),
+            data_model_id=data_model_id,
+            metadata={
+                "operation": "replace_specification_sections",
+                "source": "specification_wizard",
+                "format": "csv",
+                "outcome": "success",
+                "base_revision": request.base_revision,
+                "resulting_revision": resulting_revision,
+                "csv_digest": request.csv_digest,
+                **summary,
+            },
+        )
+    except Exception:
+        # The specification is already committed. A secondary activity
+        # failure must not make the client believe the replacement failed.
+        logger.exception(
+            "Specification replacement committed but activity recording "
+            "failed for data model %s.",
+            data_model_id,
+        )
+
+    return {
+        "applied": True,
+        "summary": summary,
+        "specification_revision": resulting_revision,
+    }
