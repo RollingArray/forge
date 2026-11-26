@@ -139,6 +139,7 @@ class SpecificationCsvReplacementService:
             candidate["constraints"] = self._convert_constraints(
                 parsed["constraints"],
                 existing_specification.get("constraints", []),
+                entities,
             )
         except ValueError as exc:
             issues.append({
@@ -820,7 +821,18 @@ class SpecificationCsvReplacementService:
         self,
         parsed: dict[str, Any],
         existing: list[dict[str, Any]],
+        entities: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
+        field_types = {
+            (entity.get("name"), field.get("name")): str(
+                field.get("type", "")
+            ).upper()
+            for entity in entities
+            if isinstance(entity, dict)
+            for field in entity.get("fields", [])
+            if isinstance(field, dict)
+        }
+
         old_by_key: dict[str, list[dict[str, Any]]] = {}
 
         for item in existing:
@@ -855,8 +867,14 @@ class SpecificationCsvReplacementService:
 
             old = matches[0] if matches else {}
             old_value = old.get("value")
+            field_type = field_types.get((entity, field))
 
-            if old and isinstance(old_value, str):
+            # DECIMAL comparison values must remain strings. Converting them
+            # through float loses precision and violates canonical validation.
+            if field_type == "DECIMAL":
+                stripped = raw.strip()
+                value = stripped if stripped else None
+            elif old and isinstance(old_value, str):
                 value = raw
             elif old and isinstance(old_value, bool):
                 if raw.strip().lower() not in {"true", "false"}:

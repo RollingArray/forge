@@ -1,5 +1,6 @@
 import copy
 import json
+import pytest
 from pathlib import Path
 
 from app.services.specification_csv_export_service import (
@@ -582,3 +583,81 @@ def test_replacement_supports_new_entity_with_multiple_fields():
 
     # Conversion must never mutate the original specification.
     assert original == original_snapshot
+
+
+def test_decimal_constraint_values_remain_strings_on_replacement():
+    original = rich_specification()
+    original["constraints"] = [{
+        "entity": "SALES_ORDER",
+        "field": "TOTAL_AMOUNT",
+        "operator": ">",
+        "value": 12.5,
+    }]
+
+    csv_sections = SpecificationCsvExportService().export(original)
+    csv_sections["constraints"] = (
+        "entity,field,operator,value\n"
+        "SALES_ORDER,TOTAL_AMOUNT,>,0.0500\n"
+    )
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["issues"] == []
+    assert result["specification"]["constraints"][0]["value"] == "0.0500"
+    assert isinstance(
+        result["specification"]["constraints"][0]["value"], str
+    )
+
+
+def test_new_decimal_constraint_values_remain_strings():
+    original = rich_specification()
+    original["constraints"] = []
+
+    csv_sections = SpecificationCsvExportService().export(original)
+    csv_sections["constraints"] = (
+        "entity,field,operator,value\n"
+        "SALES_ORDER,TOTAL_AMOUNT,>,0.0500\n"
+    )
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["issues"] == []
+    assert result["specification"]["constraints"][0]["value"] == "0.0500"
+    assert isinstance(
+        result["specification"]["constraints"][0]["value"], str
+    )
+
+
+@pytest.mark.parametrize(
+    "existing_value",
+    ["new", None, 12.5],
+)
+def test_blank_decimal_constraint_values_become_none(existing_value):
+    original = rich_specification()
+
+    if existing_value != "new":
+        original["constraints"] = [{
+            "entity": "SALES_ORDER",
+            "field": "TOTAL_AMOUNT",
+            "operator": ">",
+            "value": existing_value,
+        }]
+    else:
+        original["constraints"] = []
+
+    csv_sections = SpecificationCsvExportService().export(original)
+    csv_sections["constraints"] = (
+        "entity,field,operator,value\n"
+        "SALES_ORDER,TOTAL_AMOUNT,>,   \n"
+    )
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["issues"] == []
+    assert result["specification"]["constraints"][0]["value"] is None

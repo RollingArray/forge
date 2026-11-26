@@ -432,13 +432,13 @@
       "entity": "SALES_ORDER",
       "field": "TOTAL_AMOUNT",
       "operator": ">",
-      "value": 0
+      "value": "0"
     },
     {
       "entity": "SALES_ORDER",
       "field": "TOTAL_AMOUNT",
       "operator": ">=",
-      "value": 1
+      "value": "1"
     },
     {
       "entity": "SALES_ORDER_LINE",
@@ -456,7 +456,7 @@
       "entity": "PRODUCT",
       "field": "UNIT_PRICE",
       "operator": "==",
-      "value": 100
+      "value": "100"
     },
     {
       "entity": "CUSTOMER",
