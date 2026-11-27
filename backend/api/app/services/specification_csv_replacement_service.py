@@ -16,6 +16,22 @@ from app.services.relationship_endpoint import (
 )
 
 
+class _SpecificationCsvConversionError(ValueError):
+    """A conversion failure with its originating CSV location."""
+
+    def __init__(
+        self,
+        section: str,
+        row: int | None,
+        column: str | None,
+        message: str,
+    ) -> None:
+        super().__init__(message)
+        self.section = section
+        self.row = row
+        self.column = column
+
+
 class SpecificationCsvReplacementService:
     """Convert edited wizard CSV sections into a canonical specification.
 
@@ -141,6 +157,14 @@ class SpecificationCsvReplacementService:
                 existing_specification.get("constraints", []),
                 entities,
             )
+        except _SpecificationCsvConversionError as exc:
+            issues.append({
+                "section": exc.section,
+                "row": exc.row,
+                "column": exc.column,
+                "message": str(exc),
+            })
+            return {"specification": None, "issues": issues}
         except ValueError as exc:
             issues.append({
                 "section": "fields_and_keys",
@@ -170,11 +194,19 @@ class SpecificationCsvReplacementService:
             values = row["values"]
             name = values.get("entity", "").strip()
             if not name:
-                raise ValueError(
-                    f"Entities row {row['row_number']}: entity name is required."
+                raise _SpecificationCsvConversionError(
+                    section="entities",
+                    row=row["row_number"],
+                    column="entity",
+                    message="entity name is required.",
                 )
             if name in lookup:
-                raise ValueError(f"Duplicate entity row: {name!r}.")
+                raise _SpecificationCsvConversionError(
+                    section="entities",
+                    row=row["row_number"],
+                    column="entity",
+                    message=f"duplicate entity name: {name!r}.",
+                )
 
             old = old_entities.get(name, {})
             entity = copy.deepcopy(old)
@@ -199,14 +231,18 @@ class SpecificationCsvReplacementService:
                 try:
                     count = int(count_text)
                 except ValueError as exc:
-                    raise ValueError(
-                        f"Entities row {row['row_number']}: "
-                        "population_count must be a whole number."
+                    raise _SpecificationCsvConversionError(
+                        section="entities",
+                        row=row["row_number"],
+                        column="population_count",
+                        message="population_count must be a whole number.",
                     ) from exc
                 if count < 0:
-                    raise ValueError(
-                        f"Entities row {row['row_number']}: "
-                        "population_count cannot be negative."
+                    raise _SpecificationCsvConversionError(
+                        section="entities",
+                        row=row["row_number"],
+                        column="population_count",
+                        message="population_count cannot be negative.",
                     )
                 population["count"] = count
             else:
@@ -215,9 +251,13 @@ class SpecificationCsvReplacementService:
             if scaling_text:
                 scaling = scaling_text.upper()
                 if scaling not in {"FIXED", "SCALABLE"}:
-                    raise ValueError(
-                        f"Entities row {row['row_number']}: "
-                        "population_scaling must be FIXED or SCALABLE."
+                    raise _SpecificationCsvConversionError(
+                        section="entities",
+                        row=row["row_number"],
+                        column="population_scaling",
+                        message=(
+                            "population_scaling must be FIXED or SCALABLE."
+                        ),
                     )
                 population["scaling"] = scaling
             else:
@@ -262,7 +302,7 @@ class SpecificationCsvReplacementService:
                 if isinstance(item, dict) and isinstance(item.get("name"), str)
             }
 
-        positions: dict[str, list[tuple[int, str]]] = {
+        positions: dict[str, list[tuple[int, str, int]]] = {
             name: [] for name in entity_lookup
         }
         seen_fields: set[tuple[str, str]] = set()
@@ -275,16 +315,26 @@ class SpecificationCsvReplacementService:
             field_type = values.get("type", "").strip().upper()
 
             if entity_name not in entity_lookup:
-                raise ValueError(
-                    f"Fields row {number}: unknown entity {entity_name!r}."
+                raise _SpecificationCsvConversionError(
+                    section="fields_and_keys",
+                    row=number,
+                    column="entity",
+                    message=f"unknown entity {entity_name!r}.",
                 )
             if not field_name:
-                raise ValueError(f"Fields row {number}: field name is required.")
+                raise _SpecificationCsvConversionError(
+                    section="fields_and_keys",
+                    row=number,
+                    column="field",
+                    message="field name is required.",
+                )
             key = (entity_name, field_name)
             if key in seen_fields:
-                raise ValueError(
-                    f"Fields row {number}: duplicate field "
-                    f"{entity_name}.{field_name}."
+                raise _SpecificationCsvConversionError(
+                    section="fields_and_keys",
+                    row=number,
+                    column="field",
+                    message=f"duplicate field {entity_name}.{field_name}.",
                 )
             seen_fields.add(key)
 
@@ -320,32 +370,57 @@ class SpecificationCsvReplacementService:
                 try:
                     position = int(position_text)
                 except ValueError as exc:
-                    raise ValueError(
-                        f"Fields row {number}: identity_position "
-                        "must be a positive whole number."
+                    raise _SpecificationCsvConversionError(
+                        section="fields_and_keys",
+                        row=number,
+                        column="identity_position",
+                        message=(
+                            "identity_position must be a positive whole number."
+                        ),
                     ) from exc
                 if position < 1:
-                    raise ValueError(
-                        f"Fields row {number}: identity_position must be at least 1."
+                    raise _SpecificationCsvConversionError(
+                        section="fields_and_keys",
+                        row=number,
+                        column="identity_position",
+                        message="identity_position must be at least 1.",
                     )
-                positions[entity_name].append((position, field_name))
+                positions[entity_name].append((position, field_name, number))
 
         for entity_name, entity in entity_lookup.items():
-            ordered = sorted(positions[entity_name])
-            numeric_positions = [position for position, _ in ordered]
-            if len(numeric_positions) != len(set(numeric_positions)):
-                raise ValueError(
-                    f"Entity {entity_name!r} has duplicate identity positions."
-                )
-            if numeric_positions and numeric_positions != list(
-                range(1, len(numeric_positions) + 1)
+            entity_positions = positions[entity_name]
+            seen_positions: set[int] = set()
+
+            for position, _, row_number in entity_positions:
+                if position in seen_positions:
+                    raise _SpecificationCsvConversionError(
+                        section="fields_and_keys",
+                        row=row_number,
+                        column="identity_position",
+                        message=(
+                            f"duplicate identity_position {position} "
+                            f"for entity {entity_name!r}."
+                        ),
+                    )
+                seen_positions.add(position)
+
+            ordered = sorted(entity_positions)
+            for expected_position, (position, _, row_number) in enumerate(
+                ordered, start=1
             ):
-                raise ValueError(
-                    f"Entity {entity_name!r} identity positions must be "
-                    "contiguous starting at 1."
-                )
+                if position != expected_position:
+                    raise _SpecificationCsvConversionError(
+                        section="fields_and_keys",
+                        row=row_number,
+                        column="identity_position",
+                        message=(
+                            "identity_position values must be contiguous "
+                            "starting at 1."
+                        ),
+                    )
+
             entity["identity"]["fields"] = [
-                field_name for _, field_name in ordered
+                field_name for _, field_name, _ in ordered
             ]
 
     def _convert_generation(
@@ -379,12 +454,18 @@ class SpecificationCsvReplacementService:
                 try:
                     value = json.loads(text)
                 except json.JSONDecodeError as exc:
-                    raise ValueError(
-                        f"Fields row {row_number}: {column} must be valid JSON."
+                    raise _SpecificationCsvConversionError(
+                        "fields_and_keys",
+                        row_number,
+                        column,
+                        f"{column} must be valid JSON.",
                     ) from exc
                 if not isinstance(value, list):
-                    raise ValueError(
-                        f"Fields row {row_number}: {column} must be a JSON array."
+                    raise _SpecificationCsvConversionError(
+                        "fields_and_keys",
+                        row_number,
+                        column,
+                        f"{column} must be a JSON array.",
                     )
             elif column in {
                 "minimum_length", "maximum_length", "precision", "scale"
@@ -392,17 +473,22 @@ class SpecificationCsvReplacementService:
                 try:
                     value = int(text)
                 except ValueError as exc:
-                    raise ValueError(
-                        f"Fields row {row_number}: {column} must be an integer."
+                    raise _SpecificationCsvConversionError(
+                        "fields_and_keys",
+                        row_number,
+                        column,
+                        f"{column} must be an integer.",
                     ) from exc
             elif column in {"minimum", "maximum"}:
                 if field_type == "INTEGER":
                     try:
                         value = int(text)
                     except ValueError as exc:
-                        raise ValueError(
-                            f"Fields row {row_number}: {column} "
-                            "must be a whole number for INTEGER fields."
+                        raise _SpecificationCsvConversionError(
+                            "fields_and_keys",
+                            row_number,
+                            column,
+                            f"{column} must be a whole number for INTEGER fields.",
                         ) from exc
                 else:
                     # DECIMAL bounds must remain strings to preserve precision.
@@ -467,11 +553,19 @@ class SpecificationCsvReplacementService:
             source_entity = values.get("source_entity", "").strip()
             target_entity = values.get("target_entity", "").strip()
 
-            source_fields = self._json_value(
-                values.get("source_fields", ""),
-                "source_fields",
-                number,
-            )
+            try:
+                source_fields = self._json_value(
+                    values.get("source_fields", ""),
+                    "source_fields",
+                    number,
+                )
+            except ValueError as exc:
+                raise _SpecificationCsvConversionError(
+                    "foreign_keys",
+                    number,
+                    "source_fields",
+                    "source_fields must contain valid JSON.",
+                ) from exc
 
             if (
                 not isinstance(source_fields, list)
@@ -479,9 +573,11 @@ class SpecificationCsvReplacementService:
                 or any(not isinstance(field, str) or not field.strip()
                        for field in source_fields)
             ):
-                raise ValueError(
-                    f"Foreign keys row {number}: source_fields must be "
-                    "a non-empty JSON array of field names."
+                raise _SpecificationCsvConversionError(
+                    "foreign_keys",
+                    number,
+                    "source_fields",
+                    "source_fields must be a non-empty JSON array of field names.",
                 )
 
             key = SpecificationCsvReplacementService._record_key([
@@ -504,16 +600,24 @@ class SpecificationCsvReplacementService:
                 ]
                 if existing_pair:
                     continue
-                raise ValueError(
-                    f"Foreign keys row {number}: unknown source or target "
-                    f"entity ({source_entity!r}, {target_entity!r})."
+                missing_column = (
+                    "source_entity" if not source_exists else "target_entity"
+                )
+                raise _SpecificationCsvConversionError(
+                    "foreign_keys",
+                    number,
+                    missing_column,
+                    f"unknown source or target entity "
+                    f"({source_entity!r}, {target_entity!r}).",
                 )
 
             if len(matches) > 1:
-                raise ValueError(
-                    f"Foreign keys row {number}: multiple existing foreign "
-                    "keys match this legacy declaration. The original CSV "
-                    "format cannot distinguish them."
+                raise _SpecificationCsvConversionError(
+                    "foreign_keys",
+                    number,
+                    "source_fields",
+                    "multiple existing foreign keys match this legacy "
+                    "declaration. The original CSV format cannot distinguish them.",
                 )
 
             old = matches[0] if matches else {}
@@ -548,11 +652,13 @@ class SpecificationCsvReplacementService:
             ):
                 target_fields = list(old_target_fields)
             else:
-                raise ValueError(
-                    f"Foreign keys row {number}: cannot derive a compatible "
-                    f"target-field mapping for {target_entity!r}. "
-                    "The target identity and existing FK mapping do not "
-                    "provide a matching number of fields."
+                raise _SpecificationCsvConversionError(
+                    "foreign_keys",
+                    number,
+                    "target_entity",
+                    f"cannot derive a compatible target-field mapping for "
+                    f"{target_entity!r}. The target identity and existing FK "
+                    "mapping do not provide a matching number of fields.",
                 )
 
             record_metadata = {
@@ -652,19 +758,23 @@ class SpecificationCsvReplacementService:
                 continue
 
             if len(unchanged_matches) > 1:
-                raise ValueError(
-                    f"Relationships row {number}: multiple existing "
-                    "relationships match this declaration."
+                raise _SpecificationCsvConversionError(
+                    "relationships",
+                    number,
+                    "type",
+                    "multiple existing relationships match this declaration.",
                 )
 
             if relationship_type not in {
                 "ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_ONE"
             }:
-                raise ValueError(
-                    f"Relationships row {number}: unsupported relationship "
-                    f"type {relationship_type!r}. A new or edited "
-                    "relationship of this type cannot be reconstructed "
-                    "from the original CSV format."
+                raise _SpecificationCsvConversionError(
+                    "relationships",
+                    number,
+                    "type",
+                    f"unsupported relationship type {relationship_type!r}. "
+                    "A new or edited relationship of this type cannot be "
+                    "reconstructed from the original CSV format.",
                 )
 
             if relationship_type == "MANY_TO_ONE":
@@ -730,16 +840,20 @@ class SpecificationCsvReplacementService:
 
             if len(resolved) != 1:
                 if not resolved:
-                    raise ValueError(
-                        f"Relationships row {number}: no complete ordered "
-                        f"foreign-key mapping supports "
+                    raise _SpecificationCsvConversionError(
+                        "relationships",
+                        number,
+                        "source_entity",
+                        "no complete ordered foreign-key mapping supports "
                         f"{source_entity} -> {target_entity} "
-                        f"({relationship_type})."
+                        f"({relationship_type}).",
                     )
-                raise ValueError(
-                    f"Relationships row {number}: multiple foreign keys "
-                    "support this relationship. The original CSV format "
-                    "cannot distinguish them."
+                raise _SpecificationCsvConversionError(
+                    "relationships",
+                    number,
+                    "source_entity",
+                    "multiple foreign keys support this relationship. "
+                    "The original CSV format cannot distinguish them.",
                 )
 
             relationship = resolved[0]
@@ -797,9 +911,11 @@ class SpecificationCsvReplacementService:
                     old_matches.append(old)
 
             if len(old_matches) > 1:
-                raise ValueError(
-                    f"Relationships row {number}: multiple existing "
-                    "relationships match this declaration."
+                raise _SpecificationCsvConversionError(
+                    "relationships",
+                    number,
+                    "type",
+                    "multiple existing relationships match this declaration.",
                 )
 
             if old_matches:
@@ -860,9 +976,12 @@ class SpecificationCsvReplacementService:
             matches = old_by_key.get(key, [])
 
             if len(matches) > 1:
-                raise ValueError(
-                    f"Constraints row {number}: multiple existing "
-                    "constraints match this entity, field and operator."
+                raise _SpecificationCsvConversionError(
+                    "constraints",
+                    number,
+                    "operator",
+                    "multiple existing constraints match this entity, "
+                    "field and operator.",
                 )
 
             old = matches[0] if matches else {}
@@ -878,24 +997,32 @@ class SpecificationCsvReplacementService:
                 value = raw
             elif old and isinstance(old_value, bool):
                 if raw.strip().lower() not in {"true", "false"}:
-                    raise ValueError(
-                        f"Constraints row {number}: value must be "
-                        "true or false."
+                    raise _SpecificationCsvConversionError(
+                        "constraints",
+                        number,
+                        "value",
+                        "value must be true or false.",
                     )
                 value = raw.strip().lower() == "true"
             elif old and isinstance(old_value, int):
                 try:
                     value = int(raw)
                 except ValueError as exc:
-                    raise ValueError(
-                        f"Constraints row {number}: value must be an integer."
+                    raise _SpecificationCsvConversionError(
+                        "constraints",
+                        number,
+                        "value",
+                        "value must be an integer.",
                     ) from exc
             elif old and isinstance(old_value, float):
                 try:
                     value = float(raw)
                 except ValueError as exc:
-                    raise ValueError(
-                        f"Constraints row {number}: value must be numeric."
+                    raise _SpecificationCsvConversionError(
+                        "constraints",
+                        number,
+                        "value",
+                        "value must be numeric.",
                     ) from exc
             elif old and old_value is None and raw == "":
                 value = None

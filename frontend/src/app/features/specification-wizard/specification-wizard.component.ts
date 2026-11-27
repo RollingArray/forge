@@ -123,6 +123,8 @@ export class SpecificationWizardComponent implements OnInit {
 
   readonly activeSection = signal<CsvSectionKey>('entities');
 
+  private userModifiedCsv = false;
+
   readonly csvText = signal<SpecificationReplacementCsv>({
     entities: '',
     fields_and_keys: '',
@@ -227,6 +229,10 @@ export class SpecificationWizardComponent implements OnInit {
       .exportReplacement(this.dataModelId)
       .subscribe({
         next: (csv) => {
+          if (!showSuccessNotification && this.userModifiedCsv) {
+            return;
+          }
+
           this.csvText.set(csv);
           this.activeSection.set('entities');
           this.resetPreviewState();
@@ -284,6 +290,8 @@ export class SpecificationWizardComponent implements OnInit {
   private loadAerospaceSampleSections(
     onlySection?: CsvSectionKey,
   ): void {
+    this.userModifiedCsv = true;
+
     forkJoin({
       entities: this.http.get(
         `${this.sampleBase}${this.sampleFiles.entities}`,
@@ -445,6 +453,8 @@ export class SpecificationWizardComponent implements OnInit {
   }
 
   private setSectionCsv(section: CsvSectionKey, content: string): void {
+    this.userModifiedCsv = true;
+
     this.csvText.update((current) => ({
       ...current,
       [section]: content,

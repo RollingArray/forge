@@ -1,4 +1,6 @@
 import copy
+import csv
+import io
 import json
 import pytest
 from pathlib import Path
@@ -661,3 +663,597 @@ def test_blank_decimal_constraint_values_become_none(existing_value):
 
     assert result["issues"] == []
     assert result["specification"]["constraints"][0]["value"] is None
+
+
+def test_invalid_entity_population_count_reports_structured_csv_location():
+    original = rich_specification()
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    rows = list(csv.reader(io.StringIO(csv_sections["entities"])))
+    population_column = rows[0].index("population_count")
+    rows[1][population_column] = "not-a-number"
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections["entities"] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "entities",
+        "row": 2,
+        "column": "population_count",
+        "message": "population_count must be a whole number.",
+    }]
+
+
+@pytest.mark.parametrize(
+    ("section", "column", "replacement", "expected_section", "message"),
+    [
+        (
+            "entities",
+            "population_scaling",
+            "INVALID",
+            "entities",
+            "population_scaling must be FIXED or SCALABLE.",
+        ),
+        (
+            "fields_and_keys",
+            "identity_position",
+            "not-a-number",
+            "fields_and_keys",
+            "identity_position must be a positive whole number.",
+        ),
+        (
+            "fields_and_keys",
+            "identity_position",
+            "0",
+            "fields_and_keys",
+            "identity_position must be at least 1.",
+        ),
+    ],
+)
+def test_row_conversion_errors_report_structured_csv_locations(
+    section,
+    column,
+    replacement,
+    expected_section,
+    message,
+):
+    original = rich_specification()
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    rows = list(csv.reader(io.StringIO(csv_sections[section])))
+    column_index = rows[0].index(column)
+    rows[1][column_index] = replacement
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections[section] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": expected_section,
+        "row": 2,
+        "column": column,
+        "message": message,
+    }]
+
+@pytest.mark.parametrize(
+    ("field_name", "column", "replacement", "message"),
+    [
+        (
+            "CUSTOMER_STATUS",
+            "values",
+            "{invalid-json",
+            "values must be valid JSON.",
+        ),
+        (
+            "CUSTOMER_STATUS",
+            "values",
+            '{"status": "ACTIVE"}',
+            "values must be a JSON array.",
+        ),
+        (
+            "CUSTOMER_NAME",
+            "minimum_length",
+            "not-a-number",
+            "minimum_length must be an integer.",
+        ),
+        (
+            "CUSTOMER_NAME",
+            "maximum_length",
+            "1.5",
+            "maximum_length must be an integer.",
+        ),
+        (
+            "QUANTITY",
+            "minimum",
+            "not-a-number",
+            "minimum must be a whole number for INTEGER fields.",
+        ),
+    ],
+)
+def test_generation_conversion_errors_report_structured_csv_locations(
+    field_name,
+    column,
+    replacement,
+    message,
+):
+    original = rich_specification()
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    rows = list(csv.reader(io.StringIO(csv_sections["fields_and_keys"])))
+    headers = rows[0]
+    field_column = headers.index("field")
+    target_column = headers.index(column)
+
+    matching_rows = [
+        row for row in rows[1:] if row[field_column] == field_name
+    ]
+    assert len(matching_rows) == 1
+
+    target_row = matching_rows[0]
+    target_row[target_column] = replacement
+    expected_row_number = rows.index(target_row) + 1
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections["fields_and_keys"] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "fields_and_keys",
+        "row": expected_row_number,
+        "column": column,
+        "message": message,
+    }]
+
+@pytest.mark.parametrize(
+    ("replacement", "message"),
+    [
+        (
+            "{invalid-json",
+            "source_fields must contain valid JSON.",
+        ),
+        (
+            '{"field": "CUSTOMER_ID"}',
+            "source_fields must be a non-empty JSON array of field names.",
+        ),
+        (
+            "[]",
+            "source_fields must be a non-empty JSON array of field names.",
+        ),
+    ],
+)
+def test_foreign_key_source_fields_errors_report_structured_csv_locations(
+    replacement,
+    message,
+):
+    original = rich_specification()
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    rows = list(csv.reader(io.StringIO(csv_sections["foreign_keys"])))
+    headers = rows[0]
+    source_fields_column = headers.index("source_fields")
+
+    assert len(rows) > 1, "Expected the fixture to contain a foreign-key row."
+    rows[1][source_fields_column] = replacement
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections["foreign_keys"] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "foreign_keys",
+        "row": 2,
+        "column": "source_fields",
+        "message": message,
+    }]
+
+@pytest.mark.parametrize(
+    ("column", "replacement"),
+    [
+        ("source_entity", "UNKNOWN_SOURCE"),
+        ("target_entity", "UNKNOWN_TARGET"),
+    ],
+)
+def test_foreign_key_unknown_entities_report_structured_csv_locations(
+    column,
+    replacement,
+):
+    original = rich_specification()
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    rows = list(csv.reader(io.StringIO(csv_sections["foreign_keys"])))
+    headers = rows[0]
+    target_column = headers.index(column)
+
+    assert len(rows) > 1, "Expected the fixture to contain a foreign-key row."
+    rows[1][target_column] = replacement
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections["foreign_keys"] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "foreign_keys",
+        "row": 2,
+        "column": column,
+        "message": (
+            "unknown source or target entity "
+            f"({replacement!r}, "
+            f"{rows[1][headers.index('target_entity')]!r})."
+            if column == "source_entity"
+            else
+            "unknown source or target entity "
+            f"({rows[1][headers.index('source_entity')]!r}, "
+            f"{replacement!r})."
+        ),
+    }]
+
+
+def test_deleted_entity_keeps_existing_foreign_key_skip_behavior():
+    original = rich_specification()
+    existing_foreign_key = original["foreign_keys"][0]
+    source = existing_foreign_key["source"]
+    target = existing_foreign_key["target"]
+
+    remaining_entities = [
+        entity
+        for entity in original["entities"]
+        if entity["name"] != target["entity"]
+    ]
+
+    parsed = {
+        "rows": [{
+            "row_number": 2,
+            "values": {
+                "source_entity": source["entity"],
+                "source_fields": (
+                    "[" + ", ".join(f'"{field}"' for field in source["fields"]) + "]"
+                ),
+                "target_entity": target["entity"],
+            },
+        }],
+    }
+
+    result = SpecificationCsvReplacementService()._convert_foreign_keys(
+        parsed,
+        remaining_entities,
+        original["foreign_keys"],
+    )
+
+    assert result == []
+
+def test_foreign_key_multiple_legacy_matches_report_structured_csv_location():
+    import copy
+
+    original = rich_specification()
+    original["foreign_keys"].append(
+        copy.deepcopy(original["foreign_keys"][0])
+    )
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "foreign_keys",
+        "row": 2,
+        "column": "source_fields",
+        "message": (
+            "multiple existing foreign keys match this legacy declaration. "
+            "The original CSV format cannot distinguish them."
+        ),
+    }]
+
+
+def test_foreign_key_incompatible_target_mapping_reports_structured_location():
+    import copy
+
+    original = rich_specification()
+    foreign_key = original["foreign_keys"][0]
+    source = foreign_key["source"]
+    target = foreign_key["target"]
+
+    entities = copy.deepcopy(original["entities"])
+    existing = copy.deepcopy(original["foreign_keys"])
+
+    target_entity = next(
+        entity for entity in entities
+        if entity["name"] == target["entity"]
+    )
+    target_entity["identity"]["fields"] = ["TARGET_A", "TARGET_B"]
+    existing[0]["target"]["fields"] = ["TARGET_A", "TARGET_B"]
+
+    parsed = {
+        "rows": [{
+            "row_number": 2,
+            "values": {
+                "source_entity": source["entity"],
+                "source_fields": (
+                    "[" + ", ".join(f'"{field}"' for field in source["fields"]) + "]"
+                ),
+                "target_entity": target["entity"],
+            },
+        }],
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        SpecificationCsvReplacementService()._convert_foreign_keys(
+            parsed,
+            entities,
+            existing,
+        )
+
+    assert exc_info.value.section == "foreign_keys"
+    assert exc_info.value.row == 2
+    assert exc_info.value.column == "target_entity"
+    assert str(exc_info.value) == (
+        f"cannot derive a compatible target-field mapping for "
+        f"{target['entity']!r}. The target identity and existing FK "
+        "mapping do not provide a matching number of fields."
+    )
+
+def _parsed_relationship_row(
+    source_entity,
+    target_entity,
+    relationship_type,
+    source_participation="MANDATORY",
+    target_participation="MANDATORY",
+):
+    return {
+        "rows": [{
+            "row_number": 2,
+            "values": {
+                "source_entity": source_entity,
+                "target_entity": target_entity,
+                "type": relationship_type,
+                "source_participation": source_participation,
+                "target_participation": target_participation,
+            },
+        }],
+    }
+
+
+def test_relationship_duplicate_unchanged_matches_report_structured_location():
+    import copy
+
+    original = rich_specification()
+    existing = copy.deepcopy(original["relationships"])
+    existing.append(copy.deepcopy(existing[0]))
+
+    row = existing[0]
+    parsed = _parsed_relationship_row(
+        row["source"],
+        row["target"],
+        row["type"],
+        row["source_participation"],
+        row["target_participation"],
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        SpecificationCsvReplacementService()._convert_relationships(
+            parsed,
+            original["foreign_keys"],
+            existing,
+        )
+
+    assert exc_info.value.section == "relationships"
+    assert exc_info.value.row == 2
+    assert exc_info.value.column == "type"
+    assert str(exc_info.value) == (
+        "multiple existing relationships match this declaration."
+    )
+
+
+def test_relationship_unsupported_type_reports_structured_location():
+    original = rich_specification()
+    parsed = _parsed_relationship_row(
+        "PRODUCT",
+        "WAREHOUSE",
+        "MANY_TO_MANY",
+        "MANDATORY",
+        "OPTIONAL",
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        SpecificationCsvReplacementService()._convert_relationships(
+            parsed,
+            original["foreign_keys"],
+            original["relationships"],
+        )
+
+    assert exc_info.value.section == "relationships"
+    assert exc_info.value.row == 2
+    assert exc_info.value.column == "type"
+    assert str(exc_info.value) == (
+        "unsupported relationship type 'MANY_TO_MANY'. "
+        "A new or edited relationship of this type cannot be "
+        "reconstructed from the original CSV format."
+    )
+
+
+def test_relationship_missing_mapping_reports_structured_location():
+    original = rich_specification()
+    parsed = _parsed_relationship_row(
+        "CUSTOMER",
+        "PRODUCT",
+        "ONE_TO_MANY",
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        SpecificationCsvReplacementService()._convert_relationships(
+            parsed,
+            original["foreign_keys"],
+            [],
+        )
+
+    assert exc_info.value.section == "relationships"
+    assert exc_info.value.row == 2
+    assert exc_info.value.column == "source_entity"
+    assert str(exc_info.value) == (
+        "no complete ordered foreign-key mapping supports "
+        "CUSTOMER -> PRODUCT (ONE_TO_MANY)."
+    )
+
+@pytest.mark.parametrize(
+    ("existing_value", "replacement", "message"),
+    [
+        (True, "not-a-boolean", "value must be true or false."),
+        (42, "not-an-integer", "value must be an integer."),
+        (12.5, "not-a-number", "value must be numeric."),
+    ],
+)
+def test_constraint_conversion_errors_report_structured_csv_locations(
+    existing_value,
+    replacement,
+    message,
+):
+    original = {
+        "entities": [{
+            "name": "ITEM",
+            "fields": [{"name": "ITEM_VALUE", "type": "STRING"}],
+        }],
+        "foreign_keys": [],
+        "relationships": [],
+        "constraints": [{
+            "entity": "ITEM",
+            "field": "ITEM_VALUE",
+            "operator": ">",
+            "value": existing_value,
+        }],
+    }
+
+    csv_sections = SpecificationCsvExportService().export(original)
+    csv_sections["constraints"] = (
+        "entity,field,operator,value\n"
+        f"ITEM,ITEM_VALUE,>,{replacement}\n"
+    )
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "constraints",
+        "row": 2,
+        "column": "value",
+        "message": message,
+    }]
+
+
+def test_constraint_duplicate_matches_report_structured_csv_location():
+    import copy
+
+    original = {
+        "entities": [{
+            "name": "ITEM",
+            "fields": [{"name": "ITEM_VALUE", "type": "STRING"}],
+        }],
+        "foreign_keys": [],
+        "relationships": [],
+        "constraints": [{
+            "entity": "ITEM",
+            "field": "ITEM_VALUE",
+            "operator": ">",
+            "value": "10",
+        }],
+    }
+    original["constraints"].append(
+        copy.deepcopy(original["constraints"][0])
+    )
+
+    csv_sections = SpecificationCsvExportService().export(original)
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "constraints",
+        "row": 2,
+        "column": "operator",
+        "message": (
+            "multiple existing constraints match this entity, "
+            "field and operator."
+        ),
+    }]
+
+@pytest.mark.parametrize(
+    ("second_position", "message"),
+    [
+        (
+            "1",
+            "duplicate identity_position 1 for entity 'ITEM'.",
+        ),
+        (
+            "3",
+            "identity_position values must be contiguous starting at 1.",
+        ),
+    ],
+)
+def test_identity_position_errors_report_structured_csv_locations(
+    second_position,
+    message,
+):
+    original = {
+        "entities": [{
+            "name": "ITEM",
+            "fields": [
+                {"name": "ITEM_ID", "type": "INTEGER"},
+                {"name": "TENANT_ID", "type": "INTEGER"},
+            ],
+            "identity": {"fields": ["ITEM_ID", "TENANT_ID"]},
+        }],
+        "foreign_keys": [],
+        "relationships": [],
+        "constraints": [],
+    }
+
+    csv_sections = SpecificationCsvExportService().export(original)
+    rows = list(csv.reader(io.StringIO(csv_sections["fields_and_keys"])))
+    position_column = rows[0].index("identity_position")
+    rows[2][position_column] = second_position
+
+    output = io.StringIO(newline="")
+    csv.writer(output, lineterminator="\n").writerows(rows)
+    csv_sections["fields_and_keys"] = output.getvalue()
+
+    result = SpecificationCsvReplacementService().convert(
+        csv_sections, original
+    )
+
+    assert result["specification"] is None
+    assert result["issues"] == [{
+        "section": "fields_and_keys",
+        "row": 3,
+        "column": "identity_position",
+        "message": message,
+    }]

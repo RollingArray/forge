@@ -87,6 +87,39 @@ async function exportPersistedSpecification(
   return await response.json() as Record<string, string>;
 }
 
+type ReplacementCsv = {
+  entities: string;
+  fields_and_keys: string;
+  foreign_keys: string;
+  relationships: string;
+  constraints: string;
+};
+
+function canonicalReplacementCsv(): ReplacementCsv {
+  return {
+    entities: readCanonicalCsv('01_entities.csv'),
+    fields_and_keys: readCanonicalCsv('02_fields_and_keys.csv'),
+    foreign_keys: readCanonicalCsv('03_foreign_keys.csv'),
+    relationships: readCanonicalCsv('04_relationships.csv'),
+    constraints: readCanonicalCsv('05_constraints.csv'),
+  };
+}
+
+async function postReplacementPreview(
+  page: Page,
+  modelId: string,
+  csv: ReplacementCsv,
+) {
+  const origin = new URL(page.url()).origin;
+  return page.context().request.post(
+    `${origin}/api/v1/data-models/${modelId}/specification/replacement/preview`,
+    {
+      headers: await getApiAuthorizationHeaders(page),
+      data: { csv },
+    },
+  );
+}
+
 test.describe('MS21 - Specification Wizard navigation and state', () => {
   test.beforeEach(async ({ page, workspaceModel }, testInfo) => {
     test.setTimeout(120_000);
@@ -127,6 +160,18 @@ test.describe('MS21 - Specification Wizard navigation and state', () => {
       name: 'Load Complete Aerospace Sample',
       exact: true,
     }).click();
+
+    // Wait for all five asynchronous sample requests and conversion to finish.
+    await expect(
+      page.getByRole('status').filter({
+        hasText: 'All five sample sections are ready for editing.',
+      }),
+    ).toBeVisible();
+
+    // Verify the editor reflects the completed sample load.
+    await expect(
+      page.locator('#csv-section-input'),
+    ).toHaveValue(readCanonicalCsv('01_entities.csv'));
   });
 
   test('MS21-01: Loads the selected model in the Specification Wizard', async ({
@@ -525,4 +570,610 @@ test.describe('MS21 - Specification Wizard navigation and state', () => {
       contentType: 'application/json',
     });
   });
+
+  test('MS22-01: Accepts all five required CSV sections with valid headers', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+
+    const previewResponsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const previewResponse = await previewResponsePromise;
+    expect(previewResponse.status()).toBe(200);
+
+    const preview = await previewResponse.json() as {
+      can_apply: boolean;
+      issues: unknown[];
+      summary: Record<string, number>;
+      validation: unknown;
+      candidate: unknown;
+    };
+
+    expect(preview.can_apply).toBe(true);
+    expect(preview.issues).toEqual([]);
+    expect(preview.validation).toBeNull();
+    expect(preview.candidate).toBeTruthy();
+
+    for (const section of [
+      'entities',
+      'fields_and_keys',
+      'foreign_keys',
+      'relationships',
+      'constraints',
+    ]) {
+      expect(
+        preview.summary[section],
+        `Expected a numeric summary for ${section}`,
+      ).toEqual(expect.any(Number));
+      expect(preview.summary[section]).toBeGreaterThanOrEqual(0);
+    }
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/model-validation$`),
+      { timeout: 60_000 },
+    );
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Model Validation',
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-01-valid-replacement-preview.json', {
+      body: JSON.stringify({
+        modelId,
+        status: previewResponse.status(),
+        canApply: preview.can_apply,
+        issues: preview.issues,
+        summary: preview.summary,
+        canonicalValidationInvoked: preview.validation !== null,
+        replacementApplied: false,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+
+  test('MS22-02: Reports missing required CSV headers', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+    const editor = page.locator('#csv-section-input');
+
+    const invalidCsv = [
+      'description,population_count,population_scaling',
+      'Airlines and aerospace manufacturers,40,SCALABLE',
+    ].join('\n');
+
+    await editor.fill(invalidCsv);
+
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+
+    const preview = await response.json();
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+    expect(preview.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: 'entities',
+          row: 1,
+          column: 'entity',
+        }),
+      ]),
+    );
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/specification-wizard$`),
+    );
+
+    const review = page.locator('[aria-label="CSV replacement review"]');
+    await expect(review).toBeVisible();
+    await expect(review).toContainText('Needs attention');
+    await expect(review).toContainText('column: entity');
+
+    await expect(editor).toHaveValue(invalidCsv);
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-02-missing-header-review.json', {
+      body: JSON.stringify({
+        modelId,
+        canApply: preview.can_apply,
+        issues: preview.issues,
+        editorRetained: true,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+  test('MS22-03: Reports unexpected CSV columns', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+    const editor = page.locator('#csv-section-input');
+
+    await page.getByRole('tab', {
+      name: 'Constraints',
+      exact: true,
+    }).click();
+
+    const originalCsv = await editor.inputValue();
+    const lines = originalCsv.split(/\r?\n/);
+
+    lines[0] = `${lines[0]},unexpected_column`;
+    const invalidCsv = [
+      lines[0],
+      ...lines.slice(1).map((line) => `${line},`),
+    ].join('\n');
+
+    await editor.fill(invalidCsv);
+
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+
+    const preview = await response.json();
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+    expect(preview.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: 'constraints',
+          row: 1,
+          column: 'unexpected_column',
+        }),
+      ]),
+    );
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/specification-wizard$`),
+    );
+
+    const review = page.locator('[aria-label="CSV replacement review"]');
+    await expect(review).toBeVisible();
+    await expect(review).toContainText('Needs attention');
+    await expect(review).toContainText('unexpected_column');
+
+    await expect(editor).toHaveValue(invalidCsv);
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-03-unexpected-column-review.json', {
+      body: JSON.stringify({
+        modelId,
+        canApply: preview.can_apply,
+        issues: preview.issues,
+        editorRetained: true,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+  test('MS22-04: Rejects malformed quoting before candidate preparation', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const csv = canonicalReplacementCsv();
+    const editor = page.locator('#csv-section-input');
+
+    // Wait until the shared MS21 setup has finished loading the Aerospace sample.
+    await expect(editor).toHaveValue(
+      readCanonicalCsv('01_entities.csv'),
+    );
+
+    csv.entities = [
+      'entity,description,population_count,population_scaling',
+      '"CUSTOMER,Malformed description,40,SCALABLE',
+    ].join('\n');
+
+    // Enter malformed CSV only after sample loading has completed.
+    await editor.fill(csv.entities);
+    await expect(editor).toHaveValue(csv.entities);
+
+    const parseAlert = page.getByRole('alert');
+
+    await expect(parseAlert).toContainText(
+      'CSV formatting needs attention',
+    );
+
+    const prepareButton = page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    });
+
+    await expect(prepareButton).toBeDisabled();
+
+    // A malformed CSV must not trigger a preview request.
+    const previewRequests = page.waitForRequest(
+      (request) =>
+        request.url().includes(
+          `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+        ) && request.method() === 'POST',
+      { timeout: 2000 },
+    ).then(
+      () => true,
+      (error) => {
+        if (error.name === 'TimeoutError') {
+          return false;
+        }
+        throw error;
+      },
+    );
+
+    expect(await previewRequests).toBe(false);
+
+    const preview = await postReplacementPreview(page, modelId, csv)
+      .then(async (response) => {
+        expect(response.status()).toBe(200);
+        return response.json();
+      });
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+    expect(preview.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: 'entities',
+          row: expect.any(Number),
+          column: null,
+          message: expect.stringContaining('Invalid CSV syntax'),
+        }),
+      ]),
+    );
+
+    await testInfo.attach('ms22-04-malformed-quoting-diagnostics.json', {
+      body: JSON.stringify(preview.issues, null, 2),
+      contentType: 'application/json',
+    });
+  });
+
+  test('MS22-05: Reports invalid basic type conversions', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+    const editor = page.locator('#csv-section-input');
+
+    const invalidCsv = readCanonicalCsv('01_entities.csv').replace(
+      'CUSTOMER,Airlines and aerospace manufacturers,40,SCALABLE',
+      'CUSTOMER,Airlines and aerospace manufacturers,not-a-number,SCALABLE',
+    );
+
+    await editor.fill(invalidCsv);
+
+    // Confirm the browser editor retained the intended value before preview.
+    await expect(editor).toHaveValue(invalidCsv);
+
+
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+
+    const preview = await response.json();
+
+    const submittedCsv = response.request().postDataJSON() as {
+      csv: Record<string, string>;
+    };
+
+    console.log(
+      '[MS22-05] Submitted entities CSV:',
+      JSON.stringify(submittedCsv.csv.entities),
+    );
+
+    console.log(
+      '[MS22-05] Preview response:',
+      JSON.stringify({
+        can_apply: preview.can_apply,
+        candidate_is_null: preview.candidate === null,
+        issues: preview.issues,
+      }),
+    );
+
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+    expect(preview.issues).toEqual([
+      expect.objectContaining({
+        section: 'entities',
+        row: 2,
+        column: 'population_count',
+        message: 'population_count must be a whole number.',
+      }),
+    ]);
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/specification-wizard$`),
+    );
+
+    const review = page.locator('[aria-label="CSV replacement review"]');
+    await expect(review).toBeVisible();
+    await expect(review).toContainText('Needs attention');
+    await expect(review).toContainText('population_count');
+    await expect(review).toContainText(
+      'population_count must be a whole number.',
+    );
+
+    await expect(editor).toHaveValue(invalidCsv);
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-05-type-conversion-review.json', {
+      body: JSON.stringify({
+        modelId,
+        canApply: preview.can_apply,
+        issues: preview.issues,
+        editorRetained: true,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+  test('MS22-06: Collects diagnostics for multiple malformed rows', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const csv = canonicalReplacementCsv();
+
+    csv.entities = [
+      'entity,description,population_count,population_scaling',
+      'CUSTOMER,Malformed row,40,SCALABLE,unexpected',
+      'AIRCRAFT_PROGRAM,Malformed row,12',
+    ].join('\n');
+
+    const response = await postReplacementPreview(page, modelId, csv);
+    expect(response.status()).toBe(200);
+
+    const preview = await response.json();
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+
+    const entityIssues = preview.issues.filter(
+      (issue: { section: string }) => issue.section === 'entities',
+    );
+
+    expect(entityIssues).toHaveLength(2);
+    expect(entityIssues.map(
+      (issue: { row: number }) => issue.row,
+    )).toEqual([2, 3]);
+    expect(entityIssues.every(
+      (issue: { column: string | null }) => issue.column === null,
+    )).toBe(true);
+
+    await testInfo.attach('ms22-06-multiple-row-diagnostics.json', {
+      body: JSON.stringify(preview.issues, null, 2),
+      contentType: 'application/json',
+    });
+  });
+
+  test('MS22-07: Blocks candidate preparation when conversion has errors', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+
+    const invalidEntities = readCanonicalCsv('01_entities.csv').replace(
+      'CUSTOMER,Airlines and aerospace manufacturers,40,SCALABLE',
+      'CUSTOMER,Airlines and aerospace manufacturers,-1,SCALABLE',
+    );
+
+    await page.locator('#csv-section-input').fill(invalidEntities);
+
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+
+    const preview = await response.json();
+
+    const submittedCsv = response.request().postDataJSON() as {
+      csv: Record<string, string>;
+    };
+
+    console.log(
+      '[MS22-07] Submitted entities CSV:',
+      JSON.stringify(submittedCsv.csv.entities),
+    );
+
+    console.log(
+      '[MS22-07] Preview response:',
+      JSON.stringify({
+        can_apply: preview.can_apply,
+        candidate_is_null: preview.candidate === null,
+        issues: preview.issues,
+      }),
+    );
+
+    expect(preview.can_apply).toBe(false);
+    expect(preview.candidate).toBeNull();
+    expect(preview.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: 'entities',
+          row: 2,
+          column: 'population_count',
+          message: 'population_count cannot be negative.',
+        }),
+      ]),
+    );
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/specification-wizard$`),
+    );
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-07-candidate-blocked.json', {
+      body: JSON.stringify({
+        modelId,
+        canApply: preview.can_apply,
+        candidatePresent: preview.candidate !== null,
+        issues: preview.issues,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+
+  test('MS22-08: Corrects invalid CSV and successfully retries replacement preview', async ({
+    page,
+  }, testInfo) => {
+    const modelId = new URL(page.url()).pathname.split('/')[2];
+    const persistedBefore = await exportPersistedSpecification(page, modelId);
+
+    const invalidEntities = readCanonicalCsv('01_entities.csv').replace(
+      'CUSTOMER,Airlines and aerospace manufacturers,40,SCALABLE',
+      'CUSTOMER,Airlines and aerospace manufacturers,invalid,SCALABLE',
+    );
+
+    const editor = page.locator('#csv-section-input');
+
+    // Wait until the shared setup has finished loading the Aerospace sample.
+    await expect(editor).toHaveValue(
+      readCanonicalCsv('01_entities.csv'),
+    );
+
+    // Enter the invalid value only after sample loading is complete.
+    await editor.fill(invalidEntities);
+    await expect(editor).toHaveValue(invalidEntities);
+
+    const firstResponsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const firstResponse = await firstResponsePromise;
+    expect(firstResponse.status()).toBe(200);
+
+    const firstPreview = await firstResponse.json();
+
+    const submittedCsv = firstResponse.request().postDataJSON() as {
+      csv: Record<string, string>;
+    };
+
+    console.log(
+      '[MS22-08] Submitted entities CSV:',
+      JSON.stringify(submittedCsv.csv.entities),
+    );
+
+    console.log(
+      '[MS22-08] First preview response:',
+      JSON.stringify({
+        can_apply: firstPreview.can_apply,
+        candidate_is_null: firstPreview.candidate === null,
+        issues: firstPreview.issues,
+      }),
+    );
+
+    expect(firstPreview.can_apply).toBe(false);
+    expect(firstPreview.candidate).toBeNull();
+    expect(firstPreview.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: 'entities',
+          row: 2,
+          column: 'population_count',
+        }),
+      ]),
+    );
+
+    await editor.fill(readCanonicalCsv('01_entities.csv'));
+
+    const retryResponsePromise = page.waitForResponse((response) =>
+      response.url().includes(
+        `/api/v1/data-models/${modelId}/specification/replacement/preview`,
+      ) && response.request().method() === 'POST',
+    );
+
+    await page.getByRole('button', {
+      name: /^Prepare replacement$/,
+    }).click();
+
+    const retryResponse = await retryResponsePromise;
+    expect(retryResponse.status()).toBe(200);
+
+    const retryPreview = await retryResponse.json();
+    expect(retryPreview.can_apply).toBe(true);
+    expect(retryPreview.issues).toEqual([]);
+    expect(retryPreview.candidate).toBeTruthy();
+
+    await expect(page).toHaveURL(
+      new RegExp(`/workspace/${modelId}/model-validation$`),
+      { timeout: 60_000 },
+    );
+
+    const persistedAfter = await exportPersistedSpecification(page, modelId);
+    expect(persistedAfter).toEqual(persistedBefore);
+
+    await testInfo.attach('ms22-08-corrected-retry.json', {
+      body: JSON.stringify({
+        modelId,
+        firstAttemptCanApply: firstPreview.can_apply,
+        firstAttemptIssues: firstPreview.issues,
+        retryCanApply: retryPreview.can_apply,
+        retryIssues: retryPreview.issues,
+        replacementApplied: false,
+        persistedSpecificationUnchanged: true,
+      }, null, 2),
+      contentType: 'application/json',
+    });
+  });
+
 });
