@@ -172,7 +172,15 @@ test.describe('WS05 - Workspace Data Model AI Integration', () => {
     }
 
     await card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = card.locator('.actions-menu[role="menu"]');
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {

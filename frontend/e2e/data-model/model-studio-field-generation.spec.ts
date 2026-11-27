@@ -1,13 +1,16 @@
 import { test, expect, BrowserContext, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import path from 'node:path';
 
 const ENTITY = 'TestRecord';
 const TARGET_ROWS = 12;
-const BASE_URL =
-  process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
-
-const AUTH_FILE = resolve(
+const MAX_SEMANTIC_VOCABULARY_SIZE = 50;
+const EXPECTED_SEMANTIC_VOCABULARY_SIZE = Math.min(
+  MAX_SEMANTIC_VOCABULARY_SIZE,
+  TARGET_ROWS,
+);
+const BASE_URL = process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
+const AUTH_FILE = path.resolve(
   __dirname,
   '../../playwright/.auth/isolated-owner.json',
 );
@@ -345,18 +348,43 @@ async function importGenerationSpecification(
   }
 
   await page.getByRole('button', {
-    name: /^Preview CSV import$/,
+    name: /^Prepare replacement$/,
   }).click();
 
-  const review = page.locator('section[aria-label="CSV import review"]');
-  await expect(review).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`/workspace/${modelId}/model-validation$`),
+    { timeout: 60_000 },
+  );
+
   await expect(
-    review.getByText('Ready to apply', { exact: true }),
+    page.getByRole('heading', {
+      name: 'Model Validation',
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  const confirmButton = page.getByRole('button', {
+    name: 'Confirm replacement',
+    exact: true,
+  });
+
+  await expect(confirmButton).toBeEnabled({ timeout: 60_000 });
+
+  page.once('dialog', async (dialog) => {
+    await dialog.accept();
+  });
+
+  await confirmButton.click();
+
+  await expect(
+    page.getByText('Specification replacement complete'),
   ).toBeVisible({ timeout: 60_000 });
 
-  await page.getByRole('button', {
-    name: /Apply additions & open Model Studio/,
-  }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/workspace/${modelId}/model-validation$`),
+  );
+
+  await page.goto(`/workspace/${modelId}/model-studio`);
 
   await expect(page).toHaveURL(
     new RegExp(`/workspace/${modelId}/model-studio$`),
@@ -568,6 +596,10 @@ async function prepareScenario(
     jobId: jobMatch![1],
     generatedData,
   };
+
+  // The setup page is no longer needed after scenario preparation.
+  // Keep the context open because afterAll uses it for model deletion.
+  await page.close();
 }
 
 async function openScenarioModel(page: Page): Promise<Scenario> {
@@ -609,9 +641,21 @@ async function deleteScenarioModel(): Promise<void> {
       'Cleanup must identify exactly one MS08-owned model before deletion',
     ).toBe(1);
 
-    await card.getByRole('button', {
-      name: 'Edit Data Model',
-    }).click();
+    const actionsButton = card.getByRole('button', {
+      name: 'Data Model actions',
+    });
+    await expect(actionsButton).toBeVisible();
+    await actionsButton.click();
+
+    const menuItems = card.locator(
+      '.actions-menu [role="menuitem"]',
+    );
+    await expect(menuItems).toHaveCount(2);
+
+    const editMenuItem = menuItems.nth(0);
+    await expect(editMenuItem).toBeVisible();
+    await expect(editMenuItem).toContainText('Edit');
+    await editMenuItem.click();
 
     const editDialog = page.getByRole('dialog', {
       name: 'Edit Data Model',
@@ -769,18 +813,12 @@ test.describe('MS08 - Field type and generation configuration', () => {
     expect(values).toHaveLength(TARGET_ROWS);
     expect(values.every((value) => value.trim().length > 0)).toBe(true);
 
-    const candidateId = process.env.FORGE_E2E_CANDIDATE_ID;
-    if (!candidateId) {
-      throw new Error(
-        'FORGE_E2E_CANDIDATE_ID is required to verify persisted semantic vocabulary.',
-      );
-    }
+    const semanticDataModelRoot =
+      process.env.FORGE_E2E_DATA_MODEL_ROOT ??
+      path.resolve(__dirname, '../../../backend/api/data/data_model');
 
-    const semanticPath = resolve(
-      __dirname,
-      '../../../dist/test-runs',
-      candidateId,
-      'runtime/forge-deployment/backend/api/data/data_model',
+    const semanticPath = path.resolve(
+      semanticDataModelRoot,
       current.modelId,
       'generation',
       current.jobId,
@@ -810,7 +848,9 @@ test.describe('MS08 - Field type and generation configuration', () => {
     }
 
     expect(vocabularyRecord.mode).toBe('VOCABULARY');
-    expect(vocabularyRecord.values).toHaveLength(50);
+    expect(vocabularyRecord.values).toHaveLength(
+      EXPECTED_SEMANTIC_VOCABULARY_SIZE,
+    );
 
     const vocabularyValues = vocabularyRecord.values!;
     expect(
@@ -826,7 +866,7 @@ test.describe('MS08 - Field type and generation configuration', () => {
 
     expect(
       outOfVocabulary,
-      'Every generated PRODUCT_CATEGORY value must belong to the persisted 50-value semantic vocabulary.',
+      'Every generated PRODUCT_CATEGORY value must belong to the persisted vocabulary.',
     ).toEqual([]);
 
     const origin = new URL(page.url()).origin;
@@ -867,7 +907,9 @@ test.describe('MS08 - Field type and generation configuration', () => {
       0,
     );
 
-    expect(returnedCount).toBeGreaterThanOrEqual(50);
+    expect(returnedCount).toBeGreaterThanOrEqual(
+      EXPECTED_SEMANTIC_VOCABULARY_SIZE,
+    );
 
     await testInfo.attach('ms08-vocabulary-verification.json', {
       body: JSON.stringify({
@@ -875,6 +917,7 @@ test.describe('MS08 - Field type and generation configuration', () => {
         job_id: current.jobId,
         field: `${ENTITY}.PRODUCT_CATEGORY`,
         mode: vocabularyRecord.mode,
+        expected_vocabulary_size: EXPECTED_SEMANTIC_VOCABULARY_SIZE,
         vocabulary_size: vocabularyValues.length,
         generated_rows: values.length,
         generated_distinct_values: new Set(values).size,

@@ -1,12 +1,11 @@
 import { test, expect, type BrowserContext, type Page, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import path from 'node:path';
 
 const BASE_URL = process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
-
-const SESSIONS_FILE = resolve(
+const SESSIONS_FILE = path.resolve(
   process.env.FORGE_E2E_SESSIONS_FILE ??
-    resolve(__dirname, '../../../dist/test-runs/sessions.json'),
+    path.resolve(__dirname, '../../../dist/test-runs/sessions.json'),
 );
 
 function loadE2eSessions(): Record<string, any> {
@@ -318,7 +317,17 @@ test.describe('MU01 - Workspace Access', () => {
         if ((await card.count()) === 1) {
           await card
             .getByRole('button', {
-              name: 'Edit Data Model',
+              name: 'Data Model actions',
+            })
+            .click();
+
+          const actionsMenu = card.locator('.actions-menu[role="menu"]');
+          await expect(actionsMenu).toBeVisible();
+
+          await actionsMenu
+            .getByRole('menuitem', {
+              name: 'Edit',
+              exact: true,
             })
             .click();
 
@@ -604,7 +613,17 @@ test.describe('MU01 - Workspace Access', () => {
         if ((await card.count()) === 1) {
           await card
             .getByRole('button', {
-              name: 'Edit Data Model',
+              name: 'Data Model actions',
+            })
+            .click();
+
+          const actionsMenu = card.locator('.actions-menu[role="menu"]');
+          await expect(actionsMenu).toBeVisible();
+
+          await actionsMenu
+            .getByRole('menuitem', {
+              name: 'Edit',
+              exact: true,
             })
             .click();
 

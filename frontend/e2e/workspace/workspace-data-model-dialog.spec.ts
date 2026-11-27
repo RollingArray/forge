@@ -33,7 +33,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {
@@ -67,7 +77,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {
@@ -109,7 +129,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {
@@ -142,7 +172,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {
@@ -190,7 +230,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     await page.locator('#data-model-name').fill('Unsaved Workspace Change');
@@ -224,7 +274,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const editDialog = page.getByRole('dialog', {
@@ -254,7 +314,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     workspaceModel,
   }) => {
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     await page.getByRole('dialog', {
@@ -291,7 +361,17 @@ test.describe('WS03 - Workspace Data Model Dialog', () => {
     const expectedTags = ['Persistence', 'Regression', 'Workspace'];
 
     await workspaceModel.card.getByRole('button', {
-      name: 'Edit Data Model',
+      name: 'Data Model actions',
+    }).click();
+
+    const actionsMenu = workspaceModel.card.locator(
+      '.actions-menu[role="menu"]'
+    );
+    await expect(actionsMenu).toBeVisible();
+
+    await actionsMenu.getByRole('menuitem', {
+      name: 'Edit',
+      exact: true,
     }).click();
 
     const dialog = page.getByRole('dialog', {

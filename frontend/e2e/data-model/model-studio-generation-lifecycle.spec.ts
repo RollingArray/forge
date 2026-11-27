@@ -7,14 +7,12 @@ import {
   TestInfo,
 } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import path from 'node:path';
 
 const ENTITY = 'TestRecord';
 const TARGET_ROWS = 12;
-const BASE_URL =
-  process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
-
-const AUTH_FILE = resolve(
+const BASE_URL = process.env.FORGE_E2E_BASE_URL ?? 'http://127.0.0.1:18876';
+const AUTH_FILE = path.resolve(
   __dirname,
   '../../playwright/.auth/isolated-owner.json',
 );
@@ -217,18 +215,43 @@ async function importGenerationSpecification(
   }
 
   await page.getByRole('button', {
-    name: /^Preview CSV import$/,
+    name: /^Prepare replacement$/,
   }).click();
 
-  const review = page.locator('section[aria-label="CSV import review"]');
-  await expect(review).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`/workspace/${modelId}/model-validation$`),
+    { timeout: 60_000 },
+  );
+
   await expect(
-    review.getByText('Ready to apply', { exact: true }),
+    page.getByRole('heading', {
+      name: 'Model Validation',
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  const confirmButton = page.getByRole('button', {
+    name: 'Confirm replacement',
+    exact: true,
+  });
+
+  await expect(confirmButton).toBeEnabled({ timeout: 60_000 });
+
+  page.once('dialog', async (dialog) => {
+    await dialog.accept();
+  });
+
+  await confirmButton.click();
+
+  await expect(
+    page.getByText('Specification replacement complete'),
   ).toBeVisible({ timeout: 60_000 });
 
-  await page.getByRole('button', {
-    name: /Apply additions & open Model Studio/,
-  }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/workspace/${modelId}/model-validation$`),
+  );
+
+  await page.goto(`/workspace/${modelId}/model-studio`);
 
   await expect(page).toHaveURL(
     new RegExp(`/workspace/${modelId}/model-studio$`),
@@ -296,9 +319,9 @@ async function deleteScenarioModel(): Promise<void> {
   if (!setupContext || !createdModelName) return;
 
   const page = await setupContext.newPage();
-
   try {
     await page.goto('/workspace');
+
     await expect(page.locator('app-workspace')).toBeVisible();
 
     const card = page.locator('.dataModel-card').filter({
@@ -315,16 +338,33 @@ async function deleteScenarioModel(): Promise<void> {
       count,
       'Cleanup must identify exactly one MS30-owned model before deletion',
     ).toBe(1);
+    const actionsButton = card.getByRole('button', {
+      name: 'Data Model actions',
+    });
+    await actionsButton.click({ timeout: 8_000 });
 
-    await card.getByRole('button', {
-      name: 'Edit Data Model',
-    }).click();
+    const expanded = await actionsButton.getAttribute('aria-expanded');
+    await expect(actionsButton).toHaveAttribute('aria-expanded', 'true', {
+      timeout: 5_000,
+    });
+
+    const menu = card.getByRole('menu');
+    await expect(menu).toBeVisible({ timeout: 5_000 });
+
+    const editMenuItem = menu.getByRole('menuitem', {
+      name: /Edit/,
+    });
+
+    await expect(editMenuItem).toBeVisible({ timeout: 5_000 });
+
+    await editMenuItem.click({ timeout: 8_000 });
 
     const editDialog = page.getByRole('dialog', {
       name: 'Edit Data Model',
     });
 
     await expect(editDialog).toBeVisible();
+
     await editDialog.locator('button.delete-button').click();
 
     const confirmation = page.getByRole('dialog', {

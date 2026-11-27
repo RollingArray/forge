@@ -143,6 +143,7 @@ PY_CANDIDATE_VALIDATION
   export FORGE_E2E_SESSIONS_FILE="$run_dir/sessions.json"
   export FORGE_E2E_EVIDENCE_DIR="$run_dir/evidence"
   export FORGE_E2E_CANDIDATE_ID="$candidate_id"
+  export FORGE_E2E_DATA_MODEL_ROOT="$runtime/backend/api/data/data_model"
 
   printf '\nCandidate: %s\n' "$candidate_id"
   printf 'SHA-256: %s\n' "$candidate_sha"

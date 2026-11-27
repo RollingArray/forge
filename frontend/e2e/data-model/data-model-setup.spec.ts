@@ -105,34 +105,57 @@ test.describe('DM01 - Data Model Setup', () => {
       }
     });
 
-    await test.step('DM01-S04: Preview and apply specification import', async () => {
+    await test.step('DM01-S04: Prepare and confirm Aerospace specification replacement', async () => {
       // --------------------------------------------------
-      // 4. Preview and apply the specification import
+      // 4. Prepare and confirm the complete specification replacement
       // --------------------------------------------------
 
       await page
         .getByRole('button', {
-          name: /^Preview CSV import$/,
+          name: /^Prepare replacement$/,
         })
         .click();
 
-      const review = page.locator('section[aria-label="CSV import review"]');
+      await expect(page).toHaveURL(
+        new RegExp(`/workspace/${modelId}/model-validation$`),
+        { timeout: 60_000 },
+      );
 
-      await expect(review).toBeVisible();
+      await expect(
+        page.getByRole('heading', {
+          name: 'Model Validation',
+          exact: true,
+        }),
+      ).toBeVisible();
 
-      await expect(review.getByText('Ready to apply', { exact: true })).toBeVisible({
-        timeout: 60_000,
+      const confirmButton = page.getByRole('button', {
+        name: 'Confirm replacement',
+        exact: true,
       });
 
-      await page
-        .getByRole('button', {
-          name: /Apply additions & open Model Studio/,
-        })
-        .click();
+      await expect(confirmButton).toBeEnabled({ timeout: 60_000 });
 
-      await expect(page).toHaveURL(new RegExp(`/workspace/${modelId}/model-studio`), {
-        timeout: 60_000,
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
       });
+
+      await confirmButton.click();
+
+      await expect(
+        page.getByText('Specification replacement complete'),
+      ).toBeVisible({ timeout: 60_000 });
+
+      await expect(page).toHaveURL(
+        new RegExp(`/workspace/${modelId}/model-validation$`),
+      );
+
+      // Return to Model Studio for the existing DM01-S05 validation flow.
+      await page.goto(`/workspace/${modelId}/model-studio`);
+
+      await expect(page).toHaveURL(
+        new RegExp(`/workspace/${modelId}/model-studio$`),
+        { timeout: 60_000 },
+      );
     });
 
     await test.step('DM01-S05: Validate Data Model', async () => {

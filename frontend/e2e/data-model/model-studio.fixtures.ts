@@ -6,15 +6,13 @@ export interface ModelStudioContext {
   url: string;
 }
 
-async function fillCsvSection(
-  page: Page,
-  sectionName: string,
-  csv: string,
-): Promise<void> {
-  await page.getByRole('tab', {
-    name: sectionName,
-    exact: true,
-  }).click();
+async function fillCsvSection(page: Page, sectionName: string, csv: string): Promise<void> {
+  await page
+    .getByRole('tab', {
+      name: sectionName,
+      exact: true,
+    })
+    .click();
 
   await page.locator('#csv-section-input').fill(csv);
 }
@@ -23,13 +21,13 @@ async function importPopulatedSpecification(
   page: Page,
   modelStudio: ModelStudioContext,
 ): Promise<void> {
-  await page.getByRole('button', {
-    name: /CSV Specification/,
-  }).click();
+  await page
+    .getByRole('button', {
+      name: /CSV Specification/,
+    })
+    .click();
 
-  await expect(page).toHaveURL(
-    new RegExp(`/workspace/${modelStudio.id}/specification-wizard$`),
-  );
+  await expect(page).toHaveURL(new RegExp(`/workspace/${modelStudio.id}/specification-wizard$`));
 
   await expect(
     page.getByRole('heading', {
@@ -42,9 +40,9 @@ async function importPopulatedSpecification(
     page,
     'Entities',
     [
-      'entity,description',
-      'Customer,Customer master record',
-      'Order,Customer order record',
+      'entity,description,population_count,population_scaling',
+      'Customer,Customer master record,100,FIXED',
+      'Order,Customer order record,200,FIXED',
     ].join('\n'),
   );
 
@@ -64,43 +62,63 @@ async function importPopulatedSpecification(
   await fillCsvSection(
     page,
     'Foreign Keys',
-    [
-      'source_entity,source_fields,target_entity',
-      'Order,"[""CUSTOMER_ID""]",Customer',
-    ].join('\n'),
+    ['source_entity,source_fields,target_entity', 'Order,"[""CUSTOMER_ID""]",Customer'].join('\n'),
   );
 
   await fillCsvSection(
     page,
     'Relationships',
     [
-      'source_entity,target_entity,type',
-      'Customer,Order,ONE_TO_MANY',
+      'source_entity,target_entity,type,source_participation,target_participation',
+      'Customer,Order,ONE_TO_MANY,MANDATORY,OPTIONAL',
     ].join('\n'),
   );
 
-  await page.getByRole('button', {
-    name: /^Preview CSV import$/,
-  }).click();
+  await fillCsvSection(page, 'Constraints', 'entity,field,operator,value');
 
-  const review = page.locator(
-    'section[aria-label="CSV import review"]',
-  );
+  await page
+    .getByRole('button', {
+      name: /^Prepare replacement$/,
+    })
+    .click();
 
-  await expect(review).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/workspace/${modelStudio.id}/model-validation$`), {
+    timeout: 60_000,
+  });
 
   await expect(
-    review.getByText('Ready to apply', { exact: true }),
-  ).toBeVisible({ timeout: 60_000 });
+    page.getByRole('heading', {
+      name: 'Model Validation',
+      exact: true,
+    }),
+  ).toBeVisible();
 
-  await page.getByRole('button', {
-    name: /Apply additions & open Model Studio/,
-  }).click();
+  const confirmButton = page.getByRole('button', {
+    name: 'Confirm replacement',
+    exact: true,
+  });
 
-  await expect(page).toHaveURL(
-    new RegExp(`/workspace/${modelStudio.id}/model-studio$`),
-    { timeout: 60_000 },
-  );
+  // Wait until canonical validation findings have rendered.
+  await expect(page.locator('app-model-validation-findings .finding-row').first()).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await expect(confirmButton).toBeEnabled({ timeout: 5_000 });
+
+  page.once('dialog', async (dialog) => {
+    await dialog.accept();
+  });
+
+  await confirmButton.click();
+
+  await expect(page.getByText('Specification replacement complete')).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await expect(page).toHaveURL(new RegExp(`/workspace/${modelStudio.id}/model-validation$`));
+
+  // Return to Model Studio without relying on an unverified button label.
+  await page.goto(modelStudio.url);
 
   await expect(
     page.getByRole('heading', {
@@ -117,15 +135,10 @@ export const test = workspaceTest.extend<{
   modelStudio: async ({ page, workspaceModel }, use) => {
     await workspaceModel.card.click();
 
-    await expect(page).toHaveURL(
-      /\/workspace\/[^/]+\/model-studio$/,
-      { timeout: 30_000 },
-    );
+    await expect(page).toHaveURL(/\/workspace\/[^/]+\/model-studio$/, { timeout: 30_000 });
 
     const modelStudioUrl = page.url();
-    const match = modelStudioUrl.match(
-      /\/workspace\/([^/]+)\/model-studio$/,
-    );
+    const match = modelStudioUrl.match(/\/workspace\/([^/]+)\/model-studio$/);
 
     expect(
       match,

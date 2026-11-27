@@ -560,16 +560,18 @@ Objective: Verify AI-assisted constraint proposals.
 - [pending] **MS20-13**: Save reviewed constraint. Expected result: Constraint is persisted.
 
 ##### MS21: Specification Wizard navigation and state
-Status: [pending]
+Status: [completed]
 Objective: Verify navigation and CSV state management in the specification replacement workflow.
-- [pending] **MS21-01**: Open Specification Wizard for a selected data model. Expected result: Wizard opens with the correct model context.
-- [pending] **MS21-02**: Load the complete Aerospace sample. Expected result: All five CSV sections are populated with the expected sample content.
-- [pending] **MS21-03**: Navigate between the five CSV sections. Expected result: Each section displays its corresponding CSV content.
-- [pending] **MS21-04**: Edit CSV content and navigate between sections. Expected result: Edits remain intact.
-- [pending] **MS21-05**: Return from Model Validation to the Wizard. Expected result: Candidate CSV edits are preserved.
-- [pending] **MS21-06**: Leave the Wizard before applying a replacement. Expected result: The persisted specification remains unchanged.
-- [pending] **MS21-07**: Reopen the Wizard. Expected result: CSV content reflects the persisted specification.
-- [pending] **MS21-08**: Prepare a replacement candidate. Expected result: Candidate is prepared and the user is routed to Model Validation.
+- [completed] **MS21-01**: Open Specification Wizard for a selected data model. Expected result: Wizard opens with the correct model context.
+- [completed] **MS21-02**: Load the complete Aerospace sample. Expected result: All five CSV sections are populated with the expected sample content.
+- [completed] **MS21-03**: Navigate between the five CSV sections. Expected result: Each section displays its corresponding CSV content.
+- [completed] **MS21-04**: Edit CSV content and navigate between sections. Expected result: Edits remain intact.
+- [completed] **MS21-05**: Return from Model Validation to the Wizard. Expected result: Candidate CSV edits are preserved.
+- [completed] **MS21-06**: Leave the Wizard before applying a replacement. Expected result: The persisted specification remains unchanged.
+- [completed] **MS21-07**: Reopen the Wizard. Expected result: CSV content reflects the persisted specification.
+- [completed] **MS21-08**: Prepare a replacement candidate. Expected result: Candidate is prepared and the user is routed to Model Validation.
+Evidence: Deployment candidate `20261127T082208Z-bfe1a5f8-62b9c0`; Playwright combined run: 9 passed, 0 failed (MS21-01 through MS21-08 plus isolated authentication setup). Reports and screenshots: `dist/test-runs/20261127T082208Z-bfe1a5f8-62b9c0/evidence/`.
+
 
 ##### MS22: CSV structure and conversion validation
 Status: [pending]

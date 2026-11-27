@@ -253,7 +253,7 @@
     description="Preview checks CSV conversion. Applying replaces all five CSV-managed sections. Canonical readiness is reviewed separately."
     secondaryLabel="Back to Model Studio"
     secondaryIcon="arrow_back"
-    [primaryLabel]="previewInProgress() ? 'Preparing replacement…' : 'Apply replacement'"
+    [primaryLabel]="previewInProgress() ? 'Preparing replacement…' : 'Prepare replacement'"
     primaryIcon="published_with_changes"
     [primaryDisabled]="!canPreview()"
     (secondaryAction)="returnToModelStudio()"
